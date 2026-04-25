@@ -3,67 +3,92 @@ import { useEffect } from 'react'
 import RouterShell from '@/RouterShell'
 import useAuthStore from '@/stores/useAuthStore'
 import useMeetingStore from '@/stores/useMeetingStore'
+import api, { getStoredToken, storeToken, clearToken } from '@/utils/api'
 
 /**
  * Single Inertia page — the React app shell.
  *
- * Responsibilities:
- * 1. Pull auth.user from Inertia shared props (HandleInertiaRequests)
- * 2. If no session → attempt Telegram WebApp initData auth
- * 3. If no Telegram context (plain browser) → set needsLogin flag
- * 4. After auth resolves → load latest meeting into store
+ * Auth priority (highest → lowest):
+ * 1. Laravel session in Inertia shared props (HandleInertiaRequests sets auth.user)
+ * 2. Stored Sanctum Bearer token in localStorage  → verified via GET /api/v1/auth/me
+ * 3. Telegram Mini App initData               → POST /api/v1/auth/telegram (returns token)
+ * 4. No auth context available               → redirect to /login
+ *
+ * Using token-based auth (not session) ensures the Mini App works regardless
+ * of the SANCTUM_STATEFUL_DOMAINS configuration on the server.
  */
 export default function App() {
-  const { auth }   = usePage().props
-  const authStore  = useAuthStore()
+  const { auth }     = usePage().props
+  const authStore    = useAuthStore()
   const meetingStore = useMeetingStore()
 
   useEffect(() => {
-    // Already authenticated via Laravel session (Inertia shared props)
+    // ── 1. Laravel session already active (Inertia shared props) ──────────
     if (auth?.user) {
       authStore.setUser(auth.user)
-      // Pre-load meeting so BottomNav knows if an active meeting exists
       meetingStore.loadLatest()
       return
     }
 
-    // Try Telegram Mini App auto-auth
-    const tg       = window.Telegram?.WebApp
-    const initData = tg?.initData
+    // ── Show loader while we determine auth state ───────────────────────
+    authStore.setAuthPending()
 
-    if (initData) {
-      authStore.setAuthPending()
-      const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
-
-      // If opened via browser deep-link (?start=browser_TOKEN), pass the token
-      // so the backend can mark it as authenticated for the polling browser tab.
-      const startParam  = tg?.initDataUnsafe?.start_param ?? ''
-      const browserToken = startParam.startsWith('browser_') ? startParam.slice(8) : null
-
-      fetch('/auth/telegram', {
-        method:      'POST',
-        headers:     { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-        credentials: 'same-origin',
-        body:        JSON.stringify({
-          init_data: initData,
-          ...(browserToken ? { browser_token: browserToken } : {}),
-        }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.ok && data.user) {
-            authStore.setUser(data.user)
+    async function resolveAuth() {
+      // ── 2. Try stored Sanctum token ──────────────────────────────────
+      const storedToken = getStoredToken()
+      if (storedToken) {
+        try {
+          const { data } = await api.get('/auth/me')
+          const user = data?.data
+          if (user) {
+            authStore.setUser(user)
             meetingStore.loadLatest()
-          } else {
-            authStore.setNeedsLogin()
+            return
           }
-        })
-        .catch(() => authStore.setNeedsLogin())
-      return
+        } catch {
+          // 401 or network error — token is invalid/expired, clear it
+        }
+        clearToken()
+      }
+
+      // ── 3. Telegram Mini App initData ────────────────────────────────
+      const tg       = window.Telegram?.WebApp
+      const initData = tg?.initData
+
+      if (initData) {
+        // If opened via browser deep-link (?start=browser_TOKEN), pass the
+        // token so the backend can mark the browser tab as authenticated.
+        const startParam   = tg?.initDataUnsafe?.start_param ?? ''
+        const browserToken = startParam.startsWith('browser_') ? startParam.slice(8) : null
+
+        try {
+          const res = await fetch('/api/v1/auth/telegram', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body:    JSON.stringify({
+              init_data: initData,
+              ...(browserToken ? { browser_token: browserToken } : {}),
+            }),
+          })
+          const data = await res.json()
+
+          if (data.ok && data.data?.token && data.data?.user) {
+            storeToken(data.data.token)
+            authStore.setUser(data.data.user, data.data.token)
+            meetingStore.loadLatest()
+            return
+          }
+        } catch { /* network error */ }
+
+        authStore.setNeedsLogin()
+        return
+      }
+
+      // ── 4. Plain browser — no Telegram context ───────────────────────
+      authStore.setNeedsLogin()
     }
 
-    // Plain browser — no Telegram context → show login page
-    authStore.setNeedsLogin()
+    resolveAuth().catch(() => authStore.setNeedsLogin())
   }, [])
 
   return <RouterShell />

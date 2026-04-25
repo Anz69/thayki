@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import api from '@/utils/api'
+import api, { storeToken, clearToken } from '@/utils/api'
 
 /**
  * Reset every other domain store back to a clean slate. Called on logout / 401
@@ -33,13 +33,23 @@ const useAuthStore = create((set, get) => ({
   /** true = currently waiting for TG initData auth to resolve */
   authPending: false,
 
-  setUser:        (user)  => set({ user, needsLogin: false, authPending: false }),
-  setNeedsLogin:  ()      => {
+  /**
+   * Call with an optional token when logging in via the API token flow.
+   * If token is provided it is persisted to localStorage so api.js can inject it.
+   */
+  setUser: (user, token) => {
+    if (token) storeToken(token)
+    set({ user, needsLogin: false, authPending: false })
+  },
+
+  setNeedsLogin: () => {
+    clearToken()
     set({ user: null, needsLogin: true, authPending: false })
     resetDependentStores()
   },
-  setAuthPending: ()      => set({ authPending: true }),
-  clear:          ()      => {
+  setAuthPending: () => set({ authPending: true }),
+  clear: () => {
+    clearToken()
     set({ user: null, needsLogin: false, authPending: false })
     resetDependentStores()
   },
@@ -51,6 +61,7 @@ const useAuthStore = create((set, get) => ({
    */
   logout: async () => {
     try { await api.post('/auth/logout') } catch { /* noop */ }
+    clearToken()
     set({ user: null, needsLogin: true, authPending: false })
     await resetDependentStores()
   },
@@ -60,7 +71,7 @@ const useAuthStore = create((set, get) => ({
       const res = await api.get('/auth/me')
       const user = res.data?.data
       if (user) set({ user })
-    } catch {}
+    } catch { /* noop */ }
   },
 
   isAuthenticated: () => get().user !== null,

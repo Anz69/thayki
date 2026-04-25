@@ -13,6 +13,8 @@ use App\Services\Audit\AuditLogger;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class AuthController extends Controller
 {
@@ -20,10 +22,28 @@ class AuthController extends Controller
     {
         $result = $action->execute((string) $request->input('init_data'));
 
+        // Browser deep-link flow: the Mini App passes a short-lived token so
+        // the desktop browser tab can poll and get authenticated.
+        $browserToken = (string) $request->input('browser_token', '');
+        if ($browserToken !== '') {
+            Cache::put('browser_auth:' . $browserToken, $result['user']->id, now()->addMinutes(5));
+        }
+
+        // Best-effort: also start a web session so Inertia shared props (auth.user)
+        // are populated on the next page load — avoids an extra /auth/me round-trip.
+        // This is optional: the Bearer token is the primary auth mechanism.
+        try {
+            Auth::login($result['user'], remember: true);
+            $request->session()->regenerate();
+        } catch (\Throwable) {
+            // Session not available (e.g. domain not in SANCTUM_STATEFUL_DOMAINS)
+            // Token-based auth is fully sufficient without a session.
+        }
+
         return ApiResponse::ok([
             'token' => $result['token']->plainTextToken,
-            'user' => (new UserResource($result['user']))->resolve(),
-            'role' => $result['user']->role->value,
+            'user'  => (new UserResource($result['user']))->resolve(),
+            'role'  => $result['user']->role->value,
         ], status: 200);
     }
 

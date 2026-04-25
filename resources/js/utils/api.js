@@ -22,9 +22,25 @@ const api = axios.create({
   },
 })
 
+const TOKEN_KEY = '_tg_auth_token'
+
+export function storeToken(token) {
+  try { localStorage.setItem(TOKEN_KEY, token) } catch {}
+}
+export function clearToken() {
+  try { localStorage.removeItem(TOKEN_KEY) } catch {}
+}
+export function getStoredToken() {
+  try { return localStorage.getItem(TOKEN_KEY) } catch { return null }
+}
+
 api.interceptors.request.use((config) => {
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
   if (csrf) config.headers['X-CSRF-TOKEN'] = csrf
+
+  // Attach Sanctum Bearer token (token-based auth for Mini App)
+  const token = getStoredToken()
+  if (token) config.headers['Authorization'] = `Bearer ${token}`
 
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type']

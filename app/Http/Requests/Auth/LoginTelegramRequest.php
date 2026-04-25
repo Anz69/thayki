@@ -19,7 +19,8 @@ class LoginTelegramRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'init_data' => ['required', 'string', 'min:10', 'max:4096'],
+            'init_data'     => ['required', 'string', 'min:10', 'max:4096'],
+            'browser_token' => ['sometimes', 'nullable', 'string', 'max:128'],
         ];
     }
 }
