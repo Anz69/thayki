@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import RouterShell from '@/RouterShell'
 import useAuthStore from '@/stores/useAuthStore'
 import useMeetingStore from '@/stores/useMeetingStore'
-import api, { getStoredToken, storeToken, clearToken } from '@/utils/api'
+import api, { getStoredToken, clearToken } from '@/utils/api'
 
 /**
  * Single Inertia page — the React app shell.
@@ -62,23 +62,20 @@ export default function App() {
         const browserToken = startParam.startsWith('browser_') ? startParam.slice(8) : null
 
         try {
-          const res = await fetch('/api/v1/auth/telegram', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body:    JSON.stringify({
-              init_data: initData,
-              ...(browserToken ? { browser_token: browserToken } : {}),
-            }),
+          // Use api (axios) instead of fetch so the CSRF token interceptor fires.
+          // Without it, Sanctum rejects the request with 419 when the domain is
+          // listed in SANCTUM_STATEFUL_DOMAINS.
+          const { data } = await api.post('/auth/telegram', {
+            init_data: initData,
+            ...(browserToken ? { browser_token: browserToken } : {}),
           })
-          const data = await res.json()
 
           if (data.ok && data.data?.token && data.data?.user) {
-            storeToken(data.data.token)
             authStore.setUser(data.data.user, data.data.token)
             meetingStore.loadLatest()
             return
           }
-        } catch { /* network error */ }
+        } catch { /* network or validation error */ }
 
         authStore.setNeedsLogin()
         return
