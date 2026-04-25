@@ -19,7 +19,7 @@ class UploadModelPhotoAction
     public function execute(ModelProfile $profile, UploadedFile $file, bool $makeMain = false): ModelPhoto
     {
         return DB::transaction(function () use ($profile, $file, $makeMain): ModelPhoto {
-            $disk = (string) config('filesystems.default', 'public');
+            $disk = 'public';
 
             try {
                 $ext = SafeFileExtension::forImage($file);

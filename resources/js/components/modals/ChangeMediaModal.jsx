@@ -60,8 +60,10 @@ function EmptySlot({ onAdd }) {
   )
 }
 
-function FilledSlot({ photo, onRemove, onSetMain, canRemove }) {
-  const slotRef = useRef(null)
+function FilledSlot({ photo, onRemove, onSetMain, onReplace, canRemove }) {
+  const slotRef  = useRef(null)
+  const inputRef = useRef(null)
+  const [replacing, setReplacing] = useState(false)
 
   useEffect(() => {
     if (slotRef.current) {
@@ -72,19 +74,51 @@ function FilledSlot({ photo, onRemove, onSetMain, canRemove }) {
     }
   }, [])
 
+  const handleReplaceFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setReplacing(true)
+    try {
+      await onReplace(photo.id, file)
+    } finally {
+      setReplacing(false)
+    }
+  }
+
   return (
     <div
       ref={slotRef}
       className="relative rounded-2xl"
       style={{ aspectRatio: '2/3' }}
     >
-      {/* Preview: if photo has a real url — show it; otherwise show blob preview */}
-      <img
-        src={photo.url ?? photo.preview}
-        alt=""
-        className="w-full h-full object-cover rounded-2xl"
-        draggable={false}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleReplaceFile}
       />
+      {/* Clicking the image replaces it */}
+      <button
+        type="button"
+        className="w-full h-full block rounded-2xl overflow-hidden focus:outline-none active:brightness-90 transition-[filter]"
+        onClick={() => inputRef.current?.click()}
+        title="Нажмите чтобы заменить фото"
+      >
+        {replacing ? (
+          <div className="w-full h-full flex items-center justify-center bg-black/20 rounded-2xl">
+            <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent animate-spin" />
+          </div>
+        ) : (
+          <img
+            src={photo.url ?? photo.preview}
+            alt=""
+            className="w-full h-full object-cover rounded-2xl"
+            draggable={false}
+          />
+        )}
+      </button>
 
       {/* Main badge */}
       {photo.is_main && (
@@ -183,6 +217,16 @@ export default function ChangeMediaModal({ isOpen, onClose }) {
     }
   }, [profile])
 
+  const handleReplace = useCallback(async (id, file) => {
+    if (!id) return
+    try {
+      await profile.deletePhoto(id)
+      await profile.uploadPhoto(file)
+    } catch (err) {
+      logError('Replace photo failed', err)
+    }
+  }, [profile])
+
   const handleSetMain = useCallback(async (id) => {
     try {
       await profile.setMainPhoto(id)
@@ -225,6 +269,7 @@ export default function ChangeMediaModal({ isOpen, onClose }) {
                 photo={slot}
                 onRemove={handleRemove}
                 onSetMain={handleSetMain}
+                onReplace={handleReplace}
                 canRemove={filledCount > MIN_REQUIRED}
               />
             ) : (
