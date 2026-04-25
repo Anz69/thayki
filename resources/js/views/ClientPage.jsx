@@ -8,6 +8,7 @@ import InfoModal from '@/components/modals/InfoModal'
 import HowItWorksModal from '@/components/modals/HowItWorksModal'
 import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
+import { logError } from '@/utils/logger'
 
 const STATUS_MAP = {
   pending:   { label: 'Ожидает подтверждения' },
@@ -120,7 +121,7 @@ export default function ClientPage() {
       },
     })
       .then(r => setMeetings(r.data.data ?? []))
-      .catch(console.error)
+      .catch(logError)
       .finally(() => setLoadingMeetings(false))
 
     api.get('/wallet')

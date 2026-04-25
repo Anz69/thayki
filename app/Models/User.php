@@ -34,7 +34,30 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $guarded = ['id'];
+    /**
+     * Mass-assignable columns.
+     *
+     * Note: even though `role`, `status` and `last_auth_at` appear here so
+     * that admin actions and seeders/factories can assign them via ->fill(),
+     * end-user request payloads are filtered through dedicated FormRequest
+     * objects (see `UpdateMyProfileRequest`, `UpdateMyModelProfileRequest`)
+     * which never expose those keys. The id column stays implicit-protected.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'telegram_id',
+        'username',
+        'first_name',
+        'last_name',
+        'language_code',
+        'photo_url',
+        'photo_customized',
+        'is_premium',
+        'role',
+        'status',
+        'last_auth_at',
+    ];
 
     /** @var list<string> */
     protected $hidden = [

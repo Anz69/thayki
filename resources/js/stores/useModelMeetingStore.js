@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import api from '@/utils/api'
+import { logError } from '@/utils/logger'
 
 const useModelMeetingStore = create((set, get) => ({
   meeting:      null,
@@ -49,7 +50,7 @@ const useModelMeetingStore = create((set, get) => ({
       await api.post(`/meetings/${id}/accept`)
       get().setStatus('accepted')
     } catch (e) {
-      console.error('Meeting accept failed:', e)
+      logError('Meeting accept failed:', e)
     }
   },
 
@@ -62,7 +63,7 @@ const useModelMeetingStore = create((set, get) => ({
       const m = data.data
       set({ meeting: m, status: m?.status ?? 'rejected' })
     } catch (e) {
-      console.error('Meeting reject failed:', e)
+      logError('Meeting reject failed:', e)
     }
   },
 
@@ -74,7 +75,7 @@ const useModelMeetingStore = create((set, get) => ({
       const m = data.data
       set({ meeting: m, status: m?.status ?? 'cancelled' })
     } catch (e) {
-      console.error('Meeting cancel failed:', e)
+      logError('Meeting cancel failed:', e)
     }
   },
 
@@ -98,7 +99,7 @@ const useModelMeetingStore = create((set, get) => ({
       const m = data.data
       set({ meeting: m, status: m?.status ?? 'confirmed' })
     } catch (e) {
-      console.error('Meeting confirm failed:', e)
+      logError('Meeting confirm failed:', e)
     }
   },
 
@@ -110,7 +111,7 @@ const useModelMeetingStore = create((set, get) => ({
       const m = data.data
       set({ meeting: m, status: m?.status ?? 'completed' })
     } catch (e) {
-      console.error('Meeting complete failed:', e)
+      logError('Meeting complete failed:', e)
     }
   },
 

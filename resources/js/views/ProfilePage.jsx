@@ -10,6 +10,7 @@ import MetricsModal from '@/components/modals/MetricsModal'
 import ChangeMediaModal from '@/components/modals/ChangeMediaModal'
 import ScheduleSelector from '@/components/profile/ScheduleSelector'
 import Media from '@/components/sections/modelSelectInfo/Media'
+import { logError } from '@/utils/logger'
 
 const CameraIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 19 19" fill="none">
@@ -225,7 +226,7 @@ export default function ProfilePage() {
   const handleEditToggle = useCallback(() => {
     if (isEditing) {
       // Save name when finishing edit
-      profile.savePatch({ name: localName }).catch(console.error)
+      profile.savePatch({ name: localName }).catch(logError)
       setIsEditing(false)
 
       stopBorderSpin(nameBorderRef, nameSpinTween)
@@ -278,7 +279,7 @@ export default function ProfilePage() {
     try {
       await profile.uploadAvatar(file)
     } catch (err) {
-      console.error('Avatar upload failed', err)
+      logError('Avatar upload failed', err)
     }
   }
 
@@ -421,7 +422,7 @@ export default function ProfilePage() {
 
                 <ScheduleSelector
                   value={profile.schedule}
-                  onChange={(id) => profile.savePatch({ schedule: id }).catch(console.error)}
+                  onChange={(id) => profile.savePatch({ schedule: id }).catch(logError)}
                   isEditing={isEditing}
                 />
               </>
@@ -452,13 +453,13 @@ export default function ProfilePage() {
       <AgeModal
         isOpen={ageOpen}
         onClose={() => setAgeOpen(false)}
-        onSavePatch={(age) => profile.savePatch({ age }).catch(console.error)}
+        onSavePatch={(age) => profile.savePatch({ age }).catch(logError)}
       />
       <MetricsModal
         isOpen={metricsOpen}
         onClose={() => setMetricsOpen(false)}
         profile={profile}
-        onSave={(data) => profile.savePatch(data).catch(console.error)}
+        onSave={(data) => profile.savePatch(data).catch(logError)}
       />
       <ChangeMediaModal isOpen={mediaEditOpen} onClose={() => setMediaEditOpen(false)} />
     </section>

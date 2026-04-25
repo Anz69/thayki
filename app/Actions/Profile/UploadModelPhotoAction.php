@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\Profile;
 
+use App\Exceptions\DomainException;
 use App\Jobs\ProcessUploadedMediaJob;
 use App\Models\ModelPhoto;
 use App\Models\ModelProfile;
+use App\Support\SafeFileExtension;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +20,13 @@ class UploadModelPhotoAction
     {
         return DB::transaction(function () use ($profile, $file, $makeMain): ModelPhoto {
             $disk = (string) config('filesystems.default', 'public');
-            $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+
+            try {
+                $ext = SafeFileExtension::forImage($file);
+            } catch (\RuntimeException $e) {
+                throw DomainException::invalid('UNSUPPORTED_FILE', 'Unsupported photo format.');
+            }
+
             $path = 'model-photos/'.$profile->id.'/'.Str::uuid()->toString().'.'.$ext;
 
             Storage::disk($disk)->putFileAs(dirname($path), $file, basename($path), 'public');

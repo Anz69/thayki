@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import gsap from 'gsap'
 import ModalSheet from '@/layout/ModalSheet'
 import useProfileStore from '@/stores/useProfileStore'
+import { logError } from '@/utils/logger'
 
 const MAX_PHOTOS = 6
 const MIN_REQUIRED = 3
@@ -178,7 +179,7 @@ export default function ChangeMediaModal({ isOpen, onClose }) {
     try {
       await profile.deletePhoto(id)
     } catch (err) {
-      console.error('Delete photo failed', err)
+      logError('Delete photo failed', err)
     }
   }, [profile])
 
@@ -186,7 +187,7 @@ export default function ChangeMediaModal({ isOpen, onClose }) {
     try {
       await profile.setMainPhoto(id)
     } catch (err) {
-      console.error('Set main photo failed', err)
+      logError('Set main photo failed', err)
     }
   }, [profile])
 

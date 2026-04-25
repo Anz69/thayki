@@ -6,6 +6,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
 import { subscribePrivate } from '@/utils/safeEcho'
 import ChatLoadingSkeleton from '@/components/ui/ChatLoadingSkeleton'
+import { logError } from '@/utils/logger'
 
 const PaperclipIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 21 21" fill="none">
@@ -168,7 +169,7 @@ export default function SupportPage() {
         prevMsgCount.current = normalized.length
         setMessages(normalized)
       })
-      .catch(console.error)
+      .catch(logError)
       .finally(() => {
         loadDone.current = true
         setInitialLoad(false)

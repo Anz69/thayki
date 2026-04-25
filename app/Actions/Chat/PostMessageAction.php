@@ -9,8 +9,10 @@ use App\Exceptions\DomainException;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
+use App\Support\SafeFileExtension;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PostMessageAction
 {
@@ -30,8 +32,18 @@ class PostMessageAction
             $mime = null;
 
             if ($attachment !== null) {
-                $path = $attachment->store('chat-attachments/'.$chat->id, $disk);
-                $mime = $attachment->getMimeType();
+                try {
+                    $ext = SafeFileExtension::forChatAttachment($attachment);
+                } catch (\RuntimeException $e) {
+                    throw DomainException::invalid('UNSUPPORTED_FILE', 'Unsupported attachment type.');
+                }
+
+                $mime = (string) $attachment->getMimeType();
+                $name = Str::uuid()->toString().'.'.$ext;
+                $dir  = 'chat-attachments/'.$chat->id;
+                \Illuminate\Support\Facades\Storage::disk($disk)
+                    ->putFileAs($dir, $attachment, $name, 'public');
+                $path = $dir.'/'.$name;
             }
 
             /** @var Message $message */

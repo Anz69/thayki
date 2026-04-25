@@ -20,8 +20,17 @@ class CreatePaymentRequest extends FormRequest
      */
     public function rules(): array
     {
+        $userId = (int) ($this->user()?->id ?? 0);
+
         return [
-            'meeting_id' => ['required', 'integer', 'exists:meetings,id'],
+            // Meeting must exist *and* belong to the requesting user.
+            // CreatePaymentAction enforces this again as defence-in-depth, but
+            // catching it here returns a clearer 422 instead of a 403.
+            'meeting_id' => [
+                'required',
+                'integer',
+                Rule::exists('meetings', 'id')->where('client_id', $userId),
+            ],
             'method' => ['required', 'string', Rule::in(array_map(fn (PaymentMethod $m) => $m->value, PaymentMethod::cases()))],
         ];
     }

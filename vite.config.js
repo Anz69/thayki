@@ -18,4 +18,19 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'resources/js'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        // Split heavy third-party libs into their own chunks so they cache
+        // separately from app code on deploys.
+        manualChunks: {
+          react:    ['react', 'react-dom', 'react-router-dom'],
+          gsap:     ['gsap'],
+          swiper:   ['swiper', 'swiper/react', 'swiper/modules'],
+          realtime: ['laravel-echo', 'pusher-js'],
+        },
+      },
+    },
+  },
 })

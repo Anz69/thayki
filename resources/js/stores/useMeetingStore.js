@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import api from '@/utils/api'
+import { logError } from '@/utils/logger'
 
 const useMeetingStore = create((set, get) => ({
   meeting:        null,
@@ -64,7 +65,7 @@ const useMeetingStore = create((set, get) => ({
       const m = data.data
       set({ meeting: m, status: m?.status ?? 'cancelled' })
     } catch (e) {
-      console.error('Meeting cancel failed:', e)
+      logError('Meeting cancel failed:', e)
     }
   },
 

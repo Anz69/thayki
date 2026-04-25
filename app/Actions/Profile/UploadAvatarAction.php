@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Profile;
 
+use App\Exceptions\DomainException;
 use App\Models\User;
+use App\Support\SafeFileExtension;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -14,7 +16,13 @@ class UploadAvatarAction
     public function execute(User $user, UploadedFile $file): User
     {
         $disk = 'public';
-        $ext  = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+
+        try {
+            $ext = SafeFileExtension::forImage($file);
+        } catch (\RuntimeException $e) {
+            throw DomainException::invalid('UNSUPPORTED_FILE', 'Unsupported avatar format.');
+        }
+
         $path = 'avatars/'.$user->id.'/'.Str::uuid()->toString().'.'.$ext;
 
         // Remove old local avatar (if it was previously uploaded — not a TG URL)

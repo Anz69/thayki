@@ -77,7 +77,10 @@ class InitDataValidator
 
         $valid = hash_equals($expected, $providedHash);
 
-        if (! $valid && ! ($allowUnsigned && $appEnv !== 'production')) {
+        // Escape hatch is *strictly* limited to local development. Even
+        // `staging` / `testing` environments must use a signed payload, or
+        // the test suite must call ::build() to produce one.
+        if (! $valid && ! ($allowUnsigned && $appEnv === 'local')) {
             throw InvalidInitDataException::signature();
         }
 

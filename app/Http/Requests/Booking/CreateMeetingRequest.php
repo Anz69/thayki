@@ -19,10 +19,12 @@ class CreateMeetingRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Model profile must be a *published* model — silent IDOR check.
             'model_profile_id' => ['required', 'integer', 'exists:model_profiles,id'],
             'scheduled_at'     => ['required', 'date', 'after:+15 minutes'],
             'duration_hours'   => ['required', 'integer', 'min:1', 'max:24'],
-            'price_thb'        => ['sometimes', 'integer', 'min:1'],
+            // `price_thb` is intentionally NOT accepted from the client — the
+            // server derives it from the model's hourly rate.
         ];
     }
 
