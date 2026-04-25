@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Resources;
+
+use App\Models\ModelPriceOption;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * @mixin ModelPriceOption
+ */
+class ModelPriceOptionResource extends JsonResource
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'hours' => $this->hours,
+            'price_thb' => $this->price_thb,
+            'label' => $this->label,
+        ];
+    }
+}

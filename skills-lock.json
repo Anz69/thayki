@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "skills": {
+    "filament-pro": {
+      "source": "marcelorodrigo/agent-skills",
+      "sourceType": "github",
+      "computedHash": "8e7763e017b3cfbdbf16bd968cfdb62e138a7e89f9494766e1d91c4e339fcd5f"
+    },
+    "gsap-core": {
+      "source": "greensock/gsap-skills",
+      "sourceType": "github",
+      "computedHash": "c4a01101d9e1aafbf4b49f75d74f9349790d8741981ba0237c990093863035a6"
+    },
+    "laravel-inertia-react": {
+      "source": "asyrafhussin/agent-skills",
+      "sourceType": "github",
+      "computedHash": "b05144f7f9df5fd3cd03ce13cba822ac61970449fdf7c4c4208684258e8b1724"
+    },
+    "laravel-specialist": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "computedHash": "d42a21cb81a384d31b90d4a563570fa3e33441a6beb968487fcf95a338985a7e"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "ca7b0c0c6e5f2750043f7f0cd72d16ac4e2abc48f9b5500d047a4b77a2506212"
+    }
+  }
+}
