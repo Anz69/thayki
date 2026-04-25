@@ -203,10 +203,10 @@
         function getPusher() {
             if (!pusher) {
                 pusher = new Pusher('{{ config("broadcasting.connections.reverb.key") }}', {
-                    wsHost:            '{{ config("broadcasting.connections.reverb.options.host", "127.0.0.1") }}',
-                    wsPort:            {{ (int) config("broadcasting.connections.reverb.options.port", 8080) }},
-                    wssPort:           {{ (int) config("broadcasting.connections.reverb.options.port", 8080) }},
-                    forceTLS:          {{ config("broadcasting.connections.reverb.options.scheme", "http") === "https" ? "true" : "false" }},
+                    wsHost:            '{{ config("services.reverb_public.host", "127.0.0.1") }}',
+                    wsPort:            {{ config("services.reverb_public.port", 8080) }},
+                    wssPort:           {{ config("services.reverb_public.port", 8080) }},
+                    forceTLS:          {{ config("services.reverb_public.scheme", "http") === "https" ? "true" : "false" }},
                     cluster:           'mt1',
                     enabledTransports: ['ws', 'wss'],
                     authEndpoint:      '/admin/broadcasting/auth',
