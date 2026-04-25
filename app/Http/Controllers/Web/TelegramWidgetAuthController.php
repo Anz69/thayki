@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Web;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\Wallet;
 use Illuminate\Http\JsonResponse;
@@ -42,12 +43,7 @@ class TelegramWidgetAuthController extends Controller
             return response()->json(['ok' => false, 'error' => 'Invalid widget data'], 422);
         }
 
-        // Allow unsigned ONLY when the dev flag is on AND we are not in
-        // production. The previous code looked at `services.telegram.allow_unsigned`
-        // which doesn't exist — so the flag silently always evaluated to false.
-        // We now mirror the InitDataValidator policy (the source of truth).
-        $allowUnsigned = (bool) config('telegram.allow_unsigned', false)
-            && config('app.env') !== 'production';
+        $allowUnsigned = (bool) config('telegram.allow_unsigned', false);
 
         if (! $allowUnsigned && ! $this->validateHash($data)) {
             return response()->json(['ok' => false, 'error' => 'Invalid hash'], 401);
@@ -100,12 +96,19 @@ class TelegramWidgetAuthController extends Controller
         Auth::login($user, remember: true);
         $request->session()->regenerate();
 
-        return response()->json(['ok' => true, 'user' => $this->formatUser($user)]);
+        $token = $user->createToken('widget')->plainTextToken;
+
+        return response()->json([
+            'ok'   => true,
+            'user' => $this->formatUser($user),
+            'token' => $token,
+            'role'  => $user->role->value,
+        ]);
     }
 
     private function validateHash(array $data): bool
     {
-        $botToken = config('services.telegram.bot_token', '');
+        $botToken = config('telegram.bot_token', '');
         if ($botToken === '') {
             return false;
         }

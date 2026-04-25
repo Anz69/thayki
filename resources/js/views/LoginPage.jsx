@@ -131,7 +131,7 @@ export default function LoginPage() {
         gsap.to(cardRef.current, {
           scale: 1.03, duration: 0.15, ease: 'power2.out',
           onComplete: () => {
-            authStore.setUser(data.user)
+            authStore.setUser(data.user, data.token ?? null)
             meetingStore.loadLatest()
             // Fade out everything then navigate
             gsap.to([cardRef.current, subtitleRef.current, footerRef.current], {
@@ -168,7 +168,7 @@ export default function LoginPage() {
       try {
         const data = await postToAuth('/auth/telegram-widget', tgUser)
         if (data.ok && data.user) {
-          authStore.setUser(data.user)
+          authStore.setUser(data.user, data.token ?? null)
           meetingStore.loadLatest()
           navigate('/home', { replace: true })
         } else {
