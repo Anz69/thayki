@@ -127,8 +127,8 @@
                     </div>
                 </div>
 
-                {{-- Messages --}}
-                <div id="msg-list" data-chat-id="{{ $selectedChatId }}" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:4px;">
+                {{-- Messages: poll every 2 s so new messages appear without page reload --}}
+                <div id="msg-list" wire:poll.2s data-chat-id="{{ $selectedChatId }}" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:4px;">
                     @forelse($this->getMessages() as $message)
                         @php $isSupport = in_array($message->sender?->role->value, ['admin','support']); @endphp
                         <div
@@ -192,83 +192,28 @@
         </div>
     </div>
 
-    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script>
     (function () {
-        let pusher       = null;
-        let channel      = null;
-        let activeChatId = null;
-        let skipAnim     = false;
-
-        function getPusher() {
-            if (!pusher) {
-                pusher = new Pusher('{{ config("broadcasting.connections.reverb.key") }}', {
-                    wsHost:            '{{ config("services.reverb_public.host", "127.0.0.1") }}',
-                    wsPort:            {{ config("services.reverb_public.port", 8080) }},
-                    wssPort:           {{ config("services.reverb_public.port", 8080) }},
-                    forceTLS:          {{ config("services.reverb_public.scheme", "http") === "https" ? "true" : "false" }},
-                    cluster:           'mt1',
-                    enabledTransports: ['ws', 'wss'],
-                    authEndpoint:      '/admin/broadcasting/auth',
-                    auth: {
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                        },
-                    },
-                });
-            }
-            return pusher;
-        }
-
-        function subscribeToChat(chatId) {
-            const p = getPusher();
-            if (channel) { p.unsubscribe(channel.name); channel = null; }
-            if (!chatId) return;
-            activeChatId = chatId;
-            channel = p.subscribe('private-chats.' + chatId);
-            channel.bind('message.sent', function () {
-                Livewire.dispatch('new-message-received');
-            });
-        }
-
         function scrollBottom() {
             const list = document.getElementById('msg-list');
             if (list) list.scrollTop = list.scrollHeight;
         }
 
-        // Mark all current messages as seen (no animation)
-        function markAllSeen() {
-            document.querySelectorAll('[data-msg-id]').forEach(function (el) {
-                el.setAttribute('data-animated', '1');
-            });
-        }
-
-        // Animate only messages that haven't been animated yet
         function animateNewMessages() {
-            if (skipAnim) { markAllSeen(); skipAnim = false; return; }
             document.querySelectorAll('[data-msg-id]:not([data-animated])').forEach(function (el) {
                 el.setAttribute('data-animated', '1');
                 el.classList.add('msg-new');
             });
         }
 
-        function syncChatSubscription() {
-            const list   = document.getElementById('msg-list');
-            const chatId = list ? list.dataset.chatId : null;
-            if (chatId && chatId !== String(activeChatId)) {
-                skipAnim = true; // initial load of this chat — don't animate existing messages
-                subscribeToChat(chatId);
-            }
-        }
-
         document.addEventListener('livewire:init', function () {
-            syncChatSubscription();
-            markAllSeen(); // page load — mark everything as seen
+            document.querySelectorAll('[data-msg-id]').forEach(function (el) {
+                el.setAttribute('data-animated', '1');
+            });
             scrollBottom();
         });
 
         document.addEventListener('livewire:update', function () {
-            syncChatSubscription();
             scrollBottom();
             requestAnimationFrame(animateNewMessages);
         });
