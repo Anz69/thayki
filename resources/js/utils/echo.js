@@ -3,6 +3,8 @@ import Pusher from 'pusher-js'
 
 window.Pusher = Pusher
 
+const TOKEN_KEY = '_tg_auth_token'
+
 const echo = new Echo({
   broadcaster:       'reverb',
   key:               import.meta.env.VITE_REVERB_APP_KEY,
@@ -12,6 +14,28 @@ const echo = new Echo({
   forceTLS:          (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
   enabledTransports: ['ws', 'wss'],
   withCredentials:   true,
+  // Read Bearer token lazily at auth-call time to avoid circular imports
+  // and to pick up the token obtained after autologin.
+  authorizer: (channel) => ({
+    authorize: (socketId, callback) => {
+      const token = localStorage.getItem(TOKEN_KEY)
+      const csrf  = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
+      fetch('/broadcasting/auth', {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Accept':        'application/json',
+          'X-CSRF-TOKEN':  csrf,
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ socket_id: socketId, channel_name: channel.name }),
+      })
+        .then(r => r.json())
+        .then(data => callback(null, data))
+        .catch(err  => callback(err))
+    },
+  }),
 })
 
 export default echo
