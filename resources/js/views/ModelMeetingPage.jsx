@@ -4,6 +4,7 @@ import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import useModelMeetingStore from '@/stores/useModelMeetingStore'
+import useAuthStore from '@/stores/useAuthStore'
 import FinishMeetingModal from '@/components/modals/FinishMeetingModal'
 import PendingModelStep from '@/components/sections/modelMeetingPage/PendingModelStep'
 import WaitingPaymentStep from '@/components/sections/modelMeetingPage/WaitingPaymentStep'
@@ -32,6 +33,7 @@ const formatDate = (date) => {
 export default function ModelMeetingPage() {
   const navigate = useTransitionNavigate()
   const meeting  = useModelMeetingStore()
+  const { user } = useAuthStore()
   const [params] = useSearchParams()
 
   // ── Refs ──────────────────────────────────────────────────────────────────
@@ -107,8 +109,15 @@ export default function ModelMeetingPage() {
   const price         = m?.price_thb ?? 0
   const durationHours = m?.duration_hours
   const durationLabel = durationHours ? `${durationHours} ч` : '—'
-  const clientName   = m?.client?.first_name ?? m?.client?.username ?? 'Клиент'
-  const clientAvatar = m?.client?.photo_url ?? null
+  // If the logged-in user is the CLIENT in this meeting (model booking another model),
+  // show the model's info; otherwise show the client's info.
+  const isUserTheClient = m?.client_id === user?.id
+  const clientName = isUserTheClient
+    ? (m?.model_profile?.display_name ?? '—')
+    : (m?.client?.first_name ?? m?.client?.username ?? 'Клиент')
+  const clientAvatar = isUserTheClient
+    ? (m?.model_profile?.photos?.find(p => p.is_main)?.url ?? m?.model_profile?.photos?.[0]?.url ?? null)
+    : (m?.client?.photo_url ?? null)
 
   const DETAIL_ROWS = [
     { label: 'Клиент',        value: clientName,                               hasAvatar: true, avatarUrl: clientAvatar },

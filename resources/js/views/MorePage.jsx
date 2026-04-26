@@ -82,12 +82,18 @@ function formatDate(iso) {
   } catch { return '—' }
 }
 
-function OrderCard({ meeting, onClick }) {
+function OrderCard({ meeting, currentUserId, onClick }) {
   const [imgFailed, setImgFailed] = useState(false)
-  const modelName = meeting.model_profile?.display_name ?? '—'
-  const modelPhoto = meeting.model_profile?.photos?.find(p => p.is_main)?.url
-    ?? meeting.model_profile?.photos?.[0]?.url
-    ?? null
+
+  // Show the OPPOSITE participant: if logged-in user is the client, show model; if the model — show client
+  const isClient = meeting.client_id === currentUserId
+  const counterName = isClient
+    ? (meeting.model_profile?.display_name ?? '—')
+    : (meeting.client?.first_name ?? meeting.client?.username ?? 'Клиент')
+  const counterPhoto = isClient
+    ? (meeting.model_profile?.photos?.find(p => p.is_main)?.url ?? meeting.model_profile?.photos?.[0]?.url ?? null)
+    : (meeting.client?.photo_url ?? null)
+
   const statusLabel = STATUS_MAP[meeting.status] ?? meeting.status
   const price = meeting.price_thb ?? 0
   const duration = meeting.duration_hours ? `${meeting.duration_hours} ч` : '—'
@@ -99,13 +105,13 @@ function OrderCard({ meeting, onClick }) {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="size-5 rounded-full shrink-0 overflow-hidden flex items-center justify-center" {...(!modelPhoto ? { style: { background: '#E2319B' } } : {})}>
-            {modelPhoto && !imgFailed
-              ? <img src={modelPhoto} alt="" className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
-              : <span className="text-white text-[10px] font-bold">{modelName[0]?.toUpperCase()}</span>
+          <div className="size-5 rounded-full shrink-0 overflow-hidden flex items-center justify-center" {...(!counterPhoto ? { style: { background: '#E2319B' } } : {})}>
+            {counterPhoto && !imgFailed
+              ? <img src={counterPhoto} alt="" className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
+              : <span className="text-white text-[10px] font-bold">{counterName[0]?.toUpperCase()}</span>
             }
           </div>
-          <span className="text-black text-[15px]/[100%] font-[500]">{modelName}</span>
+          <span className="text-black text-[15px]/[100%] font-[500]">{counterName}</span>
         </div>
         <span className="text-[#777779] text-xs/[100%] font-medium">{formatDate(meeting.scheduled_at)}</span>
       </div>
@@ -217,6 +223,7 @@ export default function MorePage() {
                   <OrderCard
                     key={m.id}
                     meeting={m}
+                    currentUserId={auth.user?.id}
                     onClick={() => navigate(`/meeting?id=${m.id}`)}
                   />
                 ))
