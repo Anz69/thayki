@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import useBookingStore from '@/stores/useBookingStore'
 import { useCompactMode } from '@/composables/useCompactMode'
 
@@ -49,6 +49,47 @@ export default function TimeStep() {
 
   const timeValid = store.isTimeValid()
   const scheduleHint = SCHEDULE_LABELS[store.schedule] ?? null
+
+  // ── Pre-compute which hours are taken on the currently-selected day ─────
+  // We use the duration the user has already picked (default 1h before they
+  // reach the duration step). A taken hour is rendered with the disabled
+  // colour so the user sees the conflict before pressing "Next".
+  const takenHourSet = useMemo(() => {
+    const taken = new Set()
+    const day = store.selectedDate?.date
+    if (!day) return taken
+    const durationHours = store.selectedDuration?.hours ?? 1
+    const dayStart = new Date(day)
+    dayStart.setHours(0, 0, 0, 0)
+    for (let h = 0; h < 24; h++) {
+      const t = new Date(dayStart)
+      t.setHours(h, store.selectedMinute || 0, 0, 0)
+      if (store.isSlotConflicting(t.getTime(), durationHours)) {
+        taken.add(h)
+      }
+    }
+    return taken
+  }, [
+    store.selectedDate,
+    store.selectedDuration,
+    store.selectedMinute,
+    store.bookedSlots,
+  ])
+
+  const conflictWithCurrentSelection = useMemo(() => {
+    const day = store.selectedDate?.date
+    if (!day) return false
+    const dur = store.selectedDuration?.hours ?? 1
+    const dt = new Date(day)
+    dt.setHours(store.selectedHour, store.selectedMinute, 0, 0)
+    return store.isSlotConflicting(dt.getTime(), dur)
+  }, [
+    store.selectedDate,
+    store.selectedHour,
+    store.selectedMinute,
+    store.selectedDuration,
+    store.bookedSlots,
+  ])
 
   function getIndexFromScroll(scrollTop, listLength) {
     return clamp(Math.round(scrollTop / itemHeightRef.current), 0, listLength - 1)
@@ -203,9 +244,11 @@ export default function TimeStep() {
         .drum-col { height: ${DRUM_H}px; width: 88px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scroll-snap-type: y mandatory; cursor: ns-resize; }
         .drum-col::-webkit-scrollbar { display: none; }
         .drum-pad { height: ${PAD_H}px; min-height: ${PAD_H}px; }
-        .drum-item { height: ${ITEM_HEIGHT}px; width: 100%; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; font-size: ${isCompact ? 26 : 30}px; font-weight: 700; color: #d4d4d4; cursor: ns-resize; user-select: none; scroll-snap-align: center; scroll-snap-stop: always; transition: color 0.16s ease, font-size 0.16s ease, transform 0.16s ease; }
+        .drum-item { height: ${ITEM_HEIGHT}px; width: 100%; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; font-size: ${isCompact ? 26 : 30}px; font-weight: 700; color: #d4d4d4; cursor: ns-resize; user-select: none; scroll-snap-align: center; scroll-snap-stop: always; transition: color 0.16s ease, font-size 0.16s ease, transform 0.16s ease, text-decoration 0.16s ease; position: relative; }
         .drum-item--active { color: #111; font-size: ${isCompact ? 30 : 34}px; }
         .drum-item--disabled { color: #e8e8e8; }
+        .drum-item--taken { color: #f0a8c8; text-decoration: line-through; text-decoration-color: rgba(226, 49, 155, 0.55); text-decoration-thickness: 1.5px; }
+        .drum-item--active.drum-item--taken { color: #e2319b; text-decoration-color: rgba(226, 49, 155, 0.85); }
         .drum-colon { position: relative; z-index: 2; padding-bottom: 4px; font-size: ${isCompact ? 28 : 32}px; font-weight: 700; line-height: 1; color: #111; }
         .drum-highlight { position: absolute; top: calc(50% - ${HALF_ITEM}px); left: 50%; z-index: 0; height: ${ITEM_HEIGHT}px; width: 100%; transform: translateX(-50%); border-top: 1px solid rgba(0,0,0,0.1); border-bottom: 1px solid rgba(0,0,0,0.1); pointer-events: none; }
         .drum-fade-top { position: absolute; top: 0; left: 0; right: 0; z-index: 2; height: ${FADE_H}px; background: linear-gradient(to bottom, #fff 0%, transparent 100%); pointer-events: none; }
@@ -216,8 +259,12 @@ export default function TimeStep() {
 
       <div className="flex flex-col gap-2">
         <h2 className="text-xl/[100%] font-semibold text-[#111]">Время встречи</h2>
-
         <p className="text-sm/[100%] font-medium text-[#8A8A8F]">Во сколько вам будет удобно?</p>
+        {conflictWithCurrentSelection && (
+          <p className="text-[#E2319B] text-sm/[140%] font-medium">
+            Это время уже занято. Выберите другое — занятые часы зачёркнуты.
+          </p>
+        )}
       </div>
 
       <div className="drum-wrap">
@@ -242,6 +289,7 @@ export default function TimeStep() {
             <div className="drum-pad" aria-hidden="true" />
             {hours.map((hour) => {
               const allowed = isHourAllowed(hour, store.schedule)
+              const taken = takenHourSet.has(hour)
               return (
                 <button
                   key={hour}
@@ -250,8 +298,10 @@ export default function TimeStep() {
                     'drum-item',
                     hour === store.selectedHour ? ' drum-item--active' : '',
                     !allowed ? ' drum-item--disabled' : '',
+                    allowed && taken ? ' drum-item--taken' : '',
                   ].join('')}
                   onClick={() => selectHour(hour)}
+                  title={taken ? 'Этот час уже занят' : ''}
                 >
                   {String(hour).padStart(2, '0')}
                 </button>

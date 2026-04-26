@@ -32,6 +32,8 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware('throttle:api')->group(function (): void {
         Route::get('/catalog/models', [CatalogController::class, 'index'])->name('catalog.index');
         Route::get('/catalog/models/{id}', [CatalogController::class, 'show'])->name('catalog.show');
+        Route::get('/catalog/models/{id}/booked-slots', [CatalogController::class, 'bookedSlots'])
+            ->name('catalog.bookedSlots');
         Route::get('/roadmap', [RoadmapController::class, 'index'])->name('roadmap.index');
     });
 

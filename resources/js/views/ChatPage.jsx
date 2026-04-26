@@ -135,7 +135,25 @@ export default function ChatPage() {
         if (!isMountedRef.current) return
         const msg = e.message ?? e
         setMessages(prev => {
+          // Already in the list (HTTP response landed first).
           if (prev.some(m => m.id === msg.id)) return prev
+
+          // Sender's own message: collapse the optimistic placeholder
+          // with the same body instead of appending a duplicate. Without
+          // this the Echo-before-HTTP race produced two copies of the
+          // same outbound message.
+          if (msg.sender_id === myId) {
+            const idx = prev.findIndex(
+              m => typeof m.id === 'string' && m.id.startsWith('opt-')
+                && m.from === 'user'
+                && (m.text ?? '') === (msg.body ?? msg.text ?? ''),
+            )
+            if (idx !== -1) {
+              const next = prev.slice()
+              next[idx] = normalizeMsg(msg, myId)
+              return next
+            }
+          }
           return [...prev, normalizeMsg(msg, myId)]
         })
       },

@@ -52,13 +52,23 @@ class TelegramBotService
         ];
 
         $miniAppUrl = (string) config('telegram.miniapp_url', '');
-        if ($openPath !== null && $miniAppUrl !== '') {
-            $url = $this->buildMiniAppUrl($miniAppUrl, $openPath);
-            $payload['reply_markup'] = json_encode([
-                'inline_keyboard' => [[
-                    ['text' => $buttonLabel ?? 'Перейти', 'url' => $url],
-                ]],
-            ], JSON_UNESCAPED_UNICODE);
+        $botUsername = (string) config('telegram.bot_username', '');
+        if ($openPath !== null) {
+            $url = null;
+            if ($miniAppUrl !== '') {
+                $url = $this->buildMiniAppUrl($miniAppUrl, $openPath);
+            } elseif ($botUsername !== '') {
+                // Fallback when TELEGRAM_MINIAPP_URL isn't configured: at
+                // least open the bot itself so the button isn't a dead end.
+                $url = 'https://t.me/'.$botUsername;
+            }
+            if ($url !== null) {
+                $payload['reply_markup'] = json_encode([
+                    'inline_keyboard' => [[
+                        ['text' => $buttonLabel ?? 'Перейти', 'url' => $url],
+                    ]],
+                ], JSON_UNESCAPED_UNICODE);
+            }
         }
 
         try {
@@ -104,18 +114,27 @@ class TelegramBotService
     }
 
     /**
-     * Compose a t.me/<bot>?startapp=<base64> URL when the Mini App URL is a
+     * Compose a t.me/<bot>/<app>?startapp=<token> URL when the Mini App URL is a
      * t.me deep-link, or just append a hash so the front-end can read the
      * intended path. Falls back to the raw URL when path encoding is unsafe.
+     *
+     * IMPORTANT: Telegram restricts `startapp` to [A-Za-z0-9_-]{1,64}. Plain
+     * base64 contains `+`, `/`, `=` — when we send those Telegram silently
+     * drops the start_param entirely and the Mini App opens at its default
+     * URL, which makes inline-keyboard buttons appear "broken". We therefore
+     * encode with **base64url** (`-` for `+`, `_` for `/`, no padding) and
+     * the SPA front-end (resources/js/app.jsx) does the inverse mapping
+     * before atob().
      */
     private function buildMiniAppUrl(string $miniAppUrl, string $openPath): string
     {
         $clean = '/'.ltrim($openPath, '/');
 
-        // t.me/<bot>/<app>?startapp=<token>  — Mini App URL with start params.
+        // t.me/<bot>/<app>?startapp=<token> — Mini App URL with start params.
         if (str_starts_with($miniAppUrl, 'https://t.me/')) {
-            $sep = str_contains($miniAppUrl, '?') ? '&' : '?';
-            return $miniAppUrl.$sep.'startapp='.rawurlencode(base64_encode($clean));
+            $token = rtrim(strtr(base64_encode($clean), '+/', '-_'), '=');
+            $sep   = str_contains($miniAppUrl, '?') ? '&' : '?';
+            return $miniAppUrl.$sep.'startapp='.$token;
         }
 
         // Plain Web URL: append the path as a hash so the SPA router can
