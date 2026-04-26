@@ -10,8 +10,10 @@ use App\Enums\UserStatus;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Log;
 
 class SupportChats extends Page
 {
@@ -96,18 +98,50 @@ class SupportChats extends Page
             return;
         }
 
-        $supportUser = $this->getSupportUser();
-        $chat        = Chat::with('participants')->findOrFail($this->selectedChatId);
-
-        if (! $chat->participants()->where('user_id', $supportUser->id)->exists()) {
-            $chat->participants()->create([
-                'user_id' => $supportUser->id,
-                'role'    => ChatParticipantRole::Support,
-            ]);
+        // Hard cap to match the API request validation. Anything longer would
+        // 500 inside the action — surface it as a friendly Filament notice.
+        if (mb_strlen($msg) > 4096) {
+            Notification::make()
+                ->title('Сообщение слишком длинное (макс. 4096 символов).')
+                ->danger()
+                ->send();
+            return;
         }
 
-        app(PostMessageAction::class)->execute($supportUser, $chat, $msg);
+        try {
+            $supportUser = $this->getSupportUser();
+            $chat        = Chat::with('participants')->find($this->selectedChatId);
 
-        $this->newMessage = '';
+            if ($chat === null) {
+                Notification::make()->title('Чат не найден.')->danger()->send();
+                $this->selectedChatId = null;
+                return;
+            }
+
+            if (! $chat->participants()->where('user_id', $supportUser->id)->exists()) {
+                $chat->participants()->create([
+                    'user_id' => $supportUser->id,
+                    'role'    => ChatParticipantRole::Support,
+                ]);
+                // Refresh the relation so PostMessageAction's isParticipant()
+                // sees the freshly-attached support user when the relation is
+                // already loaded on the in-memory model.
+                $chat->load('participants');
+            }
+
+            app(PostMessageAction::class)->execute($supportUser, $chat, $msg);
+
+            $this->newMessage = '';
+        } catch (\Throwable $e) {
+            Log::error('[SupportChats] sendReply failed', [
+                'chat_id' => $this->selectedChatId,
+                'error'   => $e->getMessage(),
+            ]);
+            Notification::make()
+                ->title('Не удалось отправить сообщение.')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 }

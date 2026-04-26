@@ -10,6 +10,9 @@ import PendingStep     from '@/components/sections/meetingPage/PendingStep'
 import AcceptedStep    from '@/components/sections/meetingPage/AcceptedStep'
 import ConfirmedStep   from '@/components/sections/meetingPage/ConfirmedStep'
 import { subscribePrivate } from '@/utils/safeEcho'
+import { useStatusPolling } from '@/composables/useStatusPolling'
+
+const TERMINAL_STATUSES = ['rejected', 'expired', 'cancelled', 'completed']
 const formatDate = (date) => {
   if (!date) return '—'
   try {
@@ -95,23 +98,36 @@ export default function MeetingPage() {
 
   useEffect(() => {
     if (!meeting.status) return
-    if (['rejected', 'expired', 'cancelled', 'completed'].includes(meeting.status)) {
+    if (TERMINAL_STATUSES.includes(meeting.status)) {
       navigate('/home')
     }
   }, [meeting.status])
 
   // Subscribe to Reverb for real-time status updates.
   // subscribePrivate swallows WebSocket failures so a flaky connection
-  // never crashes the page — the user can still poll by reloading.
+  // never crashes the page — the polling fallback below covers that case.
   useEffect(() => {
     const meetingId = meeting.meeting?.id
     if (!meetingId) return undefined
     return subscribePrivate(`meeting.${meetingId}`, {
       '.meeting.status_changed': (e) => {
         if (e?.status) meeting.setStatus(e.status)
+        // Re-fetch full meeting payload so derived fields (paid_at,
+        // confirmed_at, etc.) stay in sync with the new status.
+        if (meetingId) meeting.load(meetingId)
       },
     })
   }, [meeting.meeting?.id])
+
+  // Polling fallback: if WebSocket events don't arrive (Reverb down, channel
+  // auth failure, network filtering), the page still catches up to server
+  // state every few seconds and immediately on tab refocus.
+  const pollMeetingId = meeting.meeting?.id
+  const pollEnabled   = !!pollMeetingId && !TERMINAL_STATUSES.includes(meeting.status)
+  useStatusPolling(
+    () => pollMeetingId && meeting.load(pollMeetingId),
+    { enabled: pollEnabled, intervalMs: 5000 },
+  )
   const animatePendingIn = useCallback((delay = 0) => {
     const rows = cardRowsRef.current.filter(Boolean)
     const tl = gsap.timeline({ delay })

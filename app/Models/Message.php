@@ -53,6 +53,14 @@ class Message extends Model
             return null;
         }
 
-        return Storage::disk($this->attachment_disk)->url($this->attachment_path);
+        // Storage::disk() throws InvalidArgumentException when the configured
+        // disk no longer exists in config/filesystems.php (e.g. after rename
+        // or env mismatch). Swallow that — the chat must keep working even
+        // if older messages reference a missing disk.
+        try {
+            return Storage::disk($this->attachment_disk)->url($this->attachment_path);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

@@ -9,6 +9,9 @@ import PendingModelStep from '@/components/sections/modelMeetingPage/PendingMode
 import WaitingPaymentStep from '@/components/sections/modelMeetingPage/WaitingPaymentStep'
 import ConfirmedModelStep from '@/components/sections/modelMeetingPage/ConfirmedModelStep'
 import { subscribePrivate } from '@/utils/safeEcho'
+import { useStatusPolling } from '@/composables/useStatusPolling'
+
+const TERMINAL_STATUSES = ['rejected', 'expired', 'cancelled', 'completed']
 
 const formatDate = (date) => {
   if (!date) return '—'
@@ -69,7 +72,7 @@ export default function ModelMeetingPage() {
 
   useEffect(() => {
     if (!meeting.status) return
-    if (['rejected', 'expired', 'cancelled', 'completed'].includes(meeting.status)) {
+    if (TERMINAL_STATUSES.includes(meeting.status)) {
       navigate('/more')
     }
   }, [meeting.status])
@@ -81,9 +84,19 @@ export default function ModelMeetingPage() {
     return subscribePrivate(`meeting.${meetingId}`, {
       '.meeting.status_changed': (e) => {
         if (e?.status) meeting.setStatus(e.status)
+        // Re-fetch full meeting so timestamp fields stay accurate.
+        if (meetingId) meeting.load(meetingId)
       },
     })
   }, [meeting.meeting?.id])
+
+  // Polling fallback when WebSockets aren't delivering (Reverb down, etc.).
+  const pollMeetingId = meeting.meeting?.id
+  const pollEnabled   = !!pollMeetingId && !TERMINAL_STATUSES.includes(meeting.status)
+  useStatusPolling(
+    () => pollMeetingId && meeting.load(pollMeetingId),
+    { enabled: pollEnabled, intervalMs: 5000 },
+  )
 
   // ── Build detail rows from real meeting data ──────────────────────────────
   const m            = meeting.meeting

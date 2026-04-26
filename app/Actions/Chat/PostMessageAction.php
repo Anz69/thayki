@@ -41,8 +41,21 @@ class PostMessageAction
                 $mime = (string) $attachment->getMimeType();
                 $name = Str::uuid()->toString().'.'.$ext;
                 $dir  = 'chat-attachments/'.$chat->id;
-                \Illuminate\Support\Facades\Storage::disk($disk)
-                    ->putFileAs($dir, $attachment, $name, 'public');
+                try {
+                    \Illuminate\Support\Facades\Storage::disk($disk)
+                        ->putFileAs($dir, $attachment, $name, 'public');
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('[PostMessageAction] putFileAs failed', [
+                        'chat_id' => $chat->id,
+                        'disk'    => $disk,
+                        'mime'    => $mime,
+                        'error'   => $e->getMessage(),
+                    ]);
+                    throw DomainException::invalid(
+                        'ATTACHMENT_STORAGE_FAILED',
+                        'Не удалось сохранить вложение, попробуйте ещё раз.',
+                    );
+                }
                 $path = $dir.'/'.$name;
             }
 

@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import gsap from 'gsap'
-import { subscribePageReady, setLoaderDone } from '@/utils/pageTransition'
+import { subscribePageReady, setLoaderDone, getPageReady } from '@/utils/pageTransition'
+
+// Hard ceiling — even if every signal fails (entry animation throws, page
+// ready never fires, etc.), the overlay will tear itself down after this many
+// ms so the user is never stuck behind a white screen.
+const MAX_LIFETIME_MS = 6000
 
 export default function AppLoader() {
   const [visible, setVisible] = useState(true)
@@ -11,14 +16,41 @@ export default function AppLoader() {
   const ringTl     = useRef(null)
   const entryDone  = useRef(false)
   const shouldExit = useRef(false)
+  const exited     = useRef(false)
+
+  function forceHide() {
+    if (exited.current) return
+    exited.current = true
+    try {
+      idleTl.current?.kill()
+      ringTl.current?.kill()
+      gsap.set(overlayRef.current, { autoAlpha: 0 })
+    } catch {}
+    setLoaderDone()
+    setVisible(false)
+  }
 
   function runExit() {
-    idleTl.current?.kill()
-    ringTl.current?.kill()
+    if (exited.current) return
+    try {
+      idleTl.current?.kill()
+      ringTl.current?.kill()
+    } catch {}
 
-    const tl = gsap.timeline({ onComplete: () => setVisible(false) })
+    let completed = false
+    const finish = () => {
+      if (completed) return
+      completed = true
+      exited.current = true
+      setVisible(false)
+    }
 
-    // 1. Ring collapses inward
+    const tl = gsap.timeline({ onComplete: finish })
+
+    // Hard backstop: if for any reason the timeline never completes
+    // (interrupted, killed, overridden), force-hide after a short window.
+    const fallback = setTimeout(finish, 1200)
+
     tl.to(ringRef.current, {
       scale: 0.4,
       autoAlpha: 0,
@@ -26,7 +58,6 @@ export default function AppLoader() {
       ease: 'power3.in',
     }, 0)
 
-    // 2. Logo compresses slightly, then launches up & blurs out
     tl.to(logoRef.current, {
       scale: 0.92,
       duration: 0.12,
@@ -39,54 +70,58 @@ export default function AppLoader() {
       filter: 'blur(8px)',
       duration: 0.3,
       ease: 'power3.in',
-      onComplete: () => gsap.set(logoRef.current, { clearProps: 'filter' }),
+      onComplete: () => {
+        try { gsap.set(logoRef.current, { clearProps: 'filter' }) } catch {}
+      },
     }, 0.1)
 
-    // 3. White overlay collapses to center point like a closing iris
     tl.fromTo(overlayRef.current,
       { clipPath: 'inset(0% 0% 0% 0% round 0px)' },
       {
         clipPath: 'inset(50% 50% 50% 50% round 40px)',
         duration: 0.52,
         ease: 'expo.in',
-        onComplete: () => gsap.set(overlayRef.current, { autoAlpha: 0 }),
+        onComplete: () => {
+          try { gsap.set(overlayRef.current, { autoAlpha: 0 }) } catch {}
+          clearTimeout(fallback)
+        },
       }, 0.18,
     )
 
-    // Fire setLoaderDone when iris is ~50% through its collapse.
-    // This triggers usePageReady callbacks → page entrance animations
-    // begin while the overlay is still closing, syncing the reveal with
-    // the content animation.
+    // Notify subscribers (page-entrance animations) at the half-iris point.
     tl.call(setLoaderDone, [], 0.40)
   }
 
   // ─── Entry ───────────────────────────────────────────────────
   useEffect(() => {
-    // Hide ring initially
-    gsap.set(ringRef.current, { autoAlpha: 0, scale: 0.6 })
+    try { gsap.set(ringRef.current, { autoAlpha: 0, scale: 0.6 }) } catch {}
 
     const tl = gsap.timeline({
       onComplete: () => {
-        entryDone.current = true
+        try {
+          entryDone.current = true
 
-        // Start pulsing ring
-        ringTl.current = gsap.timeline({ repeat: -1, repeatDelay: 0.6 })
-        ringTl.current
-          .fromTo(ringRef.current,
-            { scale: 0.88, autoAlpha: 0.55 },
-            { scale: 1.65, autoAlpha: 0, duration: 1.4, ease: 'power2.out' },
-          )
+          ringTl.current = gsap.timeline({ repeat: -1, repeatDelay: 0.6 })
+          ringTl.current
+            .fromTo(ringRef.current,
+              { scale: 0.88, autoAlpha: 0.55 },
+              { scale: 1.65, autoAlpha: 0, duration: 1.4, ease: 'power2.out' },
+            )
 
-        // Breathing
-        idleTl.current = gsap.to(logoRef.current, {
-          scale: 1.04, duration: 2.0, ease: 'sine.inOut', yoyo: true, repeat: -1,
-        })
+          idleTl.current = gsap.to(logoRef.current, {
+            scale: 1.04, duration: 2.0, ease: 'sine.inOut', yoyo: true, repeat: -1,
+          })
 
-        if (shouldExit.current) runExit()
+          if (shouldExit.current) runExit()
+        } catch {
+          // If anything in the post-entry setup fails, never let the loader
+          // stick around. Force the exit path.
+          shouldExit.current = false
+          forceHide()
+        }
       },
     })
 
-    // Step 1 — blur focus-in
     tl.fromTo(logoRef.current,
       { autoAlpha: 0, scale: 0.75, filter: 'blur(18px)', y: 14 },
       {
@@ -95,14 +130,26 @@ export default function AppLoader() {
         clearProps: 'filter',
       },
     )
-
-    // Step 2 — micro-bounce landing
     tl.to(logoRef.current, { scale: 1.018, duration: 0.14, ease: 'power2.out' })
     tl.to(logoRef.current, { scale: 1,     duration: 0.22, ease: 'elastic.out(1, 0.5)' })
+
+    // SAFETY: hard limit on overlay lifetime, no matter what. If we already
+    // got the page-ready signal but somehow never exited, this kicks in.
+    const lifetimeId = setTimeout(() => {
+      if (!exited.current) forceHide()
+    }, MAX_LIFETIME_MS)
+
+    return () => clearTimeout(lifetimeId)
   }, [])
 
   // ─── Exit when page ready ─────────────────────────────────────
   useEffect(() => {
+    // If page already became ready before this effect ran, exit straight away.
+    if (getPageReady()) {
+      if (entryDone.current) runExit()
+      else shouldExit.current = true
+      return
+    }
     const unsub = subscribePageReady((ready) => {
       if (!ready) return
       unsub()
@@ -124,7 +171,6 @@ export default function AppLoader() {
         willChange: 'clip-path',
       }}
     >
-      {/* Pulsing ring behind the logo */}
       <div
         ref={ringRef}
         style={{
