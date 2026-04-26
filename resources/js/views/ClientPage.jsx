@@ -62,10 +62,11 @@ const IconChevron = () => (
 function OrderCard({ meeting, onClick }) {
   const [imgFailed, setImgFailed] = useState(false)
   const s = STATUS_MAP[meeting.status] ?? { label: meeting.status }
-  const modelName  = meeting.model_profile?.display_name ?? '—'
-  const modelPhoto = meeting.model_profile?.photos?.find(p => p.is_main)?.url
-    ?? meeting.model_profile?.photos?.[0]?.url
-    ?? null
+
+  // Show the client (who created the booking), not the model's own profile
+  const clientName  = meeting.client?.first_name ?? meeting.client?.username ?? 'Клиент'
+  const clientPhoto = meeting.client?.photo_url ?? null
+
   const date     = formatMeetingDate(meeting.scheduled_at)
   const price    = meeting.price_thb ?? 0
   const duration = meeting.duration_hours ? `${meeting.duration_hours} ч` : '—'
@@ -78,12 +79,12 @@ function OrderCard({ meeting, onClick }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="size-5 rounded-full shrink-0 overflow-hidden bg-[#E2319B] flex items-center justify-center">
-            {modelPhoto && !imgFailed
-              ? <img src={modelPhoto} alt="" className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
-              : <span className="text-white text-[10px] font-bold leading-none">{modelName[0]?.toUpperCase()}</span>
+            {clientPhoto && !imgFailed
+              ? <img src={clientPhoto} alt="" className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
+              : <span className="text-white text-[10px] font-bold leading-none">{clientName[0]?.toUpperCase()}</span>
             }
           </div>
-          <span className="text-black text-[15px]/[100%] font-[500]">{modelName}</span>
+          <span className="text-black text-[15px]/[100%] font-[500]">{clientName}</span>
         </div>
         <span className="text-[#777779] text-xs/[100%] font-medium">{date}</span>
       </div>
@@ -118,7 +119,7 @@ export default function ClientPage() {
       params: {
         per_page: 20,
         statuses: 'pending,accepted,paid,confirmed',
-        role: 'client',
+        role: 'model',
       },
     })
       .then(r => setMeetings(r.data.data ?? []))
