@@ -138,14 +138,51 @@ class UserResource extends Resource
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
+                    ->modalHeading('Заблокировать пользователя?')
+                    ->modalDescription('Все активные сессии будут завершены. Пользователь не сможет пользоваться приложением.')
+                    ->modalSubmitActionLabel('Заблокировать')
                     ->visible(fn (User $r) => $r->status !== UserStatus::Banned)
-                    ->action(fn (User $r) => $r->update(['status' => UserStatus::Banned])),
+                    ->action(function (User $r): void {
+                        try {
+                            // 1) flip status. Use ->save() so casts run reliably.
+                            $r->status = UserStatus::Banned;
+                            $r->save();
+
+                            // 2) revoke ALL Sanctum tokens. Without this the
+                            //    user keeps their Bearer token and can keep
+                            //    using the API for as long as it's stored on
+                            //    their device. EnsureUserIsActive middleware
+                            //    catches this on the next request, but token
+                            //    deletion is the durable fix.
+                            try {
+                                $r->tokens()->delete();
+                            } catch (\Throwable) {
+                                // best-effort
+                            }
+
+                            Notification::make()
+                                ->title('Пользователь заблокирован')
+                                ->body('Сессии прекращены, токены отозваны.')
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Не удалось заблокировать')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
                 Tables\Actions\Action::make('unban')
                     ->label('Разбан')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (User $r) => $r->status === UserStatus::Banned)
-                    ->action(fn (User $r) => $r->update(['status' => UserStatus::Active])),
+                    ->action(function (User $r): void {
+                        $r->status = UserStatus::Active;
+                        $r->save();
+                        Notification::make()->title('Пользователь разблокирован')->success()->send();
+                    }),
                 Tables\Actions\EditAction::make()->label('Изменить'),
             ])
             ->defaultSort('created_at', 'desc');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Exceptions\ApiException;
 use App\Http\Middleware\EnsureRole;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IdempotencyKey;
@@ -40,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'idempotency' => IdempotencyKey::class,
             'force.json' => ForceJsonResponse::class,
             'touch.last_seen' => TouchLastSeen::class,
+            'active' => EnsureUserIsActive::class,
         ]);
 
         $middleware->web(append: [
@@ -49,6 +51,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
             ForceJsonResponse::class,
+        ]);
+
+        // Append after authentication so $request->user() is populated.
+        // EnsureUserIsActive 403's any banned user and revokes their
+        // current Sanctum token on the way out — without this a banned
+        // user can keep using the API forever, because Sanctum tokens
+        // remain valid until explicitly deleted.
+        $middleware->api(append: [
+            EnsureUserIsActive::class,
         ]);
 
         // Telegram bot webhooks come in as POSTs from Telegram's servers and

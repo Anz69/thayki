@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
-use App\Enums\PaymentMethod;
 use App\Models\AppSetting;
-use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -29,18 +27,8 @@ class SettingsPage extends Page implements HasForms
 
     public function mount(): void
     {
-        $defaultMethods = array_map(
-            static fn (PaymentMethod $method): string => $method->value,
-            PaymentMethod::withdrawalDefaults()
-        );
-        $savedMethods = array_values(array_filter(array_map(
-            static fn (string $value): string => trim($value),
-            explode(',', (string) AppSetting::get('withdrawal_methods', implode(',', $defaultMethods)))
-        )));
-
         $this->form->fill([
             'auto_approve_applications' => AppSetting::bool('auto_approve_applications'),
-            'withdrawal_methods' => $savedMethods !== [] ? $savedMethods : $defaultMethods,
         ]);
     }
 
@@ -56,20 +44,6 @@ class SettingsPage extends Page implements HasForms
                             ->helperText('При включении все новые заявки одобряются мгновенно без ручной проверки')
                             ->onColor('success'),
                     ]),
-                Section::make('Вывод средств')
-                    ->description('Какие криптовалюты доступны моделям для вывода')
-                    ->schema([
-                        CheckboxList::make('withdrawal_methods')
-                            ->label('Доступные криптовалюты')
-                            ->options([
-                                PaymentMethod::Usdt->value => PaymentMethod::Usdt->label(),
-                                PaymentMethod::Btc->value => PaymentMethod::Btc->label(),
-                                PaymentMethod::Ton->value => PaymentMethod::Ton->label(),
-                            ])
-                            ->columns(3)
-                            ->required()
-                            ->minItems(1),
-                    ]),
             ])
             ->statePath('data');
     }
@@ -78,14 +52,6 @@ class SettingsPage extends Page implements HasForms
     {
         $data = $this->form->getState();
         AppSetting::set('auto_approve_applications', $data['auto_approve_applications'] ? 'true' : 'false');
-        $methods = array_values(array_filter((array) ($data['withdrawal_methods'] ?? [])));
-        AppSetting::set(
-            'withdrawal_methods',
-            implode(',', $methods !== [] ? $methods : array_map(
-                static fn (PaymentMethod $method): string => $method->value,
-                PaymentMethod::withdrawalDefaults()
-            ))
-        );
 
         Notification::make()
             ->title('Настройки сохранены')
