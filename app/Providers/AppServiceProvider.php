@@ -6,6 +6,9 @@ namespace App\Providers;
 
 use App\Services\Payments\Contracts\PaymentGateway;
 use App\Services\Payments\PaymentGatewayManager;
+use App\Services\Telegram\Notifier;
+use App\Services\Telegram\StartHandler;
+use App\Services\Telegram\TelegramBotService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -20,6 +23,16 @@ class AppServiceProvider extends ServiceProvider
             PaymentGateway::class,
             static fn ($app): PaymentGateway => $app->make(PaymentGatewayManager::class)->default(),
         );
+
+        // Telegram services have primitive (string) constructor params that
+        // Laravel can't auto-resolve via reflection. Without these explicit
+        // bindings the container blows up with
+        //   "Unresolvable dependency [Parameter #0 [ <required> string $botToken ]]"
+        // the moment ANYTHING type-hints StartHandler / TelegramBotService /
+        // Notifier — which is exactly what TelegramBotWebhookController does.
+        $this->app->singleton(TelegramBotService::class, static fn (): TelegramBotService => TelegramBotService::fromConfig());
+        $this->app->singleton(StartHandler::class, static fn ($app): StartHandler => new StartHandler($app->make(TelegramBotService::class)));
+        $this->app->singleton(Notifier::class, static fn ($app): Notifier => new Notifier($app->make(TelegramBotService::class)));
     }
 
     public function boot(): void
