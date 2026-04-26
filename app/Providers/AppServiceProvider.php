@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Events\MeetingStatusChanged;
+use App\Events\MessageSent;
+use App\Listeners\SendMeetingStatusNotification;
+use App\Listeners\SendMessageNotification;
 use App\Services\Payments\Contracts\PaymentGateway;
 use App\Services\Payments\PaymentGatewayManager;
 use App\Services\Telegram\Notifier;
@@ -11,6 +15,7 @@ use App\Services\Telegram\StartHandler;
 use App\Services\Telegram\TelegramBotService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -38,6 +43,23 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiters();
+        $this->registerEventListeners();
+    }
+
+    /**
+     * Single source of truth for event→listener wiring.
+     *
+     * Laravel 11/12 also runs convention-based auto-discovery on
+     * app/Listeners/ when EventServiceProvider is present — that is what
+     * was causing every Telegram notification to fire twice when we also
+     * had EventServiceProvider::$listen filled in. We now drive everything
+     * from this one place and EventServiceProvider was removed from
+     * bootstrap/providers.php to make double-registration impossible.
+     */
+    private function registerEventListeners(): void
+    {
+        Event::listen(MeetingStatusChanged::class, SendMeetingStatusNotification::class);
+        Event::listen(MessageSent::class, SendMessageNotification::class);
     }
 
     private function configureRateLimiters(): void
