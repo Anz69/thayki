@@ -30,6 +30,11 @@ class ChatResource extends JsonResource
                 'id'     => $u->id,
                 'name'   => trim("{$u->first_name} {$u->last_name}") ?: ($u->username ? "@{$u->username}" : 'Пользователь'),
                 'avatar' => $u->photo_url,
+                // Drives the "была в сети: X" pill in the chat header.
+                // Falls back to last_auth_at for users who registered before
+                // the touch-middleware was deployed (so they don't all show
+                // "только что" or "—").
+                'last_seen_at' => optional($u->last_seen_at ?? $u->last_auth_at)->toIso8601String(),
             ];
         });
 

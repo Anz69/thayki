@@ -61,6 +61,7 @@ class User extends Authenticatable
         'role',
         'status',
         'last_auth_at',
+        'last_seen_at',
     ];
 
     /** @var list<string> */
@@ -82,6 +83,7 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'status' => UserStatus::class,
             'last_auth_at' => 'datetime',
+            'last_seen_at' => 'datetime',
         ];
     }
 

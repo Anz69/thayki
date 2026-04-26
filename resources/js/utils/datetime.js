@@ -1,0 +1,112 @@
+/**
+ * Russian-locale date/time helpers used across the chat UI.
+ *
+ *   formatRussianRelative(iso, { feminine: true })
+ *     "была в сети" pill — "только что" / "5 мин назад" / "2 ч назад" /
+ *     "вчера" / "10 апреля". Pass feminine=true so the verb agrees ("была"
+ *     vs "был") — the chat usually shows female models, but support chat
+ *     should pass feminine=false.
+ *
+ *   formatRussianDaySeparator(iso)
+ *     The pill shown above the first message of a new day:
+ *       same day   → "Сегодня, HH:MM"
+ *       yesterday  → "Вчера, HH:MM"
+ *       this year  → "10 апреля, HH:MM"
+ *       older      → "10 апреля 2024, HH:MM"
+ *
+ *   isSameDay(aIso, bIso)
+ *     Helper to decide when to insert the day separator.
+ *
+ * Implementation note: we deliberately avoid Intl.RelativeTimeFormat for the
+ * "X назад" string because it produces "5 мин. назад" with a period, which
+ * doesn't match the visual style of the screenshot. Hand-rolled is shorter
+ * and consistent.
+ */
+
+const MONTHS_GENITIVE = [
+  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+]
+
+function pad2(n) {
+  return String(n).padStart(2, '0')
+}
+
+function pluralRu(n, [one, few, many]) {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few
+  return many
+}
+
+function startOfDay(d) {
+  const x = new Date(d)
+  x.setHours(0, 0, 0, 0)
+  return x
+}
+
+export function isSameDay(aIso, bIso) {
+  if (!aIso || !bIso) return false
+  const a = new Date(aIso); const b = new Date(bIso)
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return false
+  return a.getFullYear() === b.getFullYear()
+      && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate()
+}
+
+export function formatRussianRelative(iso, { feminine = true } = {}) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+
+  const now = new Date()
+  const diffMs = Math.max(0, now.getTime() - d.getTime())
+  const diffSec = Math.round(diffMs / 1000)
+  const verb = feminine ? 'была' : 'был'
+
+  if (diffSec < 60) return `${verb} в сети только что`
+  const diffMin = Math.round(diffSec / 60)
+  if (diffMin < 60) {
+    return `${verb} в сети: ${diffMin} ${pluralRu(diffMin, ['минуту', 'минуты', 'минут'])} назад`
+  }
+  const diffH = Math.round(diffMin / 60)
+  if (diffH < 24) {
+    return `${verb} в сети: ${diffH} ${pluralRu(diffH, ['час', 'часа', 'часов'])} назад`
+  }
+  const diffDays = Math.round((startOfDay(now) - startOfDay(d)) / 86400000)
+  if (diffDays === 1) return `${verb} в сети вчера`
+  if (diffDays < 7) {
+    return `${verb} в сети: ${diffDays} ${pluralRu(diffDays, ['день', 'дня', 'дней'])} назад`
+  }
+  // Older than a week — show full date
+  const day = d.getDate()
+  const month = MONTHS_GENITIVE[d.getMonth()]
+  const sameYear = d.getFullYear() === now.getFullYear()
+  return sameYear
+    ? `${verb} в сети ${day} ${month}`
+    : `${verb} в сети ${day} ${month} ${d.getFullYear()}`
+}
+
+export function formatRussianDaySeparator(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+
+  const now = new Date()
+  const today = startOfDay(now)
+  const yesterday = new Date(today.getTime() - 86400000)
+  const that = startOfDay(d)
+  const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+
+  if (that.getTime() === today.getTime())     return `Сегодня, ${time}`
+  if (that.getTime() === yesterday.getTime()) return `Вчера, ${time}`
+
+  const day   = d.getDate()
+  const month = MONTHS_GENITIVE[d.getMonth()]
+  const year  = d.getFullYear()
+  const sameYear = year === now.getFullYear()
+  return sameYear
+    ? `${day} ${month}, ${time}`
+    : `${day} ${month} ${year}, ${time}`
+}

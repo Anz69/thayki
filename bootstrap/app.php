@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IdempotencyKey;
+use App\Http\Middleware\TouchLastSeen;
 use App\Http\Middleware\VerifyTelegramInitData;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use App\Support\ApiResponse;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'telegram.initdata' => VerifyTelegramInitData::class,
             'idempotency' => IdempotencyKey::class,
             'force.json' => ForceJsonResponse::class,
+            'touch.last_seen' => TouchLastSeen::class,
         ]);
 
         $middleware->web(append: [

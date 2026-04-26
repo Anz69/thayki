@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, Fragment } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import gsap from 'gsap'
@@ -7,6 +7,11 @@ import useAuthStore from '@/stores/useAuthStore'
 import api, { extractErrorMessage } from '@/utils/api'
 import { subscribePrivate } from '@/utils/safeEcho'
 import ChatLoadingSkeleton from '@/components/ui/ChatLoadingSkeleton'
+import {
+  formatRussianRelative,
+  formatRussianDaySeparator,
+  isSameDay,
+} from '@/utils/datetime'
 
 const PaperclipIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 21 21" fill="none">
@@ -34,6 +39,9 @@ function normalizeMsg(raw, myUserId) {
     from:       isMe ? 'user' : 'them',
     text:       raw.body ?? raw.text ?? '',
     time,
+    // Keep the raw ISO string so the day-separator can group by date
+    // without re-parsing through the formatted "HH:MM" string.
+    createdAt:  raw.created_at ?? null,
     type:       raw.type ?? 'text',
     showAvatar: raw.showAvatar ?? false,
     senderName: raw.user?.name ?? raw.sender?.name ?? '',
@@ -325,7 +333,11 @@ export default function ChatPage() {
       <div ref={listRef} className="flex-1 overflow-y-auto min-h-0">
         <div className="flex flex-col px-4 py-4 gap-0 container min-h-0">
 
-          {/* Contact avatar + last-seen header */}
+          {/* Contact avatar + last-seen pill (matches the screenshot:
+              big circle on top, then "была в сети: 2ч назад" pill).
+              Falls back to the contact's name when we have no last_seen_at
+              (e.g. support chats or users registered before the touch
+              middleware existed). */}
           <div data-msg className="flex flex-col items-center gap-3 mb-6">
             {contactAvatar ? (
               <img src={contactAvatar} alt="avatar" className="w-20 h-20 rounded-full object-cover" />
@@ -335,7 +347,11 @@ export default function ChatPage() {
               </div>
             )}
             <div className="bg-[#F5F5F7] rounded-full px-4 py-2">
-              <span className="text-[#7F7F7F] text-sm/[80%] font-medium">{contactName}</span>
+              <span className="text-[#7F7F7F] text-sm/[80%] font-medium">
+                {chatInfo?.other_user?.last_seen_at
+                  ? formatRussianRelative(chatInfo.other_user.last_seen_at, { feminine: true })
+                  : contactName}
+              </span>
             </div>
           </div>
 
@@ -362,22 +378,42 @@ export default function ChatPage() {
             const isLastInGroup = !nextMsg || nextMsg.from !== msg.from
             const gap          = idx > 0 ? 'mt-3' : ''
 
+            // Day-separator: shown above the FIRST message of any day.
+            // Matches the screenshot — a centered grey pill like
+            // "Сегодня, 11:25" / "Вчера, 14:08" / "10 апреля, 09:30".
+            const showDaySep = msg.createdAt && (
+              idx === 0 || ! isSameDay(prevMsg?.createdAt, msg.createdAt)
+            )
+            const daySepEl = showDaySep
+              ? (
+                <div data-msg key={`sep-${msg.id}`} className="flex justify-center my-5">
+                  <span className="text-[#7F7F7F] text-sm/[100%] font-medium">
+                    {formatRussianDaySeparator(msg.createdAt)}
+                  </span>
+                </div>
+              )
+              : null
+
             if (msg.type === 'image') {
               return (
-                <div key={msg.id} data-msg className={`flex items-end gap-4 ${gap}`}>
-                  <div className="w-8 shrink-0">
-                    {isLastInGroup && contactAvatar && (
-                      <img src={contactAvatar} alt="" className="w-8 h-8 rounded-full object-cover" />
-                    )}
+                <Fragment key={msg.id}>
+                  {daySepEl}
+                  <div data-msg className={`flex items-end gap-4 ${gap}`}>
+                    <div className="w-8 shrink-0">
+                      {isLastInGroup && contactAvatar && (
+                        <img src={contactAvatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      )}
+                    </div>
+                    <div className="w-[180px] h-[160px] rounded-2xl overflow-hidden bg-[#E2319B]/20" />
                   </div>
-                  <div className="w-[180px] h-[160px] rounded-2xl overflow-hidden bg-[#E2319B]/20" />
-                </div>
+                </Fragment>
               )
             }
 
             return (
+              <Fragment key={msg.id}>
+                {daySepEl}
               <div
-                key={msg.id}
                 data-msg
                 className={`flex items-end gap-4 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`}
               >
@@ -404,6 +440,7 @@ export default function ChatPage() {
                   <p className="text-[16px]/[100%] font-normal whitespace-pre-wrap">{msg.text}</p>
                 </div>
               </div>
+              </Fragment>
             )
           })}
           <div ref={messagesEndRef} />

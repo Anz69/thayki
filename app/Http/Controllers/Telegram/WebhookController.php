@@ -24,8 +24,24 @@ class WebhookController extends Controller
     public function __invoke(Request $request, string $secret, StartHandler $start): JsonResponse
     {
         $expected = (string) config('telegram.webhook_secret', '');
-        if ($expected === '' || ! hash_equals($expected, $secret)) {
-            // 200 OK so Telegram doesn't keep retrying — but we don't act.
+
+        if ($expected === '') {
+            // env not set at all — make this LOUD so deploys without the
+            // secret don't silently swallow every Telegram update.
+            Log::error('[Telegram webhook] TELEGRAM_WEBHOOK_SECRET is not set in .env — every update is dropped.');
+            return response()->json(['ok' => true]);
+        }
+
+        if (! hash_equals($expected, $secret)) {
+            // The URL Telegram is hitting doesn't match our env. Common
+            // causes: rotated secret without re-running setWebhook, or
+            // config:cache holding the old value. Log the suffix of each
+            // so we can spot the mismatch in storage/logs/laravel.log
+            // without leaking the full secret.
+            Log::error('[Telegram webhook] secret mismatch — update dropped.', [
+                'env_suffix' => substr($expected, -6),
+                'url_suffix' => substr($secret, -6),
+            ]);
             return response()->json(['ok' => true]);
         }
 
@@ -33,6 +49,10 @@ class WebhookController extends Controller
             $update = $request->all();
             $message = $update['message'] ?? null;
             if (! is_array($message)) {
+                Log::info('[Telegram webhook] non-message update ignored.', [
+                    'update_id' => $update['update_id'] ?? null,
+                    'kinds'     => array_keys($update),
+                ]);
                 return response()->json(['ok' => true]);
             }
 
@@ -41,17 +61,29 @@ class WebhookController extends Controller
             $from = is_array($message['from'] ?? null) ? $message['from'] : [];
 
             if ($chatId <= 0 || ! is_array($from)) {
+                Log::info('[Telegram webhook] message without chat_id/from ignored.');
                 return response()->json(['ok' => true]);
             }
 
             if (str_starts_with($text, '/start')) {
                 $startParam = trim(substr($text, strlen('/start')));
                 $startParam = $startParam === '' ? null : $startParam;
+                Log::info('[Telegram webhook] /start received.', [
+                    'chat_id' => $chatId,
+                    'from_id' => $from['id'] ?? null,
+                    'param'   => $startParam,
+                ]);
                 $start->handle($chatId, $from, $startParam);
+            } else {
+                Log::info('[Telegram webhook] non-/start text ignored.', [
+                    'chat_id' => $chatId,
+                    'text'    => mb_substr($text, 0, 60),
+                ]);
             }
         } catch (\Throwable $e) {
-            Log::warning('[Telegram webhook] handler failed', [
+            Log::error('[Telegram webhook] handler threw', [
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
 

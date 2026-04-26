@@ -38,7 +38,9 @@ Route::prefix('v1')->group(function (): void {
     // ------------------------------------------------------------------------
     // Authenticated
     // ------------------------------------------------------------------------
-    Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
+    // `touch.last_seen` quietly bumps users.last_seen_at (throttled to 1/min)
+    // so the chat header can render "была в сети: <relative>" with live data.
+    Route::middleware(['auth:sanctum', 'throttle:api', 'touch.last_seen'])->group(function (): void {
         // Auth / session
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
