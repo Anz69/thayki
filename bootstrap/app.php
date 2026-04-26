@@ -48,6 +48,15 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureFrontendRequestsAreStateful::class,
             ForceJsonResponse::class,
         ]);
+
+        // Telegram bot webhooks come in as POSTs from Telegram's servers and
+        // can never carry a CSRF token. Without this exception every update
+        // bounces with HTTP 419 and Telegram retries forever (then disables
+        // the webhook). The URL is already protected by the secret-in-path
+        // pattern (see TelegramBotWebhookController + telegram.webhook_secret).
+        $middleware->validateCsrfTokens(except: [
+            'telegram/webhook/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(static function (Request $request): bool {
