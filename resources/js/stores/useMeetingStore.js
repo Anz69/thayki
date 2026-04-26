@@ -19,6 +19,7 @@ const useMeetingStore = create((set, get) => ({
           per_page: 10,
           page: 1,
           statuses: 'pending,accepted,paid,confirmed',
+          role: 'client',
         },
       })
       const meetings = data.data ?? []

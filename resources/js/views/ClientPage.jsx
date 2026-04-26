@@ -118,6 +118,7 @@ export default function ClientPage() {
       params: {
         per_page: 20,
         statuses: 'pending,accepted,paid,confirmed',
+        role: 'client',
       },
     })
       .then(r => setMeetings(r.data.data ?? []))
