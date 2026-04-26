@@ -6,6 +6,7 @@ const useMeetingStore = create((set, get) => ({
   meeting:        null,
   status:         null,
   isPaymentOpen:  false,
+  isCancelOpen:   false,
   isLoading:      false,
   error:          null,
   errorStatus:    null,
@@ -72,8 +73,11 @@ const useMeetingStore = create((set, get) => ({
   openPayment()  { set({ isPaymentOpen: true  }) },
   closePayment() { set({ isPaymentOpen: false }) },
 
+  openCancel()  { set({ isCancelOpen: true  }) },
+  closeCancel() { set({ isCancelOpen: false }) },
+
   reset() {
-    set({ meeting: null, status: null, isPaymentOpen: false, isLoading: false, error: null, errorStatus: null })
+    set({ meeting: null, status: null, isPaymentOpen: false, isCancelOpen: false, isLoading: false, error: null, errorStatus: null })
   },
 }))
 

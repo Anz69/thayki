@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\Chat\EnsureSupportChatAction;
 use App\Actions\Wallet\ProcessWithdrawalAction;
 use App\Enums\WithdrawalStatus;
 use App\Filament\Resources\WithdrawalResource\Pages;
+use App\Models\Wallet;
 use App\Models\Withdrawal;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -37,12 +39,29 @@ class WithdrawalResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id')->sortable()->label('ID'),
-                Tables\Columns\TextColumn::make('user.first_name')->label('Пользователь')
-                    ->formatStateUsing(fn ($record) => "{$record->user?->first_name} {$record->user?->last_name}"),
-                Tables\Columns\TextColumn::make('amount_minor')->label('Сумма')
-                    ->formatStateUsing(fn ($state, $record) => number_format($state / 100, 2) . " {$record->currency}"),
-                Tables\Columns\TextColumn::make('method')->label('Метод'),
-                Tables\Columns\TextColumn::make('wallet_address')->label('Адрес')->limit(20),
+                Tables\Columns\TextColumn::make('user.first_name')->label('Модель')
+                    ->formatStateUsing(fn ($record) => trim("{$record->user?->first_name} {$record->user?->last_name}")
+                        ?: ($record->user?->username ?? '—')),
+                Tables\Columns\TextColumn::make('user.username')->label('Telegram')
+                    ->formatStateUsing(fn ($state) => $state ? "@{$state}" : '—')
+                    ->url(
+                        fn (Withdrawal $record): ?string => $record->user?->username
+                            ? "https://t.me/{$record->user->username}"
+                            : null,
+                        true,
+                    )
+                    ->color('primary'),
+                Tables\Columns\TextColumn::make('user_balance')->label('Баланс модели')
+                    ->state(function (Withdrawal $record): string {
+                        $wallet = $record->user
+                            ? Wallet::query()->where('user_id', $record->user->id)->first()
+                            : null;
+                        $balanceMinor = (int) ($wallet?->balance_minor ?? 0);
+                        return number_format($balanceMinor / 100, 2).' '.($wallet?->currency ?? 'THB');
+                    }),
+                Tables\Columns\TextColumn::make('amount_minor')->label('К выводу')
+                    ->formatStateUsing(fn ($state, $record) => number_format($state / 100, 2)." {$record->currency}")
+                    ->sortable(),
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')
                     ->colors([
                         'warning' => WithdrawalStatus::Pending->value,
@@ -57,6 +76,33 @@ class WithdrawalResource extends Resource
                     ->options(collect(WithdrawalStatus::cases())->mapWithKeys(fn ($c) => [$c->value => $c->value])),
             ])
             ->actions([
+                // High-frequency action: open / create the support chat with this
+                // model and jump straight to the SupportChats Filament page so the
+                // admin can coordinate the actual payout.
+                Tables\Actions\Action::make('contact_via_support')
+                    ->label('Написать в чате')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->color('warning')
+                    ->action(function (Withdrawal $record): void {
+                        if ($record->user === null) {
+                            Notification::make()->title('У заявки нет пользователя.')->danger()->send();
+                            return;
+                        }
+                        try {
+                            $chat = app(EnsureSupportChatAction::class)->execute($record->user);
+                            Notification::make()
+                                ->title('Чат поддержки готов')
+                                ->body('Перейдите в раздел "Чат поддержки", чтобы написать модели.')
+                                ->success()
+                                ->send();
+                            // Stash the chat id in session so SupportChats page can preselect it.
+                            session()->put('support_chat_preselect', $chat->id);
+                        } catch (\Throwable $e) {
+                            Notification::make()->title('Ошибка: '.$e->getMessage())->danger()->send();
+                        }
+                    })
+                    ->url(fn () => \App\Filament\Pages\SupportChats::getUrl()),
+
                 Tables\Actions\Action::make('approve')
                     ->label('Одобрить')
                     ->icon('heroicon-o-check')
@@ -70,7 +116,7 @@ class WithdrawalResource extends Resource
                             app(ProcessWithdrawalAction::class)->approve($r, $admin);
                             Notification::make()->title('Вывод одобрен')->success()->send();
                         } catch (\Throwable $e) {
-                            Notification::make()->title('Ошибка: ' . $e->getMessage())->danger()->send();
+                            Notification::make()->title('Ошибка: '.$e->getMessage())->danger()->send();
                         }
                     }),
                 Tables\Actions\Action::make('mark_paid')
@@ -86,7 +132,7 @@ class WithdrawalResource extends Resource
                             app(ProcessWithdrawalAction::class)->markPaid($r, $admin);
                             Notification::make()->title('Вывод отмечен как оплаченный')->success()->send();
                         } catch (\Throwable $e) {
-                            Notification::make()->title('Ошибка: ' . $e->getMessage())->danger()->send();
+                            Notification::make()->title('Ошибка: '.$e->getMessage())->danger()->send();
                         }
                     }),
                 Tables\Actions\Action::make('reject')
@@ -105,7 +151,7 @@ class WithdrawalResource extends Resource
                             app(ProcessWithdrawalAction::class)->reject($r, $admin, $data['note'] ?? null);
                             Notification::make()->title('Вывод отклонён, средства возвращены')->success()->send();
                         } catch (\Throwable $e) {
-                            Notification::make()->title('Ошибка: ' . $e->getMessage())->danger()->send();
+                            Notification::make()->title('Ошибка: '.$e->getMessage())->danger()->send();
                         }
                     }),
                 Tables\Actions\EditAction::make()->label('Изменить'),

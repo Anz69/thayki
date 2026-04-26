@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Telegram\WebhookController as TelegramBotWebhookController;
 use App\Http\Controllers\Web\BrowserPollController;
 use App\Http\Controllers\Web\TelegramWebAuthController;
 use App\Http\Controllers\Web\TelegramWidgetAuthController;
@@ -36,6 +37,11 @@ Route::post('/auth/telegram-widget', [TelegramWidgetAuthController::class, 'hand
 Route::get('/auth/browser-poll/{token}', [BrowserPollController::class, 'poll'])
     ->middleware('throttle:60,1')
     ->name('web.auth.browser-poll');
+
+// Telegram bot webhook. Telegram delivers POST updates here when the bot
+// receives a message; the secret-in-URL pattern protects the endpoint.
+Route::post('/telegram/webhook/{secret}', TelegramBotWebhookController::class)
+    ->name('telegram.webhook');
 
 // SPA catch-all — Inertia renders the React app shell
 // All React Router navigation is client-side from here

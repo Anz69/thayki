@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -134,7 +134,22 @@ export default function MorePage() {
   const auth = useAuthStore()
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
-  const [notifications, setNotifications] = useState(false)
+  // Notifications toggle: bound to the server-side `notifications_enabled`
+  // flag. Defaults to true on registration; user can opt out here.
+  const [notifications, setNotifications] = useState(
+    auth.user?.notifications_enabled ?? true
+  )
+  const handleNotificationsChange = useCallback(async (next) => {
+    setNotifications(next)
+    try {
+      const res = await api.patch('/me', { notifications_enabled: next })
+      const updated = res?.data?.data
+      if (updated && auth.setUser) auth.setUser(updated)
+    } catch {
+      // Revert optimistic toggle on failure.
+      setNotifications((v) => !v)
+    }
+  }, [auth])
   const [meetings, setMeetings] = useState([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
   const [balance, setBalance] = useState(auth.user?.balance ?? 0)
@@ -251,7 +266,7 @@ export default function MorePage() {
 
             <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-4">
               <span className="text-black text-[16px]/[100%] font-medium">Получать уведомления в ТГ</span>
-              <Toggle value={notifications} onChange={setNotifications} />
+              <Toggle value={notifications} onChange={handleNotificationsChange} />
             </div>
           </div>
 

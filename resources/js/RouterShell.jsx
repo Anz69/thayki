@@ -12,6 +12,7 @@ import useAuthStore from '@/stores/useAuthStore'
 // LandingPage is eager — it's the first route users see
 import LandingPage from '@/views/LandingPage'
 import LoginPage   from '@/views/LoginPage'
+import StrangeWelcomePage from '@/views/StrangeWelcomePage'
 
 // All other views are lazy-loaded to reduce initial bundle size
 const HomePage         = lazy(() => import('@/views/HomePage'))
@@ -27,6 +28,7 @@ const ClientPage       = lazy(() => import('@/views/ClientPage'))
 const BecomeModelPage          = lazy(() => import('@/views/BecomeModelPage'))
 const ApplicationPendingPage   = lazy(() => import('@/views/ApplicationPendingPage'))
 const SupportPage              = lazy(() => import('@/views/SupportPage'))
+const FeedbackPage             = lazy(() => import('@/views/FeedbackPage'))
 
 function MainPage() {
   const { user } = useAuthStore()
@@ -74,6 +76,29 @@ function AuthGuard({ children }) {
   return children
 }
 
+/**
+ * "Double-bottom" gate — strange (unverified) users are funneled to the
+ * welcome stub no matter where they navigate. The only escape is to /start
+ * the bot via a valid invite link, which flips is_strange=false on the
+ * server. Routes whitelisted below are still reachable so we don't trap
+ * users on the stub if they somehow have a token bound to /become-model
+ * (model-invite flow logs them in already non-strange, but we keep the
+ * route accessible just in case).
+ */
+function StrangeGuard({ children }) {
+  const { user } = useAuthStore()
+  const location = useLocation()
+
+  if (!user) return children
+  if (!user.is_strange) return children
+
+  // Allow login + the welcome page itself; redirect everything else.
+  const allowed = ['/welcome', '/login']
+  if (allowed.includes(location.pathname)) return children
+
+  return <Navigate to="/welcome" replace />
+}
+
 export default function App() {
   const overlayRef  = useRef(null)
   const pageRootRef = useRef(null)
@@ -100,25 +125,29 @@ export default function App() {
           <ErrorBoundary>
             <Suspense fallback={<PageFallback />}>
               <AuthGuard>
-                <Routes>
-                  <Route path="/login"         element={<LoginPage />} />
-                  <Route path="/"              element={<LandingPage />} />
-                  <Route path="/home"          element={<MainPage />} />
-                  <Route path="/more"          element={<MoreRolePage />} />
-                  <Route path="/models"        element={<Navigate to="/home" replace />} />
-                  <Route path="/model-more"    element={<Navigate to="/more" replace />} />
-                  <Route path="/model/:id"     element={<ModelPage />} />
-                  <Route path="/meeting"       element={<MeetingRolePage />} />
-                  <Route path="/model-meeting" element={<Navigate to="/meeting" replace />} />
-                  <Route path="/chat"          element={<ChatPage />} />
-                  <Route path="/support"       element={<SupportPage />} />
-                  <Route path="/roadmap"       element={<RoadmapPage />} />
-                  <Route path="/profile"              element={<ProfilePage />} />
-                  <Route path="/become-model"         element={<BecomeModelPage />} />
-                  <Route path="/application-pending"  element={<ApplicationPendingPage />} />
-                  {/* SPA catch-all → redirect unknown URLs to /home */}
-                  <Route path="*" element={<Navigate to="/home" replace />} />
-                </Routes>
+                <StrangeGuard>
+                  <Routes>
+                    <Route path="/login"         element={<LoginPage />} />
+                    <Route path="/welcome"       element={<StrangeWelcomePage />} />
+                    <Route path="/"              element={<LandingPage />} />
+                    <Route path="/home"          element={<MainPage />} />
+                    <Route path="/more"          element={<MoreRolePage />} />
+                    <Route path="/models"        element={<Navigate to="/home" replace />} />
+                    <Route path="/model-more"    element={<Navigate to="/more" replace />} />
+                    <Route path="/model/:id"     element={<ModelPage />} />
+                    <Route path="/meeting"       element={<MeetingRolePage />} />
+                    <Route path="/model-meeting" element={<Navigate to="/meeting" replace />} />
+                    <Route path="/chat"          element={<ChatPage />} />
+                    <Route path="/support"       element={<SupportPage />} />
+                    <Route path="/roadmap"       element={<RoadmapPage />} />
+                    <Route path="/profile"              element={<ProfilePage />} />
+                    <Route path="/become-model"         element={<BecomeModelPage />} />
+                    <Route path="/application-pending"  element={<ApplicationPendingPage />} />
+                    <Route path="/feedback"             element={<FeedbackPage />} />
+                    {/* SPA catch-all → redirect unknown URLs to /home */}
+                    <Route path="*" element={<Navigate to="/home" replace />} />
+                  </Routes>
+                </StrangeGuard>
               </AuthGuard>
             </Suspense>
           </ErrorBoundary>

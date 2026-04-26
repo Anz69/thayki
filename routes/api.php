@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\PhotoUploadController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\ChatController;
+use App\Http\Controllers\Api\V1\ComplaintController;
+use App\Http\Controllers\Api\V1\InviteController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MeetingController;
 use App\Http\Controllers\Api\V1\ModelApplicationController;
@@ -102,6 +104,17 @@ Route::prefix('v1')->group(function (): void {
             ->middleware(['throttle:messages', 'idempotency'])
             ->name('chats.postMessage');
         Route::post('/chats/{chat}/read', [ChatController::class, 'markRead'])->name('chats.markRead');
+
+        // Complaints (post-meeting feedback / abuse report)
+        Route::post('/complaints', [ComplaintController::class, 'store'])
+            ->middleware('idempotency')
+            ->name('complaints.store');
+
+        // Share-an-invite: verified users mint a one-shot, 7-day deep-link
+        // they can forward. Strange users are blocked inside the controller.
+        Route::post('/invites/share', [InviteController::class, 'share'])
+            ->middleware(['throttle:10,1', 'idempotency'])
+            ->name('invites.share');
 
         // Wallet / withdrawals
         Route::get('/wallet', [WalletController::class, 'show'])->name('wallet.show');

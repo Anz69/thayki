@@ -184,13 +184,18 @@ class MeetingController extends Controller
         return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'client'])));
     }
 
+    /**
+     * Legacy endpoint. The product flow no longer asks the model to "confirm"
+     * after payment — paid is treated as the final positive state. We keep
+     * the route defined for backwards compatibility, but it now returns the
+     * meeting as-is (idempotent no-op) rather than transitioning to a status
+     * that the simplified state machine no longer accepts.
+     */
     public function confirm(Request $request, Meeting $meeting, TransitionMeetingStatusAction $transition): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
         $this->authorizeModelOwner($user, $meeting);
-
-        $meeting = $transition->execute($meeting, MeetingStatus::Confirmed, $user);
 
         return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'client'])));
     }

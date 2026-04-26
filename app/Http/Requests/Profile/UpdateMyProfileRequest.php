@@ -22,6 +22,8 @@ class UpdateMyProfileRequest extends FormRequest
             'first_name' => ['sometimes', 'string', 'min:1', 'max:80'],
             'last_name' => ['sometimes', 'nullable', 'string', 'max:80'],
             'language_code' => ['sometimes', 'nullable', 'string', 'max:8'],
+            // Telegram-bot notifications opt-in/out (More-page toggle).
+            'notifications_enabled' => ['sometimes', 'boolean'],
         ];
     }
 }

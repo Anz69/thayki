@@ -5,7 +5,8 @@ import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import useModelMeetingStore from '@/stores/useModelMeetingStore'
 import useAuthStore from '@/stores/useAuthStore'
-import FinishMeetingModal from '@/components/modals/FinishMeetingModal'
+import FinishMeetingModal  from '@/components/modals/FinishMeetingModal'
+import CancelMeetingModal  from '@/components/modals/CancelMeetingModal'
 import PendingModelStep from '@/components/sections/modelMeetingPage/PendingModelStep'
 import WaitingPaymentStep from '@/components/sections/modelMeetingPage/WaitingPaymentStep'
 import ConfirmedModelStep from '@/components/sections/modelMeetingPage/ConfirmedModelStep'
@@ -363,6 +364,15 @@ export default function ModelMeetingPage() {
         onClose={() => meeting.closeFinish()}
         onConfirm={async () => {
           await meeting.complete()
+          meeting.reset()
+          navigate('/more')
+        }}
+      />
+      <CancelMeetingModal
+        isOpen={meeting.isCancelOpen}
+        onClose={() => meeting.closeCancel()}
+        onConfirm={async () => {
+          await meeting.cancel()
           meeting.reset()
           navigate('/more')
         }}

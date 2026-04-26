@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Wallet\RequestWithdrawalAction;
-use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Wallet\RequestWithdrawalRequest;
 use App\Http\Resources\WalletResource;
@@ -87,8 +86,6 @@ class WalletController extends Controller
         $withdrawal = $action->execute(
             $user,
             (int) $request->input('amount_minor'),
-            PaymentMethod::from((string) $request->input('method')),
-            (string) $request->input('wallet_address'),
         );
 
         return ApiResponse::created(new WithdrawalResource($withdrawal));

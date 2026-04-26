@@ -86,7 +86,8 @@ class SupportChats extends Page
                 'username'   => 'support',
                 'role'       => UserRole::Admin,
                 'status'     => UserStatus::Active,
-                'is_premium' => false,
+                'is_strange' => false,
+                'notifications_enabled' => false,
             ],
         );
     }

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -47,6 +47,28 @@ function MenuItem({ icon, label, onClick }) {
     >
       <span className="flex items-center justify-center w-5 h-5">{icon}</span>
       <span className="text-black text-[15px]/[100%] font-medium">{label}</span>
+    </button>
+  )
+}
+
+// Local mirror of the Toggle component used on the client-side MorePage.
+// Kept here (and not extracted) on purpose — both pages have minor visual
+// differences and we'd rather not couple them to a shared file yet.
+function Toggle({ value, onChange }) {
+  return (
+    <button
+      onClick={() => onChange(!value)}
+      className={[
+        'relative w-[46px] h-[24px] rounded-full transition-colors duration-200 flex-shrink-0',
+        value ? 'bg-[#E2319B]' : 'bg-[#D1D1D6]',
+      ].join(' ')}
+    >
+      <span
+        className={[
+          'absolute top-[6px] size-3 rounded-full bg-white transition-transform duration-200',
+          !value ? 'translate-x-[-16px]' : 'translate-x-[4px]',
+        ].join(' ')}
+      />
     </button>
   )
 }
@@ -112,6 +134,22 @@ export default function ModelMorePage() {
   const [meetings, setMeetings]             = useState([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
 
+  // TG-notification opt-out (default ON server-side). Optimistic update with
+  // rollback on failure so the model can flick the toggle and feel snappy.
+  const [notifications, setNotifications] = useState(
+    auth.user?.notifications_enabled ?? true
+  )
+  const handleNotificationsChange = useCallback(async (next) => {
+    setNotifications(next)
+    try {
+      const res = await api.patch('/me', { notifications_enabled: next })
+      const updated = res?.data?.data
+      if (updated && auth.setUser) auth.setUser(updated)
+    } catch {
+      setNotifications((v) => !v)
+    }
+  }, [auth])
+
   const headerRef   = useRef(null)
   const userCardRef = useRef(null)
   const ordersRef   = useRef(null)
@@ -167,6 +205,10 @@ export default function ModelMorePage() {
           <div ref={section1Ref} className="flex flex-col gap-4">
             <SectionLabel>Важное</SectionLabel>
             <MenuItem icon={<IconUser />} label="Профиль" onClick={() => navigate('/profile')} />
+            <div className="w-full flex items-center justify-between bg-[#F5F5F7] rounded-2xl px-4 py-4">
+              <span className="text-black text-[15px]/[100%] font-medium">Получать уведомления в ТГ</span>
+              <Toggle value={notifications} onChange={handleNotificationsChange} />
+            </div>
           </div>
 
           <div ref={section2Ref} className="flex flex-col gap-4">

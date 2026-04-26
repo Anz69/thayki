@@ -22,6 +22,41 @@ export default function ModelPage() {
   const [model,   setModel]   = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
+  const [shareLoading, setShareLoading] = useState(false)
+  const [shareError, setShareError]     = useState('')
+
+  // Mints a one-shot verify-invite for the current (non-strange) user and
+  // forwards it through Telegram's share sheet so the recipient lands in the
+  // bot's /start handler with the token attached.
+  const handleShare = useCallback(async () => {
+    if (shareLoading) return
+    setShareLoading(true)
+    setShareError('')
+    try {
+      const res = await api.post('/invites/share', null, {
+        headers: { 'Idempotency-Key': `invite-share-${Date.now()}` },
+      })
+      const url = res?.data?.data?.url
+      if (!url) throw new Error('Бот не настроен')
+
+      const text = `Зацени, тут красивые девушки на Пхукете 😍 ${model?.display_name ? `Например ${model.display_name}.` : ''}`.trim()
+      const tg = window.Telegram?.WebApp
+      if (tg?.openTelegramLink) {
+        // Telegram native share sheet: t.me/share/url?url=...&text=...
+        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`
+        tg.openTelegramLink(shareUrl)
+      } else if (navigator.share) {
+        await navigator.share({ url, text }).catch(() => {})
+      } else {
+        await navigator.clipboard?.writeText?.(url).catch(() => {})
+        setShareError('Ссылка скопирована в буфер обмена')
+      }
+    } catch (err) {
+      setShareError(extractErrorMessage(err, 'Не удалось создать ссылку'))
+    } finally {
+      setShareLoading(false)
+    }
+  }, [shareLoading, model])
 
   const pageReadyFired = useRef(false)
   const modelRef = useRef(null)
@@ -239,7 +274,21 @@ export default function ModelPage() {
               Модель
             </h1>
           </div>
+          <button
+            type="button"
+            disabled={shareLoading}
+            onClick={handleShare}
+            className="absolute right-4 px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors disabled:opacity-60"
+            aria-label="Поделиться"
+          >
+            {shareLoading ? '...' : 'Поделиться'}
+          </button>
         </div>
+        {shareError && (
+          <div className="container pt-2">
+            <p className="text-[#E2319B] text-xs/[140%] font-medium text-center">{shareError}</p>
+          </div>
+        )}
       </header>
 
       {createPortal(

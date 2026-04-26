@@ -7,8 +7,10 @@ use App\Actions\ModelApplication\RejectModelApplicationAction;
 use App\Enums\ModelApplicationStatus;
 use App\Filament\Resources\ModelApplicationResource\Pages;
 use App\Models\ModelApplication;
+use App\Models\StartInvite;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -69,6 +71,32 @@ class ModelApplicationResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn (ModelApplication $r) => $r->status === ModelApplicationStatus::Submitted)
                     ->action(fn (ModelApplication $r) => app(RejectModelApplicationAction::class)->execute($r)),
+                // Generates a deep-link invite for a *would-be model*: when
+                // someone opens t.me/<bot>?start=<token>, StartHandler routes
+                // them to the "become a model" mini-app screen so they can
+                // submit an application.
+                Tables\Actions\Action::make('issue_model_invite')
+                    ->label('Сгенерировать ссылку для модели')
+                    ->icon('heroicon-o-link')
+                    ->color('warning')
+                    ->action(function (): void {
+                        $token = rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
+                        StartInvite::query()->create([
+                            'token' => $token,
+                            'kind'  => StartInvite::KIND_MODEL,
+                            'label' => 'Приглашение модели',
+                            'created_by_admin_id' => auth()->id(),
+                            'max_uses' => 1,
+                        ]);
+                        $bot = (string) config('telegram.bot_username', '');
+                        $url = $bot ? "https://t.me/{$bot}?start={$token}" : '(укажите TELEGRAM_BOT_USERNAME)';
+                        Notification::make()
+                            ->title('Ссылка для модели создана')
+                            ->body($url)
+                            ->success()
+                            ->persistent()
+                            ->send();
+                    }),
                 Tables\Actions\EditAction::make()->label('Изменить'),
             ])
             ->defaultSort('created_at', 'desc');

@@ -6,6 +6,7 @@ const useModelMeetingStore = create((set, get) => ({
   meeting:      null,
   status:       null,
   isFinishOpen: false,
+  isCancelOpen: false,
   isLoading:    false,
   error:        null,
   errorStatus:  null,
@@ -120,8 +121,11 @@ const useModelMeetingStore = create((set, get) => ({
   openFinish()  { set({ isFinishOpen: true  }) },
   closeFinish() { set({ isFinishOpen: false }) },
 
+  openCancel()  { set({ isCancelOpen: true  }) },
+  closeCancel() { set({ isCancelOpen: false }) },
+
   reset() {
-    set({ meeting: null, status: null, isFinishOpen: false, isLoading: false, error: null, errorStatus: null })
+    set({ meeting: null, status: null, isFinishOpen: false, isCancelOpen: false, isLoading: false, error: null, errorStatus: null })
   },
 }))
 

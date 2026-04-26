@@ -24,6 +24,13 @@ use Laravel\Sanctum\NewAccessToken;
  * 2) Anti-replay via cache: one-shot lock on the initData hash.
  * 3) Upsert the user record and its wallet.
  * 4) Issue a Sanctum token scoped to the user's role.
+ *
+ * NOTE on `is_strange`:
+ *   New users created here default to is_strange=true (the column default).
+ *   They stay strange and see only the welcome stub until they /start the
+ *   bot via a 'verify' invite-link, which flips the flag (see
+ *   App\Services\Telegram\StartHandler). This is the gate for the
+ *   double-bottom flow — direct Mini App access never grants verification.
  */
 class AuthenticateTelegramUserAction
 {
@@ -62,9 +69,10 @@ class AuthenticateTelegramUserAction
                     'username' => isset($payload['username']) ? (string) $payload['username'] : null,
                     'language_code' => isset($payload['language_code']) ? (string) $payload['language_code'] : null,
                     'photo_url' => isset($payload['photo_url']) ? (string) $payload['photo_url'] : null,
-                    'is_premium' => (bool) ($payload['is_premium'] ?? false),
                     'role' => UserRole::Client,
                     'status' => UserStatus::Active,
+                    // is_strange / notifications_enabled fall back to column defaults
+                    // (true / true respectively).
                 ],
             );
 
@@ -76,7 +84,6 @@ class AuthenticateTelegramUserAction
                 'photo_url' => $user->photo_customized
                     ? $user->photo_url
                     : (isset($payload['photo_url']) ? (string) $payload['photo_url'] : $user->photo_url),
-                'is_premium' => (bool) ($payload['is_premium'] ?? $user->is_premium),
                 'last_auth_at' => now(),
             ])->save();
 
@@ -99,7 +106,7 @@ class AuthenticateTelegramUserAction
 
         $this->audit->log('auth.login', $user, $user, [
             'telegram_id' => $user->telegram_id,
-            'is_premium' => $user->is_premium,
+            'is_strange' => $user->is_strange,
         ]);
 
         return ['user' => $user, 'token' => $token];

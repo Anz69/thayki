@@ -15,11 +15,15 @@ use Illuminate\Support\Facades\DB;
 /**
  * Generic, explicit state-machine transitions for a Meeting.
  *
- * Allowed transitions (happy path only; terminal from many):
- *  pending -> accepted|rejected|expired|cancelled
- *  accepted -> paid|cancelled|expired
- *  paid -> confirmed|cancelled
- *  confirmed -> completed|cancelled
+ * NEW canonical happy path (post simplification):
+ *   pending  -> accepted | rejected | expired | cancelled
+ *   accepted -> paid | cancelled | expired
+ *   paid     -> completed | cancelled
+ *
+ * The legacy `confirmed` status is kept in the enum so historical rows in
+ * production are still parseable, but no transition leads INTO it any more.
+ * `confirmed -> completed | cancelled` is preserved purely so historical
+ * confirmed rows can still be retired cleanly.
  */
 class TransitionMeetingStatusAction
 {
@@ -27,9 +31,11 @@ class TransitionMeetingStatusAction
      * @var array<string, list<string>>
      */
     private const ALLOWED = [
-        'pending' => ['accepted', 'rejected', 'expired', 'cancelled'],
-        'accepted' => ['paid', 'cancelled', 'expired'],
-        'paid' => ['confirmed', 'cancelled'],
+        'pending'   => ['accepted', 'rejected', 'expired', 'cancelled'],
+        'accepted'  => ['paid', 'cancelled', 'expired'],
+        // paid is now terminal-positive: model doesn't need to confirm again.
+        'paid'      => ['completed', 'cancelled'],
+        // legacy: only used to migrate historical confirmed rows.
         'confirmed' => ['completed', 'cancelled'],
     ];
 
@@ -56,6 +62,12 @@ class TransitionMeetingStatusAction
             }
             if ($target === MeetingStatus::Paid) {
                 $update['paid_at'] = now();
+                // Stamp confirmed_at too so any analytics/admin views that
+                // still read "confirmed_at" as a proxy for "set in stone"
+                // don't suddenly go null.
+                if ($meeting->confirmed_at === null) {
+                    $update['confirmed_at'] = now();
+                }
             }
             if ($target === MeetingStatus::Confirmed) {
                 $update['confirmed_at'] = now();

@@ -5,10 +5,11 @@ namespace App\Filament\Resources;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Filament\Resources\UserResource\Pages;
+use App\Models\StartInvite;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -40,23 +41,11 @@ class UserResource extends Resource
                     UserStatus::Active->value => 'Активен',
                     UserStatus::Banned->value => 'Забанен',
                 ])->required(),
-            Forms\Components\Toggle::make('is_premium')->label('Premium'),
+            Forms\Components\Toggle::make('is_strange')
+                ->label('Strange (не верифицирован)')
+                ->helperText('Пользователь видит только экран-заглушку, пока не пройдёт по invite-ссылке.'),
+            Forms\Components\Toggle::make('notifications_enabled')->label('Уведомления в TG'),
             Forms\Components\DateTimePicker::make('last_auth_at')->label('Последний вход'),
-            Forms\Components\Section::make('Баланс')
-                ->visibleOn('edit')
-                ->schema([
-                    Forms\Components\TextInput::make('wallet_balance_thb')
-                        ->label('Баланс (THB)')
-                        ->numeric()
-                        ->minValue(0)
-                        ->required(),
-                    Forms\Components\TextInput::make('wallet_locked_thb')
-                        ->label('Зарезервировано (THB)')
-                        ->numeric()
-                        ->minValue(0)
-                        ->lte('wallet_balance_thb')
-                        ->required(),
-                ]),
         ]);
     }
 
@@ -70,14 +59,8 @@ class UserResource extends Resource
                     ->formatStateUsing(fn ($record) => trim("{$record->first_name} {$record->last_name}"))
                     ->searchable(['first_name', 'last_name']),
                 Tables\Columns\TextColumn::make('username')->label('@username')->searchable()
-                    ->formatStateUsing(fn ($state) => $state ? "@{$state}" : '—'),
-                Tables\Columns\TextColumn::make('wallet.balance_minor')->label('Баланс')
-                    ->state(fn (User $record) => (int) ($record->wallet?->balance_minor ?? 0))
-                    ->formatStateUsing(fn ($state) => number_format(((int) $state) / 100, 2) . ' THB')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('wallet.available_minor')->label('Доступно')
-                    ->state(fn (User $record) => (int) (($record->wallet?->balance_minor ?? 0) - ($record->wallet?->locked_minor ?? 0)))
-                    ->formatStateUsing(fn ($state) => number_format(((int) $state) / 100, 2) . ' THB'),
+                    ->formatStateUsing(fn ($state) => $state ? "@{$state}" : '—')
+                    ->url(fn (User $record): ?string => $record->username ? "https://t.me/{$record->username}" : null, true),
                 Tables\Columns\BadgeColumn::make('role')->label('Роль')
                     ->colors([
                         'warning' => UserRole::Client->value,
@@ -89,7 +72,9 @@ class UserResource extends Resource
                         'success' => UserStatus::Active->value,
                         'danger'  => UserStatus::Banned->value,
                     ]),
-                Tables\Columns\IconColumn::make('is_premium')->label('Premium')->boolean(),
+                Tables\Columns\IconColumn::make('is_strange')->label('Strange')->boolean(),
+                Tables\Columns\IconColumn::make('notifications_enabled')->label('TG-уведомления')->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('last_auth_at')->label('Последний вход')
                     ->dateTime('d.m.Y H:i')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Зарегистрирован')
@@ -107,8 +92,47 @@ class UserResource extends Resource
                         UserStatus::Active->value => 'Активен',
                         UserStatus::Banned->value => 'Забанен',
                     ]),
+                Tables\Filters\TernaryFilter::make('is_strange')->label('Strange'),
             ])
             ->actions([
+                Tables\Actions\Action::make('verify')
+                    ->label('Верифицировать')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->visible(fn (User $r) => (bool) $r->is_strange)
+                    ->action(fn (User $r) => $r->update(['is_strange' => false])),
+                // Mints a single-use deep-link the admin can hand to a user
+                // (e.g. paste in a chat) — when the user opens it the bot
+                // flips them to non-strange. See StartHandler::handle.
+                Tables\Actions\Action::make('issue_verify_link')
+                    ->label('Сгенерировать invite-ссылку')
+                    ->icon('heroicon-o-link')
+                    ->color('primary')
+                    ->action(function (User $r): void {
+                        $token = rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
+                        StartInvite::query()->create([
+                            'token' => $token,
+                            'kind'  => StartInvite::KIND_VERIFY,
+                            'label' => "Для пользователя #{$r->id}",
+                            'created_by_admin_id' => auth()->id(),
+                            'max_uses' => 1,
+                        ]);
+                        $bot = (string) config('telegram.bot_username', '');
+                        $url = $bot ? "https://t.me/{$bot}?start={$token}" : '(укажите TELEGRAM_BOT_USERNAME)';
+                        Notification::make()
+                            ->title('Invite-ссылка создана')
+                            ->body($url)
+                            ->success()
+                            ->persistent()
+                            ->send();
+                    }),
+                Tables\Actions\Action::make('mark_strange')
+                    ->label('Сделать strange')
+                    ->icon('heroicon-o-question-mark-circle')
+                    ->color('warning')
+                    ->visible(fn (User $r) => ! $r->is_strange)
+                    ->requiresConfirmation()
+                    ->action(fn (User $r) => $r->update(['is_strange' => true])),
                 Tables\Actions\Action::make('ban')
                     ->label('Бан')
                     ->icon('heroicon-o-x-circle')
@@ -128,11 +152,6 @@ class UserResource extends Resource
     }
 
     public static function getRelations(): array { return []; }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()->with('wallet');
-    }
 
     public static function getPages(): array
     {

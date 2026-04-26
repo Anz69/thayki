@@ -24,7 +24,9 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $language_code
  * @property string|null $photo_url
  * @property bool $photo_customized
- * @property bool $is_premium
+ * @property bool $is_strange
+ * @property bool $notifications_enabled
+ * @property int|null $tg_chat_id
  * @property UserRole $role
  * @property UserStatus $status
  * @property Carbon|null $last_auth_at
@@ -53,7 +55,9 @@ class User extends Authenticatable
         'language_code',
         'photo_url',
         'photo_customized',
-        'is_premium',
+        'is_strange',
+        'notifications_enabled',
+        'tg_chat_id',
         'role',
         'status',
         'last_auth_at',
@@ -71,8 +75,10 @@ class User extends Authenticatable
     {
         return [
             'telegram_id' => 'integer',
-            'is_premium' => 'boolean',
+            'tg_chat_id' => 'integer',
             'photo_customized' => 'boolean',
+            'is_strange' => 'boolean',
+            'notifications_enabled' => 'boolean',
             'role' => UserRole::class,
             'status' => UserStatus::class,
             'last_auth_at' => 'datetime',

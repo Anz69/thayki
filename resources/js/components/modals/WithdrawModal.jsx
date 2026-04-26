@@ -1,20 +1,23 @@
-import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
 import api from '@/utils/api'
 
-const METHOD_META = {
-  usdt: { label: 'USDT', hint: 'TRC20', icon: 'U' },
-  btc: { label: 'BTC', hint: 'Bitcoin', icon: 'B' },
-  ton: { label: 'TON', hint: 'TON', icon: 'T' },
-}
-
-const DEFAULT_METHODS = ['usdt', 'btc', 'ton']
-
-export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = DEFAULT_METHODS }) {
+/**
+ * Simplified withdrawal modal.
+ *
+ * Old flow (removed): amount → choose crypto + wallet → submit.
+ * New flow:           amount → submit → "заявка создана".
+ *
+ * The actual payout is coordinated out-of-band by the support team via the
+ * support chat (see Filament WithdrawalResource → "Написать в чате").
+ *
+ * Animations between stages stay identical to the previous version so we
+ * don't ship a regression on the visual feel — the only differences are
+ * the dropped middle pane and the API payload (no method/wallet_address).
+ */
+export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
   const [amount, setAmount] = useState('')
-  const [selectedMethod, setSelectedMethod] = useState(null)
-  const [walletAddress, setWalletAddress] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -23,47 +26,13 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = 
   const currentViewRef = useRef('amount')
   const amountBtnsRef = useRef(null)
 
-  const availableMethods = useMemo(() => {
-    const normalized = (methods ?? [])
-      .map((method) => {
-        if (typeof method === 'string') {
-          return {
-            value: method,
-            label: METHOD_META[method]?.label ?? method.toUpperCase(),
-            hint: METHOD_META[method]?.hint ?? '',
-            icon: METHOD_META[method]?.icon ?? method[0]?.toUpperCase() ?? '?',
-          }
-        }
-        const value = method?.value
-        if (!value) return null
-        return {
-          value,
-          label: method?.label ?? METHOD_META[value]?.label ?? value.toUpperCase(),
-          hint: method?.hint ?? METHOD_META[value]?.hint ?? '',
-          icon: method?.icon ?? METHOD_META[value]?.icon ?? value[0]?.toUpperCase() ?? '?',
-        }
-      })
-      .filter(Boolean)
-    return normalized.length ? normalized : DEFAULT_METHODS.map((value) => ({
-      value,
-      label: METHOD_META[value].label,
-      hint: METHOD_META[value].hint,
-      icon: METHOD_META[value].icon,
-    }))
-  }, [methods])
-
   const numAmount = Number(amount || 0)
   const amountMinor = Math.round(numAmount * 100)
   const hasAmount = numAmount > 0
   const amountOver = numAmount > balance
-  const detailsValid = hasAmount && !!selectedMethod && walletAddress.trim().length > 3
 
-  useEffect(() => {
-    if (!selectedMethod || !availableMethods.some(m => m.value === selectedMethod)) {
-      setSelectedMethod(availableMethods[0]?.value ?? null)
-    }
-  }, [availableMethods, selectedMethod])
-
+  // Reveal the action buttons under the input only after a positive amount
+  // is typed — same gentle slide-in as before.
   useEffect(() => {
     const el = amountBtnsRef.current
     if (!el) return
@@ -76,12 +45,10 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = 
         gsap.set(el, { display: 'none', height: 0, opacity: 0, marginTop: -12 })
         return
       }
-
       if (el.offsetHeight <= 0) {
         gsap.set(el, { display: 'none', height: 0, opacity: 0, marginTop: -12 })
         return
       }
-
       gsap.set(el, { display: 'flex', overflow: 'hidden' })
       gsap.to(el, {
         height: 0,
@@ -120,7 +87,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = 
     if (!prevEl || !currEl || !wrapEl) return
 
     currentViewRef.current = next
-    const forward = next === 'details' || next === 'done'
+    const forward = next === 'done'
 
     gsap.killTweensOf([prevEl, currEl, wrapEl])
     gsap.set(wrapEl, { height: wrapEl.offsetHeight })
@@ -197,14 +164,12 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = 
   }, [])
 
   const handleSubmit = useCallback(async () => {
-    if (!detailsValid || submitting) return
+    if (!hasAmount || amountOver || submitting) return
     setSubmitting(true)
     setError('')
     try {
       await api.post('/withdrawals', {
         amount_minor: amountMinor,
-        method: selectedMethod,
-        wallet_address: walletAddress.trim(),
       }, {
         headers: { 'Idempotency-Key': `withdraw-${Date.now()}-${amountMinor}` },
       })
@@ -218,17 +183,15 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = 
           ? 'Сумма меньше минимально допустимой'
           : code === 'WITHDRAWAL_FORBIDDEN'
             ? 'Вывод доступен только для моделей'
-            : code === 'WITHDRAWAL_METHOD_NOT_ALLOWED'
-              ? 'Этот способ вывода сейчас недоступен'
-              : raw || 'Не удалось создать заявку. Попробуйте ещё раз.'
+            : raw || 'Не удалось создать заявку. Попробуйте ещё раз.'
       setError(friendly)
     } finally {
       setSubmitting(false)
     }
-  }, [detailsValid, submitting, amountMinor, selectedMethod, walletAddress, switchView])
+  }, [hasAmount, amountOver, submitting, amountMinor, switchView])
 
   const handleAfterClose = useCallback(() => {
-    const { amount: amountEl, details: detailsEl, done: doneEl } = viewRefs.current
+    const { amount: amountEl, done: doneEl } = viewRefs.current
     const reset = (el, isVisible) => {
       if (!el) return
       gsap.set(el, isVisible
@@ -257,13 +220,11 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = 
           })
     }
     reset(amountEl, true)
-    reset(detailsEl, false)
     reset(doneEl, false)
     if (contentWrapRef.current) gsap.set(contentWrapRef.current, { clearProps: 'height' })
     if (amountBtnsRef.current) gsap.set(amountBtnsRef.current, { display: 'none', height: 0, opacity: 0, marginTop: -12 })
     currentViewRef.current = 'amount'
     setAmount('')
-    setWalletAddress('')
     setError('')
     setSubmitting(false)
   }, [])
@@ -278,7 +239,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = 
             <div className="flex flex-col items-center gap-1.5 text-center pt-1">
               <h2 className="text-black text-xl/[100%] font-semibold">Заявка на вывод</h2>
               <p className="text-[#7F7F7F] text-sm/[140%] font-medium">
-                Укажите сумму, затем выберите криптовалюту и кошелек.
+                Укажите сумму. Реквизиты обсудим в чате поддержки после подачи заявки.
               </p>
             </div>
 
@@ -294,72 +255,6 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = 
                 }}
                 className="w-full bg-transparent text-black text-lg/[100%] font-semibold outline-none placeholder:text-[#ABABAB] placeholder:font-medium"
               />
-       
-            </div>
-
-            <div
-              ref={amountBtnsRef}
-              className="flex flex-col gap-3"
-              style={{ display: 'none', height: 0, opacity: 0, marginTop: -12 }}
-            >
-              <button
-                onClick={() => switchView('details')}
-                disabled={!hasAmount}
-                className={[
-                  'w-full py-4 rounded-full text-base/[100%] font-semibold transition-opacity',
-                  hasAmount ? 'bg-[#E2319B] text-white active:opacity-80' : 'bg-[#F0F0F0] text-[#BDBDBD] cursor-not-allowed',
-                ].join(' ')}
-              >
-                Далее
-              </button>
-              <button
-                onClick={onClose}
-                className="w-full py-4 rounded-full bg-[#1C1C1E] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity"
-              >
-                Вернуться назад
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div
-          ref={(el) => { viewRefs.current.details = el }}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, visibility: 'hidden', opacity: 0, pointerEvents: 'none' }}
-        >
-          <div className="flex flex-col gap-4 px-5 pt-2 pb-6 bg-white">
-            <div className="flex flex-col gap-1.5 text-center">
-              <h2 className="text-black text-xl/[100%] font-semibold">Выбор крипты и кошелька</h2>
-              <p className="text-[#7F7F7F] text-sm/[140%] font-medium">Сумма вывода: ฿ {numAmount.toLocaleString()}</p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {availableMethods.map((method) => {
-                const active = selectedMethod === method.value
-                return (
-                  <button
-                    key={method.value}
-                    onClick={() => setSelectedMethod(method.value)}
-                    className={[
-                      'rounded-2xl px-3 py-3.5 border transition-colors text-left',
-                      active ? 'border-[#E2319B] bg-[#FFF2FA]' : 'border-[#ECEAEC] bg-[#F5F5F7] active:bg-[#ECEAEC]',
-                    ].join(' ')}
-                  >
-                 
-                    <p className="text-black text-sm/[100%] font-semibold">{method.label}</p>
-                    <p className="text-[#7F7F7F] text-[11px]/[120%] font-medium mt-1">{method.hint}</p>
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="bg-[#F5F5F7] rounded-2xl px-5 py-5">
-              <input
-                type="text"
-                value={walletAddress}
-                onChange={(e) => setWalletAddress(e.target.value)}
-                placeholder="Введите адрес кошелька"
-                className="w-full bg-transparent text-black text-base/[100%] font-medium outline-none placeholder:text-[#ABABAB]"
-              />
             </div>
 
             {amountOver && (
@@ -373,25 +268,28 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = 
               </p>
             )}
 
-            <div className="flex flex-col gap-3 pt-1">
+            <div
+              ref={amountBtnsRef}
+              className="flex flex-col gap-3"
+              style={{ display: 'none', height: 0, opacity: 0, marginTop: -12 }}
+            >
               <button
                 onClick={handleSubmit}
-                disabled={!detailsValid || submitting || amountOver}
+                disabled={!hasAmount || amountOver || submitting}
                 className={[
                   'w-full py-4 rounded-full text-base/[100%] font-semibold transition-opacity',
-                  (!detailsValid || submitting || amountOver)
+                  (!hasAmount || amountOver || submitting)
                     ? 'bg-[#F0F0F0] text-[#BDBDBD] cursor-not-allowed'
                     : 'bg-[#E2319B] text-white active:opacity-80',
                 ].join(' ')}
               >
-                {submitting ? 'Отправляем...' : 'Оставить заявку'}
+                {submitting ? 'Отправляем...' : 'Подать заявку'}
               </button>
               <button
-                onClick={() => switchView('amount')}
-                disabled={submitting}
+                onClick={onClose}
                 className="w-full py-4 rounded-full bg-[#1C1C1E] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity"
               >
-                Назад
+                Вернуться назад
               </button>
             </div>
           </div>
@@ -403,9 +301,9 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, methods = 
         >
           <div className="flex flex-col items-center gap-5 px-5 py-6 text-center bg-white">
             <div className="flex flex-col gap-1.5">
-              <h2 className="text-black text-xl/[100%] font-semibold">Заявка на вывод создана</h2>
+              <h2 className="text-black text-xl/[100%] font-semibold">Заявка создана</h2>
               <p className="text-[#7F7F7F] text-sm/[150%] font-medium">
-                Скоро проверим заявку и обработаем вывод.
+                Скоро поддержка свяжется с вами в чате, чтобы обсудить реквизиты и обработать вывод.
               </p>
             </div>
             <button

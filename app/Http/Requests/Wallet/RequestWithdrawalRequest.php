@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Wallet;
 
-use App\Enums\PaymentMethod;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
+/**
+ * Simplified withdrawal request — the user submits only an amount. Method
+ * and wallet details are no longer collected up-front; the admin coordinates
+ * the actual payout through the support chat (see WithdrawalResource's
+ * "Написать юзеру в чат как саппорт" action).
+ */
 class RequestWithdrawalRequest extends FormRequest
 {
     public function authorize(): bool
@@ -22,8 +26,6 @@ class RequestWithdrawalRequest extends FormRequest
     {
         return [
             'amount_minor' => ['required', 'integer', 'min:1'],
-            'method' => ['required', 'string', Rule::in(array_map(fn (PaymentMethod $m) => $m->value, PaymentMethod::cases()))],
-            'wallet_address' => ['required', 'string', 'max:255'],
         ];
     }
 }

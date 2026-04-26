@@ -5,7 +5,8 @@ import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import useBookingStore from '@/stores/useBookingStore'
 import useMeetingStore from '@/stores/useMeetingStore'
-import PaymentSheet    from '@/components/modals/PaymentSheet'
+import PaymentSheet       from '@/components/modals/PaymentSheet'
+import CancelMeetingModal from '@/components/modals/CancelMeetingModal'
 import PendingStep     from '@/components/sections/meetingPage/PendingStep'
 import AcceptedStep    from '@/components/sections/meetingPage/AcceptedStep'
 import ConfirmedStep   from '@/components/sections/meetingPage/ConfirmedStep'
@@ -295,10 +296,7 @@ export default function MeetingPage() {
   }, [meeting.status, animatePendingIn, animateAcceptedIn, animateConfirmedIn])
   usePageReady(startAnimations)
 
-  const handleCancel = async () => {
-    await meeting.cancel()
-    navigate('/home')
-  }
+  const handleCancel = () => meeting.openCancel()
 
   const handleGoToChat = async () => {
     const meetingId = meeting.meeting?.id
@@ -365,6 +363,15 @@ export default function MeetingPage() {
         isOpen={meeting.isPaymentOpen}
         onClose={meeting.closePayment}
         price={price}
+      />
+      <CancelMeetingModal
+        isOpen={meeting.isCancelOpen}
+        onClose={() => meeting.closeCancel()}
+        onConfirm={async () => {
+          await meeting.cancel()
+          meeting.reset()
+          navigate('/home')
+        }}
       />
     </section>
   )

@@ -76,16 +76,8 @@ export default function BottomNav() {
     }
   }, [])
 
-  const clientCancel  = async () => {
-    await meeting.cancel()
-    meeting.reset()
-    nav('/home')
-  }
-  const modelCancel   = async () => {
-    await modelMeeting.cancel()
-    modelMeeting.reset()
-    nav('/more')
-  }
+  const clientCancel  = () => meeting.openCancel()
+  const modelCancel   = () => modelMeeting.openCancel()
   const goSupport     = () => nav('/support')
   const confirmModel  = () => modelMeeting.accept()
   const confirmPaid   = () => modelMeeting.confirm()
