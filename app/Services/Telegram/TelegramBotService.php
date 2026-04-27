@@ -51,21 +51,19 @@ class TelegramBotService
             'disable_web_page_preview' => true,
         ];
 
-        $miniAppUrl = (string) config('telegram.miniapp_url', '');
-        $botUsername = (string) config('telegram.bot_username', '');
         if ($openPath !== null) {
-            $url = null;
-            if ($miniAppUrl !== '') {
-                $url = $this->buildMiniAppUrl($miniAppUrl, $openPath);
-            } elseif ($botUsername !== '') {
-                // Fallback when TELEGRAM_MINIAPP_URL isn't configured: at
-                // least open the bot itself so the button isn't a dead end.
-                $url = 'https://t.me/'.$botUsername;
-            }
-            if ($url !== null) {
+            // Use a web_app button with the direct HTTPS URL of the Mini App.
+            //
+            // We intentionally avoid the url+t.me/Bot/App approach here because
+            // that form requires the Mini App short name to be registered in
+            // BotFather and Telegram to resolve it — if that mapping is missing
+            // or wrong the button silently does nothing. A web_app button with
+            // the real HTTPS origin always opens the app reliably.
+            $webAppUrl = $this->buildDirectUrl($openPath);
+            if ($webAppUrl !== null) {
                 $payload['reply_markup'] = json_encode([
                     'inline_keyboard' => [[
-                        ['text' => $buttonLabel ?? 'Перейти', 'url' => $url],
+                        ['text' => $buttonLabel ?? 'Перейти', 'web_app' => ['url' => $webAppUrl]],
                     ]],
                 ], JSON_UNESCAPED_UNICODE);
             }
@@ -114,9 +112,42 @@ class TelegramBotService
     }
 
     /**
+     * Build the direct HTTPS URL used for web_app inline-keyboard buttons.
+     *
+     * Precedence:
+     *   1. TELEGRAM_MINIAPP_URL if it is already a plain HTTPS URL (not t.me).
+     *   2. APP_URL — the canonical domain of the application.
+     *
+     * Returns null only when neither config value is set (should never happen
+     * in production).
+     */
+    private function buildDirectUrl(string $openPath): ?string
+    {
+        $clean = '/'.ltrim($openPath, '/');
+
+        // If TELEGRAM_MINIAPP_URL is a plain web URL use it as the base.
+        $miniAppUrl = (string) config('telegram.miniapp_url', '');
+        if ($miniAppUrl !== '' && ! str_starts_with($miniAppUrl, 'https://t.me/')) {
+            return rtrim($miniAppUrl, '/').$clean;
+        }
+
+        // Otherwise fall back to APP_URL (always the real domain).
+        $appUrl = (string) config('app.url', '');
+        if ($appUrl !== '') {
+            return rtrim($appUrl, '/').$clean;
+        }
+
+        return null;
+    }
+
+    /**
      * Compose a t.me/<bot>/<app>?startapp=<token> URL when the Mini App URL is a
      * t.me deep-link, or just append a hash so the front-end can read the
      * intended path. Falls back to the raw URL when path encoding is unsafe.
+     *
+     * NOTE: This method is kept for reference / direct-link generation (e.g.
+     * start-command buttons). Notification inline buttons now use web_app
+     * buttons via buildDirectUrl() instead.
      *
      * IMPORTANT: Telegram restricts `startapp` to [A-Za-z0-9_-]{1,64}. Plain
      * base64 contains `+`, `/`, `=` — when we send those Telegram silently

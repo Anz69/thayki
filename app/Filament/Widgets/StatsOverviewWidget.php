@@ -39,11 +39,16 @@ class StatsOverviewWidget extends BaseWidget
             ->where('completed_at', '>=', now()->startOfDay())
             ->count();
 
-        $revenueMonth = Meeting::where('status', MeetingStatus::Completed)
+        // ::sum() returns the underlying DB type (MySQL: string for SUM of an
+        // integer column). PHP 8.3's strict number_format() rejects strings,
+        // so we cast to int here — without this, opening any Filament page
+        // that shows the dashboard widget (incl. the user-edit Livewire
+        // round-trip) blew up with HTTP 500.
+        $revenueMonth = (int) Meeting::where('status', MeetingStatus::Completed)
             ->where('completed_at', '>=', now()->startOfMonth())
             ->sum('price_thb');
 
-        $revenueTotal = Meeting::where('status', MeetingStatus::Completed)->sum('price_thb');
+        $revenueTotal = (int) Meeting::where('status', MeetingStatus::Completed)->sum('price_thb');
 
         $pendingWithdrawals       = Withdrawal::where('status', WithdrawalStatus::Pending)->count();
         $pendingWithdrawalsAmount = (int) round(
