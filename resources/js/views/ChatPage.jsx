@@ -331,7 +331,7 @@ export default function ChatPage() {
       <header ref={headerRef} className="w-full py-5 bg-white shrink-0">
         <div className="container flex items-center justify-between relative">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(-1) || navigate('/home')}
             className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-base/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
           >
             Назад
