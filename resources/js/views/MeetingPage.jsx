@@ -296,8 +296,6 @@ export default function MeetingPage() {
   }, [meeting.status, animatePendingIn, animateAcceptedIn, animateConfirmedIn])
   usePageReady(startAnimations)
 
-  const handleCancel = () => meeting.openCancel()
-
   const handleGoToChat = async () => {
     const meetingId = meeting.meeting?.id
     if (!meetingId) { navigate('/chat'); return }
@@ -315,7 +313,7 @@ export default function MeetingPage() {
         <div className="container flex items-center relative">
           <button
             ref={backBtnRef}
-            onClick={handleCancel}
+            onClick={() => navigate('/home')}
             className="px-3.5 py-2.5 bg-[#EFEEF3] absolute left-4 text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
           >
             На главную
