@@ -354,10 +354,8 @@ export default function ModelMeetingPage() {
         cardRef={confirmedCardRef}
         cardRowsRef={confirmedRowsRef}
         detailRows={DETAIL_ROWS}
-        title={meeting.status === 'paid' ? 'Оплата подтверждена' : 'Встреча подтверждена'}
-        subtitle={meeting.status === 'paid'
-          ? 'Клиент оплатил встречу. Подтвердите старт встречи.'
-          : 'Встреча активна, можете перейти в чат с клиентом.'}
+        title="Встреча подтверждена"
+        subtitle="Клиент оплатил, встреча активна. Перейдите в чат с клиентом."
       />
       <FinishMeetingModal
         isOpen={meeting.isFinishOpen}

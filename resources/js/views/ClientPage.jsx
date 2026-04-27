@@ -83,7 +83,7 @@ function OrderCard({ meeting, currentUserId, onClick }) {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="size-5 rounded-full shrink-0 overflow-hidden bg-[#E2319B] flex items-center justify-center">
+          <div className="size-5 rounded-full shrink-0 overflow-hidden flex items-center justify-center" {...(!counterPhoto ? { style: { background: '#E2319B' } } : {})}>
             {counterPhoto && !imgFailed
               ? <img src={counterPhoto} alt="" className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
               : <span className="text-white text-[10px] font-bold leading-none">{counterName[0]?.toUpperCase()}</span>

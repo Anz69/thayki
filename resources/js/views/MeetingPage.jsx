@@ -354,10 +354,8 @@ export default function MeetingPage() {
         onGoToChat={handleGoToChat}
         modelAvatarUrl={modelAvatar}
         modelName={modelName}
-        title={meeting.status === 'paid' ? 'Оплата отправлена' : 'Бронирование подтверждено'}
-        subtitle={meeting.status === 'paid'
-          ? 'Ожидаем подтверждение модели. Скоро встреча станет активной.'
-          : 'Все готово для встречи, обсудите адрес и детали в чате.'}
+        title="Бронирование подтверждено"
+        subtitle="Все готово для встречи, обсудите адрес и детали в чате."
       />
       <PaymentSheet
         isOpen={meeting.isPaymentOpen}

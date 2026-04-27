@@ -220,8 +220,11 @@ export default function ChangeMediaModal({ isOpen, onClose }) {
   const handleReplace = useCallback(async (id, file) => {
     if (!id) return
     try {
-      await profile.deletePhoto(id)
-      await profile.uploadPhoto(file)
+      // Safe replace: upload first, then delete the old photo.
+      // The previous "delete then upload" order left users with NO photo
+      // whenever the upload step failed (network blip, validation error,
+      // photo-limit hit) — which was exactly the bug shipped to prod.
+      await profile.replacePhoto(id, file)
     } catch (err) {
       logError('Replace photo failed', err)
     }

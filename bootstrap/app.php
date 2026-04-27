@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Exceptions\ApiException;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\EnsureUserIsVerified;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IdempotencyKey;
@@ -58,8 +59,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // current Sanctum token on the way out — without this a banned
         // user can keep using the API forever, because Sanctum tokens
         // remain valid until explicitly deleted.
+        // EnsureUserIsVerified is the server-side enforcement of the
+        // "double-bottom" flow — strange users can authenticate and read
+        // their own profile, but cannot reach catalog / booking / chats.
         $middleware->api(append: [
             EnsureUserIsActive::class,
+            EnsureUserIsVerified::class,
         ]);
 
         // Telegram bot webhooks come in as POSTs from Telegram's servers and

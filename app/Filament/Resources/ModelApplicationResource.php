@@ -7,14 +7,17 @@ use App\Actions\ModelApplication\RejectModelApplicationAction;
 use App\Enums\ModelApplicationStatus;
 use App\Filament\Resources\ModelApplicationResource\Pages;
 use App\Models\ModelApplication;
-use App\Models\StartInvite;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
+/**
+ * Заявки кандидатов на роль модели. Создание invite-ссылок для будущих
+ * моделей живёт в отдельном разделе «Invite-ссылки» — здесь чисто
+ * рассмотрение уже поданных заявок (approve / reject).
+ */
 class ModelApplicationResource extends Resource
 {
     protected static ?string $model = ModelApplication::class;
@@ -40,9 +43,13 @@ class ModelApplicationResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')->sortable()->label('ID'),
                 Tables\Columns\TextColumn::make('user.first_name')->label('Пользователь')
-                    ->formatStateUsing(fn ($record) => "{$record->user?->first_name} {$record->user?->last_name}"),
+                    ->formatStateUsing(fn ($record) => trim("{$record->user?->first_name} {$record->user?->last_name}")
+                        ?: ($record->user?->username ?? '—')),
                 Tables\Columns\TextColumn::make('user.username')->label('@username')
-                    ->formatStateUsing(fn ($state) => $state ? "@{$state}" : '—'),
+                    ->formatStateUsing(fn ($state) => $state ? "@{$state}" : '—')
+                    ->url(fn ($record): ?string => $record->user?->username
+                        ? "https://t.me/{$record->user->username}"
+                        : null, true),
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')
                     ->colors([
                         'warning' => ModelApplicationStatus::Submitted->value,
@@ -50,7 +57,8 @@ class ModelApplicationResource extends Resource
                         'success' => ModelApplicationStatus::Approved->value,
                         'danger'  => ModelApplicationStatus::Rejected->value,
                     ]),
-                Tables\Columns\TextColumn::make('created_at')->label('Подана')->dateTime('d.m.Y H:i')->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Подана')
+                    ->dateTime('d.m.Y H:i')->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Статус')
@@ -71,32 +79,6 @@ class ModelApplicationResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn (ModelApplication $r) => $r->status === ModelApplicationStatus::Submitted)
                     ->action(fn (ModelApplication $r) => app(RejectModelApplicationAction::class)->execute($r)),
-                // Generates a deep-link invite for a *would-be model*: when
-                // someone opens t.me/<bot>?start=<token>, StartHandler routes
-                // them to the "become a model" mini-app screen so they can
-                // submit an application.
-                Tables\Actions\Action::make('issue_model_invite')
-                    ->label('Сгенерировать ссылку для модели')
-                    ->icon('heroicon-o-link')
-                    ->color('warning')
-                    ->action(function (): void {
-                        $token = rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
-                        StartInvite::query()->create([
-                            'token' => $token,
-                            'kind'  => StartInvite::KIND_MODEL,
-                            'label' => 'Приглашение модели',
-                            'created_by_admin_id' => auth()->id(),
-                            'max_uses' => 1,
-                        ]);
-                        $bot = (string) config('telegram.bot_username', '');
-                        $url = $bot ? "https://t.me/{$bot}?start={$token}" : '(укажите TELEGRAM_BOT_USERNAME)';
-                        Notification::make()
-                            ->title('Ссылка для модели создана')
-                            ->body($url)
-                            ->success()
-                            ->persistent()
-                            ->send();
-                    }),
                 Tables\Actions\EditAction::make()->label('Изменить'),
             ])
             ->defaultSort('created_at', 'desc');

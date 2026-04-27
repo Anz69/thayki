@@ -17,6 +17,23 @@ use Illuminate\Support\Facades\Log;
  * and missing tg_chat_id (handled inside Notifier).
  *
  * Best-effort — failures here must not break the message itself.
+ *
+ * Anti-self-ping rules
+ * --------------------
+ * The sender must never receive a notification about their own message —
+ * not just because it's noise but because the title rendered in the
+ * notification IS the sender's display name, so a misrouted self-ping
+ * looks like "I'm getting a message from myself" in the bot.
+ *
+ * We compare the sender to each recipient in three ways, ordered from
+ * cheapest to most expensive:
+ *   1. id            (User row equality — the obvious case)
+ *   2. telegram_id   (catches data-integrity issues where two User rows
+ *                     accidentally point at the same Telegram account)
+ *   3. tg_chat_id    (catches the rare case where two test accounts in
+ *                     dev share the same chat target — usually because
+ *                     someone manually set tg_chat_id in the DB)
+ * Any match is enough to skip.
  */
 class SendMessageNotification
 {
@@ -47,7 +64,7 @@ class SendMessageNotification
             foreach ($chat->participants as $participant) {
                 $recipient = $participant->user;
                 if ($recipient === null) continue;
-                if ($sender !== null && $recipient->id === $sender->id) continue;
+                if ($this->isSameUser($sender, $recipient)) continue;
 
                 $title = $isSupport ? 'Поддержка' : $senderName;
                 $text  = "✉️ <b>{$title}</b>\n{$preview}";
@@ -60,6 +77,15 @@ class SendMessageNotification
                 'error'      => $e->getMessage(),
             ]);
         }
+    }
+
+    private function isSameUser(?User $a, ?User $b): bool
+    {
+        if ($a === null || $b === null) return false;
+        if ($a->id === $b->id) return true;
+        if ($a->telegram_id !== null && $a->telegram_id === $b->telegram_id) return true;
+        if ($a->tg_chat_id !== null && $a->tg_chat_id === $b->tg_chat_id) return true;
+        return false;
     }
 
     private function displayName(?User $user): string

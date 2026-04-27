@@ -302,7 +302,8 @@ export default function ModelPage() {
             <button
               ref={bookBtnRef}
               onClick={() => navigate(`/meeting?id=${activeMeeting.id}`)}
-              className="invisible fixed mx-auto bottom-6 left-0 right-0 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000]"
+              className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto"
+              style={{ willChange: 'transform, opacity' }}
             >
               <div className="p-3 bg-[#232323] rounded-full text-white text-base/[100%] font-medium">
                 Перейти к встрече →
@@ -312,7 +313,8 @@ export default function ModelPage() {
             <button
               ref={bookBtnRef}
               onClick={() => store.open(model)}
-              className="invisible fixed mx-auto bottom-6 left-0 right-0 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000]"
+              className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto"
+              style={{ willChange: 'transform, opacity' }}
             >
               <div className="p-3 bg-[#E2319B] rounded-full text-white text-base/[100%] font-medium">
                 Забронировать встречу

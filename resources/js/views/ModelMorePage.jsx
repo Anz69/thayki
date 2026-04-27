@@ -3,6 +3,7 @@ import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import FaqModal from '@/components/modals/FaqModal'
+import WithdrawModal from '@/components/modals/WithdrawModal'
 import useAuthStore from '@/stores/useAuthStore'
 import Avatar from '@/components/ui/Avatar'
 import api from '@/utils/api'
@@ -131,6 +132,8 @@ export default function ModelMorePage() {
   const navigate = useTransitionNavigate()
   const auth     = useAuthStore()
   const [faqOpen, setFaqOpen] = useState(false)
+  const [withdrawOpen, setWithdrawOpen] = useState(false)
+  const [balance, setBalance]           = useState(0)
   const [meetings, setMeetings]             = useState([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
 
@@ -167,6 +170,14 @@ export default function ModelMorePage() {
       .then(r => setMeetings(r.data.data ?? []))
       .catch(logError)
       .finally(() => setLoadingMeetings(false))
+
+    api.get('/wallet')
+      .then((r) => {
+        const w = r.data?.data
+        const minor = (w?.available_minor ?? w?.balance_minor ?? 0)
+        setBalance(Math.floor(minor / 100))
+      })
+      .catch(() => setBalance(0))
   }, [])
 
   useLayoutEffect(() => {
@@ -202,6 +213,31 @@ export default function ModelMorePage() {
 
 
 
+          {/* Balance + withdraw entry-point. Visible only when there's
+              actually some balance to withdraw, so a brand-new model
+              isn't tempted to tap an empty-form withdraw flow. */}
+          <div className="flex flex-col gap-3">
+            <SectionLabel>Финансы</SectionLabel>
+            <div className="bg-[#F5F5F7] rounded-2xl px-4 py-4 flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <span className="text-[#7F7F7F] text-xs/[100%] font-medium uppercase tracking-[0.08em]">Баланс</span>
+                <span className="text-black text-[20px]/[100%] font-semibold">฿ {balance.toLocaleString()}</span>
+              </div>
+              <button
+                onClick={() => setWithdrawOpen(true)}
+                disabled={balance <= 0}
+                className={[
+                  'px-5 py-3 rounded-full text-[15px]/[100%] font-semibold transition-opacity',
+                  balance > 0
+                    ? 'bg-[#E2319B] text-white active:opacity-80'
+                    : 'bg-[#E5E5EA] text-[#9A9A9F] cursor-not-allowed',
+                ].join(' ')}
+              >
+                Вывести
+              </button>
+            </div>
+          </div>
+
           <div ref={section1Ref} className="flex flex-col gap-4">
             <SectionLabel>Важное</SectionLabel>
             <MenuItem icon={<IconUser />} label="Профиль" onClick={() => navigate('/profile')} />
@@ -222,6 +258,11 @@ export default function ModelMorePage() {
       </section>
 
       <FaqModal isOpen={faqOpen} onClose={() => setFaqOpen(false)} />
+      <WithdrawModal
+        isOpen={withdrawOpen}
+        onClose={() => setWithdrawOpen(false)}
+        balance={balance}
+      />
     </>
   )
 }

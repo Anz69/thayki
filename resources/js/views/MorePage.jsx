@@ -226,25 +226,29 @@ export default function MorePage() {
           </div>
 
 
-          <div ref={ordersRef} className="flex flex-col gap-3">
-            <SectionLabel>Текущие заказы</SectionLabel>
-            <div className="flex flex-col gap-2  rounded-2xl overflow-hidden">
-              {loadingMeetings ? (
-                <p className="text-[#7F7F7F] text-sm/[100%] font-medium px-4 py-3.5">Загрузка...</p>
-              ) : activeMeetings.length === 0 ? (
-                <p className="text-[#7F7F7F] text-sm/[100%] font-medium px-4 py-3.5">Нет активных заказов</p>
-              ) : (
-                activeMeetings.map(m => (
-                  <OrderCard
-                    key={m.id}
-                    meeting={m}
-                    currentUserId={auth.user?.id}
-                    onClick={() => navigate(`/meeting?id=${m.id}`)}
-                  />
-                ))
-              )}
+          {/* The "Текущие заказы" section is hidden entirely when the user
+              has no active bookings. Showing an empty-state placeholder
+              looked like clutter in screenshots; the screen is much
+              cleaner without it. */}
+          {(loadingMeetings || activeMeetings.length > 0) && (
+            <div ref={ordersRef} className="flex flex-col gap-3">
+              <SectionLabel>Текущие заказы</SectionLabel>
+              <div className="flex flex-col gap-2 rounded-2xl overflow-hidden">
+                {loadingMeetings ? (
+                  <p className="text-[#7F7F7F] text-sm/[100%] font-medium px-4 py-3.5">Загрузка...</p>
+                ) : (
+                  activeMeetings.map(m => (
+                    <OrderCard
+                      key={m.id}
+                      meeting={m}
+                      currentUserId={auth.user?.id}
+                      onClick={() => navigate(`/meeting?id=${m.id}`)}
+                    />
+                  ))
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           <div ref={section1Ref} className="flex flex-col gap-4">
             <SectionLabel>Важное</SectionLabel>

@@ -2,23 +2,25 @@ import { useRef, useLayoutEffect, useCallback } from 'react'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 
+const CHAT_URL = 'https://t.me/ThaikyChat'
+
 /**
  * "Double-bottom" welcome screen shown to is_strange=true users.
  *
  * Strange users can't reach the catalog / booking / chat pages — only
  * this stub. The single CTA opens the public Telegram chat.
  *
- * Why a real <a href> instead of a button + onClick:
- *   Telegram WebApp's openTelegramLink() worked inconsistently — on some
- *   client builds it silently no-op'd, leaving users staring at an
- *   unresponsive button. A native <a target="_blank"> always works
- *   because the click is delegated to the OS, which Telegram itself
- *   intercepts and routes to the in-app chat.
- *
- * We still call openTelegramLink() inside an onClick fallback for
- * environments where the OS handler doesn't intercept the URL — but
- * we DON'T preventDefault on the click, so the anchor is the primary
- * navigation path.
+ * Why a manual click handler with multiple fallbacks instead of a plain
+ * <a target="_blank">:
+ *   Telegram Mini App webviews don't honor target="_blank" — clicking a
+ *   blank-target anchor inside the WebApp does nothing visible. So we
+ *   try, in order:
+ *     1. Telegram.WebApp.openTelegramLink(url) — recommended path inside
+ *        the WebApp, opens the t.me chat in the parent Telegram client.
+ *     2. window.open(url, '_blank') — works in regular browsers.
+ *     3. window.location.href = url — last-resort, replaces the WebApp
+ *        with the Telegram chat URL (Telegram intercepts t.me URLs and
+ *        navigates to the chat).
  */
 export default function StrangeWelcomePage() {
   const cardRef  = useRef(null)
@@ -41,21 +43,29 @@ export default function StrangeWelcomePage() {
       .to(btnRef.current,   { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, 0.28)
   })
 
-  // Best-effort call to Telegram's native handler. We don't preventDefault
-  // — if it succeeds the WebApp closes/navigates and the anchor never
-  // fires, if it fails the browser falls back to the <a> behaviour.
-  const onCtaClick = useCallback((event) => {
+  const openChat = useCallback((event) => {
+    if (event) event.preventDefault()
+
+    // 1) Native Telegram WebApp method — preferred path.
     try {
       const tg = window.Telegram?.WebApp
-      if (tg?.openTelegramLink) {
-        tg.openTelegramLink('https://t.me/ThaikyChat')
-        // Some Telegram clients honour openTelegramLink only when we
-        // suppress the default — but suppressing universally breaks
-        // browsers where the call silently no-ops. Compromise:
-        // suppress only when the Telegram SDK is present.
-        event.preventDefault()
+      if (tg && typeof tg.openTelegramLink === 'function') {
+        tg.openTelegramLink(CHAT_URL)
+        return
       }
-    } catch { /* fall through to anchor default */ }
+    } catch { /* fall through */ }
+
+    // 2) Plain browser path.
+    try {
+      const w = window.open(CHAT_URL, '_blank', 'noopener,noreferrer')
+      if (w) return
+    } catch { /* fall through */ }
+
+    // 3) Last resort — same-window navigation. Telegram WebView intercepts
+    //    t.me links here and routes to the chat.
+    try {
+      window.location.href = CHAT_URL
+    } catch { /* nothing else we can do */ }
   }, [])
 
   return (
@@ -67,16 +77,14 @@ export default function StrangeWelcomePage() {
         <p ref={subRef} className="text-[#7F7F7F] text-base/[150%] font-medium">
           Вы можете присоединиться к нашему чату <span className="text-[#E2319B] font-semibold">@ThaikyChat</span> и начать общение.
         </p>
-        <a
+        <button
           ref={btnRef}
-          href="https://t.me/ThaikyChat"
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={onCtaClick}
-          className="w-full py-4 rounded-full bg-[#E2319B] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity text-center"
+          type="button"
+          onClick={openChat}
+          className="w-full py-4 rounded-full bg-[#E2319B] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity"
         >
           Перейти в чат
-        </a>
+        </button>
       </div>
     </section>
   )

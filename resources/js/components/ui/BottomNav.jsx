@@ -17,14 +17,17 @@ function getSlot(pathname, clientStatus, modelStatus, isModel) {
   if (pathname === '/meeting') {
     if (isModel) {
       if (!modelStatus || ['rejected', 'expired', 'cancelled', 'completed'].includes(modelStatus)) return null
-      if (modelStatus === 'pending')         return 'model-pending'
-      if (modelStatus === 'accepted')        return 'model-waiting'
-      if (modelStatus === 'paid')            return 'model-ready'
-      if (modelStatus === 'confirmed')       return 'model-confirmed'
+      if (modelStatus === 'pending')   return 'model-pending'
+      if (modelStatus === 'accepted')  return 'model-waiting'
+      // After payment the meeting is FINAL — no extra "confirm" step.
+      // Both `paid` and the legacy `confirmed` get the same slot.
+      if (modelStatus === 'paid' || modelStatus === 'confirmed') return 'model-confirmed'
       return null
     }
     if (!clientStatus || ['rejected', 'expired', 'cancelled', 'completed'].includes(clientStatus)) return null
-    return clientStatus === 'confirmed' ? 'client-chat' : 'client-default'
+    // Client gets the "go to chat" CTA as soon as the meeting is set
+    // (paid OR legacy confirmed). Before that, it's the default screen.
+    return (clientStatus === 'paid' || clientStatus === 'confirmed') ? 'client-chat' : 'client-default'
   }
   return null
 }
@@ -80,7 +83,6 @@ export default function BottomNav() {
   const modelCancel   = () => modelMeeting.openCancel()
   const goSupport     = () => nav('/support')
   const confirmModel  = () => modelMeeting.accept()
-  const confirmPaid   = () => modelMeeting.confirm()
   const finishMeeting = () => modelMeeting.openFinish()
 
   const goChat = async () => {
@@ -112,10 +114,6 @@ export default function BottomNav() {
       case 'model-waiting': return (
         <><button onClick={modelCancel} className={CANCEL}>Отменить</button>
           <button onClick={goSupport}   className={GHOST}>Поддержка</button></>
-      )
-      case 'model-ready': return (
-        <><button onClick={modelCancel} className={WHITE}>Отменить</button>
-          <button onClick={confirmPaid} className={PINK}>Подтвердить встречу</button></>
       )
       case 'model-confirmed': return (
         <><button onClick={goChat}        className={WHITE}>Перейти в чат</button>
