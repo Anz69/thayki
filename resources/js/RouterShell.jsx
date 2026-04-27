@@ -11,7 +11,7 @@ import useAuthStore from '@/stores/useAuthStore'
 
 // LandingPage is eager — it's the first route users see
 import LandingPage from '@/views/LandingPage'
-import LoginPage   from '@/views/LoginPage'
+// import LoginPage from '@/views/LoginPage'  // disabled — auto-login retries on reload
 import StrangeWelcomePage from '@/views/StrangeWelcomePage'
 
 // All other views are lazy-loaded to reduce initial bundle size
@@ -51,26 +51,21 @@ function PageFallback() {
 }
 
 /**
- * Redirects to /login when:
- * - User is not authenticated (no session / TG auth failed)
- * - AND we're not still waiting for TG initData to resolve
- * - AND we're not already on /login
+ * Reloads the page when auto-login (TG initData / stored token) failed.
+ * This retries the full auth cycle instead of showing a login screen,
+ * which makes sense for a Telegram Mini App where manual login is not used.
+ * Login page is kept in the codebase but its route is disabled.
  */
 function AuthGuard({ children }) {
   const { user, needsLogin, authPending } = useAuthStore()
-  const location = useLocation()
 
   // Still waiting for TG auto-login — render nothing (AppLoader covers the screen)
   if (authPending) return null
 
-  // Browser without login and not on /login → redirect
-  if (!user && needsLogin && location.pathname !== '/login') {
-    return <Navigate to="/login" replace />
-  }
-
-  // Authenticated but landed on /login → go to main app
-  if (user && location.pathname === '/login') {
-    return <Navigate to="/home" replace />
+  // Auto-login failed → reload to retry the auth cycle
+  if (!user && needsLogin) {
+    window.location.reload()
+    return null
   }
 
   return children
@@ -92,8 +87,8 @@ function StrangeGuard({ children }) {
   if (!user) return children
   if (!user.is_strange) return children
 
-  // Allow login + the welcome page itself; redirect everything else.
-  const allowed = ['/welcome', '/login']
+  // Allow only the welcome page itself; redirect everything else.
+  const allowed = ['/welcome']
   if (allowed.includes(location.pathname)) return children
 
   return <Navigate to="/welcome" replace />
@@ -127,7 +122,7 @@ export default function App() {
               <AuthGuard>
                 <StrangeGuard>
                   <Routes>
-                    <Route path="/login"         element={<LoginPage />} />
+                    {/* <Route path="/login" element={<LoginPage />} /> — disabled, reload retries auto-login */}
                     <Route path="/welcome"       element={<StrangeWelcomePage />} />
                     <Route path="/"              element={<LandingPage />} />
                     <Route path="/home"          element={<MainPage />} />
