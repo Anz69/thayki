@@ -12,9 +12,24 @@ return [
 
     /*
      * How long (in seconds) the initData is considered fresh after
-     * Telegram issued `auth_date`. Replay protection rejects older values.
+     * Telegram issued `auth_date`. Requests with an older auth_date are
+     * rejected as stale.
      */
     'init_data_ttl' => (int) env('TELEGRAM_INIT_DATA_TTL', 86400),
+
+    /*
+     * How long (in seconds) the anti-replay cache lock is held for a given
+     * initData hash. This only needs to be long enough to block a
+     * double-submit within a single login request — NOT the full initData
+     * validity window.
+     *
+     * Using init_data_ttl (24 h) here was wrong: it prevented the user from
+     * re-authenticating (e.g. after a token revocation) for a full day,
+     * because their stored token was cleared but Telegram's WebApp hadn't
+     * refreshed initData yet. 60 seconds is enough to stop replay attacks
+     * while allowing legitimate re-auth with the same initData.
+     */
+    'replay_cache_ttl' => (int) env('TELEGRAM_REPLAY_CACHE_TTL', 60),
 
     /*
      * Development-only escape hatch: allow requests without a valid

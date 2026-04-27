@@ -48,10 +48,10 @@ class AuthenticateTelegramUserAction
     {
         $validated = $this->validator->validate($rawInitData);
 
-        $replayKey = (string) $this->config->get('telegram.replay_cache_prefix', 'tg:initdata:').$validated['hash'];
-        $ttl = (int) $this->config->get('telegram.init_data_ttl', 86400);
+        $replayKey  = (string) $this->config->get('telegram.replay_cache_prefix', 'tg:initdata:').$validated['hash'];
+        $replayTtl  = (int) $this->config->get('telegram.replay_cache_ttl', 60);
 
-        if (! $this->cache->add($replayKey, 1, $ttl)) {
+        if (! $this->cache->add($replayKey, 1, $replayTtl)) {
             throw InvalidInitDataException::replay();
         }
 
