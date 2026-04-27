@@ -52,23 +52,99 @@ function PageFallback() {
   return <div style={{ width: '100%', height: '100dvh', background: '#fff' }} />
 }
 
+// Module-level flag — resets on page reload, persists across remounts within the same session.
+// Ensures we attempt exactly one silent retry before showing the error screen.
+let authRetried = false
+
 /**
- * Reloads the page when auto-login (TG initData / stored token) failed.
- * This retries the full auth cycle instead of showing a login screen,
- * which makes sense for a Telegram Mini App where manual login is not used.
- * Login page is kept in the codebase but its route is disabled.
+ * Shown when auto-login fails. On first mount it silently retries the full
+ * auth cycle (stored token → TG initData). If that also fails, it renders
+ * an error screen with a "Reload" button that resets the retry flag so the
+ * next page load gets another attempt.
+ */
+function AuthErrorScreen() {
+  const authStore    = useAuthStore()
+  const meetingStore = useMeetingStore()
+
+  useEffect(() => {
+    if (authRetried) return   // already retried — stay on error screen
+    authRetried = true
+
+    authStore.setAuthPending()
+
+    async function retry() {
+      // Try stored token first
+      const storedToken = getStoredToken()
+      if (storedToken) {
+        try {
+          const { data } = await api.get('/auth/me')
+          if (data?.data) {
+            authStore.setUser(data.data)
+            meetingStore.loadLatest()
+            return
+          }
+        } catch { /* invalid / expired */ }
+        clearToken()
+      }
+
+      // Try Telegram initData
+      const tg       = window.Telegram?.WebApp
+      const initData = tg?.initData
+      if (initData) {
+        const startParam   = tg?.initDataUnsafe?.start_param ?? ''
+        const browserToken = startParam.startsWith('browser_') ? startParam.slice(8) : null
+        try {
+          const { data } = await api.post('/auth/telegram', {
+            init_data: initData,
+            ...(browserToken ? { browser_token: browserToken } : {}),
+          })
+          if (data.ok && data.data?.token && data.data?.user) {
+            authStore.setUser(data.data.user, data.data.token)
+            meetingStore.loadLatest()
+            return
+          }
+        } catch { /* network or validation error */ }
+      }
+
+      authStore.setNeedsLogin()
+    }
+
+    retry().catch(() => authStore.setNeedsLogin())
+  }, [])
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-8 text-center bg-white">
+      <div className="flex flex-col items-center gap-3">
+        <span className="text-5xl select-none">😕</span>
+        <h1 className="text-xl font-semibold text-black">Ошибка входа</h1>
+        <p className="text-sm text-[#7F7F7F] leading-relaxed">
+          Не удалось войти в приложение.<br />Попробуйте перезагрузить страницу.
+        </p>
+      </div>
+      <button
+        onClick={() => { authRetried = false; window.location.reload() }}
+        className="w-full max-w-xs py-4 rounded-full bg-[#E2319B] text-white text-base font-semibold active:opacity-80 transition-opacity"
+      >
+        Перезагрузить страницу
+      </button>
+    </div>
+  )
+}
+
+/**
+ * Auth gate — renders nothing while auto-login is in progress (AppLoader
+ * covers the screen), shows AuthErrorScreen on failure, and passes through
+ * to the app on success. Login page is kept in the codebase but its route
+ * is disabled since the app relies solely on Telegram auto-login.
  */
 function AuthGuard({ children }) {
   const { user, needsLogin, authPending } = useAuthStore()
 
-  // Still waiting for TG auto-login — render nothing (AppLoader covers the screen)
+  // Still resolving — render nothing (AppLoader covers the screen)
   if (authPending) return null
 
-  // Auto-login failed → reload to retry the auth cycle
-  if (!user && needsLogin) {
-    window.location.reload()
-    return null
-  }
+  // Auto-login failed → silent retry first, then error screen
+  if (!user && needsLogin) return <AuthErrorScreen />
 
   return children
 }
