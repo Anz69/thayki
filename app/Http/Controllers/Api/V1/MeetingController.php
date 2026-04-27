@@ -28,7 +28,7 @@ class MeetingController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $query = Meeting::query()->with(['modelProfile.photos', 'client']);
+        $query = Meeting::query()->with(['modelProfile.photos', 'modelProfile.user', 'client']);
 
         if ($user->role === UserRole::Model) {
             $profile   = $user->modelProfile()->first();
@@ -99,7 +99,7 @@ class MeetingController extends Controller
         $user = $request->user();
 
         $meeting = Meeting::query()
-            ->with(['modelProfile.photos', 'client'])
+            ->with(['modelProfile.photos', 'modelProfile.user', 'client'])
             ->where(function ($q) use ($user) {
                 $profile = $user->modelProfile()->first();
                 $q->where('client_id', $user->id);
@@ -122,7 +122,7 @@ class MeetingController extends Controller
     {
         $this->authorizeAccess($request->user(), $meeting);
 
-        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'client'])));
+        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'modelProfile.user', 'client'])));
     }
 
     public function store(CreateMeetingRequest $request, CreateMeetingAction $action): JsonResponse
@@ -146,7 +146,7 @@ class MeetingController extends Controller
             ExpirePendingMeetingJob::dispatch($meeting->id)->delay(now()->addSeconds($ttl));
         }
 
-        return ApiResponse::created(new MeetingResource($meeting->load(['modelProfile.photos', 'client'])));
+        return ApiResponse::created(new MeetingResource($meeting->load(['modelProfile.photos', 'modelProfile.user', 'client'])));
     }
 
     public function accept(Request $request, Meeting $meeting, TransitionMeetingStatusAction $transition): JsonResponse
@@ -157,7 +157,7 @@ class MeetingController extends Controller
 
         $meeting = $transition->execute($meeting, MeetingStatus::Accepted, $user);
 
-        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'client'])));
+        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'modelProfile.user', 'client'])));
     }
 
     public function reject(Request $request, Meeting $meeting, TransitionMeetingStatusAction $transition): JsonResponse
@@ -169,7 +169,7 @@ class MeetingController extends Controller
         $request->validate(['reason' => ['sometimes', 'string', 'max:255']]);
         $meeting = $transition->execute($meeting, MeetingStatus::Rejected, $user, $request->input('reason'));
 
-        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'client'])));
+        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'modelProfile.user', 'client'])));
     }
 
     public function cancel(Request $request, Meeting $meeting, TransitionMeetingStatusAction $transition): JsonResponse
@@ -181,7 +181,7 @@ class MeetingController extends Controller
 
         $meeting = $transition->execute($meeting, MeetingStatus::Cancelled, $user, $request->input('reason'));
 
-        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'client'])));
+        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'modelProfile.user', 'client'])));
     }
 
     /**
@@ -197,7 +197,7 @@ class MeetingController extends Controller
         $user = $request->user();
         $this->authorizeModelOwner($user, $meeting);
 
-        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'client'])));
+        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'modelProfile.user', 'client'])));
     }
 
     public function complete(Request $request, Meeting $meeting, TransitionMeetingStatusAction $transition): JsonResponse
@@ -208,7 +208,7 @@ class MeetingController extends Controller
 
         $meeting = $transition->execute($meeting, MeetingStatus::Completed, $user);
 
-        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'client'])));
+        return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'modelProfile.user', 'client'])));
     }
 
     private function authorizeAccess(?User $user, Meeting $meeting): void

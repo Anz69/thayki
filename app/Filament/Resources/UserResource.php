@@ -46,6 +46,23 @@ class UserResource extends Resource
                 ->helperText('Пользователь видит только экран-заглушку, пока не пройдёт по invite-ссылке.'),
             Forms\Components\Toggle::make('notifications_enabled')->label('Уведомления в TG'),
             Forms\Components\DateTimePicker::make('last_auth_at')->label('Последний вход'),
+            Forms\Components\Section::make('Кошелёк')
+                ->schema([
+                    Forms\Components\TextInput::make('wallet_balance_thb')
+                        ->label('Баланс (THB)')
+                        ->numeric()
+                        ->step(0.01)
+                        ->minValue(0)
+                        ->helperText('Текущий доступный баланс'),
+                    Forms\Components\TextInput::make('wallet_locked_thb')
+                        ->label('Заблокировано (THB)')
+                        ->numeric()
+                        ->step(0.01)
+                        ->minValue(0)
+                        ->helperText('Сумма, удержанная под активные встречи'),
+                ])
+                ->columns(2)
+                ->visibleOn('edit'),
         ]);
     }
 

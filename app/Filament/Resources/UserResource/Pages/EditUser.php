@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\UserResource\Pages;
 
-use App\Enums\WalletTransactionType;
 use App\Filament\Resources\UserResource;
 use App\Models\Wallet;
 use App\Services\Audit\AuditLogger;
@@ -36,10 +35,11 @@ class EditUser extends EditRecord
         $newBalanceMinor = (int) round(((float) ($data['wallet_balance_thb'] ?? 0)) * 100);
         $newLockedMinor  = (int) round(((float) ($data['wallet_locked_thb'] ?? 0)) * 100);
 
-        /** @var \App\Models\AdminUser $admin */
-        $admin = auth()->user();
+        // auth()->user() here is AdminUser (Filament admin guard), NOT App\Models\User.
+        // AuditLogger expects ?User, so we pass null and store the admin id in context.
+        $adminId = auth()->id();
 
-        DB::transaction(function () use ($newBalanceMinor, $newLockedMinor, $admin): void {
+        DB::transaction(function () use ($newBalanceMinor, $newLockedMinor, $adminId): void {
             /** @var Wallet $wallet */
             $wallet = $this->record->wallet()->lockForUpdate()->firstOrCreate(
                 [],
@@ -55,7 +55,8 @@ class EditUser extends EditRecord
                 'version'       => ((int) $wallet->version) + 1,
             ]);
 
-            app(AuditLogger::class)->log('admin.wallet.adjusted', $admin, $wallet, [
+            app(AuditLogger::class)->log('admin.wallet.adjusted', null, $wallet, [
+                'admin_id'         => $adminId,
                 'user_id'          => $this->record->id,
                 'prev_balance'     => $prevBalance,
                 'new_balance'      => $newBalanceMinor,

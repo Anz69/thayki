@@ -64,7 +64,11 @@ export default function MeetingPage() {
   const durationLabel = durationHours ? `${durationHours} ч` : (booking.selectedDuration?.label ?? '—')
 
   const modelName   = m?.model_profile?.display_name ?? booking.modelName ?? '—'
-  const modelAvatar = m?.model_profile?.photos?.find(p => p.is_main)?.url
+  // Show the model's actual TG avatar (uploaded in profile / synced from
+  // Telegram), NOT the first media-gallery photo. The fallback chain is
+  // strict: model.user.photo_url → main profile photo → first photo → null.
+  const modelAvatar = m?.model_profile?.user?.photo_url
+    ?? m?.model_profile?.photos?.find(p => p.is_main)?.url
     ?? m?.model_profile?.photos?.[0]?.url
     ?? null
 
