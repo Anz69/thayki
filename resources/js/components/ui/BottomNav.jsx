@@ -1,5 +1,5 @@
 import { useRef, useEffect, useLayoutEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import useMeetingStore from '@/stores/useMeetingStore'
 import useModelMeetingStore from '@/stores/useModelMeetingStore'
@@ -45,6 +45,7 @@ const PINK   = `${BASE} bg-[#E2319B] text-white active:opacity-80 transition-opa
 
 export default function BottomNav() {
   const location     = useLocation()
+  const [params]     = useSearchParams()
   const nav          = useTransitionNavigate()
   const meeting      = useMeetingStore()
   const modelMeeting = useModelMeetingStore()
@@ -86,8 +87,10 @@ export default function BottomNav() {
   const finishMeeting = () => modelMeeting.openFinish()
 
   const goChat = async () => {
-    // client-side meeting takes priority, then model-side
-    const meetingId = meeting.meeting?.id ?? modelMeeting.meeting?.id
+    const urlId = pathname === '/meeting' ? Number(params.get('id') || 0) : 0
+    const meetingId = urlId > 0
+      ? urlId
+      : (meeting.meeting?.id ?? modelMeeting.meeting?.id)
     if (!meetingId) { nav('/chat'); return }
     try {
       const { data } = await api.get(`/chats/meetings/${meetingId}`)

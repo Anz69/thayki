@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const PALETTE = ['#E2319B', '#7B5BFF', '#229ED9', '#22B573', '#FF7A3D', '#FFB01F']
 
@@ -13,27 +13,56 @@ function paletteIndex(name) {
 
 export default function Avatar({ src, name, size = 112, className = '' }) {
   const [failed, setFailed] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   const letter = (String(name || '?').trim()[0] ?? '?').toUpperCase()
 
-  if (src && !failed) {
+  useEffect(() => {
+    setFailed(false)
+    setLoaded(false)
+  }, [src])
+
+  const bg = PALETTE[paletteIndex(name)]
+
+  if (!src || failed) {
     return (
-      <img
-        src={src}
-        alt=""
-        style={{ width: size, height: size }}
-        className={`rounded-full object-cover ${className}`}
-        onError={() => setFailed(true)}
-      />
+      <div
+        style={{ width: size, height: size, background: bg, flexShrink: 0 }}
+        className={`rounded-full flex items-center justify-center text-white font-semibold ${className}`}
+      >
+        <span style={{ fontSize: Math.round(size * 0.42) }}>{letter}</span>
+      </div>
     )
   }
 
-  const bg = PALETTE[paletteIndex(name)]
   return (
     <div
-      style={{ width: size, height: size, background: bg, flexShrink: 0 }}
-      className={`rounded-full flex items-center justify-center text-white font-semibold ${className}`}
+      className={`relative rounded-full overflow-hidden ${className}`}
+      style={{ width: size, height: size, flexShrink: 0, background: '#F0F0F0' }}
     >
-      <span style={{ fontSize: Math.round(size * 0.42) }}>{letter}</span>
+      <div
+        className={`absolute inset-0 transition-opacity duration-300 ${loaded ? 'opacity-0' : 'opacity-100'}`}
+        style={{
+          background: 'linear-gradient(110deg, #F0F0F0 30%, #E5E5EA 50%, #F0F0F0 70%)',
+          backgroundSize: '200% 100%',
+          animation: 'avatar-shimmer 1.4s linear infinite',
+        }}
+      />
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        style={{ width: size, height: size }}
+        className={`absolute inset-0 object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+      />
+      <style>{`
+        @keyframes avatar-shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </div>
   )
 }

@@ -271,6 +271,8 @@ export default function ChatPage() {
   }
 
   const sendingRef = useRef(false)
+  const fileInputRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
 
   const handleSend = async () => {
     const text = inputText.trim()
@@ -309,12 +311,51 @@ export default function ChatPage() {
     } catch {
       if (isMountedRef.current) {
         setMessages(prev => prev.filter(m => m.id !== optimisticId))
-        // Restore the text so the user can retry without retyping
         setInputText((prev) => prev || text)
       }
     } finally {
       sendingRef.current = false
       if (isMountedRef.current) setSending(false)
+    }
+  }
+
+  const handleAttachmentChange = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !chatId || uploading) return
+
+    setUploading(true)
+    const optimisticId = `opt-att-${Date.now()}`
+    const previewUrl = URL.createObjectURL(file)
+    setMessages(prev => [...prev, {
+      id: optimisticId,
+      from: 'user',
+      text: '',
+      time: (() => {
+        const now = new Date()
+        return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      })(),
+      attachmentUrl: previewUrl,
+      attachmentMime: file.type,
+      uploading: true,
+    }])
+
+    try {
+      const fd = new FormData()
+      fd.append('attachment', file)
+      const { data } = await api.post(`/chats/${chatId}/messages`, fd, {
+        headers: { 'Idempotency-Key': `att-${chatId}-${optimisticId}` },
+      })
+      if (!isMountedRef.current) return
+      const saved = normalizeMsg(data.data, myId)
+      setMessages(prev => prev.map(m => m.id === optimisticId ? saved : m))
+    } catch (err) {
+      if (isMountedRef.current) {
+        setMessages(prev => prev.filter(m => m.id !== optimisticId))
+      }
+    } finally {
+      try { URL.revokeObjectURL(previewUrl) } catch {}
+      if (isMountedRef.current) setUploading(false)
     }
   }
 
@@ -351,11 +392,7 @@ export default function ChatPage() {
       <div ref={listRef} className="flex-1 overflow-y-auto min-h-0">
         <div className="flex flex-col px-4 py-4 gap-0 container min-h-0">
 
-          {/* Contact avatar + last-seen pill (matches the screenshot:
-              big circle on top, then "была в сети: 2ч назад" pill).
-              Falls back to the contact's name when we have no last_seen_at
-              (e.g. support chats or users registered before the touch
-              middleware existed). */}
+
           <div data-msg className="flex flex-col items-center gap-3 mb-6">
             {contactAvatar ? (
               <img src={contactAvatar} alt="avatar" className="w-20 h-20 rounded-full object-cover" />
@@ -395,10 +432,6 @@ export default function ChatPage() {
             const nextMsg      = messages[idx + 1]
             const isLastInGroup = !nextMsg || nextMsg.from !== msg.from
             const gap          = idx > 0 ? 'mt-3' : ''
-
-            // Day-separator: shown above the FIRST message of any day.
-            // Matches the screenshot — a centered grey pill like
-            // "Сегодня, 11:25" / "Вчера, 14:08" / "10 апреля, 09:30".
             const showDaySep = msg.createdAt && (
               idx === 0 || ! isSameDay(prevMsg?.createdAt, msg.createdAt)
             )
@@ -466,9 +499,25 @@ export default function ChatPage() {
       </div>
 
       <div ref={inputBarRef} className="bg-white px-4 py-3 pb-8 shrink-0 container">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,application/pdf"
+          className="hidden"
+          onChange={handleAttachmentChange}
+        />
         <div className="flex items-end">
-          <button className="shrink-0 size-11 bg-[#EFEEF3] rounded-full flex items-center justify-center active:opacity-60 transition-opacity mr-3">
-            <PaperclipIcon />
+          <button
+            type="button"
+            disabled={uploading || !chatId}
+            onClick={() => fileInputRef.current?.click()}
+            className="shrink-0 size-11 bg-[#EFEEF3] rounded-full flex items-center justify-center active:opacity-60 transition-opacity mr-3 disabled:opacity-50"
+          >
+            {uploading ? (
+              <div className="w-4 h-4 rounded-full border-2 border-[#7F7F7F] border-t-transparent animate-spin" />
+            ) : (
+              <PaperclipIcon />
+            )}
           </button>
 
           <div className="flex-1 min-w-0 bg-[#EFEEF3] rounded-[22px] px-4 py-3 overflow-hidden">

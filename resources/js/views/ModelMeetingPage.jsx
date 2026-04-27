@@ -58,14 +58,14 @@ export default function ModelMeetingPage() {
   const confirmedRowsRef   = useRef([])
   const prevStatus         = useRef(meeting.status)
 
+  const meetingIdParam = params.get('id')
   useEffect(() => {
-    const meetingId = params.get('id')
-    if (meetingId) {
-      meeting.load(meetingId)
+    if (meetingIdParam) {
+      meeting.load(meetingIdParam)
     } else {
       meeting.loadLatest()
     }
-  }, [])
+  }, [meetingIdParam])
 
   useEffect(() => {
     if (meeting.errorStatus === 403 || meeting.errorStatus === 404) {
