@@ -213,30 +213,7 @@ export default function ModelMorePage() {
 
 
 
-          {/* Balance + withdraw entry-point. Visible only when there's
-              actually some balance to withdraw, so a brand-new model
-              isn't tempted to tap an empty-form withdraw flow. */}
-          <div className="flex flex-col gap-3">
-            <SectionLabel>Финансы</SectionLabel>
-            <div className="bg-[#F5F5F7] rounded-2xl px-4 py-4 flex items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <span className="text-[#7F7F7F] text-xs/[100%] font-medium uppercase tracking-[0.08em]">Баланс</span>
-                <span className="text-black text-[20px]/[100%] font-semibold">฿ {balance.toLocaleString()}</span>
-              </div>
-              <button
-                onClick={() => setWithdrawOpen(true)}
-                disabled={balance <= 0}
-                className={[
-                  'px-5 py-3 rounded-full text-[15px]/[100%] font-semibold transition-opacity',
-                  balance > 0
-                    ? 'bg-[#E2319B] text-white active:opacity-80'
-                    : 'bg-[#E5E5EA] text-[#9A9A9F] cursor-not-allowed',
-                ].join(' ')}
-              >
-                Вывести
-              </button>
-            </div>
-          </div>
+
 
           <div ref={section1Ref} className="flex flex-col gap-4">
             <SectionLabel>Важное</SectionLabel>
