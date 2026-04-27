@@ -8,6 +8,8 @@ import RegistrationModal from '@/components/modals/RegistrationModal'
 import AppLoader from '@/components/ui/AppLoader'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import useAuthStore from '@/stores/useAuthStore'
+import useMeetingStore from '@/stores/useMeetingStore'
+import api, { getStoredToken, clearToken } from '@/utils/api'
 
 // LandingPage is eager — it's the first route users see
 import LandingPage from '@/views/LandingPage'

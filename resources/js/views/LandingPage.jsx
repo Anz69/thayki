@@ -308,7 +308,7 @@ export default function LandingPage() {
         ref={bottomRef}
         className={`mt-auto relative z-50 container flex flex-col items-center bg-white/5 backdrop-blur-xs border-t-2 border-white/50 ${bottomPt} ${bottomGap}`}
         style={{
-          paddingBottom: `max(${isCompact ? '2vh' : '4vh'}, calc(env(safe-area-inset-bottom) + ${isCompact ? '12px' : '16px'}))`,
+          paddingBottom: `max(${isCompact ? '4vh' : '4vh'}, calc(env(safe-area-inset-bottom) + ${isCompact ? '12px' : '16px'}))`,
         }}
       >
 
