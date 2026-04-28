@@ -13,17 +13,51 @@
             to   { opacity: 1; transform: translateY(0)   scale(1);    }
         }
         .msg-new { animation: msgIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+        #photo-lightbox {
+            display: none;
+            position: fixed; inset: 0; z-index: 99999;
+            background: rgba(0,0,0,0.9);
+            align-items: center; justify-content: center;
+        }
+        #photo-lightbox.open { display: flex; }
+        #photo-lightbox img { max-width: 92vw; max-height: 88vh; border-radius: 12px; object-fit: contain; }
+        #photo-lightbox-close {
+            position: absolute; top: 20px; right: 20px;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); border: none; cursor: pointer;
+            color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center;
+        }
+        #photo-lightbox-close:hover { background: rgba(255,255,255,0.2); }
+        .msg-img {
+            width: 180px; height: 160px; border-radius: 14px; overflow: hidden;
+            background: #1e1e1e; cursor: pointer; position: relative; display: block;
+        }
+        .msg-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .msg-img:hover { opacity: 0.85; }
+        .attach-btn {
+            width: 36px; height: 36px; border-radius: 50%; background: #1e1e1e;
+            border: 1px solid #2a2a2a; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; flex-shrink: 0;
+            transition: background .15s;
+        }
+        .attach-btn:hover { background: #2a2a2a; }
+        .attach-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
+
+    <div id="photo-lightbox" onclick="if(event.target===this)closeLightbox()">
+        <button id="photo-lightbox-close" onclick="closeLightbox()">✕</button>
+        <img id="photo-lightbox-img" src="" alt="">
+    </div>
 
     <div
         id="support-chat-wrap"
         class="flex rounded-2xl overflow-hidden"
         style="height: calc(100vh - 9rem); background: #111; border: 1px solid #222;"
     >
-        {{-- ══════════════ LEFT — chat list ══════════════ --}}
+        {{-- LEFT — chat list --}}
         <div class="flex flex-col shrink-0" style="width:300px; border-right:1px solid #1e1e1e; background:#0d0d0d;">
 
-            {{-- Header --}}
             <div style="padding:16px 14px 12px; border-bottom:1px solid #1e1e1e;">
                 <p style="font-size:11px;font-weight:600;letter-spacing:.08em;color:#555;text-transform:uppercase;margin-bottom:10px;">Чаты</p>
                 <div style="position:relative;">
@@ -40,7 +74,6 @@
                 </div>
             </div>
 
-            {{-- List --}}
             <div style="flex:1;overflow-y:auto;">
                 @forelse($this->getChats() as $chat)
                     @php
@@ -49,6 +82,9 @@
                         $initial    = strtoupper(substr($client?->first_name ?? 'U', 0, 1));
                         $fullName   = trim(($client?->first_name ?? '').' '.($client?->last_name ?? '')) ?: 'Пользователь';
                         $isSelected = $selectedChatId === $chat->id;
+                        $lastMsgPreview = $lastMsg
+                            ? ($lastMsg->attachment_path ? '📷 Фото' : Str::limit($lastMsg->body, 34))
+                            : '';
                     @endphp
                     <button
                         wire:click="selectChat({{ $chat->id }})"
@@ -80,7 +116,7 @@
                             @endif
                             @if($lastMsg)
                                 <div style="font-size:12px;color:#555;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                    {{ Str::limit($lastMsg->body, 34) }}
+                                    {{ $lastMsgPreview }}
                                 </div>
                             @endif
                         </div>
@@ -96,7 +132,7 @@
             </div>
         </div>
 
-        {{-- ══════════════ RIGHT — messages ══════════════ --}}
+        {{-- RIGHT — messages --}}
         <div style="flex:1;display:flex;flex-direction:column;min-width:0;background:#111;">
             @php $selectedChat = $this->getSelectedChat(); @endphp
 
@@ -106,7 +142,6 @@
                     $clientName = trim(($chatClient?->first_name ?? '').' '.($chatClient?->last_name ?? '')) ?: 'Пользователь';
                 @endphp
 
-                {{-- Chat header --}}
                 <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #1e1e1e;flex-shrink:0;">
                     @php $headerInitial = strtoupper(substr($chatClient?->first_name ?? 'U', 0, 1)); @endphp
                     <div style="width:36px;height:36px;border-radius:50%;background:#E2319B;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;">
@@ -127,7 +162,6 @@
                     </div>
                 </div>
 
-                {{-- Messages: poll every 2 s so new messages appear without page reload --}}
                 <div id="msg-list" wire:poll.2s data-chat-id="{{ $selectedChatId }}" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:4px;">
                     @forelse($this->getMessages() as $message)
                         @php $isSupport = in_array($message->sender?->role->value, ['admin','support']); @endphp
@@ -136,12 +170,22 @@
                             style="display:flex;justify-content:{{ $isSupport ? 'flex-end' : 'flex-start' }};margin-bottom:2px;"
                         >
                             <div style="max-width:62%;display:flex;flex-direction:column;align-items:{{ $isSupport ? 'flex-end' : 'flex-start' }};gap:3px;">
-                                <div style="padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;
-                                            {{ $isSupport
-                                                ? 'background:#E2319B;color:#fff;border-bottom-right-radius:4px;'
-                                                : 'background:#1e1e1e;color:#ccc;border-bottom-left-radius:4px;' }}">
-                                    {{ $message->body }}
-                                </div>
+                                @if($message->attachment_path && $message->attachmentUrl())
+                                    <div
+                                        class="msg-img"
+                                        onclick="openLightbox('{{ $message->attachmentUrl() }}')"
+                                        title="Нажмите для просмотра"
+                                    >
+                                        <img src="{{ $message->attachmentUrl() }}" alt="Фото" loading="lazy">
+                                    </div>
+                                @elseif($message->body)
+                                    <div style="padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;
+                                                {{ $isSupport
+                                                    ? 'background:#E2319B;color:#fff;border-bottom-right-radius:4px;'
+                                                    : 'background:#1e1e1e;color:#ccc;border-bottom-left-radius:4px;' }}">
+                                        {{ $message->body }}
+                                    </div>
+                                @endif
                                 <span style="font-size:10px;color:#444;padding:0 4px;">{{ $message->created_at->format('H:i') }}</span>
                             </div>
                         </div>
@@ -152,9 +196,20 @@
                     @endforelse
                 </div>
 
-                {{-- Input --}}
                 <div style="padding:12px 16px 16px;border-top:1px solid #1e1e1e;flex-shrink:0;">
+                    <input type="file" id="admin-attach-input" accept="image/*" style="display:none" onchange="handleAdminAttach(event)">
                     <div style="display:flex;align-items:flex-end;gap:10px;">
+                        <button
+                            class="attach-btn"
+                            id="admin-attach-btn"
+                            type="button"
+                            title="Прикрепить фото"
+                            onclick="document.getElementById('admin-attach-input').click()"
+                        >
+                            <svg width="16" height="16" fill="none" stroke="#888" stroke-width="1.75" viewBox="0 0 21 21">
+                                <path d="M14.2275 5.71149L7.31849 12.6205C6.69202 13.247 6.69202 14.2627 7.31849 14.8891C7.94495 15.5156 8.96065 15.5156 9.58712 14.8891L16.393 8.08325C17.646 6.83031 17.646 4.79891 16.393 3.54598C15.1401 2.29305 13.1087 2.29305 11.8558 3.54598L5.15297 10.2488C3.27357 12.1282 3.27357 15.1753 5.15297 17.0547C7.03237 18.9341 10.0795 18.9341 11.9589 17.0547L16.5993 12.4143" stroke-linecap="round"/>
+                            </svg>
+                        </button>
                         <div style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:10px 14px;">
                             <textarea
                                 wire:model.defer="newMessage"
@@ -179,7 +234,6 @@
                 </div>
 
             @else
-                {{-- Empty state --}}
                 <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:32px;">
                     <div style="width:56px;height:56px;border-radius:50%;background:#1a1a1a;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:24px;height:24px;color:#444;" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -218,5 +272,38 @@
             requestAnimationFrame(animateNewMessages);
         });
     })();
+
+    function openLightbox(src) {
+        document.getElementById('photo-lightbox-img').src = src;
+        document.getElementById('photo-lightbox').classList.add('open');
+    }
+
+    function closeLightbox() {
+        document.getElementById('photo-lightbox').classList.remove('open');
+        document.getElementById('photo-lightbox-img').src = '';
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeLightbox();
+    });
+
+    function handleAdminAttach(event) {
+        const file = event.target.files[0];
+        event.target.value = '';
+        if (!file) return;
+
+        const btn = document.getElementById('admin-attach-btn');
+        if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = e.target.result;
+            @this.call('uploadAttachment', { data: data, mime: file.type, name: file.name })
+                .finally(function() {
+                    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+                });
+        };
+        reader.readAsDataURL(file);
+    }
     </script>
 </x-filament-panels::page>

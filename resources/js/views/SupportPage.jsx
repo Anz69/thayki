@@ -29,7 +29,43 @@ function normalizeMsg(raw, myUserId) {
         return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
       })()
     : raw.time ?? ''
-  return { id: raw.id, from: isMe ? 'user' : 'them', isSupport, text: raw.body ?? raw.text ?? '', time }
+  return {
+    id: raw.id,
+    from: isMe ? 'user' : 'them',
+    isSupport,
+    text: raw.body ?? raw.text ?? '',
+    time,
+    type: raw.type ?? (raw.attachment_url ? 'image' : 'text'),
+    attachmentUrl: raw.attachment_url ?? raw.attachmentUrl ?? null,
+  }
+}
+
+function PhotoViewer({ src, onClose }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-5 right-5 size-10 rounded-full bg-white/10 flex items-center justify-center text-white text-xl active:bg-white/20"
+      >
+        ✕
+      </button>
+      <img
+        src={src}
+        alt=""
+        className="max-w-[92vw] max-h-[88vh] rounded-xl object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  )
 }
 
 export default function SupportPage() {
@@ -41,7 +77,9 @@ export default function SupportPage() {
   const [inputText, setInputText] = useState('')
   const [chatId,    setChatId]    = useState(null)
   const [sending,   setSending]   = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [viewerSrc, setViewerSrc] = useState(null)
 
   const hasText = inputText.trim().length > 0
 
@@ -50,6 +88,8 @@ export default function SupportPage() {
   const loadDone      = useRef(false)
   const initMsgs      = useRef([])
   const prevMsgCount  = useRef(0)
+  const sendingRef    = useRef(false)
+  const fileInputRef  = useRef(null)
 
   const messagesEndRef = useRef(null)
   const headerRef      = useRef(null)
@@ -237,8 +277,6 @@ export default function SupportPage() {
     el.style.height = Math.min(el.scrollHeight, 120) + 'px'
   }
 
-  const sendingRef = useRef(false)
-
   const handleSend = async () => {
     const text = inputText.trim()
     if (!text || sendingRef.current || !chatId) return
@@ -249,6 +287,7 @@ export default function SupportPage() {
     const optimisticId = `opt-${Date.now()}`
     const optimistic = {
       id: optimisticId, from: 'user', text,
+      type: 'text',
       time: (() => {
         const now = new Date()
         return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -278,12 +317,51 @@ export default function SupportPage() {
     }
   }
 
+  const handleAttachmentChange = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !chatId || uploading) return
+
+    setUploading(true)
+    const optimisticId = `opt-att-${Date.now()}`
+    const previewUrl = URL.createObjectURL(file)
+    setMessages(prev => [...prev, {
+      id: optimisticId,
+      from: 'user',
+      text: '',
+      type: 'image',
+      attachmentUrl: previewUrl,
+      uploading: true,
+      time: (() => {
+        const now = new Date()
+        return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      })(),
+    }])
+
+    try {
+      const fd = new FormData()
+      fd.append('attachment', file)
+      const { data } = await api.post(`/chats/${chatId}/messages`, fd, {
+        headers: { 'Idempotency-Key': `att-${chatId}-${optimisticId}` },
+      })
+      const saved = normalizeMsg(data.data, myId)
+      setMessages(prev => prev.map(m => m.id === optimisticId ? saved : m))
+    } catch {
+      setMessages(prev => prev.filter(m => m.id !== optimisticId))
+    } finally {
+      try { URL.revokeObjectURL(previewUrl) } catch {}
+      setUploading(false)
+    }
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
   return (
     <section className="flex flex-col bg-white overflow-hidden" style={{ height: '100dvh' }}>
+      {viewerSrc && <PhotoViewer src={viewerSrc} onClose={() => setViewerSrc(null)} />}
+
       <header ref={headerRef} className="w-full py-4 bg-white shrink-0">
         <div className="container flex items-center relative">
           <button
@@ -329,6 +407,41 @@ export default function SupportPage() {
               const prevMsg        = messages[idx - 1]
               const isFirstInGroup = !prevMsg || prevMsg.from !== msg.from
               const gap            = isFirstInGroup && idx > 0 ? 'mt-3' : 'mt-1'
+
+              if (msg.type === 'image') {
+                const imgSrc = msg.attachmentUrl
+                return (
+                  <div
+                    key={msg.id}
+                    data-msg
+                    className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`}
+                  >
+                    <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+                      <div
+                        className="w-[180px] h-[160px] rounded-2xl overflow-hidden bg-[#F0F0F0] relative cursor-pointer active:opacity-80 transition-opacity"
+                        onClick={() => imgSrc && !msg.uploading && setViewerSrc(imgSrc)}
+                      >
+                        {imgSrc && (
+                          <img
+                            src={imgSrc}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        )}
+                        {msg.uploading && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                            <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[#ABABAB] text-xs font-medium px-1">{msg.time}</span>
+                    </div>
+                  </div>
+                )
+              }
+
               return (
                 <div
                   key={msg.id}
@@ -357,9 +470,25 @@ export default function SupportPage() {
       </div>
 
       <div ref={inputBarRef} className="bg-white px-4 py-3 pb-8 shrink-0 container">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAttachmentChange}
+        />
         <div className="flex items-end">
-          <button className="shrink-0 size-11 bg-[#EFEEF3] rounded-full flex items-center justify-center active:opacity-60 transition-opacity mr-3">
-            <PaperclipIcon />
+          <button
+            type="button"
+            disabled={uploading || !chatId}
+            onClick={() => fileInputRef.current?.click()}
+            className="shrink-0 size-11 bg-[#EFEEF3] rounded-full flex items-center justify-center active:opacity-60 transition-opacity mr-3 disabled:opacity-50"
+          >
+            {uploading ? (
+              <div className="w-4 h-4 rounded-full border-2 border-[#7F7F7F] border-t-transparent animate-spin" />
+            ) : (
+              <PaperclipIcon />
+            )}
           </button>
           <div className="flex-1 min-w-0 bg-[#EFEEF3] rounded-[22px] px-4 py-3 overflow-hidden">
             <textarea

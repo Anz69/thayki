@@ -27,7 +27,7 @@ class PostMessageAction
         }
 
         $message = DB::transaction(function () use ($sender, $chat, $body, $attachment): Message {
-            $disk = (string) config('filesystems.default', 'public');
+            $disk = 'public';
             $path = null;
             $mime = null;
 

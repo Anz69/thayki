@@ -303,6 +303,7 @@ export default function ChatPage() {
   const sendingRef = useRef(false)
   const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
+  const [viewerSrc, setViewerSrc] = useState(null)
 
   const handleSend = async () => {
     const text = inputText.trim()
@@ -400,6 +401,25 @@ export default function ChatPage() {
 
   return (
     <section className="flex flex-col bg-white overflow-hidden" style={{ height: '100dvh' }}>
+      {viewerSrc && (
+        <div
+          className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center"
+          onClick={() => setViewerSrc(null)}
+        >
+          <button
+            onClick={() => setViewerSrc(null)}
+            className="absolute top-5 right-5 size-10 rounded-full bg-white/10 flex items-center justify-center text-white text-xl active:bg-white/20"
+          >
+            ✕
+          </button>
+          <img
+            src={viewerSrc}
+            alt=""
+            className="max-w-[92vw] max-h-[88vh] rounded-xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
       <header ref={headerRef} className="w-full py-5 bg-white shrink-0">
         <div className="container flex items-center justify-between relative">
           <button
@@ -493,7 +513,10 @@ export default function ChatPage() {
                           )}
                         </div>
                       )}
-                      <div className="w-[180px] h-[160px] rounded-2xl overflow-hidden bg-[#F0F0F0] relative">
+                      <div
+                        className="w-[180px] h-[160px] rounded-2xl overflow-hidden bg-[#F0F0F0] relative cursor-pointer active:opacity-80 transition-opacity"
+                        onClick={() => imgSrc && !msg.uploading && setViewerSrc(imgSrc)}
+                      >
                         {imgSrc && (
                           <img
                             src={imgSrc}

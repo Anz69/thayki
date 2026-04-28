@@ -92,6 +92,64 @@ class SupportChats extends Page
         );
     }
 
+    public function uploadAttachment($fileData): void
+    {
+        if (! $this->selectedChatId || ! $fileData) {
+            return;
+        }
+
+        try {
+            $tmpPath = tempnam(sys_get_temp_dir(), 'chat_attach_');
+            $decoded = base64_decode(preg_replace('/^data:[^;]+;base64,/', '', $fileData['data']));
+            file_put_contents($tmpPath, $decoded);
+
+            $mime      = $fileData['mime'] ?? 'image/jpeg';
+            $extension = match (true) {
+                str_contains($mime, 'png')  => 'png',
+                str_contains($mime, 'webp') => 'webp',
+                default                     => 'jpg',
+            };
+
+            $uploaded = new \Illuminate\Http\UploadedFile(
+                $tmpPath,
+                'attachment.'.$extension,
+                $mime,
+                null,
+                true,
+            );
+
+            $supportUser = $this->getSupportUser();
+            $chat        = Chat::with('participants')->find($this->selectedChatId);
+
+            if ($chat === null) {
+                Notification::make()->title('Чат не найден.')->danger()->send();
+                return;
+            }
+
+            if (! $chat->participants()->where('user_id', $supportUser->id)->exists()) {
+                $chat->participants()->create([
+                    'user_id' => $supportUser->id,
+                    'role'    => ChatParticipantRole::Support,
+                ]);
+                $chat->load('participants');
+            }
+
+            app(PostMessageAction::class)->execute($supportUser, $chat, null, $uploaded);
+
+            @unlink($tmpPath);
+        } catch (\Throwable $e) {
+            Log::error('[SupportChats] uploadAttachment failed', [
+                'chat_id' => $this->selectedChatId,
+                'error'   => $e->getMessage(),
+            ]);
+            Notification::make()
+                ->title('Не удалось отправить файл.')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
     public function sendReply(): void
     {
         $msg = trim($this->newMessage);
