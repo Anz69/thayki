@@ -11,6 +11,7 @@ import {
   formatRussianDaySeparator,
   isSameDay,
 } from '@/utils/datetime'
+import PhotoViewer from '@/components/ui/PhotoViewer'
 
 const PaperclipIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 21 21" fill="none">
@@ -401,25 +402,7 @@ export default function ChatPage() {
 
   return (
     <section className="flex flex-col bg-white overflow-hidden" style={{ height: '100dvh' }}>
-      {viewerSrc && (
-        <div
-          className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center"
-          onClick={() => setViewerSrc(null)}
-        >
-          <button
-            onClick={() => setViewerSrc(null)}
-            className="absolute top-5 right-5 size-10 rounded-full bg-white/10 flex items-center justify-center text-white text-xl active:bg-white/20"
-          >
-            ✕
-          </button>
-          <img
-            src={viewerSrc}
-            alt=""
-            className="max-w-[92vw] max-h-[88vh] rounded-xl object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
+      {viewerSrc && <PhotoViewer src={viewerSrc} onClose={() => setViewerSrc(null)} />}
       <header ref={headerRef} className="w-full py-5 bg-white shrink-0">
         <div className="container flex items-center justify-between relative">
           <button

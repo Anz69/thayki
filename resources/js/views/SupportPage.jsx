@@ -6,6 +6,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
 import { subscribePrivate } from '@/utils/safeEcho'
 import ChatLoadingSkeleton from '@/components/ui/ChatLoadingSkeleton'
+import PhotoViewer from '@/components/ui/PhotoViewer'
 import { logError } from '@/utils/logger'
 
 const PaperclipIcon = () => (
@@ -40,33 +41,6 @@ function normalizeMsg(raw, myUserId) {
   }
 }
 
-function PhotoViewer({ src, onClose }) {
-  useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
-
-  return (
-    <div
-      className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center"
-      onClick={onClose}
-    >
-      <button
-        onClick={onClose}
-        className="absolute top-5 right-5 size-10 rounded-full bg-white/10 flex items-center justify-center text-white text-xl active:bg-white/20"
-      >
-        ✕
-      </button>
-      <img
-        src={src}
-        alt=""
-        className="max-w-[92vw] max-h-[88vh] rounded-xl object-contain"
-        onClick={(e) => e.stopPropagation()}
-      />
-    </div>
-  )
-}
 
 export default function SupportPage() {
   const navigate = useTransitionNavigate()
