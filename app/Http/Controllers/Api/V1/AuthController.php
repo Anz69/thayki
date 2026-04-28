@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -33,12 +34,17 @@ class AuthController extends Controller
         $inviteToken = (string) $request->input('invite_token', '');
         if ($inviteToken !== '' && $result['user']->is_strange) {
             $this->tryApplyInvite($result['user'], $inviteToken);
+            $result['user']->refresh();
         }
 
         try {
             Auth::login($result['user'], remember: true);
             $request->session()->regenerate();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('[AuthController@login] session login failed', [
+                'user_id' => $result['user']->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return ApiResponse::ok([
@@ -53,6 +59,10 @@ class AuthController extends Controller
         try {
             $invite = StartInvite::query()->where('token', $token)->first();
             if ($invite === null || ! $invite->isUsable()) {
+                Log::info('[AuthController@tryApplyInvite] invite missing or unusable', [
+                    'user_id' => $user->id,
+                    'token_tail' => substr($token, -8),
+                ]);
                 return;
             }
 
@@ -78,7 +88,12 @@ class AuthController extends Controller
                 $user->is_strange = false;
                 $user->save();
             });
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('[AuthController@tryApplyInvite] failed', [
+                'user_id' => $user->id,
+                'token_tail' => substr($token, -8),
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

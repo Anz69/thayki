@@ -10,6 +10,8 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import useAuthStore from '@/stores/useAuthStore'
 import useMeetingStore from '@/stores/useMeetingStore'
 import api, { getStoredToken, clearToken } from '@/utils/api'
+import { logWarn } from '@/utils/logger'
+import { parseTelegramStartParam } from '@/utils/telegramAuth'
 
 import LandingPage from '@/views/LandingPage'
 import StrangeWelcomePage from '@/views/StrangeWelcomePage'
@@ -70,7 +72,9 @@ function AuthErrorScreen() {
             meetingStore.loadLatest()
             return
           }
-        } catch {}
+        } catch (e) {
+          logWarn('[AuthErrorScreen] /auth/me retry failed', { error: e?.message })
+        }
         clearToken()
       }
 
@@ -78,18 +82,25 @@ function AuthErrorScreen() {
       const initData = tg?.initData
       if (initData) {
         const startParam   = tg?.initDataUnsafe?.start_param ?? ''
-        const browserToken = startParam.startsWith('browser_') ? startParam.slice(8) : null
+        const { browserToken, inviteToken } = parseTelegramStartParam(startParam)
         try {
           const { data } = await api.post('/auth/telegram', {
             init_data: initData,
             ...(browserToken ? { browser_token: browserToken } : {}),
+            ...(inviteToken  ? { invite_token:  inviteToken  } : {}),
           })
           if (data.ok && data.data?.token && data.data?.user) {
             authStore.setUser(data.data.user, data.data.token)
             meetingStore.loadLatest()
             return
           }
-        } catch {}
+        } catch (e) {
+          logWarn('[AuthErrorScreen] /auth/telegram retry failed', {
+            hasBrowserToken: !!browserToken,
+            hasInviteToken: !!inviteToken,
+            error: e?.message,
+          })
+        }
       }
 
       authStore.setNeedsLogin()

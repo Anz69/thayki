@@ -134,7 +134,8 @@ class UserResource extends Resource
                         $miniAppUrl = (string) config('telegram.miniapp_url', '');
                         $bot        = (string) config('telegram.bot_username', '');
                         if ($miniAppUrl !== '' && str_starts_with($miniAppUrl, 'https://t.me/')) {
-                            $url = rtrim($miniAppUrl, '/').'?startapp='.$token;
+                            $sep = str_contains($miniAppUrl, '?') ? '&' : '?';
+                            $url = rtrim($miniAppUrl, '/').$sep.'startapp='.$token;
                         } elseif ($bot) {
                             $url = "https://t.me/{$bot}?start={$token}";
                         } else {

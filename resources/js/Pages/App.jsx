@@ -4,6 +4,8 @@ import RouterShell from '@/RouterShell'
 import useAuthStore from '@/stores/useAuthStore'
 import useMeetingStore from '@/stores/useMeetingStore'
 import api, { getStoredToken, clearToken } from '@/utils/api'
+import { logWarn } from '@/utils/logger'
+import { parseTelegramStartParam } from '@/utils/telegramAuth'
 
 /**
  * Single Inertia page — the React app shell.
@@ -52,18 +54,7 @@ export default function App() {
 
       if (initData) {
         const startParam   = tg?.initDataUnsafe?.start_param ?? ''
-        const browserToken = startParam.startsWith('browser_') ? startParam.slice(8) : null
-
-        let inviteToken = null
-        if (!browserToken && startParam !== '') {
-          try {
-            const padded  = startParam.replace(/-/g, '+').replace(/_/g, '/')
-            const decoded = atob(padded)
-            if (!decoded.startsWith('/')) inviteToken = startParam
-          } catch {
-            inviteToken = startParam
-          }
-        }
+        const { browserToken, inviteToken } = parseTelegramStartParam(startParam)
 
         try {
           const { data } = await api.post('/auth/telegram', {
@@ -77,7 +68,14 @@ export default function App() {
             meetingStore.loadLatest()
             return
           }
-        } catch { /* network or validation error */ }
+        } catch (e) {
+          logWarn('[App auth] /auth/telegram failed', {
+            hasInitData: !!initData,
+            hasBrowserToken: !!browserToken,
+            hasInviteToken: !!inviteToken,
+            error: e?.message,
+          })
+        }
 
         authStore.setNeedsLogin()
         return
