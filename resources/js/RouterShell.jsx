@@ -15,6 +15,7 @@ import { parseTelegramStartParam } from '@/utils/telegramAuth'
 
 import LandingPage from '@/views/LandingPage'
 import StrangeWelcomePage from '@/views/StrangeWelcomePage'
+import BannedPage from '@/views/BannedPage'
 
 const HomePage         = lazy(() => import('@/views/HomePage'))
 const ModelPage        = lazy(() => import('@/views/ModelPage'))
@@ -55,6 +56,7 @@ let authRetried = false
 function AuthErrorScreen() {
   const authStore    = useAuthStore()
   const meetingStore = useMeetingStore()
+  const hint         = authStore.authErrorHint
 
   useEffect(() => {
     if (authRetried) return
@@ -94,12 +96,17 @@ function AuthErrorScreen() {
             meetingStore.loadLatest()
             return
           }
-        } catch (e) {
+        } catch (err) {
           logWarn('[AuthErrorScreen] /auth/telegram retry failed', {
             hasBrowserToken: !!browserToken,
             hasInviteToken: !!inviteToken,
-            error: e?.message,
+            error: err?.message,
           })
+          const code = err?.response?.data?.error?.code
+          if (code === 'USER_BANNED') {
+            authStore.setBanned()
+            return
+          }
         }
       }
 
@@ -117,6 +124,11 @@ function AuthErrorScreen() {
         <p className="text-sm text-[#7F7F7F] leading-relaxed">
           Не удалось войти в приложение.<br />Попробуйте перезагрузить страницу.
         </p>
+        {hint && (
+          <p className="text-xs text-[#AAAAAA] leading-relaxed mt-1 max-w-xs">
+            {hint}
+          </p>
+        )}
       </div>
       <button
         onClick={() => { authRetried = false; window.location.reload() }}
@@ -129,9 +141,10 @@ function AuthErrorScreen() {
 }
 
 function AuthGuard({ children }) {
-  const { user, needsLogin, authPending } = useAuthStore()
+  const { user, needsLogin, authPending, isBanned } = useAuthStore()
 
   if (authPending) return null
+  if (isBanned) return <BannedPage />
   if (!user && needsLogin) return <AuthErrorScreen />
 
   return children

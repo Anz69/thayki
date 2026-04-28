@@ -15,24 +15,33 @@ async function resetDependentStores() {
 }
 
 const useAuthStore = create((set, get) => ({
-  user:        null,
-  needsLogin:  false,
-  authPending: false,
+  user:          null,
+  needsLogin:    false,
+  authPending:   false,
+  isBanned:      false,
+  authErrorHint: null,
 
   setUser: (user, token) => {
     if (token) storeToken(token)
-    set({ user, needsLogin: false, authPending: false })
+    set({ user, needsLogin: false, authPending: false, isBanned: false, authErrorHint: null })
   },
 
-  setNeedsLogin: () => {
+  setNeedsLogin: (hint = null) => {
     clearToken()
-    set({ user: null, needsLogin: true, authPending: false })
+    set({ user: null, needsLogin: true, authPending: false, isBanned: false, authErrorHint: hint })
     resetDependentStores()
   },
+
+  setBanned: () => {
+    clearToken()
+    set({ user: null, needsLogin: false, authPending: false, isBanned: true, authErrorHint: null })
+    resetDependentStores()
+  },
+
   setAuthPending: () => set({ authPending: true }),
   clear: () => {
     clearToken()
-    set({ user: null, needsLogin: false, authPending: false })
+    set({ user: null, needsLogin: false, authPending: false, isBanned: false, authErrorHint: null })
     resetDependentStores()
   },
 

@@ -51,11 +51,25 @@ class AuthenticateTelegramUserAction
         $replayKey  = (string) $this->config->get('telegram.replay_cache_prefix', 'tg:initdata:').$validated['hash'];
         $replayTtl  = (int) $this->config->get('telegram.replay_cache_ttl', 60);
 
-
         if (! $this->cache->add($replayKey, 1, $replayTtl)) {
-            logger()->info('[AuthenticateTelegramUserAction] initData replay accepted as idempotent retry', [
-                'replay_key' => $replayKey,
-            ]);
+            $replayTelegramId = (int) ($validated['user']['id'] ?? 0);
+            $existingUser = $replayTelegramId > 0
+                ? User::query()->where('telegram_id', $replayTelegramId)->first()
+                : null;
+
+            if ($existingUser !== null && $existingUser->status !== UserStatus::Banned) {
+                logger()->info('[AuthenticateTelegramUserAction] initData replay accepted as idempotent retry', [
+                    'replay_key' => $replayKey,
+                    'telegram_id' => $replayTelegramId,
+                ]);
+                $token = $existingUser->createToken(
+                    name: 'mini-app',
+                    abilities: ['role:' . $existingUser->role->value],
+                );
+                return ['user' => $existingUser, 'token' => $token];
+            }
+
+            throw InvalidInitDataException::replay();
         }
 
         $payload = $validated['user'];

@@ -68,20 +68,27 @@ export default function App() {
             meetingStore.loadLatest()
             return
           }
-        } catch (e) {
+        } catch (err) {
           logWarn('[App auth] /auth/telegram failed', {
             hasInitData: !!initData,
             hasBrowserToken: !!browserToken,
             hasInviteToken: !!inviteToken,
-            error: e?.message,
+            error: err?.message,
           })
+          const code = err?.response?.data?.error?.code
+          if (code === 'USER_BANNED') {
+            authStore.setBanned()
+            return
+          }
+          authStore.setNeedsLogin('Telegram вернул ошибку авторизации. Попробуйте перезагрузить через несколько секунд.')
+          return
         }
 
         authStore.setNeedsLogin()
         return
       }
 
-      authStore.setNeedsLogin()
+      authStore.setNeedsLogin('Не удалось получить данные авторизации из Telegram.')
     }
 
     resolveAuth().catch(() => authStore.setNeedsLogin())
