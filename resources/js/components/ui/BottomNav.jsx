@@ -294,7 +294,8 @@ export default function BottomNav() {
                   style={{ color: '#7F7F7F' }}
                 >
                   {(() => {
-                    const modelPhoto = meeting.meeting?.model_profile?.photos?.find(p => p.is_main)?.url
+                    const modelPhoto = meeting.meeting?.model_profile?.user?.photo_url
+                      ?? meeting.meeting?.model_profile?.photos?.find(p => p.is_main)?.url
                       ?? meeting.meeting?.model_profile?.photos?.[0]?.url
                       ?? null
                     const modelName = meeting.meeting?.model_profile?.display_name ?? 'Встреча'

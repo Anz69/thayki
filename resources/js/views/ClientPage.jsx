@@ -68,7 +68,7 @@ function OrderCard({ meeting, currentUserId, onClick }) {
     ? (meeting.model_profile?.display_name ?? '—')
     : (meeting.client?.first_name ?? meeting.client?.username ?? 'Клиент')
   const counterPhoto = isClient
-    ? (meeting.model_profile?.photos?.find(p => p.is_main)?.url ?? meeting.model_profile?.photos?.[0]?.url ?? null)
+    ? (meeting.model_profile?.user?.photo_url ?? meeting.model_profile?.photos?.find(p => p.is_main)?.url ?? meeting.model_profile?.photos?.[0]?.url ?? null)
     : (meeting.client?.photo_url ?? null)
 
   const date     = formatMeetingDate(meeting.scheduled_at)
