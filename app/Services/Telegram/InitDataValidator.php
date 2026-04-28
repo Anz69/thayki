@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Telegram;
 
 use App\Exceptions\InvalidInitDataException;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Illuminate\Support\Facades\Http;
 
 /**
  * Validates a Telegram Mini App `initData` raw query string.
@@ -21,7 +23,10 @@ use Illuminate\Contracts\Config\Repository as ConfigRepository;
  */
 class InitDataValidator
 {
-    public function __construct(private readonly ConfigRepository $config) {}
+    public function __construct(
+        private readonly ConfigRepository $config,
+        private readonly CacheRepository  $cache,
+    ) {}
 
     /**
      * @return array{
@@ -84,13 +89,30 @@ class InitDataValidator
         $valid = hash_equals($expected, $providedHash);
 
         if (! $valid) {
-            \Illuminate\Support\Facades\Log::error('Telegram initData HMAC mismatch — check TELEGRAM_BOT_TOKEN in .env and clear config cache', [
-                'bot_token_prefix'  => substr($botToken, 0, 12),
-                'bot_token_length'  => strlen($botToken),
-                'expected'          => $expected,
-                'provided'          => $providedHash,
-                'data_check_string' => $dataCheckString,
-            ]);
+            // Auto-diagnose: verify the bot token against Telegram API (cached 1 h).
+            // This distinguishes "wrong token in .env" from "tampered initData".
+            $tokenStatus = $this->checkBotToken($botToken);
+
+            if ($tokenStatus === false) {
+                \Illuminate\Support\Facades\Log::error(
+                    'TELEGRAM_BOT_TOKEN is INVALID — call /newtoken in @BotFather, update .env and run php artisan config:cache',
+                    ['token_prefix' => substr($botToken, 0, 12), 'token_length' => strlen($botToken)]
+                );
+                throw InvalidInitDataException::malformed(
+                    'Неверный TELEGRAM_BOT_TOKEN. Получите новый токен через @BotFather и обновите .env на сервере.'
+                );
+            }
+
+            \Illuminate\Support\Facades\Log::error(
+                'Telegram initData HMAC mismatch — token is valid but signature does not match',
+                [
+                    'bot_token_prefix'  => substr($botToken, 0, 12),
+                    'bot_token_length'  => strlen($botToken),
+                    'expected'          => $expected,
+                    'provided'          => $providedHash,
+                    'data_check_string' => $dataCheckString,
+                ]
+            );
 
             if (! $allowUnsigned) {
                 throw InvalidInitDataException::signature();
@@ -121,6 +143,30 @@ class InitDataValidator
             'user' => $decoded,
             'raw' => $pairs,
         ];
+    }
+
+    /**
+     * Verify the bot token against Telegram's getMe API.
+     * Returns true = valid, false = invalid, null = could not determine (network error).
+     * Result is cached for 1 hour to avoid hammering the API.
+     */
+    public function checkBotToken(string $token): ?bool
+    {
+        $cacheKey = 'tg:token_ok:' . md5($token);
+        $cached   = $this->cache->get($cacheKey);
+
+        if ($cached !== null) {
+            return (bool) $cached;
+        }
+
+        try {
+            $response = Http::timeout(5)->get("https://api.telegram.org/bot{$token}/getMe");
+            $ok       = $response->ok() && $response->json('ok') === true;
+            $this->cache->put($cacheKey, $ok, 3600);
+            return $ok;
+        } catch (\Throwable) {
+            return null; // network unreachable — cannot determine
+        }
     }
 
     /**

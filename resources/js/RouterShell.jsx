@@ -124,8 +124,9 @@ function AuthErrorScreen() {
             hasBrowserToken: !!browserToken,
             hasInviteToken: !!inviteToken,
           }
+          const serverMsg = err?.response?.data?.error?.message ?? null
           const hintMsg = code === 'INIT_DATA_INVALID'
-            ? 'Ошибка конфигурации бота. Проверьте TELEGRAM_BOT_TOKEN на сервере.'
+            ? (serverMsg && serverMsg.includes('BOT_TOKEN') ? serverMsg : 'Ошибка конфигурации бота. Проверьте TELEGRAM_BOT_TOKEN на сервере.')
             : null
           authStore.setNeedsLogin(hintMsg, retryDetail)
           return
