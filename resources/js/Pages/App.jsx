@@ -54,10 +54,22 @@ export default function App() {
         const startParam   = tg?.initDataUnsafe?.start_param ?? ''
         const browserToken = startParam.startsWith('browser_') ? startParam.slice(8) : null
 
+        let inviteToken = null
+        if (!browserToken && startParam !== '') {
+          try {
+            const padded  = startParam.replace(/-/g, '+').replace(/_/g, '/')
+            const decoded = atob(padded)
+            if (!decoded.startsWith('/')) inviteToken = startParam
+          } catch {
+            inviteToken = startParam
+          }
+        }
+
         try {
           const { data } = await api.post('/auth/telegram', {
             init_data: initData,
             ...(browserToken ? { browser_token: browserToken } : {}),
+            ...(inviteToken  ? { invite_token:  inviteToken  } : {}),
           })
 
           if (data.ok && data.data?.token && data.data?.user) {

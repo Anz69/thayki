@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                     'photo_url'  => $user->photo_url,
                     'role'       => $user->role->value,
                     'is_premium' => $user->is_premium,
+                    'is_strange' => (bool) $user->is_strange,
                 ] : null,
             ],
             'flash' => [

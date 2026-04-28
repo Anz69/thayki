@@ -21,6 +21,7 @@ class LoginTelegramRequest extends FormRequest
         return [
             'init_data'     => ['required', 'string', 'min:10', 'max:4096'],
             'browser_token' => ['sometimes', 'nullable', 'string', 'max:128'],
+            'invite_token'  => ['sometimes', 'nullable', 'string', 'max:128'],
         ];
     }
 }

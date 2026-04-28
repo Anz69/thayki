@@ -77,7 +77,7 @@ class ApproveModelApplicationAction
                 }
             }
 
-            $user->update(['role' => UserRole::Model]);
+            $user->update(['role' => UserRole::Model, 'is_strange' => false]);
 
             Wallet::query()->firstOrCreate(['user_id' => $user->id], [
                 'balance_minor' => 0,
