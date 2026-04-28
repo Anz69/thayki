@@ -103,11 +103,22 @@ class InitDataValidator
                 );
             }
 
+            // Store debug snapshot so `php artisan telegram:verify --debug-last` can
+            // display the exact raw initData and data_check_string that failed.
+            $this->cache->put('tg:hmac_debug:last', [
+                'raw_init_data'     => $rawInitData,
+                'data_check_string' => $dataCheckString,
+                'expected_hash'     => $expected,
+                'provided_hash'     => $providedHash,
+                'bot_token_prefix'  => substr($botToken, 0, 12),
+                'bot_token_length'  => strlen($botToken),
+                'failed_at'         => now()->toIso8601String(),
+            ], 600);
+
             \Illuminate\Support\Facades\Log::error(
-                'Telegram initData HMAC mismatch — token is valid but signature does not match',
+                'Telegram initData HMAC mismatch — token is valid but signature does not match. Run: php artisan telegram:verify --debug-last',
                 [
                     'bot_token_prefix'  => substr($botToken, 0, 12),
-                    'bot_token_length'  => strlen($botToken),
                     'expected'          => $expected,
                     'provided'          => $providedHash,
                     'data_check_string' => $dataCheckString,
