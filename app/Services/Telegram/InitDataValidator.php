@@ -64,7 +64,14 @@ class InitDataValidator
             array_values($dataPairs),
         ));
 
-        $botToken = (string) $this->config->get('telegram.bot_token');
+        // Read bot token from config, fall back to env() directly in case
+        // config:cache is stale (e.g. token was updated in .env after caching).
+        // Always trim to avoid whitespace/CRLF issues in .env files.
+        $botToken = trim((string) $this->config->get('telegram.bot_token', ''));
+        if ($botToken === '') {
+            $botToken = trim((string) env('TELEGRAM_BOT_TOKEN', ''));
+        }
+
         if ($botToken === '') {
             throw InvalidInitDataException::malformed('Server misconfiguration: bot token is not set.');
         }
@@ -77,11 +84,12 @@ class InitDataValidator
         $valid = hash_equals($expected, $providedHash);
 
         if (! $valid) {
-            \Illuminate\Support\Facades\Log::debug('Telegram initData HMAC mismatch', [
-                'bot_token_prefix' => substr($botToken, 0, 10),
-                'expected'         => $expected,
-                'provided'         => $providedHash,
-                'data_check_string'=> $dataCheckString,
+            \Illuminate\Support\Facades\Log::error('Telegram initData HMAC mismatch — check TELEGRAM_BOT_TOKEN in .env and clear config cache', [
+                'bot_token_prefix'  => substr($botToken, 0, 12),
+                'bot_token_length'  => strlen($botToken),
+                'expected'          => $expected,
+                'provided'          => $providedHash,
+                'data_check_string' => $dataCheckString,
             ]);
 
             if (! $allowUnsigned) {
