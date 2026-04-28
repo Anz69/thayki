@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Support\SafeFileExtension;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PostMessageAction
@@ -78,7 +79,12 @@ class PostMessageAction
 
         try {
             event(new MessageSent($message));
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('[PostMessageAction] MessageSent dispatch failed', [
+                'message_id' => $message->id,
+                'chat_id'    => $message->chat_id,
+                'error'      => $e->getMessage(),
+            ]);
         }
 
         return $message;

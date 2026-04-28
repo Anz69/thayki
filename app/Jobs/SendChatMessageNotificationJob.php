@@ -48,11 +48,11 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 // so admins would never be reached via the loop below.
                 // Ping all Filament admins directly.
                 $notifier->notifyAdmins(
-                    '💬 Новое сообщение в поддержке от <b>'.$this->displayName($sender).'</b>',
+                    '💬 Новое сообщение в поддержке от <b>'.$this->senderDisplayName($sender).'</b>',
                 );
             }
 
-            $title    = $senderIsSupport ? 'Поддержка' : $this->displayName($sender);
+            $title    = $senderIsSupport ? 'Поддержка' : $this->senderDisplayName($sender);
             $text     = "✉️ У вас новое сообщение от <b>{$title}</b>";
             $openPath = $isSupport ? '/support' : "/chat?id={$chat->id}";
 
@@ -86,7 +86,7 @@ class SendChatMessageNotificationJob implements ShouldQueue
         return false;
     }
 
-    private function displayName(?User $user): string
+    private function senderDisplayName(?User $user): string
     {
         if ($user === null) return 'Пользователь';
         $name = trim(($user->first_name ?? '').' '.($user->last_name ?? ''));
