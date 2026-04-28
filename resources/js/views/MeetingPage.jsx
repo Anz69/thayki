@@ -64,9 +64,6 @@ export default function MeetingPage() {
   const durationLabel = durationHours ? `${durationHours} ч` : (booking.selectedDuration?.label ?? '—')
 
   const modelName   = m?.model_profile?.display_name ?? booking.modelName ?? '—'
-  // Show the model's actual TG avatar (uploaded in profile / synced from
-  // Telegram), NOT the first media-gallery photo. The fallback chain is
-  // strict: model.user.photo_url → main profile photo → first photo → null.
   const modelAvatar = m?.model_profile?.user?.photo_url
     ?? m?.model_profile?.photos?.find(p => p.is_main)?.url
     ?? m?.model_profile?.photos?.[0]?.url
@@ -81,6 +78,7 @@ export default function MeetingPage() {
   ]
   const meetingIdParam = params.get('id')
   useEffect(() => {
+    meeting.reset()
     if (meetingIdParam) {
       meeting.load(meetingIdParam)
     } else {
@@ -108,25 +106,17 @@ export default function MeetingPage() {
     }
   }, [meeting.status])
 
-  // Subscribe to Reverb for real-time status updates.
-  // subscribePrivate swallows WebSocket failures so a flaky connection
-  // never crashes the page — the polling fallback below covers that case.
   useEffect(() => {
     const meetingId = meeting.meeting?.id
     if (!meetingId) return undefined
     return subscribePrivate(`meeting.${meetingId}`, {
       '.meeting.status_changed': (e) => {
         if (e?.status) meeting.setStatus(e.status)
-        // Re-fetch full meeting payload so derived fields (paid_at,
-        // confirmed_at, etc.) stay in sync with the new status.
         if (meetingId) meeting.load(meetingId)
       },
     })
   }, [meeting.meeting?.id])
 
-  // Polling fallback: if WebSocket events don't arrive (Reverb down, channel
-  // auth failure, network filtering), the page still catches up to server
-  // state every few seconds and immediately on tab refocus.
   const pollMeetingId = meeting.meeting?.id
   const pollEnabled   = !!pollMeetingId && !TERMINAL_STATUSES.includes(meeting.status)
   useStatusPolling(

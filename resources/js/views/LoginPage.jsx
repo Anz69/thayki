@@ -10,17 +10,8 @@ const BOT_USERNAME = import.meta.env.VITE_TELEGRAM_BOT_USERNAME ?? ''
 const IS_LOCALHOST = typeof window !== 'undefined'
   && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 
-// Login Widget only works on domains registered via BotFather /setdomain
 const SHOW_WIDGET = !IS_LOCALHOST && !!BOT_USERNAME
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Dev login helper (localhost only)
-//
-// TELEGRAM_ALLOW_UNSIGNED=true + APP_ENV=local → backend skips HMAC check.
-// We build a syntactically-valid but unsigned initData string and POST it to
-// /auth/telegram exactly as the Mini App would. A stable random Telegram ID is
-// persisted in localStorage so the same dev user is reused across reloads.
-// ─────────────────────────────────────────────────────────────────────────────
 function buildFakeInitData(telegramId, firstName, username) {
   const user = JSON.stringify({
     id:             telegramId,
@@ -32,7 +23,6 @@ function buildFakeInitData(telegramId, firstName, username) {
     allows_write_to_pm: true,
   })
   const authDate = Math.floor(Date.now() / 1000)
-  // Hash value is irrelevant — backend ignores it in local+allow_unsigned mode
   return `auth_date=${authDate}&hash=devmode_bypass&user=${encodeURIComponent(user)}`
 }
 
@@ -56,21 +46,17 @@ export default function LoginPage() {
 
   const [error,    setError]    = useState(null)
   const [loading,  setLoading]  = useState(false)
-  // Dev login form state
   const [devName,  setDevName]  = useState('')
   const [showDev,  setShowDev]  = useState(false)
 
-  // Stable dev Telegram ID (persisted in localStorage)
   const devId = useMemo(getOrCreateDevId, [])
 
-  // ── GSAP refs ─────────────────────────────────────────────────
   const logoRef     = useRef(null)
   const titleRef    = useRef(null)
   const subtitleRef = useRef(null)
   const cardRef     = useRef(null)
   const footerRef   = useRef(null)
 
-  // ── Initial hidden state ──────────────────────────────────────
   useLayoutEffect(() => {
     gsap.set(logoRef.current,     { autoAlpha: 0, y: -40, scale: 0.82 })
     gsap.set(titleRef.current,    { autoAlpha: 0, y: 22 })
@@ -79,7 +65,6 @@ export default function LoginPage() {
     gsap.set(footerRef.current,   { autoAlpha: 0 })
   }, [])
 
-  // ── Entrance animation ────────────────────────────────────────
   usePageReady(() => {
     const tl = gsap.timeline({ defaults: { ease: 'expo.out' } })
 
@@ -97,12 +82,10 @@ export default function LoginPage() {
       .to(footerRef.current, { autoAlpha: 1, duration: 0.38 }, 0.54)
   })
 
-  // ── Redirect if already authed ────────────────────────────────
   useEffect(() => {
     if (authStore.user) navigate('/home', { replace: true })
   }, [authStore.user])
 
-  // ── Shared POST helper ────────────────────────────────────────
   async function postToAuth(url, body) {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
     const res  = await fetch(url, {
@@ -114,7 +97,6 @@ export default function LoginPage() {
     return res.json()
   }
 
-  // ── Dev login (localhost only) ────────────────────────────────
   const handleDevLogin = async () => {
     setLoading(true)
     setError(null)
@@ -127,13 +109,11 @@ export default function LoginPage() {
       const data = await postToAuth('/auth/telegram', { init_data: initData })
 
       if (data.ok && data.user) {
-        // Quick card scale feedback
         gsap.to(cardRef.current, {
           scale: 1.03, duration: 0.15, ease: 'power2.out',
           onComplete: () => {
             authStore.setUser(data.user, data.token ?? null)
             meetingStore.loadLatest()
-            // Fade out everything then navigate
             gsap.to([cardRef.current, subtitleRef.current, footerRef.current], {
               autoAlpha: 0, y: -10, duration: 0.25, ease: 'power2.in', stagger: 0.04,
             })
@@ -158,7 +138,6 @@ export default function LoginPage() {
     }
   }
 
-  // ── Telegram Login Widget (production only) ───────────────────
   useEffect(() => {
     if (!SHOW_WIDGET || !widgetRef.current) return
 
@@ -197,7 +176,6 @@ export default function LoginPage() {
     }
   }, [])
 
-  // ─────────────────────────────────────────────────────────────
   return (
     <section className="min-h-dvh bg-white flex flex-col items-center justify-center gap-6 px-6">
 
@@ -230,7 +208,6 @@ export default function LoginPage() {
         className="invisible w-full max-w-[320px] bg-[#F7F6FA] rounded-3xl p-5 flex flex-col gap-4"
       >
         {IS_LOCALHOST ? (
-          /* ══ LOCALHOST: Dev Login ══════════════════════════════ */
           <>
             <div className="flex items-center gap-2">
               <div className="size-2 rounded-full bg-amber-400 animate-pulse" />
@@ -306,7 +283,6 @@ export default function LoginPage() {
             </p>
           </>
         ) : (
-          /* ══ PRODUCTION: Telegram Login Widget ════════════════ */
           <>
             <p className="text-[#7F7F7F] text-xs/[150%] font-medium text-center">
               Войдите через аккаунт Telegram

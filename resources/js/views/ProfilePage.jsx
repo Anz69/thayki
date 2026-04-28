@@ -90,21 +90,18 @@ export default function ProfilePage() {
   const cancelLabelRef  = useRef(null)
   const backLabelRef    = useRef(null)
 
-  // Guard: ProfilePage is model-only
   useEffect(() => {
     if (auth.isAuthenticated() && !auth.isModel()) {
       navigate('/more')
     }
   }, [auth, navigate])
 
-  // Hydrate profile data on mount
   useEffect(() => {
     if (!profile.loaded) {
       profile.hydrate()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync local name when profile loads
   useEffect(() => {
     if (profile.loaded) {
       setLocalName(profile.name)
@@ -225,7 +222,6 @@ export default function ProfilePage() {
 
   const handleEditToggle = useCallback(() => {
     if (isEditing) {
-      // Save name when finishing edit
       profile.savePatch({ name: localName }).catch(logError)
       setIsEditing(false)
 

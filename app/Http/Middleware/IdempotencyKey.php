@@ -56,8 +56,6 @@ class IdempotencyKey
             if ($existing->expires_at->isPast()) {
                 $existing->delete();
             } else {
-                // Use timing-safe comparison to avoid leaking information about
-                // stored request hashes through measurable response-time deltas.
                 if (! hash_equals((string) $existing->request_hash, $requestHash)) {
                     throw new IdempotencyConflictException;
                 }

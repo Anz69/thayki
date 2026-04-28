@@ -95,7 +95,6 @@ class SendMeetingStatusNotification
                     break;
 
                 case MeetingStatus::Completed:
-                    // Ask the client to leave a review or complaint.
                     $notifier->notifyUser(
                         $client,
                         "🎉 Встреча завершена!\nПожалуйста, оставьте отзыв или, если что-то пошло не так — жалобу.",
@@ -106,8 +105,6 @@ class SendMeetingStatusNotification
                     break;
 
                 case MeetingStatus::Confirmed:
-                    // Legacy path. New flow treats Paid as terminal-positive
-                    // and never reaches Confirmed; nothing to notify.
                     break;
             }
         } catch (\Throwable $e) {

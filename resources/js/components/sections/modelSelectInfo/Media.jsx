@@ -11,7 +11,6 @@ export default function Media({ photos = [] }) {
     )
   }
 
-  // Normalise: API returns { id, url, is_main } — viewer expects { id, src, alt }
   const viewerPhotos = photos.map(p => ({ id: p.id, src: p.url, alt: '' }))
 
   return (

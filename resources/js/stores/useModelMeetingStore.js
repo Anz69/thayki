@@ -11,7 +11,6 @@ const useModelMeetingStore = create((set, get) => ({
   error:        null,
   errorStatus:  null,
 
-  /** Load the latest meeting where the current user is the model */
   async loadLatest() {
     set({ isLoading: true, error: null })
     try {
@@ -30,7 +29,6 @@ const useModelMeetingStore = create((set, get) => ({
     }
   },
 
-  /** Load a specific meeting by ID */
   async load(id) {
     set({ isLoading: true, error: null, errorStatus: null })
     try {
@@ -43,7 +41,6 @@ const useModelMeetingStore = create((set, get) => ({
     }
   },
 
-  /** Model accepts the booking request */
   async accept() {
     const id = get().meeting?.id
     if (!id) return
@@ -55,7 +52,6 @@ const useModelMeetingStore = create((set, get) => ({
     }
   },
 
-  /** Model rejects the booking request */
   async reject() {
     const id = get().meeting?.id
     if (!id) return
@@ -80,7 +76,6 @@ const useModelMeetingStore = create((set, get) => ({
     }
   },
 
-  /** Called by Echo when the server broadcasts a status change */
   setStatus(status) {
     set((s) => ({
       status,

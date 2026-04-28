@@ -23,17 +23,14 @@ const STYLES = `
   .mc-swiper .swiper-slide {
     width: 60%;
     height: 100%;
-    /* translateY lifts non-active cards down for depth */
     transform: scale(0.84) translateY(18px);
     opacity: 0.42;
-    /* Spring-like easing makes swipe feel physical */
     transition:
       transform 0.5s cubic-bezier(0.34, 1.42, 0.64, 1),
       opacity   0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     will-change: transform, opacity;
     transform-origin: bottom center;
   }
-  /* Adjacent cards lean inward + lowered — arc/deck effect */
   .mc-swiper .swiper-slide-prev {
     transform: scale(0.84) translateY(18px) rotate(-3.5deg) !important;
     transform-origin: bottom center;
@@ -42,7 +39,6 @@ const STYLES = `
     transform: scale(0.84) translateY(18px) rotate(3.5deg) !important;
     transform-origin: bottom center;
   }
-  /* Active card: full size, no tilt, fully opaque */
   .mc-swiper .swiper-slide-active {
     transform: scale(1) translateY(0) !important;
     opacity:   1                      !important;

@@ -61,7 +61,6 @@ function FilledSlot({ src, onRemove }) {
 }
 
 export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
-  // Each slot: { file: File, url: blobUrl } | null
   const [photos,    setPhotos]    = useState(Array(MAX_PHOTOS).fill(null))
   const [uploading, setUploading] = useState(false)
   const [uploadErr, setUploadErr] = useState(null)
@@ -138,7 +137,6 @@ export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
           return res.data.data ?? res.data
         }),
       )
-      // Pass storage paths — used directly by backend when approving the application
       const photos = results.map(r => r?.path ?? r?.url).filter(Boolean)
       onNext({ photos })
     } catch {

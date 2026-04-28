@@ -27,7 +27,6 @@ class RevenueChartWidget extends ChartWidget
             ->groupBy('day')
             ->pluck('total', 'day');
 
-        // Cumulative revenue for the second dataset
         $dailyTotals = $days->map(fn ($d) => (int) ($revenue[$d->format('Y-m-d')] ?? 0));
         $cumulative  = collect();
         $running     = 0;

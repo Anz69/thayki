@@ -21,10 +21,6 @@ class EventServiceProvider extends ServiceProvider
 {
     public function shouldDiscoverEvents(): bool
     {
-        // Tells the legacy ServiceProvider's $listen-merging path that we
-        // don't want it walking app/Listeners/ again on top of Laravel 11's
-        // built-in auto-discovery. Belt-and-braces; together with the empty
-        // $listen above, no listener is ever registered more than once.
         return false;
     }
 }

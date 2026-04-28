@@ -31,7 +31,6 @@ class ComplaintController extends Controller
                 throw DomainException::invalid('MEETING_NOT_FOUND', 'Meeting not found.');
             }
 
-            // Authorize: must be either client of the meeting, or the model.
             $profile = $user->modelProfile()->first();
             $isClient = $meeting->client_id === $user->id;
             $isModel  = $profile !== null && $profile->id === $meeting->model_profile_id;
@@ -56,7 +55,6 @@ class ComplaintController extends Controller
                 "⚠️ Новая жалоба #{$complaint->id} от {$name}".($meetingId ? " (бронь #{$meetingId})" : '').".",
             );
         } catch (\Throwable) {
-            // notification is best-effort
         }
 
         return ApiResponse::created(new ComplaintResource($complaint));

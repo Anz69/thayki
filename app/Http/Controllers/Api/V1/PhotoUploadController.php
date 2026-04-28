@@ -19,7 +19,6 @@ class PhotoUploadController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            // mimes: enforced by *real* MIME (Laravel sniffs via finfo)
             'photo' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
 

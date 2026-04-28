@@ -66,6 +66,10 @@ class MeController extends Controller
 
         $profile->fill($request->validated())->save();
 
+        if ($request->has('display_name')) {
+            $user->update(['first_name' => $request->input('display_name')]);
+        }
+
         return ApiResponse::ok(new ModelProfileResource($profile->fresh(['photos', 'priceOptions'])));
     }
 

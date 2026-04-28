@@ -1,17 +1,5 @@
 import axios from 'axios'
 
-/**
- * Centralised axios instance for the SPA.
- *
- * Notes
- * - `withCredentials: true` because the API uses Sanctum cookie session for the
- *   browser flow (TG widget login) and bearer token would need extra wiring.
- * - 25s timeout protects against hanging requests on flaky mobile networks.
- * - Request interceptor injects the CSRF token and unsets `Content-Type` for
- *   `FormData` so the browser can set the correct multipart boundary itself.
- * - Response interceptor reacts to 401 by flipping the auth store into the
- *   "needs login" state — this triggers the AuthGuard redirect to /login.
- */
 const api = axios.create({
   baseURL:         '/api/v1',
   withCredentials: true,
@@ -38,7 +26,6 @@ api.interceptors.request.use((config) => {
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
   if (csrf) config.headers['X-CSRF-TOKEN'] = csrf
 
-  // Attach Sanctum Bearer token (token-based auth for Mini App)
   const token = getStoredToken()
   if (token) config.headers['Authorization'] = `Bearer ${token}`
 
@@ -48,16 +35,6 @@ api.interceptors.request.use((config) => {
 
   return config
 })
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Auth store wiring
-// ─────────────────────────────────────────────────────────────────────────────
-// We can't import useAuthStore at the top level because that store imports
-// this `api` module itself → cycle. Instead we lazily resolve the store on the
-// first invocation that needs it and cache the reference.
-//
-// Until the dynamic import resolves, 401 handling falls back to a "pending"
-// queue so the very first 401 isn't lost.
 
 let _authStore = null
 let _pending401 = false
@@ -77,8 +54,7 @@ const resolveAuthStore = () => {
   })
 }
 
-// kick off the import immediately so the store is ready before the first call
-resolveAuthStore().catch(() => { /* will retry on next 401 */ })
+resolveAuthStore().catch(() => {})
 
 const handleUnauthenticated = () => {
   if (_authStore) {
@@ -88,7 +64,6 @@ const handleUnauthenticated = () => {
     } catch {}
     return
   }
-  // Store not yet imported — remember to flip on resolution.
   _pending401 = true
   resolveAuthStore().catch(() => {})
 }
@@ -96,7 +71,6 @@ const handleUnauthenticated = () => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Normalize timeout errors so callers can show a friendly message.
     if (error?.code === 'ECONNABORTED' || error?.message === 'Network Error') {
       error.isNetworkError = true
       if (!error.userMessage) {
@@ -111,8 +85,6 @@ api.interceptors.response.use(
       handleUnauthenticated()
     }
 
-    // 419 = Laravel CSRF token mismatch (session expired). Treat like 401 so the
-    // user is redirected to /login and forced to re-authenticate.
     if (status === 419) {
       handleUnauthenticated()
     }
@@ -121,10 +93,6 @@ api.interceptors.response.use(
   },
 )
 
-/**
- * Convenience helper for surfacing a human-readable error message from any
- * axios error (validation, network, generic 500, etc.).
- */
 export function extractErrorMessage(err, fallback = 'Что-то пошло не так') {
   if (!err) return fallback
   if (err.userMessage) return err.userMessage

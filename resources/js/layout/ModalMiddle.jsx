@@ -23,14 +23,12 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
     else if (!isOpen && isVisible) animateOut(() => { setIsVisible(false); onAfterClose?.() })
   }, [isOpen])
 
-  // Disable Telegram vertical swipe-to-close while modal is open
   useEffect(() => {
     if (!isVisible) return
     window.Telegram?.WebApp?.disableVerticalSwipes?.()
     return () => window.Telegram?.WebApp?.enableVerticalSwipes?.()
   }, [isVisible])
 
-  // Entrance animation
   useEffect(() => {
     if (!isVisible || !rootRef.current || !sheetRef.current) return
     const kids = Array.from(sheetRef.current.children)
@@ -43,7 +41,6 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
       .to(kids, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.5, stagger: 0.08, ease: 'power3.out', clearProps: 'opacity,transform,filter' }, 0.14)
   }, [isVisible])
 
-  // Attach drag handlers to handle area only, with passive:false so we can preventDefault
   useEffect(() => {
     const el = handleRef.current
     if (!el || !isVisible) return

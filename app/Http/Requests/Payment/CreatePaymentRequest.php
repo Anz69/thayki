@@ -23,9 +23,6 @@ class CreatePaymentRequest extends FormRequest
         $userId = (int) ($this->user()?->id ?? 0);
 
         return [
-            // Meeting must exist *and* belong to the requesting user.
-            // CreatePaymentAction enforces this again as defence-in-depth, but
-            // catching it here returns a clearer 422 instead of a 403.
             'meeting_id' => [
                 'required',
                 'integer',

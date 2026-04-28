@@ -31,12 +31,8 @@ class InviteController extends Controller
             throw DomainException::forbidden('INVITE_FORBIDDEN', 'Strange users cannot create invites.');
         }
 
-        // 24 raw bytes → 32-char URL-safe base64. Far above brute-force range
-        // and short enough to fit comfortably in a t.me ?start= parameter.
         $token = rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
 
-        // Deliberately scoped: 1 use, 7-day expiry. Keeps a leaked link from
-        // becoming a long-lived back door.
         StartInvite::query()->create([
             'token'              => $token,
             'kind'               => StartInvite::KIND_VERIFY,

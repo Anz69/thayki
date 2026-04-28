@@ -83,7 +83,6 @@ class CatalogController extends Controller
                 MeetingStatus::openStatuses(),
             ))
             ->where('scheduled_at', '<', $cutoff)
-            // include slots that started before "now" but are still ongoing
             ->where('scheduled_at', '>=', $now->copy()->subDay())
             ->orderBy('scheduled_at')
             ->get(['scheduled_at', 'duration_hours'])

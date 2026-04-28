@@ -55,8 +55,6 @@ const bubblesConfig = [
   { img: '/img/girls/8.png', inner: 32, border: 7,  color: '#FFD7A1', left: '68%', top: '64%' },
 ]
 
-// phone.png aspect ratio: 1720×2608 → 1.516
-// At 393px (iPhone 16 Pro) → rendered height ≈ 596px → overlaps 20px into bottom glass bar
 
 export default function LandingPage() {
   const isCompact = useCompactMode()
@@ -64,7 +62,6 @@ export default function LandingPage() {
   const [cardAData, setCardAData] = useState(messages[0])
   const [cardBData, setCardBData] = useState(messages[1])
 
-  // Track bottom section height so we can size the phone correctly
   const bottomRef    = useRef(null)
   const phoneWrapRef = useRef(null)
 
@@ -82,14 +79,11 @@ export default function LandingPage() {
   const cycleTimer  = useRef(null)
   const isAnimating = useRef(false)
 
-  // Dynamically size phone wrapper so it fills the screen top-to-bottom
-  // and always overlaps slightly into the glass bar (no gap)
   useEffect(() => {
     const resize = () => {
       if (!bottomRef.current || !phoneWrapRef.current) return
       const vh = window.innerHeight
       const bottomH = bottomRef.current.offsetHeight
-      // Phone should reach 20px BELOW the bottom section top edge (overlap)
       const phoneH = vh - bottomH + 20
       phoneWrapRef.current.style.height = phoneH + 'px'
     }
@@ -167,7 +161,6 @@ export default function LandingPage() {
       })
   }
 
-  // ─── Initial GSAP state (before paint) ───────────────────────────
   useLayoutEffect(() => {
     gsap.set(phoneRef.current,    { autoAlpha: 0, y: 80, scale: 0.95 })
     gsap.set(cardARef.current,    { autoAlpha: 0, y: -60, scale: 0.92 })
@@ -179,7 +172,6 @@ export default function LandingPage() {
     bubbleRefs.current.forEach((el) => { if (el) gsap.set(el, { autoAlpha: 0, scale: 0 }) })
   }, [])
 
-  // ─── Cleanup on unmount ────────────────────────────────────────────
   useEffect(() => {
     return () => {
       if (cycleTimer.current) clearInterval(cycleTimer.current)
@@ -193,7 +185,6 @@ export default function LandingPage() {
 
   usePageReady(startAnimations)
 
-  // Responsive values
   const bubbleScale    = isCompact ? 0.75 : 1
   const bubblesH       = isCompact ? 100 : 160
   const cardTopPercent = isCompact ? '45%' : '45%'

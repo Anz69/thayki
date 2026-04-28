@@ -118,9 +118,6 @@ class UserResource extends Resource
                     ->color('success')
                     ->visible(fn (User $r) => (bool) $r->is_strange)
                     ->action(fn (User $r) => $r->update(['is_strange' => false])),
-                // Mints a single-use deep-link the admin can hand to a user
-                // (e.g. paste in a chat) — when the user opens it the bot
-                // flips them to non-strange. See StartHandler::handle.
                 Tables\Actions\Action::make('issue_verify_link')
                     ->label('Сгенерировать invite-ссылку')
                     ->icon('heroicon-o-link')
@@ -161,20 +158,12 @@ class UserResource extends Resource
                     ->visible(fn (User $r) => $r->status !== UserStatus::Banned)
                     ->action(function (User $r): void {
                         try {
-                            // 1) flip status. Use ->save() so casts run reliably.
                             $r->status = UserStatus::Banned;
                             $r->save();
 
-                            // 2) revoke ALL Sanctum tokens. Without this the
-                            //    user keeps their Bearer token and can keep
-                            //    using the API for as long as it's stored on
-                            //    their device. EnsureUserIsActive middleware
-                            //    catches this on the next request, but token
-                            //    deletion is the durable fix.
                             try {
                                 $r->tokens()->delete();
                             } catch (\Throwable) {
-                                // best-effort
                             }
 
                             Notification::make()

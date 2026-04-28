@@ -11,12 +11,9 @@ import useAuthStore from '@/stores/useAuthStore'
 import useMeetingStore from '@/stores/useMeetingStore'
 import api, { getStoredToken, clearToken } from '@/utils/api'
 
-// LandingPage is eager — it's the first route users see
 import LandingPage from '@/views/LandingPage'
-// import LoginPage from '@/views/LoginPage'  // disabled — auto-login retries on reload
 import StrangeWelcomePage from '@/views/StrangeWelcomePage'
 
-// All other views are lazy-loaded to reduce initial bundle size
 const HomePage         = lazy(() => import('@/views/HomePage'))
 const ModelPage        = lazy(() => import('@/views/ModelPage'))
 const MeetingPage      = lazy(() => import('@/views/MeetingPage'))
@@ -47,33 +44,23 @@ function MeetingRolePage() {
   return user?.role === 'model' ? <ModelMeetingPage /> : <MeetingPage />
 }
 
-// Invisible fallback — GSAP transition overlay handles the visual loading state
 function PageFallback() {
   return <div style={{ width: '100%', height: '100dvh', background: '#fff' }} />
 }
 
-// Module-level flag — resets on page reload, persists across remounts within the same session.
-// Ensures we attempt exactly one silent retry before showing the error screen.
 let authRetried = false
 
-/**
- * Shown when auto-login fails. On first mount it silently retries the full
- * auth cycle (stored token → TG initData). If that also fails, it renders
- * an error screen with a "Reload" button that resets the retry flag so the
- * next page load gets another attempt.
- */
 function AuthErrorScreen() {
   const authStore    = useAuthStore()
   const meetingStore = useMeetingStore()
 
   useEffect(() => {
-    if (authRetried) return   // already retried — stay on error screen
+    if (authRetried) return
     authRetried = true
 
     authStore.setAuthPending()
 
     async function retry() {
-      // Try stored token first
       const storedToken = getStoredToken()
       if (storedToken) {
         try {
@@ -83,11 +70,10 @@ function AuthErrorScreen() {
             meetingStore.loadLatest()
             return
           }
-        } catch { /* invalid / expired */ }
+        } catch {}
         clearToken()
       }
 
-      // Try Telegram initData
       const tg       = window.Telegram?.WebApp
       const initData = tg?.initData
       if (initData) {
@@ -103,7 +89,7 @@ function AuthErrorScreen() {
             meetingStore.loadLatest()
             return
           }
-        } catch { /* network or validation error */ }
+        } catch {}
       }
 
       authStore.setNeedsLogin()
@@ -131,33 +117,15 @@ function AuthErrorScreen() {
   )
 }
 
-/**
- * Auth gate — renders nothing while auto-login is in progress (AppLoader
- * covers the screen), shows AuthErrorScreen on failure, and passes through
- * to the app on success. Login page is kept in the codebase but its route
- * is disabled since the app relies solely on Telegram auto-login.
- */
 function AuthGuard({ children }) {
   const { user, needsLogin, authPending } = useAuthStore()
 
-  // Still resolving — render nothing (AppLoader covers the screen)
   if (authPending) return null
-
-  // Auto-login failed → silent retry first, then error screen
   if (!user && needsLogin) return <AuthErrorScreen />
 
   return children
 }
 
-/**
- * "Double-bottom" gate — strange (unverified) users are funneled to the
- * welcome stub no matter where they navigate. The only escape is to /start
- * the bot via a valid invite link, which flips is_strange=false on the
- * server. Routes whitelisted below are still reachable so we don't trap
- * users on the stub if they somehow have a token bound to /become-model
- * (model-invite flow logs them in already non-strange, but we keep the
- * route accessible just in case).
- */
 function StrangeGuard({ children }) {
   const { user } = useAuthStore()
   const location = useLocation()
@@ -165,7 +133,6 @@ function StrangeGuard({ children }) {
   if (!user) return children
   if (!user.is_strange) return children
 
-  // Allow only the welcome page itself; redirect everything else.
   const allowed = ['/welcome']
   if (allowed.includes(location.pathname)) return children
 
@@ -200,7 +167,6 @@ export default function App() {
               <AuthGuard>
                 <StrangeGuard>
                   <Routes>
-                    {/* <Route path="/login" element={<LoginPage />} /> — disabled, reload retries auto-login */}
                     <Route path="/welcome"       element={<StrangeWelcomePage />} />
                     <Route path="/"              element={<LandingPage />} />
                     <Route path="/home"          element={<MainPage />} />
@@ -217,7 +183,6 @@ export default function App() {
                     <Route path="/become-model"         element={<BecomeModelPage />} />
                     <Route path="/application-pending"  element={<ApplicationPendingPage />} />
                     <Route path="/feedback"             element={<FeedbackPage />} />
-                    {/* SPA catch-all → redirect unknown URLs to /home */}
                     <Route path="*" element={<Navigate to="/home" replace />} />
                   </Routes>
                 </StrangeGuard>

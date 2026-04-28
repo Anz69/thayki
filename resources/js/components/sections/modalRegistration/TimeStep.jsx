@@ -50,10 +50,6 @@ export default function TimeStep() {
   const timeValid = store.isTimeValid()
   const scheduleHint = SCHEDULE_LABELS[store.schedule] ?? null
 
-  // ── Pre-compute which hours are taken on the currently-selected day ─────
-  // We use the duration the user has already picked (default 1h before they
-  // reach the duration step). A taken hour is rendered with the disabled
-  // colour so the user sees the conflict before pressing "Next".
   const takenHourSet = useMemo(() => {
     const taken = new Set()
     const day = store.selectedDate?.date

@@ -30,7 +30,6 @@ class CreateMeetingAction
             throw DomainException::forbidden('MEETING_FORBIDDEN', 'Admins cannot book meetings.');
         }
 
-        // One active meeting per client at a time
         $hasActiveMeeting = Meeting::query()
             ->where('client_id', $client->id)
             ->whereIn('status', array_map(fn (MeetingStatus $s) => $s->value, MeetingStatus::openStatuses()))

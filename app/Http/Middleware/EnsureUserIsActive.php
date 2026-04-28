@@ -33,7 +33,6 @@ class EnsureUserIsActive
                     $token->delete();
                 }
             } catch (\Throwable) {
-                // Token deletion is best-effort — never block the response.
             }
 
             return ApiResponse::error('USER_BANNED', 'Учётная запись заблокирована.', null, 403);

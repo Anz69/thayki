@@ -25,7 +25,6 @@ class UploadAvatarAction
 
         $path = 'avatars/'.$user->id.'/'.Str::uuid()->toString().'.'.$ext;
 
-        // Remove old local avatar (if it was previously uploaded — not a TG URL)
         if ($user->photo_customized && $user->photo_url) {
             $oldPath = $this->extractLocalPath($user->photo_url);
             if ($oldPath && Storage::disk($disk)->exists($oldPath)) {
@@ -48,7 +47,6 @@ class UploadAvatarAction
 
     private function extractLocalPath(string $url): ?string
     {
-        // Storage public URL pattern: /storage/avatars/...
         $prefix = '/storage/';
         $pos    = strpos($url, $prefix);
         if ($pos === false) {

@@ -2,9 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import gsap from 'gsap'
 import { subscribePageReady, setLoaderDone, getPageReady } from '@/utils/pageTransition'
 
-// Hard ceiling — even if every signal fails (entry animation throws, page
-// ready never fires, etc.), the overlay will tear itself down after this many
-// ms so the user is never stuck behind a white screen.
 const MAX_LIFETIME_MS = 6000
 
 export default function AppLoader() {
@@ -47,8 +44,6 @@ export default function AppLoader() {
 
     const tl = gsap.timeline({ onComplete: finish })
 
-    // Hard backstop: if for any reason the timeline never completes
-    // (interrupted, killed, overridden), force-hide after a short window.
     const fallback = setTimeout(finish, 1200)
 
     tl.to(ringRef.current, {
@@ -88,11 +83,9 @@ export default function AppLoader() {
       }, 0.18,
     )
 
-    // Notify subscribers (page-entrance animations) at the half-iris point.
     tl.call(setLoaderDone, [], 0.40)
   }
 
-  // ─── Entry ───────────────────────────────────────────────────
   useEffect(() => {
     try { gsap.set(ringRef.current, { autoAlpha: 0, scale: 0.6 }) } catch {}
 
@@ -114,8 +107,6 @@ export default function AppLoader() {
 
           if (shouldExit.current) runExit()
         } catch {
-          // If anything in the post-entry setup fails, never let the loader
-          // stick around. Force the exit path.
           shouldExit.current = false
           forceHide()
         }
@@ -133,8 +124,6 @@ export default function AppLoader() {
     tl.to(logoRef.current, { scale: 1.018, duration: 0.14, ease: 'power2.out' })
     tl.to(logoRef.current, { scale: 1,     duration: 0.22, ease: 'elastic.out(1, 0.5)' })
 
-    // SAFETY: hard limit on overlay lifetime, no matter what. If we already
-    // got the page-ready signal but somehow never exited, this kicks in.
     const lifetimeId = setTimeout(() => {
       if (!exited.current) forceHide()
     }, MAX_LIFETIME_MS)
@@ -142,9 +131,7 @@ export default function AppLoader() {
     return () => clearTimeout(lifetimeId)
   }, [])
 
-  // ─── Exit when page ready ─────────────────────────────────────
   useEffect(() => {
-    // If page already became ready before this effect ran, exit straight away.
     if (getPageReady()) {
       if (entryDone.current) runExit()
       else shouldExit.current = true

@@ -41,15 +41,12 @@ class TouchLastSeen
             }
 
             $cacheKey = "touch:last_seen:{$user->id}";
-            // ::add returns true only if the key didn't exist — so this whole
-            // block runs at most once every THROTTLE_SECONDS per user.
             if (Cache::add($cacheKey, 1, self::THROTTLE_SECONDS)) {
                 DB::table('users')
                     ->where('id', $user->id)
                     ->update(['last_seen_at' => now()]);
             }
         } catch (\Throwable) {
-            // never break the response over presence bookkeeping
         }
 
         return $response;

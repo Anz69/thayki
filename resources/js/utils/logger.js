@@ -15,21 +15,18 @@ const DEV = !!import.meta.env?.DEV
 
 export function logError(...args) {
   if (DEV) {
-    // eslint-disable-next-line no-console
     console.error(...args)
   }
 }
 
 export function logWarn(...args) {
   if (DEV) {
-    // eslint-disable-next-line no-console
     console.warn(...args)
   }
 }
 
 export function logInfo(...args) {
   if (DEV) {
-    // eslint-disable-next-line no-console
     console.info(...args)
   }
 }

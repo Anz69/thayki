@@ -29,9 +29,6 @@ class SubmitPaymentAction
                 throw DomainException::conflict('PAYMENT_INVALID_STATE', 'Payment cannot be resubmitted.');
             }
 
-            // Prevent the client from silently overwriting an already-submitted
-            // tx_hash with a different one — that would let a malicious client
-            // confuse the admin/manual review step.
             if (
                 $payment->tx_hash !== null
                 && $payment->tx_hash !== ''

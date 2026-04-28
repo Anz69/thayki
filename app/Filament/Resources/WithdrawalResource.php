@@ -76,9 +76,6 @@ class WithdrawalResource extends Resource
                     ->options(collect(WithdrawalStatus::cases())->mapWithKeys(fn ($c) => [$c->value => $c->value])),
             ])
             ->actions([
-                // High-frequency action: open / create the support chat with this
-                // model and jump straight to the SupportChats Filament page so the
-                // admin can coordinate the actual payout.
                 Tables\Actions\Action::make('contact_via_support')
                     ->label('Написать в чате')
                     ->icon('heroicon-o-chat-bubble-left-right')
@@ -95,7 +92,6 @@ class WithdrawalResource extends Resource
                                 ->body('Перейдите в раздел "Чат поддержки", чтобы написать модели.')
                                 ->success()
                                 ->send();
-                            // Stash the chat id in session so SupportChats page can preselect it.
                             session()->put('support_chat_preselect', $chat->id);
                         } catch (\Throwable $e) {
                             Notification::make()->title('Ошибка: '.$e->getMessage())->danger()->send();

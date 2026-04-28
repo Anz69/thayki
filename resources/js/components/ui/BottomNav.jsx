@@ -19,14 +19,10 @@ function getSlot(pathname, clientStatus, modelStatus, isModel) {
       if (!modelStatus || ['rejected', 'expired', 'cancelled', 'completed'].includes(modelStatus)) return null
       if (modelStatus === 'pending')   return 'model-pending'
       if (modelStatus === 'accepted')  return 'model-waiting'
-      // After payment the meeting is FINAL — no extra "confirm" step.
-      // Both `paid` and the legacy `confirmed` get the same slot.
       if (modelStatus === 'paid' || modelStatus === 'confirmed') return 'model-confirmed'
       return null
     }
     if (!clientStatus || ['rejected', 'expired', 'cancelled', 'completed'].includes(clientStatus)) return null
-    // Client gets the "go to chat" CTA as soon as the meeting is set
-    // (paid OR legacy confirmed). Before that, it's the default screen.
     return (clientStatus === 'paid' || clientStatus === 'confirmed') ? 'client-chat' : 'client-default'
   }
   return null
@@ -220,7 +216,6 @@ export default function BottomNav() {
   }, [targetSlot])
 
   useLayoutEffect(() => {
-    // Ensure indicator is always hidden when we're not on a tab slot
     const isTabs = renderedSlot === 'tabs'
     const indicator = indicatorRef.current
     if (indicator && !isTabs) {
@@ -289,7 +284,7 @@ export default function BottomNav() {
                 {renderedTabs[0].label}
               </button>
 
-              {renderedSlot === 'tabs' && !auth.isModel() && meeting.meeting && (
+              {renderedSlot === 'tabs' && !auth.isModel() && meeting.meeting && !['cancelled', 'rejected', 'expired', 'completed'].includes(meeting.status) && (
                 <button
                   onClick={() => {
                     const meetingId = meeting.meeting?.id

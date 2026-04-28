@@ -31,8 +31,6 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
   const hasAmount = numAmount > 0
   const amountOver = numAmount > balance
 
-  // Reveal the action buttons under the input only after a positive amount
-  // is typed — same gentle slide-in as before.
   useEffect(() => {
     const el = amountBtnsRef.current
     if (!el) return

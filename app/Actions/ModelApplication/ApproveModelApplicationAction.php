@@ -50,8 +50,6 @@ class ApproveModelApplicationAction
                 ],
             );
 
-            // Import photos from the application payload
-            // photos[] contains storage-relative paths (e.g. "application-photos/1/uuid.jpg")
             $photos = array_values(array_filter((array) ($payload['photos'] ?? [])));
             if (count($photos) > 0) {
                 $profile->photos()->delete();
@@ -66,7 +64,6 @@ class ApproveModelApplicationAction
                 }
             }
 
-            // Import price options from the application payload
             $priceOptions = (array) ($payload['price_options'] ?? []);
             if (count($priceOptions) > 0) {
                 $profile->priceOptions()->delete();

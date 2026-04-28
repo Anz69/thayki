@@ -17,7 +17,6 @@ function AgePicker({ value, onChange, itemH, visibleCount }) {
   const dragStartSc  = useRef(0)
   const itemHRef     = useRef(itemH)
 
-  // keep ref in sync so event handlers always use latest itemH
   useEffect(() => { itemHRef.current = itemH }, [itemH])
 
   function getIdx(scrollTop) {
@@ -63,7 +62,6 @@ function AgePicker({ value, onChange, itemH, visibleCount }) {
     document.removeEventListener('mouseup', stopDrag)
   }
 
-  // scroll to initial value
   useLayoutEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -72,7 +70,6 @@ function AgePicker({ value, onChange, itemH, visibleCount }) {
     setTimeout(() => { syncing.current = false }, 0)
   }, [])
 
-  // re-scroll when itemH changes (compact mode toggle)
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -170,7 +167,6 @@ export default function Step2Age({ isActive, stepNum, totalSteps, onNext }) {
   const [age, setAge] = useState(21)
   const isCompact = useCompactMode()
 
-  // Responsive picker sizing
   const itemH        = isCompact ? 65 : 70
   const visibleCount = isCompact ? 7  : 7
 

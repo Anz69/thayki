@@ -88,7 +88,6 @@ export default function HomePage() {
     gsap.set(shareBtnRef.current, { autoAlpha: 0, y: -12 })
   }, [])
 
-  // Re-animate cards when models load
   useEffect(() => {
     if (loading || !models.length || !gridRef.current) return
     const cards = Array.from(gridRef.current.children)

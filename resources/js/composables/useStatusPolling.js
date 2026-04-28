@@ -1,19 +1,5 @@
 import { useEffect, useRef } from 'react'
 
-/**
- * Periodically invoke `loader()` while the page is visible and `enabled` is
- * true. Also invokes immediately when the document becomes visible (user
- * returns to the tab). Used as a fallback to ensure UI catches up with
- * server-side state changes when WebSocket delivery is missed (Reverb not
- * running, flaky connection, channel auth failure, etc.).
- *
- *   useStatusPolling(
- *     () => meeting.load(id),
- *     { enabled: !!id, intervalMs: 5000 },
- *   )
- *
- * `loader` may return a promise; concurrent invocations are guarded against.
- */
 export function useStatusPolling(loader, { enabled = true, intervalMs = 3000 } = {}) {
   const loaderRef = useRef(loader)
   loaderRef.current = loader
@@ -29,12 +15,10 @@ export function useStatusPolling(loader, { enabled = true, intervalMs = 3000 } =
       if (cancelled || inFlight) return
       if (typeof document !== 'undefined' && document.hidden) return
       inFlight = true
-      try { await loaderRef.current?.() } catch { /* swallow */ }
+      try { await loaderRef.current?.() } catch {}
       finally { inFlight = false }
     }
 
-    // Run once immediately so the UI is up-to-date right away,
-    // then continue polling on the interval.
     run()
     timerId = setInterval(run, intervalMs)
 

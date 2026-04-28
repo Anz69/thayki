@@ -46,7 +46,6 @@ export default function StrangeWelcomePage() {
   const openChat = useCallback((event) => {
     if (event) event.preventDefault()
 
-    // 1) Native Telegram WebApp method — preferred path.
     try {
       const tg = window.Telegram?.WebApp
       if (tg && typeof tg.openTelegramLink === 'function') {
@@ -55,14 +54,11 @@ export default function StrangeWelcomePage() {
       }
     } catch { /* fall through */ }
 
-    // 2) Plain browser path.
     try {
       const w = window.open(CHAT_URL, '_blank', 'noopener,noreferrer')
       if (w) return
     } catch { /* fall through */ }
 
-    // 3) Last resort — same-window navigation. Telegram WebView intercepts
-    //    t.me links here and routes to the chat.
     try {
       window.location.href = CHAT_URL
     } catch { /* nothing else we can do */ }

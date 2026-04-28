@@ -19,7 +19,6 @@ function buildApplicationPayload(data) {
   if (prices.night)      priceOptions.push({ label: 'Ночь',   hours: 8,  price_thb: Number(prices.night) })
   if (prices.day)        priceOptions.push({ label: '24 ч',   hours: 24, price_thb: Number(prices.day) })
 
-  // hourly_rate_thb: first filled price / hours, minimum 100
   const hourlyRate = prices.hour
     ? Math.max(100, Number(prices.hour))
     : prices.threeHours
@@ -63,7 +62,6 @@ export default function BecomeModelPage() {
   const navigate = useTransitionNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Step is stored in ?step=N — survives page refresh without any browser storage
   const initialStep = clampStep(searchParams.get('step') ?? '0')
 
   const [stepIdx, setStepIdx]     = useState(initialStep)
@@ -74,7 +72,6 @@ export default function BecomeModelPage() {
   const animating = useRef(false)
   const formData  = useRef({})
 
-  // On first paint: show only the current slide (handles refresh on a non-zero step)
   useLayoutEffect(() => {
     slidesRef.current.forEach((el, i) => {
       if (!el) return
@@ -96,7 +93,6 @@ export default function BecomeModelPage() {
     const nextEl = slidesRef.current[next]
     if (!prevEl || !nextEl) return
 
-    // Sync URL — replace so the back button doesn't replay every step
     setSearchParams(next === 0 ? {} : { step: String(next) }, { replace: true })
 
     gsap.set(nextEl, { xPercent: forward ? 100 : -100, autoAlpha: 1, pointerEvents: 'none' })
@@ -118,7 +114,6 @@ export default function BecomeModelPage() {
     formData.current = { ...formData.current, ...data }
     const nextIdx = stepRef.current + 1
     if (nextIdx >= SCREENS.length) {
-      // Last step — submit the application
       setSubmitting(true)
       setSubmitError(null)
       try {

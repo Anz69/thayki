@@ -26,7 +26,6 @@ class BrowserPollController extends Controller
 {
     public function poll(Request $request, string $token): JsonResponse
     {
-        // Ignore obviously invalid tokens
         if (strlen($token) < 8 || strlen($token) > 128) {
             return response()->json(['authenticated' => false]);
         }
@@ -45,7 +44,6 @@ class BrowserPollController extends Controller
             return response()->json(['authenticated' => false]);
         }
 
-        // Consume the token — one-time use
         Cache::forget('browser_auth:' . $token);
 
         Auth::login($user, remember: true);

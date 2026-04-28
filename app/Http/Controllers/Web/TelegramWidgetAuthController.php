@@ -32,7 +32,6 @@ class TelegramWidgetAuthController extends Controller
 {
     public function handle(Request $request): JsonResponse
     {
-        // Already authenticated
         if (Auth::check()) {
             return response()->json(['ok' => true, 'user' => $this->formatUser(Auth::user())]);
         }
@@ -49,7 +48,6 @@ class TelegramWidgetAuthController extends Controller
             return response()->json(['ok' => false, 'error' => 'Invalid hash'], 401);
         }
 
-        // Reject stale auth (older than 1 day)
         if (! $allowUnsigned && (time() - (int) $data['auth_date']) > 86400) {
             return response()->json(['ok' => false, 'error' => 'Auth data expired'], 401);
         }
@@ -115,7 +113,6 @@ class TelegramWidgetAuthController extends Controller
 
         $receivedHash = $data['hash'];
 
-        // Build check string (all fields except hash, sorted alphabetically)
         $checkData = $data;
         unset($checkData['hash']);
         ksort($checkData);
@@ -125,7 +122,6 @@ class TelegramWidgetAuthController extends Controller
             $checkData,
         ));
 
-        // secret key is SHA-256 of the bot token (raw binary output)
         $secretKey     = hash('sha256', $botToken, true);
         $expectedHash  = hash_hmac('sha256', $checkString, $secretKey);
 

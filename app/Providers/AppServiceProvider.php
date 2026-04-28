@@ -29,12 +29,6 @@ class AppServiceProvider extends ServiceProvider
             static fn ($app): PaymentGateway => $app->make(PaymentGatewayManager::class)->default(),
         );
 
-        // Telegram services have primitive (string) constructor params that
-        // Laravel can't auto-resolve via reflection. Without these explicit
-        // bindings the container blows up with
-        //   "Unresolvable dependency [Parameter #0 [ <required> string $botToken ]]"
-        // the moment ANYTHING type-hints StartHandler / TelegramBotService /
-        // Notifier — which is exactly what TelegramBotWebhookController does.
         $this->app->singleton(TelegramBotService::class, static fn (): TelegramBotService => TelegramBotService::fromConfig());
         $this->app->singleton(StartHandler::class, static fn ($app): StartHandler => new StartHandler($app->make(TelegramBotService::class)));
         $this->app->singleton(Notifier::class, static fn ($app): Notifier => new Notifier($app->make(TelegramBotService::class)));
@@ -105,9 +99,6 @@ class AppServiceProvider extends ServiceProvider
                 : 'msg-ip:'.$request->ip());
         });
 
-        // Meeting state-change actions (accept/reject/cancel/confirm/complete).
-        // Generic api throttle (120/min) is too permissive for mutations that
-        // affect financial state. 30/min per user is plenty for legitimate use.
         RateLimiter::for('meetings', static function (Request $request) {
             $user = $request->user();
 

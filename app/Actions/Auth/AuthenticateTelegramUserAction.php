@@ -71,16 +71,7 @@ class AuthenticateTelegramUserAction
                     'photo_url' => isset($payload['photo_url']) ? (string) $payload['photo_url'] : null,
                     'role' => UserRole::Client,
                     'status' => UserStatus::Active,
-                    // For private chats, Telegram's chat_id equals the user's
-                    // telegram_id. Capturing it here means notifications can
-                    // start firing the moment a user authenticates via the
-                    // Mini App, without requiring them to /start the bot
-                    // first. (The bot still needs to be unblocked on the
-                    // user's end for delivery to actually succeed — that's
-                    // a Telegram-side constraint we can't avoid.)
                     'tg_chat_id' => $telegramId,
-                    // is_strange / notifications_enabled fall back to column defaults
-                    // (true / true respectively).
                 ],
             );
 
@@ -92,7 +83,6 @@ class AuthenticateTelegramUserAction
                 'photo_url' => $user->photo_customized
                     ? $user->photo_url
                     : (isset($payload['photo_url']) ? (string) $payload['photo_url'] : $user->photo_url),
-                // Backfill chat_id for users that pre-date this change.
                 'tg_chat_id' => $user->tg_chat_id ?? $telegramId,
                 'last_auth_at' => now(),
             ])->save();

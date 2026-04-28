@@ -58,8 +58,6 @@ class ExpirePendingMeetingsCommand extends Command
                     return;
                 }
 
-                // Re-check inside the lock so we never expire a still-young meeting
-                // even if the index/select returned a stale row.
                 if ($meeting->created_at->copy()->addSeconds($ttl)->isFuture()) {
                     return;
                 }

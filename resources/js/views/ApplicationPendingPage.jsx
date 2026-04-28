@@ -18,7 +18,6 @@ export default function ApplicationPendingPage() {
   const approvedRef = useRef(false)
   const loopTlRef   = useRef(null)
 
-  // If already a model — skip straight to home
   useEffect(() => {
     if (user?.role === 'model') navigate('/home', { replace: true })
   }, [user?.role])
@@ -31,7 +30,6 @@ export default function ApplicationPendingPage() {
   }, [])
 
   useEffect(() => {
-    // Entry timeline
     const tl = gsap.timeline({ delay: 0.15 })
     tl.to(ring3Ref.current, { scale: 1, opacity: 1, duration: 0.65, ease: 'back.out(1.3)' })
       .to(ring2Ref.current, { scale: 1, opacity: 1, duration: 0.55, ease: 'back.out(1.4)' }, 0.1)
@@ -40,7 +38,6 @@ export default function ApplicationPendingPage() {
       .to(headRef.current,  { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power3.out' }, 0.5)
       .to(subRef.current,   { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power3.out' }, 0.6)
 
-    // Continuous loop: rotating dashed ring + pulsing outer ring + bouncing dots
     const loopTl = gsap.timeline({ repeat: -1, yoyo: false, delay: 0.9 })
     loopTl
     loopTlRef.current = loopTl
@@ -56,7 +53,6 @@ export default function ApplicationPendingPage() {
     }
   }, [])
 
-  // Poll for approval every 3 seconds
   useEffect(() => {
     const checkStatus = async () => {
       if (approvedRef.current) return
@@ -96,7 +92,6 @@ export default function ApplicationPendingPage() {
             .to(ring1Ref.current, { scale: 1.06, duration: 0.16, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 0.64)
         }
       } catch {
-        // ignore network errors
       }
     }
 

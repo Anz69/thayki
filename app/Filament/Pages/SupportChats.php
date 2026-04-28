@@ -99,8 +99,6 @@ class SupportChats extends Page
             return;
         }
 
-        // Hard cap to match the API request validation. Anything longer would
-        // 500 inside the action — surface it as a friendly Filament notice.
         if (mb_strlen($msg) > 4096) {
             Notification::make()
                 ->title('Сообщение слишком длинное (макс. 4096 символов).')
@@ -124,9 +122,6 @@ class SupportChats extends Page
                     'user_id' => $supportUser->id,
                     'role'    => ChatParticipantRole::Support,
                 ]);
-                // Refresh the relation so PostMessageAction's isParticipant()
-                // sees the freshly-attached support user when the relation is
-                // already loaded on the in-memory model.
                 $chat->load('participants');
             }
 

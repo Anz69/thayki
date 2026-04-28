@@ -37,7 +37,6 @@ export default function ModelMeetingPage() {
   const { user } = useAuthStore()
   const [params] = useSearchParams()
 
-  // ── Refs ──────────────────────────────────────────────────────────────────
   const headerRef          = useRef(null)
   const backBtnRef         = useRef(null)
   const headerTitleRef     = useRef(null)
@@ -60,6 +59,7 @@ export default function ModelMeetingPage() {
 
   const meetingIdParam = params.get('id')
   useEffect(() => {
+    meeting.reset()
     if (meetingIdParam) {
       meeting.load(meetingIdParam)
     } else {
@@ -80,20 +80,17 @@ export default function ModelMeetingPage() {
     }
   }, [meeting.status])
 
-  // ── Echo subscription (failure-tolerant) ──────────────────────────────────
   useEffect(() => {
     const meetingId = meeting.meeting?.id
     if (!meetingId) return undefined
     return subscribePrivate(`meeting.${meetingId}`, {
       '.meeting.status_changed': (e) => {
         if (e?.status) meeting.setStatus(e.status)
-        // Re-fetch full meeting so timestamp fields stay accurate.
         if (meetingId) meeting.load(meetingId)
       },
     })
   }, [meeting.meeting?.id])
 
-  // Polling fallback when WebSockets aren't delivering (Reverb down, etc.).
   const pollMeetingId = meeting.meeting?.id
   const pollEnabled   = !!pollMeetingId && !TERMINAL_STATUSES.includes(meeting.status)
   useStatusPolling(
@@ -101,7 +98,6 @@ export default function ModelMeetingPage() {
     { enabled: pollEnabled, intervalMs: 5000 },
   )
 
-  // ── Build detail rows from real meeting data ──────────────────────────────
   const m            = meeting.meeting
   const scheduledAt  = m?.scheduled_at ? new Date(m.scheduled_at) : null
   const formattedTime = scheduledAt
@@ -110,14 +106,15 @@ export default function ModelMeetingPage() {
   const price         = m?.price_thb ?? 0
   const durationHours = m?.duration_hours
   const durationLabel = durationHours ? `${durationHours} ч` : '—'
-  // If the logged-in user is the CLIENT in this meeting (model booking another model),
-  // show the model's info; otherwise show the client's info.
   const isUserTheClient = m?.client_id === user?.id
   const clientName = isUserTheClient
     ? (m?.model_profile?.display_name ?? '—')
     : (m?.client?.first_name ?? m?.client?.username ?? 'Клиент')
   const clientAvatar = isUserTheClient
-    ? (m?.model_profile?.photos?.find(p => p.is_main)?.url ?? m?.model_profile?.photos?.[0]?.url ?? null)
+    ? (m?.model_profile?.user?.photo_url
+        ?? m?.model_profile?.photos?.find(p => p.is_main)?.url
+        ?? m?.model_profile?.photos?.[0]?.url
+        ?? null)
     : (m?.client?.photo_url ?? null)
 
   const DETAIL_ROWS = [
@@ -128,7 +125,6 @@ export default function ModelMeetingPage() {
     { label: 'Клиент платит:', value: `${price.toLocaleString()} ฿`,           isBold: true },
   ]
 
-  // ── Animations ────────────────────────────────────────────────────────────
   const animatePendingIn = useCallback((delay = 0) => {
     const rows = pendingRowsRef.current.filter(Boolean)
     const tl = gsap.timeline({ delay })

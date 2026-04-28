@@ -26,18 +26,11 @@ class WebhookController extends Controller
         $expected = (string) config('telegram.webhook_secret', '');
 
         if ($expected === '') {
-            // env not set at all — make this LOUD so deploys without the
-            // secret don't silently swallow every Telegram update.
             Log::error('[Telegram webhook] TELEGRAM_WEBHOOK_SECRET is not set in .env — every update is dropped.');
             return response()->json(['ok' => true]);
         }
 
         if (! hash_equals($expected, $secret)) {
-            // The URL Telegram is hitting doesn't match our env. Common
-            // causes: rotated secret without re-running setWebhook, or
-            // config:cache holding the old value. Log the suffix of each
-            // so we can spot the mismatch in storage/logs/laravel.log
-            // without leaking the full secret.
             Log::error('[Telegram webhook] secret mismatch — update dropped.', [
                 'env_suffix' => substr($expected, -6),
                 'url_suffix' => substr($secret, -6),

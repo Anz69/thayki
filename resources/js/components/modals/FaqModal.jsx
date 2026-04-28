@@ -35,12 +35,10 @@ function AccordionItem({ item, isOpen, onToggle }) {
     const el = bodyRef.current
     if (!el) return
 
-    // Kill any running animations before starting new ones to prevent conflicts
     gsap.killTweensOf(el)
     gsap.killTweensOf(chevronRef.current)
 
     if (isOpen) {
-      // Use GSAP's own property getter for the current animated height
       const currentH = parseFloat(gsap.getProperty(el, 'height')) || el.offsetHeight
       gsap.fromTo(el,
         { height: currentH },
@@ -48,7 +46,6 @@ function AccordionItem({ item, isOpen, onToggle }) {
       )
       gsap.to(chevronRef.current, { rotation: 0, duration: 0.2, ease: 'power2.inOut' })
     } else {
-      // Measure the full content height before animating
       gsap.set(el, { height: 'auto' })
       const h = el.scrollHeight
       gsap.fromTo(el,

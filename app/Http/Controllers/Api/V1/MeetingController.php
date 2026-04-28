@@ -45,7 +45,6 @@ class MeetingController extends Controller
                 });
             }
         } elseif ($user->role === UserRole::Admin) {
-            // Admin sees everything
         } else {
             $query->where('client_id', $user->id);
         }
@@ -137,10 +136,6 @@ class MeetingController extends Controller
             durationHours: (int) $request->input('duration_hours'),
         );
 
-        // Only dispatch the per-meeting expiration job when a real queue worker
-        // exists. The `sync` driver executes jobs immediately and ignores
-        // `delay()` — relying on the scheduled `meetings:expire-pending`
-        // command (see routes/console.php) is the only safe choice there.
         if (config('queue.default') !== 'sync') {
             $ttl = (int) config('app.meeting_pending_ttl', env('MEETING_PENDING_TTL', 600));
             ExpirePendingMeetingJob::dispatch($meeting->id)->delay(now()->addSeconds($ttl));

@@ -39,8 +39,6 @@ class TelegramBotService
     public function sendMessage(int|string $chatId, string $text, ?string $openPath = null, ?string $buttonLabel = null): bool
     {
         if ($this->botToken === '') {
-            // Bot is not configured for this environment — silently no-op so
-            // the test/local/CI paths still work.
             return false;
         }
 
@@ -52,13 +50,6 @@ class TelegramBotService
         ];
 
         if ($openPath !== null) {
-            // Use a web_app button with the direct HTTPS URL of the Mini App.
-            //
-            // We intentionally avoid the url+t.me/Bot/App approach here because
-            // that form requires the Mini App short name to be registered in
-            // BotFather and Telegram to resolve it — if that mapping is missing
-            // or wrong the button silently does nothing. A web_app button with
-            // the real HTTPS origin always opens the app reliably.
             $webAppUrl = $this->buildDirectUrl($openPath);
             if ($webAppUrl !== null) {
                 $payload['reply_markup'] = json_encode([
@@ -125,13 +116,11 @@ class TelegramBotService
     {
         $clean = '/'.ltrim($openPath, '/');
 
-        // If TELEGRAM_MINIAPP_URL is a plain web URL use it as the base.
         $miniAppUrl = (string) config('telegram.miniapp_url', '');
         if ($miniAppUrl !== '' && ! str_starts_with($miniAppUrl, 'https://t.me/')) {
             return rtrim($miniAppUrl, '/').$clean;
         }
 
-        // Otherwise fall back to APP_URL (always the real domain).
         $appUrl = (string) config('app.url', '');
         if ($appUrl !== '') {
             return rtrim($appUrl, '/').$clean;
@@ -161,15 +150,12 @@ class TelegramBotService
     {
         $clean = '/'.ltrim($openPath, '/');
 
-        // t.me/<bot>/<app>?startapp=<token> — Mini App URL with start params.
         if (str_starts_with($miniAppUrl, 'https://t.me/')) {
             $token = rtrim(strtr(base64_encode($clean), '+/', '-_'), '=');
             $sep   = str_contains($miniAppUrl, '?') ? '&' : '?';
             return $miniAppUrl.$sep.'startapp='.$token;
         }
 
-        // Plain Web URL: append the path as a hash so the SPA router can
-        // pick it up via window.location.hash on load.
         $sep = str_contains($miniAppUrl, '#') ? '' : '#';
         return $miniAppUrl.$sep.$clean;
     }

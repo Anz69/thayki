@@ -63,7 +63,6 @@ function OrderCard({ meeting, currentUserId, onClick }) {
   const [imgFailed, setImgFailed] = useState(false)
   const s = STATUS_MAP[meeting.status] ?? { label: meeting.status }
 
-  // Show the OPPOSITE participant: if logged-in user is the client, show model; if the model — show client
   const isClient = meeting.client_id === currentUserId
   const counterName = isClient
     ? (meeting.model_profile?.display_name ?? '—')
@@ -118,7 +117,6 @@ export default function ClientPage() {
   const questionRef = useRef(null)
   const ordersRef   = useRef(null)
 
-  // Load meetings and wallet in parallel
   useEffect(() => {
     api.get('/meetings', {
       params: {

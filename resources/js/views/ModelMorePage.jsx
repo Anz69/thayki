@@ -52,9 +52,6 @@ function MenuItem({ icon, label, onClick }) {
   )
 }
 
-// Local mirror of the Toggle component used on the client-side MorePage.
-// Kept here (and not extracted) on purpose — both pages have minor visual
-// differences and we'd rather not couple them to a shared file yet.
 function Toggle({ value, onChange }) {
   return (
     <button
@@ -137,8 +134,6 @@ export default function ModelMorePage() {
   const [meetings, setMeetings]             = useState([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
 
-  // TG-notification opt-out (default ON server-side). Optimistic update with
-  // rollback on failure so the model can flick the toggle and feel snappy.
   const [notifications, setNotifications] = useState(
     auth.user?.notifications_enabled ?? true
   )

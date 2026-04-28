@@ -35,8 +35,6 @@ class EditUser extends EditRecord
         $newBalanceMinor = (int) round(((float) ($data['wallet_balance_thb'] ?? 0)) * 100);
         $newLockedMinor  = (int) round(((float) ($data['wallet_locked_thb'] ?? 0)) * 100);
 
-        // auth()->user() here is AdminUser (Filament admin guard), NOT App\Models\User.
-        // AuditLogger expects ?User, so we pass null and store the admin id in context.
         $adminId = auth()->id();
 
         DB::transaction(function () use ($newBalanceMinor, $newLockedMinor, $adminId): void {

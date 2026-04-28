@@ -14,8 +14,6 @@ const echo = new Echo({
   forceTLS:          (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
   enabledTransports: ['ws', 'wss'],
   withCredentials:   true,
-  // Read Bearer token lazily at auth-call time to avoid circular imports
-  // and to pick up the token obtained after autologin.
   authorizer: (channel) => ({
     authorize: (socketId, callback) => {
       const token = localStorage.getItem(TOKEN_KEY)

@@ -79,7 +79,6 @@ class PostMessageAction
         try {
             event(new MessageSent($message));
         } catch (\Throwable) {
-            // Broadcasting failure must not break message delivery
         }
 
         return $message;

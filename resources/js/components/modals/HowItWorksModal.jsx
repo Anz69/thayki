@@ -37,10 +37,8 @@ export default function HowItWorksModal({ isOpen, onClose }) {
   const isForwardRef   = useRef(true)
   useEffect(() => {
     if (!isOpen) {
-      // Set flags immediately so no spurious animations fire during close
       skipFooterAnim.current = true
       animating.current      = false
-      // Delay state reset until AFTER ModalSheet.animateOut finishes (duration: 0.36s)
       const t = setTimeout(() => {
         setStepIdx(0)
         stepRef.current = 0

@@ -79,7 +79,6 @@ export function formatRussianRelative(iso, { feminine = true } = {}) {
   if (diffDays < 7) {
     return `${verb} в сети: ${diffDays} ${pluralRu(diffDays, ['день', 'дня', 'дней'])} назад`
   }
-  // Older than a week — show full date
   const day = d.getDate()
   const month = MONTHS_GENITIVE[d.getMonth()]
   const sameYear = d.getFullYear() === now.getFullYear()

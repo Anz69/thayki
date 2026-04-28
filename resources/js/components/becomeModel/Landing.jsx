@@ -6,7 +6,6 @@ export default function BecomeModelLanding({ isActive, onStart }) {
   const titleRef    = useRef(null)
   const subtitleRef = useRef(null)
   const btnRef      = useRef(null)
-  // Флаг: лоадер завершился и можно проигрывать анимации
   const loaderDone  = useRef(false)
 
   useLayoutEffect(() => {
@@ -25,14 +24,11 @@ export default function BecomeModelLanding({ isActive, onStart }) {
     })
   }
 
-  // Ждём окончания лоадера — только тогда разрешаем анимацию
   usePageReady(() => {
     loaderDone.current = true
     if (isActive) playAnimation()
   })
 
-  // При возврате на этот слайд (после шага 1 → назад)
-  // лоадер уже завершён, запускаем сразу
   useEffect(() => {
     if (!isActive || !loaderDone.current) return
     playAnimation()

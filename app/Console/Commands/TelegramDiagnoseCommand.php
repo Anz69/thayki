@@ -46,7 +46,6 @@ class TelegramDiagnoseCommand extends Command
             return self::FAILURE;
         }
 
-        // 2) Bot token sanity check.
         $this->newLine();
         $this->info('— getMe —');
         $bot = TelegramBotService::fromConfig();
@@ -57,7 +56,6 @@ class TelegramDiagnoseCommand extends Command
         }
         $this->line(sprintf('Bot is alive: @%s (id=%d)', $me['username'] ?? '?', $me['id'] ?? 0));
 
-        // 3) Telegram's view of our webhook.
         $this->newLine();
         $this->info('— getWebhookInfo —');
         try {
@@ -69,7 +67,6 @@ class TelegramDiagnoseCommand extends Command
             $this->line('last_error_date      : '.($info['last_error_date'] ?? '—'));
             $this->line('last_error_message   : '.($info['last_error_message'] ?? '—'));
 
-            // 4) Compare URL secret tail vs env secret tail.
             if ($url !== '') {
                 $urlSecret = (string) basename($url);
                 if (hash_equals($secret, $urlSecret)) {
@@ -83,7 +80,6 @@ class TelegramDiagnoseCommand extends Command
             $this->error('getWebhookInfo failed: '.$e->getMessage());
         }
 
-        // Optional: outbound smoke test.
         $sendTo = $this->option('send');
         if ($sendTo) {
             $this->newLine();

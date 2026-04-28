@@ -61,8 +61,6 @@ class StartHandler
             $invite = StartInvite::query()->whereKey($invite->id)->lockForUpdate()->first();
             if ($invite === null || ! $invite->isUsable()) return;
 
-            // Idempotent per (invite, user): if this user already burned
-            // this token, skip incrementing the counter.
             $alreadyUsed = StartInviteUse::query()
                 ->where('invite_id', $invite->id)
                 ->where('user_id', $user->id)
@@ -105,7 +103,6 @@ class StartHandler
                 ],
             );
 
-            // Always refresh chat id (could be different if user blocked & re-started).
             $dirty = false;
             if ($user->tg_chat_id !== $chatId) {
                 $user->tg_chat_id = $chatId;

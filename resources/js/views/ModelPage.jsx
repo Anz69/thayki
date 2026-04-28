@@ -25,9 +25,6 @@ export default function ModelPage() {
   const [shareLoading, setShareLoading] = useState(false)
   const [shareError, setShareError]     = useState('')
 
-  // Mints a one-shot verify-invite for the current (non-strange) user and
-  // forwards it through Telegram's share sheet so the recipient lands in the
-  // bot's /start handler with the token attached.
   const handleShare = useCallback(async () => {
     if (shareLoading) return
     setShareLoading(true)
@@ -42,7 +39,6 @@ export default function ModelPage() {
       const text = `Зацени, тут красивые девушки на Пхукете 😍 ${model?.display_name ? `Например ${model.display_name}.` : ''}`.trim()
       const tg = window.Telegram?.WebApp
       if (tg?.openTelegramLink) {
-        // Telegram native share sheet: t.me/share/url?url=...&text=...
         const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`
         tg.openTelegramLink(shareUrl)
       } else if (navigator.share) {
@@ -104,8 +100,6 @@ export default function ModelPage() {
     })
   }
 
-  // Анимирует фото-карточки. Вызывается как из startAnimations (если модель
-  // успела загрузиться до page-ready), так и из useEffect([model]) (если нет).
   const animatePhotos = useCallback((photos) => {
     const [p0, p1, p2] = photos
 
@@ -139,47 +133,36 @@ export default function ModelPage() {
     pageReadyFired.current = true
     const tl = gsap.timeline({ defaults: { force3D: true } })
 
-    // ── Header ────────────────────────────────────────────────
     tl.to(headerRef.current,      { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
       .to(backBtnRef.current,     { autoAlpha: 1, x: 0, duration: 0.28, ease: 'expo.out' }, 0.06)
       .to(headerTitleRef.current, { autoAlpha: 1, y: 0, duration: 0.28, ease: 'expo.out' }, 0.1)
 
-    // ── Фото: запускаем если модель уже загружена, иначе useEffect([model]) догонит ─
-    // modelRef.current хранит актуальное значение model в момент вызова
     const currentPhotos = modelRef.current?.photos ?? []
     animatePhotos(currentPhotos)
 
-    // ── Text: masked slide-up reveal ─────────────────────────
     tl.to([ageRef.current, nameRef.current], {
       y: '0%', duration: 0.52, stagger: 0.09, ease: 'expo.out',
     }, 0.4)
 
-    // ── Description ──────────────────────────────────────────
     tl.to(descRef.current, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power3.out' }, 0.56)
 
-    // ── Tab section ──────────────────────────────────────────
     tl.to(tabSectionRef.current, {
       autoAlpha: 1, y: 0, duration: 0.4, ease: 'expo.out',
       onComplete: () => gsap.set(tabSectionRef.current, { clearProps: 'will-change' }),
     }, 0.64)
 
-    // ── Book button: spring bounce in ────────────────────────
     tl.to(bookBtnRef.current, {
       autoAlpha: 1, scale: 1, duration: 0.55, ease: 'back.out(2.4)',
       onComplete: () => gsap.set(bookBtnRef.current, { clearProps: 'will-change' }),
     }, 0.7)
   }
 
-  // ─── Initial state (before paint) ────────────────────────────
   useLayoutEffect(() => {
     gsap.set(headerRef.current,      { autoAlpha: 0, y: -44 })
     gsap.set(backBtnRef.current,     { autoAlpha: 0, x: -20 })
     gsap.set(headerTitleRef.current, { autoAlpha: 0, y: -10 })
 
-    // Фото скрыты через inline style="visibility:hidden" на wrapper-div.
-    // Начальное GSAP-состояние выставляет animatePhotos() — когда модель загружена.
 
-    // Text: masked (clipped by overflow-hidden parent)
     gsap.set([ageRef.current, nameRef.current], { y: '-110%' })
     gsap.set(descRef.current,       { autoAlpha: 0, y: 12 })
     gsap.set(tabSectionRef.current, { autoAlpha: 0, y: 18, willChange: 'transform, opacity' })
@@ -210,7 +193,6 @@ export default function ModelPage() {
     }
   }, [])
 
-  // Load model from API
   useEffect(() => {
     if (!id) return
     let cancelled = false
@@ -226,7 +208,6 @@ export default function ModelPage() {
       .catch((err) => {
         if (cancelled) return
         const status = err?.response?.status
-        // 404 / 403 — model is gone or hidden, push the user back home.
         if (status === 404 || status === 403) {
           navigate('/home', { replace: true })
           return
@@ -237,7 +218,6 @@ export default function ModelPage() {
     return () => { cancelled = true }
   }, [id, navigate])
 
-  // Если page-ready уже сработал до загрузки модели — анимируем фото сейчас
   useEffect(() => {
     if (!model || !pageReadyFired.current) return
     animatePhotos(model.photos ?? [])
@@ -245,7 +225,6 @@ export default function ModelPage() {
 
   usePageReady(startAnimations)
 
-  // Always show the 3 first photos in order (index 0, 1, 2)
   const allPhotos  = model?.photos ?? []
   const mainPhoto  = allPhotos[0] ?? null
   const leftPhoto  = allPhotos[1] ?? null
@@ -298,7 +277,6 @@ export default function ModelPage() {
             : null
 
           return activeMeeting ? (
-            // Already have a booking — navigate to it instead of opening a new sheet
             <button
               ref={bookBtnRef}
               onClick={() => navigate(`/meeting?id=${activeMeeting.id}`)}

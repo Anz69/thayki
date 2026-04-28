@@ -43,7 +43,6 @@ class ManualPaymentGateway implements PaymentGateway
 
     public function refund(Payment $payment): void
     {
-        // No-op: manual refunds are handled out-of-band by admins.
     }
 
     public function name(): string

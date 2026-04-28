@@ -39,10 +39,6 @@ class ChatController extends Controller
             ->orderByDesc('last_message_at')
             ->paginate(perPage: $perPage, page: $page);
 
-        // Batch-compute unread counts in one query to avoid N+1.
-        // Each chat would otherwise issue its own COUNT in ChatResource.
-        // We join messages → chat_participants (for this user) so the per-row
-        // last_read_at cutoff is part of a single grouped query.
         $chatIds = $paginator->getCollection()->pluck('id')->all();
         $unreadByChat = [];
 
@@ -66,7 +62,6 @@ class ChatController extends Controller
             }
         }
 
-        // Stash precomputed unread count on each chat for the resource.
         foreach ($paginator->getCollection() as $chat) {
             $chat->setAttribute('unread_count_precomputed', $unreadByChat[(int) $chat->id] ?? 0);
         }

@@ -73,9 +73,6 @@ class AutoCancelStaleAcceptedMeetingsCommand extends Command
                 }
 
                 $actor = User::query()->find($meeting->client_id) ?? new User;
-                // Mark as cancelled (not expired) so the user-facing copy makes
-                // sense: "your meeting was cancelled because the model didn't
-                // confirm in time" rather than the generic expired path.
                 $transition->execute(
                     $meeting,
                     MeetingStatus::Cancelled,

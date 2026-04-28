@@ -29,10 +29,6 @@ export default function DateStep() {
     return result
   }, [])
 
-  // Annotate each day with whether it has any conflicts so we can render
-  // a small dot, and whether it's effectively "fully booked" so we can dim
-  // it. `bookedSlots` changes when the store finishes loading availability;
-  // re-running this memo on that change keeps the markers fresh.
   const annotated = useMemo(() => {
     return days.map((d) => {
       const dayStart = new Date(d.date)
@@ -49,8 +45,6 @@ export default function DateStep() {
 
   useEffect(() => {
     if (store.isOpen && !store.selectedDate && annotated.length) {
-      // Pick the first day that isn't fully booked so the user lands on
-      // a usable choice.
       const first = annotated.find((d) => !d.fullyBooked) ?? annotated[0]
       store.setState({ selectedDate: first })
     }

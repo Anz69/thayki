@@ -33,9 +33,7 @@ class TransitionMeetingStatusAction
     private const ALLOWED = [
         'pending'   => ['accepted', 'rejected', 'expired', 'cancelled'],
         'accepted'  => ['paid', 'cancelled', 'expired'],
-        // paid is now terminal-positive: model doesn't need to confirm again.
         'paid'      => ['completed', 'cancelled'],
-        // legacy: only used to migrate historical confirmed rows.
         'confirmed' => ['completed', 'cancelled'],
     ];
 
@@ -62,9 +60,6 @@ class TransitionMeetingStatusAction
             }
             if ($target === MeetingStatus::Paid) {
                 $update['paid_at'] = now();
-                // Stamp confirmed_at too so any analytics/admin views that
-                // still read "confirmed_at" as a proxy for "set in stone"
-                // don't suddenly go null.
                 if ($meeting->confirmed_at === null) {
                     $update['confirmed_at'] = now();
                 }

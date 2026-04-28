@@ -52,7 +52,6 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
   const buttWrapRef    = useRef(null)
 
   function handleSelectOpen(wrapRef) {
-    // Wait for the GSAP open animation (~300ms) then scroll the wrapper into view
     setTimeout(() => {
       wrapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }, 320)

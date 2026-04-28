@@ -85,7 +85,6 @@ function formatDate(iso) {
 function OrderCard({ meeting, currentUserId, onClick }) {
   const [imgFailed, setImgFailed] = useState(false)
 
-  // Show the OPPOSITE participant: if logged-in user is the client, show model; if the model — show client
   const isClient = meeting.client_id === currentUserId
   const counterName = isClient
     ? (meeting.model_profile?.display_name ?? '—')
@@ -134,8 +133,6 @@ export default function MorePage() {
   const auth = useAuthStore()
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
-  // Notifications toggle: bound to the server-side `notifications_enabled`
-  // flag. Defaults to true on registration; user can opt out here.
   const [notifications, setNotifications] = useState(
     auth.user?.notifications_enabled ?? true
   )
@@ -146,7 +143,6 @@ export default function MorePage() {
       const updated = res?.data?.data
       if (updated && auth.setUser) auth.setUser(updated)
     } catch {
-      // Revert optimistic toggle on failure.
       setNotifications((v) => !v)
     }
   }, [auth])

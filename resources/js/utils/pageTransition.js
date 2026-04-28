@@ -12,8 +12,6 @@ export function getPageReady()       { return _pageReady }
 
 export function setPageReady(val) {
   _pageReady = val
-  // Snapshot before iterating — listeners may unsubscribe themselves on fire,
-  // which would otherwise mutate the Set during iteration.
   Array.from(_listeners).forEach(fn => {
     try { fn(val) } catch { /* no listener should be able to cascade-fail */ }
   })
@@ -21,9 +19,6 @@ export function setPageReady(val) {
 
 export function subscribePageReady(fn) {
   _listeners.add(fn)
-  // If already ready, fire on next tick so the subscriber doesn't miss
-  // an event that already happened. This is the main defence against
-  // "subscribed too late → never notified" race.
   if (_pageReady) {
     queueMicrotask(() => {
       if (_listeners.has(fn)) {
@@ -34,11 +29,6 @@ export function subscribePageReady(fn) {
   return () => _listeners.delete(fn)
 }
 
-// ─── Loader done signal ─────────────────────────────────────────
-// AppLoader calls setLoaderDone() when its exit animation reaches
-// the point where content starts to be revealed. RouteChangeEffect
-// uses onLoaderDone() instead of a raw setTimeout on the first load,
-// so page entrance animations fire in sync with the loader exit.
 
 const _loaderListeners = new Set()
 let _loaderDone = false
@@ -54,7 +44,6 @@ export function setLoaderDone() {
 
 export function onLoaderDone(fn) {
   if (_loaderDone) {
-    // Defer to next microtask so callers can finish their setup first.
     queueMicrotask(() => { try { fn() } catch {} })
     return () => {}
   }

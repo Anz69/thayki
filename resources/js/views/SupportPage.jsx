@@ -45,12 +45,10 @@ export default function SupportPage() {
 
   const hasText = inputText.trim().length > 0
 
-  // ── State machine: 'idle' → 'empty' | 'messages' ──────────────────
-  // Content is hidden until BOTH page transition AND API load are done.
-  const contentState  = useRef('idle')   // 'idle' | 'empty' | 'messages'
+  const contentState  = useRef('idle')
   const pageReadyDone = useRef(false)
   const loadDone      = useRef(false)
-  const initMsgs      = useRef([])       // snapshot of messages at load time
+  const initMsgs      = useRef([])
   const prevMsgCount  = useRef(0)
 
   const messagesEndRef = useRef(null)
@@ -68,7 +66,6 @@ export default function SupportPage() {
     if (el) gsap.set(el, { width: 0, marginLeft: 0, overflow: 'hidden' })
   }, [])
 
-  // Lock page-root scroll
   useEffect(() => {
     const root = document.getElementById('page-root')
     if (root) {
@@ -77,7 +74,6 @@ export default function SupportPage() {
     }
   }, [])
 
-  // ── Animation helpers ──────────────────────────────────────────────
   function animateEmptyIn() {
     gsap.set(emptyRef.current, { autoAlpha: 1 })
     gsap.fromTo(titleRef.current,
@@ -118,7 +114,6 @@ export default function SupportPage() {
     requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant' }))
   }
 
-  // ── Core: show content once both signals are ready ─────────────────
   function tryShowContent() {
     if (!pageReadyDone.current || !loadDone.current) return
     if (contentState.current !== 'idle') return
@@ -135,7 +130,6 @@ export default function SupportPage() {
     }
   }
 
-  // ── Initial GSAP state (before paint) ─────────────────────────────
   useLayoutEffect(() => {
     gsap.set(headerRef.current,   { y: -40, autoAlpha: 0 })
     gsap.set(inputBarRef.current, { y: 24,  autoAlpha: 0 })
@@ -143,7 +137,6 @@ export default function SupportPage() {
     if (messagesRef.current) gsap.set(messagesRef.current, { autoAlpha: 0 })
   }, [])
 
-  // ── Signal 1: page transition done ────────────────────────────────
   usePageReady(() => {
     gsap.timeline()
       .to(headerRef.current,   { y: 0, autoAlpha: 1, duration: 0.38, ease: 'expo.out' })
@@ -154,7 +147,6 @@ export default function SupportPage() {
       }, 0.12)
   })
 
-  // ── Signal 2: API load done ────────────────────────────────────────
   useEffect(() => {
     api.get('/chats/support')
       .then(({ data }) => {
@@ -177,7 +169,6 @@ export default function SupportPage() {
       })
   }, [myId])
 
-  // ── Real-time Echo (failure-tolerant) ──────────────────────────────
   useEffect(() => {
     if (!chatId) return undefined
     return subscribePrivate(`chats.${chatId}`, {
@@ -197,7 +188,6 @@ export default function SupportPage() {
     })
   }, [chatId, myId])
 
-  // ── React to message changes after initial load ────────────────────
   useEffect(() => {
     const state = contentState.current
     if (state === 'idle') return
@@ -230,7 +220,6 @@ export default function SupportPage() {
     }
   }, [messages])
 
-  // ── Send-wrap slide animation ──────────────────────────────────────
   useEffect(() => {
     const el = sendWrapRef.current
     if (!el) return
@@ -241,7 +230,6 @@ export default function SupportPage() {
     )
   }, [hasText])
 
-  // ── Helpers ────────────────────────────────────────────────────────
   const autoResize = () => {
     const el = textareaRef.current
     if (!el) return
@@ -294,7 +282,6 @@ export default function SupportPage() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
-  // ── Render ─────────────────────────────────────────────────────────
   return (
     <section className="flex flex-col bg-white overflow-hidden" style={{ height: '100dvh' }}>
       <header ref={headerRef} className="w-full py-4 bg-white shrink-0">
@@ -318,7 +305,6 @@ export default function SupportPage() {
           </div>
         )}
 
-        {/* Empty state */}
         <div
           ref={emptyRef}
           className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-8 text-center pointer-events-none"
@@ -332,7 +318,6 @@ export default function SupportPage() {
           </span>
         </div>
 
-        {/* Messages list */}
         <div
           ref={messagesRef}
           className="absolute inset-0 overflow-y-auto"

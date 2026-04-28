@@ -21,14 +21,12 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
     else if (!isOpen && isVisible)  animateOut(() => setIsVisible(false))
   }, [isOpen])
 
-  // Disable Telegram vertical swipe-to-close while sheet is open
   useEffect(() => {
     if (!isVisible) return
     window.Telegram?.WebApp?.disableVerticalSwipes?.()
     return () => window.Telegram?.WebApp?.enableVerticalSwipes?.()
   }, [isVisible])
 
-  // Entrance animation
   useEffect(() => {
     if (!isVisible || !sheetRef.current) return
     const kids = Array.from(sheetRef.current.children)
@@ -40,7 +38,6 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
       .to(kids, { opacity: 1, y: 0, duration: 0.48, stagger: 0.06, ease: 'power3.out' }, 0.1)
   }, [isVisible])
 
-  // Attach drag handlers to handle area only, with passive:false so we can preventDefault
   useEffect(() => {
     const el = handleRef.current
     if (!el || !isVisible) return
@@ -59,7 +56,6 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
       const dy = e.touches[0].clientY - startY
       const dx = Math.abs(e.touches[0].clientX - startX)
 
-      // Lock direction on first real movement
       if (!touchState.current.dir && (Math.abs(dy) > 4 || dx > 4)) {
         touchState.current.dir = dx > Math.abs(dy) ? 'h' : 'v'
       }

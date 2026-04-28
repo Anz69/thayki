@@ -33,13 +33,10 @@ class EnsureUserIsVerified
      * @var list<string>
      */
     private const ALLOWED_ROUTES = [
-        // Auth and identity
         'auth.telegram',
         'auth.me',
         'auth.logout',
         'me.profile',
-        // Profile patch — needed so the More-page TG-notification toggle
-        // works for strange users (they still get bot pings if they want).
         'me.update',
     ];
 
@@ -61,7 +58,6 @@ class EnsureUserIsVerified
             return $next($request);
         }
 
-        // Allow public webhooks and other infrastructure URLs unconditionally.
         foreach (self::ALLOWED_URL_PREFIXES as $prefix) {
             if (str_starts_with(ltrim($request->path(), '/'), $prefix)) {
                 return $next($request);

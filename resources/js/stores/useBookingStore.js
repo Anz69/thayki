@@ -111,7 +111,6 @@ const useBookingStore = create((set, get) => ({
         .filter(Boolean)
       set({ bookedSlots: slots })
     } catch {
-      // best-effort; UI still works without highlighting
       set({ bookedSlots: [] })
     }
   },
@@ -152,7 +151,6 @@ const useBookingStore = create((set, get) => ({
       bookedSlots:      [],
     })
 
-    // Fire-and-forget; UI is already rendering.
     if (model?.id) {
       get().loadBookedSlots(model.id)
     }
@@ -199,11 +197,7 @@ const useBookingStore = create((set, get) => ({
     const d = new Date(s.selectedDate.date)
     d.setHours(s.selectedHour, s.selectedMinute, 0, 0)
 
-    // FE-side guard so the user gets an immediate, friendly message instead
-    // of waiting for the round-trip + 409 path. The backend still validates
-    // — race-safe — but this is a much better default UX.
     if (s.isSlotConflicting(d.getTime(), s.selectedDuration.hours)) {
-      // Refresh booked slots so newly-freed slots stop showing as taken
       get().loadBookedSlots(s.modelProfileId)
       const err = new Error('Это время уже занято. Выберите другое.')
       err.code = 'SLOT_TAKEN'
@@ -231,7 +225,6 @@ const useBookingStore = create((set, get) => ({
         throw new Error('У вас уже есть активная встреча. Сначала завершите её.')
       }
       if (code === 'SLOT_TAKEN') {
-        // Refresh slots so the user immediately sees the conflict highlighted.
         get().loadBookedSlots(s.modelProfileId)
         throw new Error('Это время уже занято. Выберите другое.')
       }

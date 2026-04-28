@@ -6,7 +6,6 @@ import { usePageReady } from '@/composables/usePageReady'
 import useAuthStore from '@/stores/useAuthStore'
 import api, { extractErrorMessage } from '@/utils/api'
 import { subscribePrivate } from '@/utils/safeEcho'
-import ChatLoadingSkeleton from '@/components/ui/ChatLoadingSkeleton'
 import {
   formatRussianRelative,
   formatRussianDaySeparator,
@@ -25,28 +24,65 @@ const SendIcon = () => (
   </svg>
 )
 
-/** Normalize a raw API message to component format */
 function normalizeMsg(raw, myUserId) {
   const isMe = raw.user_id === myUserId || raw.sender_id === myUserId
-  const time  = raw.created_at
+  const time = raw.created_at
     ? (() => {
         const d = new Date(raw.created_at)
         return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
       })()
     : raw.time ?? ''
   return {
-    id:         raw.id,
-    from:       isMe ? 'user' : 'them',
-    text:       raw.body ?? raw.text ?? '',
+    id:           raw.id,
+    from:         isMe ? 'user' : 'them',
+    text:         raw.body ?? raw.text ?? '',
     time,
-    // Keep the raw ISO string so the day-separator can group by date
-    // without re-parsing through the formatted "HH:MM" string.
-    createdAt:  raw.created_at ?? null,
-    type:       raw.type ?? 'text',
-    showAvatar: raw.showAvatar ?? false,
-    senderName: raw.user?.name ?? raw.sender?.name ?? '',
+    createdAt:    raw.created_at ?? null,
+    type:         raw.type ?? (raw.attachment_url ? 'image' : 'text'),
+    attachmentUrl: raw.attachment_url ?? raw.attachmentUrl ?? null,
+    showAvatar:   raw.showAvatar ?? false,
+    senderName:   raw.user?.name ?? raw.sender?.name ?? '',
     senderAvatar: raw.user?.avatar ?? raw.sender?.avatar ?? null,
   }
+}
+
+function AvatarImg({ src, name, size, className = '' }) {
+  const [loaded, setLoaded] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const letter = (String(name || '?').trim()[0] ?? '?').toUpperCase()
+
+  useEffect(() => { setLoaded(false); setFailed(false) }, [src])
+
+  if (!src || failed) {
+    return (
+      <div
+        style={{ width: size, height: size, background: '#E5E5EA', flexShrink: 0 }}
+        className={`rounded-full flex items-center justify-center text-[#7F7F7F] font-semibold ${className}`}
+      >
+        <span style={{ fontSize: Math.round(size * 0.42) }}>{letter}</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`relative rounded-full overflow-hidden ${className}`} style={{ width: size, height: size, flexShrink: 0, background: '#F0F0F0' }}>
+      <div
+        className={`absolute inset-0 transition-opacity duration-300 ${loaded ? 'opacity-0' : 'opacity-100'}`}
+        style={{ background: 'linear-gradient(110deg, #F0F0F0 30%, #E5E5EA 50%, #F0F0F0 70%)', backgroundSize: '200% 100%', animation: 'avatar-shimmer 1.4s linear infinite' }}
+      />
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        style={{ width: size, height: size }}
+        className={`absolute inset-0 object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+      />
+      <style>{`@keyframes avatar-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+    </div>
+  )
 }
 
 export default function ChatPage() {
@@ -56,13 +92,14 @@ export default function ChatPage() {
   const auth        = useAuthStore()
   const myId        = auth.user?.id
 
-  const [messages, setMessages]   = useState([])
-  const [chatInfo, setChatInfo]   = useState(null)
-  const [inputText, setInputText] = useState('')
-  const [loading, setLoading]     = useState(!!chatId)
-  const [sending, setSending]     = useState(false)
-  const [loadError, setLoadError] = useState(null)
-  const [reloadKey, setReloadKey] = useState(0)
+  const [messages, setMessages]     = useState([])
+  const [chatInfo, setChatInfo]     = useState(null)
+  const [inputText, setInputText]   = useState('')
+  const [loading, setLoading]       = useState(!!chatId)
+  const [initialLoad, setInitialLoad] = useState(!!chatId)
+  const [sending, setSending]       = useState(false)
+  const [loadError, setLoadError]   = useState(null)
+  const [reloadKey, setReloadKey]   = useState(0)
   const isMountedRef = useRef(true)
 
   useEffect(() => {
@@ -70,7 +107,7 @@ export default function ChatPage() {
     return () => { isMountedRef.current = false }
   }, [])
 
-  const hasText      = inputText.trim().length > 0
+  const hasText         = inputText.trim().length > 0
   const messagesEndRef  = useRef(null)
   const headerRef       = useRef(null)
   const listRef         = useRef(null)
@@ -86,7 +123,6 @@ export default function ChatPage() {
     if (el) gsap.set(el, { width: 0, marginLeft: 0, overflow: 'hidden' })
   }, [])
 
-  // Lock page-root scroll while chat is mounted so only the message list scrolls
   useEffect(() => {
     const pageRoot = document.getElementById('page-root')
     if (pageRoot) {
@@ -95,19 +131,19 @@ export default function ChatPage() {
     }
   }, [])
 
-  // Load chat info + messages
   useEffect(() => {
-    if (!chatId) { setLoading(false); setLoadError(null); return }
+    if (!chatId) { setLoading(false); setInitialLoad(false); setLoadError(null); return }
 
     setLoading(true)
+    setInitialLoad(true)
     setLoadError(null)
     setMessages([])
+    setChatInfo(null)
 
     let cancelled = false
 
     Promise.all([
       api.get(`/chats/${chatId}/messages`),
-      // Try to get chat metadata (name, avatar) from chat list
       api.get('/chats').catch(() => ({ data: { data: [] } })),
     ]).then(([msgsRes, chatsRes]) => {
       if (cancelled || !isMountedRef.current) return
@@ -123,6 +159,7 @@ export default function ChatPage() {
     }).finally(() => {
       if (cancelled || !isMountedRef.current) return
       setLoading(false)
+      setInitialLoad(false)
     })
 
     return () => { cancelled = true }
@@ -135,13 +172,7 @@ export default function ChatPage() {
         if (!isMountedRef.current) return
         const msg = e.message ?? e
         setMessages(prev => {
-          // Already in the list (HTTP response landed first).
           if (prev.some(m => m.id === msg.id)) return prev
-
-          // Sender's own message: collapse the optimistic placeholder
-          // with the same body instead of appending a duplicate. Without
-          // this the Echo-before-HTTP race produced two copies of the
-          // same outbound message.
           if (msg.sender_id === myId) {
             const idx = prev.findIndex(
               m => typeof m.id === 'string' && m.id.startsWith('opt-')
@@ -168,7 +199,6 @@ export default function ChatPage() {
     return unsub
   }, [chatId, myId])
 
-  // Mark as read when opening
   useEffect(() => {
     if (!chatId) return
     api.post(`/chats/${chatId}/read`).catch(() => {})
@@ -286,6 +316,7 @@ export default function ChatPage() {
       id:   optimisticId,
       from: 'user',
       text,
+      type: 'text',
       time: (() => {
         const now = new Date()
         return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -331,13 +362,14 @@ export default function ChatPage() {
       id: optimisticId,
       from: 'user',
       text: '',
+      type: 'image',
+      attachmentUrl: previewUrl,
+      attachmentMime: file.type,
+      uploading: true,
       time: (() => {
         const now = new Date()
         return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
       })(),
-      attachmentUrl: previewUrl,
-      attachmentMime: file.type,
-      uploading: true,
     }])
 
     try {
@@ -349,7 +381,7 @@ export default function ChatPage() {
       if (!isMountedRef.current) return
       const saved = normalizeMsg(data.data, myId)
       setMessages(prev => prev.map(m => m.id === optimisticId ? saved : m))
-    } catch (err) {
+    } catch {
       if (isMountedRef.current) {
         setMessages(prev => prev.filter(m => m.id !== optimisticId))
       }
@@ -363,7 +395,6 @@ export default function ChatPage() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
-  // Contact info derived from chat or first incoming message
   const contactName   = chatInfo?.other_user?.name ?? chatInfo?.name ?? messages.find(m => m.from === 'them')?.senderName ?? 'Чат'
   const contactAvatar = chatInfo?.other_user?.avatar ?? chatInfo?.avatar ?? messages.find(m => m.from === 'them')?.senderAvatar ?? null
 
@@ -389,112 +420,135 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <div ref={listRef} className="flex-1 overflow-y-auto min-h-0">
-        <div className="flex flex-col px-4 py-4 gap-0 container min-h-0">
-
-
-          <div data-msg className="flex flex-col items-center gap-3 mb-6">
-            {contactAvatar ? (
-              <img src={contactAvatar} alt="avatar" className="w-20 h-20 rounded-full object-cover" />
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-[#E2319B] flex items-center justify-center">
-                <span className="text-white text-2xl font-bold">{contactName[0]?.toUpperCase()}</span>
-              </div>
-            )}
-            <div className="bg-[#F5F5F7] rounded-full px-4 py-2">
-              <span className="text-[#7F7F7F] text-sm/[80%] font-medium">
-                {chatInfo?.other_user?.last_seen_at
-                  ? formatRussianRelative(chatInfo.other_user.last_seen_at, { feminine: true })
-                  : contactName}
-              </span>
-            </div>
+      <div className="flex-1 relative min-h-0">
+        {initialLoad && (
+          <div className="absolute inset-0 z-10 bg-white flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full border-2 border-[#EFEEF3] border-t-[#E2319B] animate-spin" />
           </div>
+        )}
 
-          {loading && <ChatLoadingSkeleton />}
+        <div ref={listRef} className="absolute inset-0 overflow-y-auto">
+          <div className="flex flex-col px-4 py-4 gap-0 container min-h-0">
 
-          {!loading && loadError && (
-            <div data-msg className="flex flex-col items-center gap-3 py-8">
-              <div className="text-[#7F7F7F] text-sm text-center max-w-[260px]">
-                {loadError}
-              </div>
-              <button
-                onClick={() => setReloadKey((k) => k + 1)}
-                className="px-4 py-2.5 bg-[#EFEEF3] text-black text-sm font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
-              >
-                Попробовать снова
-              </button>
-            </div>
-          )}
-
-          {messages.map((msg, idx) => {
-            const isUser       = msg.from === 'user'
-            const prevMsg      = messages[idx - 1]
-            const nextMsg      = messages[idx + 1]
-            const isLastInGroup = !nextMsg || nextMsg.from !== msg.from
-            const gap          = idx > 0 ? 'mt-3' : ''
-            const showDaySep = msg.createdAt && (
-              idx === 0 || ! isSameDay(prevMsg?.createdAt, msg.createdAt)
-            )
-            const daySepEl = showDaySep
-              ? (
-                <div data-msg key={`sep-${msg.id}`} className="flex justify-center my-5">
-                  <span className="text-[#7F7F7F] text-sm/[100%] font-medium">
-                    {formatRussianDaySeparator(msg.createdAt)}
+            {!initialLoad && (
+              <div data-msg className="flex flex-col items-center gap-3 mb-6">
+                <AvatarImg src={contactAvatar} name={contactName} size={80} />
+                <div className="bg-[#F5F5F7] rounded-full px-4 py-2">
+                  <span className="text-[#7F7F7F] text-sm/[80%] font-medium">
+                    {chatInfo?.other_user?.last_seen_at
+                      ? formatRussianRelative(chatInfo.other_user.last_seen_at, { feminine: true })
+                      : contactName}
                   </span>
                 </div>
-              )
-              : null
+              </div>
+            )}
 
-            if (msg.type === 'image') {
+            {!loading && loadError && (
+              <div data-msg className="flex flex-col items-center gap-3 py-8">
+                <div className="text-[#7F7F7F] text-sm text-center max-w-[260px]">
+                  {loadError}
+                </div>
+                <button
+                  onClick={() => setReloadKey((k) => k + 1)}
+                  className="px-4 py-2.5 bg-[#EFEEF3] text-black text-sm font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
+                >
+                  Попробовать снова
+                </button>
+              </div>
+            )}
+
+            {messages.map((msg, idx) => {
+              const isUser        = msg.from === 'user'
+              const prevMsg       = messages[idx - 1]
+              const nextMsg       = messages[idx + 1]
+              const isLastInGroup = !nextMsg || nextMsg.from !== msg.from
+              const gap           = idx > 0 ? 'mt-3' : ''
+              const showDaySep = msg.createdAt && (
+                idx === 0 || !isSameDay(prevMsg?.createdAt, msg.createdAt)
+              )
+              const daySepEl = showDaySep
+                ? (
+                  <div data-msg key={`sep-${msg.id}`} className="flex justify-center my-5">
+                    <span className="text-[#7F7F7F] text-sm/[100%] font-medium">
+                      {formatRussianDaySeparator(msg.createdAt)}
+                    </span>
+                  </div>
+                )
+                : null
+
+              if (msg.type === 'image') {
+                const imgSrc = msg.attachmentUrl
+                return (
+                  <Fragment key={msg.id}>
+                    {daySepEl}
+                    <div data-msg className={`flex items-end gap-4 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`}>
+                      {!isUser && (
+                        <div className="w-9 shrink-0 self-end">
+                          {isLastInGroup && (
+                            contactAvatar
+                              ? <img src={contactAvatar} alt="" className="size-10 min-w-10 rounded-3xl object-cover" />
+                              : <div className="size-10 min-w-10 rounded-3xl bg-[#E5E5EA] flex items-center justify-center">
+                                  <span className="text-[#7F7F7F] text-sm font-bold">{contactName[0]?.toUpperCase()}</span>
+                                </div>
+                          )}
+                        </div>
+                      )}
+                      <div className="w-[180px] h-[160px] rounded-2xl overflow-hidden bg-[#F0F0F0] relative">
+                        {imgSrc && (
+                          <img
+                            src={imgSrc}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        )}
+                        {msg.uploading && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                            <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Fragment>
+                )
+              }
+
               return (
                 <Fragment key={msg.id}>
                   {daySepEl}
-                  <div data-msg className={`flex items-end gap-4 ${gap}`}>
-                    <div className="w-8 shrink-0">
-                      {isLastInGroup && contactAvatar && (
-                        <img src={contactAvatar} alt="" className="w-8 h-8 rounded-full object-cover" />
-                      )}
+                  <div
+                    data-msg
+                    className={`flex items-end gap-4 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`}
+                  >
+                    {!isUser && (
+                      <div className="w-9 shrink-0 self-end">
+                        {isLastInGroup && (
+                          contactAvatar
+                            ? <img src={contactAvatar} alt="" className="size-10 min-w-10 rounded-3xl object-cover" />
+                            : <div className="size-10 min-w-10 rounded-3xl bg-[#E5E5EA] flex items-center justify-center">
+                                <span className="text-[#7F7F7F] text-sm font-bold">{contactName[0]?.toUpperCase()}</span>
+                              </div>
+                        )}
+                      </div>
+                    )}
+                    <div
+                      className={[
+                        'max-w-[72%] p-4.5 py-3',
+                        isUser
+                          ? 'bg-[#232323] text-[#D8D8D8] rounded-3xl'
+                          : 'bg-[#F0F0F0] text-[#3E3C3C] rounded-3xl',
+                      ].join(' ')}
+                      style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                    >
+                      <p className="text-[16px]/[100%] font-normal whitespace-pre-wrap">{msg.text}</p>
                     </div>
-                    <div className="w-[180px] h-[160px] rounded-2xl overflow-hidden bg-[#E2319B]/20" />
                   </div>
                 </Fragment>
               )
-            }
-
-            return (
-              <Fragment key={msg.id}>
-                {daySepEl}
-              <div
-                data-msg
-                className={`flex items-end gap-4 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`}
-              >
-                {!isUser && (
-                  <div className="w-9 shrink-0 self-end">
-                    {isLastInGroup && (
-                      contactAvatar
-                        ? <img src={contactAvatar} alt="" className="size-10 min-w-10 rounded-3xl object-cover" />
-                        : <div className="size-10 min-w-10 rounded-3xl bg-[#E2319B] flex items-center justify-center">
-                            <span className="text-white text-sm font-bold">{contactName[0]?.toUpperCase()}</span>
-                          </div>
-                    )}
-                  </div>
-                )}
-                <div
-                  className={[
-                    'max-w-[72%] p-4.5 py-3',
-                    isUser
-                      ? 'bg-[#232323] text-[#D8D8D8] rounded-3xl'
-                      : 'bg-[#F0F0F0] text-[#3E3C3C] rounded-3xl',
-                  ].join(' ')}
-                  style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                >
-                  <p className="text-[16px]/[100%] font-normal whitespace-pre-wrap">{msg.text}</p>
-                </div>
-              </div>
-              </Fragment>
-            )
-          })}
-          <div ref={messagesEndRef} />
+            })}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
       </div>
 
@@ -502,7 +556,7 @@ export default function ChatPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,application/pdf"
+          accept="image/*"
           className="hidden"
           onChange={handleAttachmentChange}
         />

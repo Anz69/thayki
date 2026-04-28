@@ -42,7 +42,6 @@ class ExpirePendingMeetingJob implements ShouldQueue
     {
         $configured = (int) config('app.meeting_pending_ttl', env('MEETING_PENDING_TTL', 600));
         $ttl = $configured > 0 ? $configured : 600;
-        // Even if config is intentionally tiny, never go below the safety floor.
         $effectiveTtl = max($ttl, self::MIN_AGE_SECONDS);
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($transition, $effectiveTtl): void {
@@ -57,7 +56,6 @@ class ExpirePendingMeetingJob implements ShouldQueue
                 return;
             }
 
-            // SAFETY 1: refuse to expire a meeting with no created_at timestamp.
             if ($meeting->created_at === null) {
                 Log::warning('[ExpirePendingMeetingJob] Refusing to expire meeting with null created_at', [
                     'meeting_id' => $meeting->id,
@@ -65,7 +63,6 @@ class ExpirePendingMeetingJob implements ShouldQueue
                 return;
             }
 
-            // SAFETY 2: compare in UTC to dodge timezone drift between PHP/DB.
             $createdAtUtc = $meeting->created_at->copy()->setTimezone('UTC');
             $expireAtUtc  = $createdAtUtc->copy()->addSeconds($effectiveTtl);
             $nowUtc       = now()->setTimezone('UTC');
@@ -73,8 +70,6 @@ class ExpirePendingMeetingJob implements ShouldQueue
             if ($nowUtc->lt($expireAtUtc)) {
                 $secondsRemaining = (int) $nowUtc->diffInSeconds($expireAtUtc, true);
 
-                // For real queue drivers, push the job back. For sync, simply abort —
-                // the scheduled command will catch this meeting once TTL elapses.
                 if ($secondsRemaining > 0
                     && $this->job !== null
                     && config('queue.default') !== 'sync'

@@ -23,7 +23,6 @@ class TelegramWebAuthController extends Controller
 
     public function handle(Request $request): JsonResponse
     {
-        // Already authenticated via session — return current user
         if (Auth::check()) {
             /** @var User $user */
             $user = Auth::user();
@@ -93,8 +92,6 @@ class TelegramWebAuthController extends Controller
         Auth::login($user, remember: true);
         $request->session()->regenerate();
 
-        // If the Mini App was opened via a browser deep-link (?start=browser_TOKEN),
-        // store a short-lived mapping so the browser tab can pick up the session.
         $browserToken = (string) $request->input('browser_token', '');
         if ($browserToken !== '') {
             Cache::put('browser_auth:' . $browserToken, $user->id, now()->addMinutes(5));

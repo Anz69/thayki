@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import api from '@/utils/api'
 import useAuthStore from '@/stores/useAuthStore'
 
-// Map backend response → frontend shape
 function mapFromApi(data) {
   return {
     name:        data.display_name  ?? '',
@@ -16,7 +15,6 @@ function mapFromApi(data) {
   }
 }
 
-// Map frontend patch → backend body
 function mapToApi(partial) {
   const body = {}
   if (partial.name        !== undefined) body.display_name  = partial.name
@@ -65,7 +63,6 @@ const useProfileStore = create((set, get) => ({
     const fd = new FormData()
     fd.append('photo', file)
     try {
-      // Не передаём Content-Type вручную — axios сам выставит multipart/form-data с boundary
       await api.post('/me/avatar', fd)
       await useAuthStore.getState().refreshUser()
     } catch (err) {
@@ -76,7 +73,6 @@ const useProfileStore = create((set, get) => ({
   uploadPhoto: async (file) => {
     const fd = new FormData()
     fd.append('photo', file)
-    // Не передаём Content-Type вручную — axios сам выставит multipart/form-data с boundary
     const res = await api.post('/me/model-profile/photos', fd)
     const photo = res.data.data
     set((s) => ({ photos: [...s.photos, photo] }))
@@ -88,21 +84,10 @@ const useProfileStore = create((set, get) => ({
     set((s) => ({ photos: s.photos.filter((p) => p.id !== id) }))
   },
 
-  /**
-   * Atomic-ish photo replacement: upload the new file first, and only then
-   * remove the old photo. If the upload fails (network, validation, server
-   * 5xx), the old photo stays — without this guard the previous flow
-   * `delete → upload` would leave the user with NO photo if the upload
-   * step failed, which is exactly the bug we hit in the wild.
-   *
-   * Also keeps the new photo in the SAME slot position as the old one so
-   * the UI doesn't visually re-order while replacing.
-   */
   replacePhoto: async (oldId, file) => {
     const oldPhotos = get().photos
     const oldIdx = oldPhotos.findIndex((p) => p.id === oldId)
 
-    // Step 1: upload the new file. Append to the end first.
     const fd = new FormData()
     fd.append('photo', file)
     let uploaded = null
@@ -116,10 +101,8 @@ const useProfileStore = create((set, get) => ({
       throw new Error('Не удалось загрузить фото')
     }
 
-    // Step 2: insert the new photo into the old slot, mark old as pending
-    // removal locally so the UI flips immediately to the new image.
     set((s) => {
-      const next = s.photos.filter((p) => p.id !== uploaded.id) // new one was appended
+      const next = s.photos.filter((p) => p.id !== uploaded.id)
       const idx = next.findIndex((p) => p.id === oldId)
       if (idx === -1) {
         return { photos: [...next, uploaded] }
@@ -129,13 +112,9 @@ const useProfileStore = create((set, get) => ({
       return { photos: copy }
     })
 
-    // Step 3: delete the old photo on the server. If THIS step fails we
-    // leave the user with both photos (old + new) — that's still better
-    // than losing the new upload they just made.
     try {
       await api.delete(`/me/model-profile/photos/${oldId}`)
     } catch (err) {
-      // Try to surface the failure without rolling back the swap.
       throw err
     }
   },

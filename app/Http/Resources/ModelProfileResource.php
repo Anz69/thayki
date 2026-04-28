@@ -34,15 +34,9 @@ class ModelProfileResource extends JsonResource
             'published_at' => $this->published_at?->toIso8601String(),
             'photos' => ModelPhotoResource::collection($this->whenLoaded('photos')),
             'price_options' => ModelPriceOptionResource::collection($this->whenLoaded('priceOptions')),
-            // Expose just the avatar bits of the underlying user. Used by
-            // MeetingPage to render the model's actual TG avatar instead of
-            // falling back to the first media photo. Loaded conditionally
-            // (whenLoaded) so it never N+1's a catalog list.
             'user' => $this->whenLoaded('user', fn () => [
                 'id'        => $this->user->id,
                 'photo_url' => $this->user->photo_url,
-                // Kept in sync with display_name via the User/ModelProfile
-                // observers (see App\Observers).
                 'first_name' => $this->user->first_name,
             ]),
         ];

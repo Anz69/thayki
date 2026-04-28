@@ -11,7 +11,6 @@ const useMeetingStore = create((set, get) => ({
   error:          null,
   errorStatus:    null,
 
-  /** Load the latest active meeting for the current user */
   async loadLatest() {
     set({ isLoading: true, error: null })
     try {
@@ -30,7 +29,6 @@ const useMeetingStore = create((set, get) => ({
     }
   },
 
-  /** Load a specific meeting by ID */
   async load(id) {
     set({ isLoading: true, error: null, errorStatus: null })
     try {
@@ -43,7 +41,6 @@ const useMeetingStore = create((set, get) => ({
     }
   },
 
-  /** Called by Echo when the server broadcasts a status change */
   setStatus(status) {
     set((s) => ({
       status,

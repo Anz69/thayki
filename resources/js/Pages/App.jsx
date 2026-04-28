@@ -23,18 +23,15 @@ export default function App() {
   const meetingStore = useMeetingStore()
 
   useEffect(() => {
-    // ── 1. Laravel session already active (Inertia shared props) ──────────
     if (auth?.user) {
       authStore.setUser(auth.user)
       meetingStore.loadLatest()
       return
     }
 
-    // ── Show loader while we determine auth state ───────────────────────
     authStore.setAuthPending()
 
     async function resolveAuth() {
-      // ── 2. Try stored Sanctum token ──────────────────────────────────
       const storedToken = getStoredToken()
       if (storedToken) {
         try {
@@ -46,25 +43,18 @@ export default function App() {
             return
           }
         } catch {
-          // 401 or network error — token is invalid/expired, clear it
         }
         clearToken()
       }
 
-      // ── 3. Telegram Mini App initData ────────────────────────────────
       const tg       = window.Telegram?.WebApp
       const initData = tg?.initData
 
       if (initData) {
-        // If opened via browser deep-link (?start=browser_TOKEN), pass the
-        // token so the backend can mark the browser tab as authenticated.
         const startParam   = tg?.initDataUnsafe?.start_param ?? ''
         const browserToken = startParam.startsWith('browser_') ? startParam.slice(8) : null
 
         try {
-          // Use api (axios) instead of fetch so the CSRF token interceptor fires.
-          // Without it, Sanctum rejects the request with 419 when the domain is
-          // listed in SANCTUM_STATEFUL_DOMAINS.
           const { data } = await api.post('/auth/telegram', {
             init_data: initData,
             ...(browserToken ? { browser_token: browserToken } : {}),
@@ -81,7 +71,6 @@ export default function App() {
         return
       }
 
-      // ── 4. Plain browser — no Telegram context ───────────────────────
       authStore.setNeedsLogin()
     }
 
