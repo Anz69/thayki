@@ -79,11 +79,11 @@ class StartHandler
         });
 
         if ($invite->kind === StartInvite::KIND_MODEL) {
-            $this->sendModelInviteWelcome($chatId);
+            $this->sendModelInviteWelcome($chatId, $user->first_name ?? '');
             return;
         }
 
-        $this->sendVerifiedWelcome($chatId);
+        $this->sendVerifiedWelcome($chatId, $user->first_name ?? '');
     }
 
     private function upsertUser(int $telegramId, int $chatId, array $tgFrom): User
@@ -127,21 +127,23 @@ class StartHandler
         $this->bot->sendMessage($chatId, $text);
     }
 
-    private function sendVerifiedWelcome(int $chatId): void
+    private function sendVerifiedWelcome(int $chatId, string $firstName): void
     {
+        $greeting = $firstName !== '' ? "Привет, {$firstName}! " : 'Привет! ';
         $this->bot->sendMessage(
             $chatId,
-            "Добро пожаловать! Доступ открыт. Откройте мини-приложение, чтобы начать.",
+            "{$greeting}Доступ открыт. Откройте мини-приложение, чтобы начать.",
             openPath: '/home',
             buttonLabel: 'Открыть приложение',
         );
     }
 
-    private function sendModelInviteWelcome(int $chatId): void
+    private function sendModelInviteWelcome(int $chatId, string $firstName): void
     {
+        $greeting = $firstName !== '' ? "Привет, {$firstName}! " : 'Привет! ';
         $this->bot->sendMessage(
             $chatId,
-            "Привет! Вы получили приглашение стать моделью.\nОткройте приложение и заполните анкету.",
+            "{$greeting}Вы получили приглашение стать моделью.\nОткройте приложение и заполните анкету.",
             openPath: '/become-model',
             buttonLabel: 'Стать моделью',
         );

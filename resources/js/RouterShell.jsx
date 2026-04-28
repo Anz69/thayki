@@ -33,6 +33,12 @@ const ApplicationPendingPage   = lazy(() => import('@/views/ApplicationPendingPa
 const SupportPage              = lazy(() => import('@/views/SupportPage'))
 const FeedbackPage             = lazy(() => import('@/views/FeedbackPage'))
 
+function LandingRoute() {
+  const { user } = useAuthStore()
+  if (user) return <Navigate to="/home" replace />
+  return <LandingPage />
+}
+
 function MainPage() {
   const { user } = useAuthStore()
   return user?.role === 'model' ? <ClientPage /> : <HomePage />
@@ -118,7 +124,10 @@ function AuthErrorScreen() {
             hasBrowserToken: !!browserToken,
             hasInviteToken: !!inviteToken,
           }
-          authStore.setNeedsLogin(null, retryDetail)
+          const hintMsg = code === 'INIT_DATA_INVALID'
+            ? 'Ошибка конфигурации бота. Проверьте TELEGRAM_BOT_TOKEN на сервере.'
+            : null
+          authStore.setNeedsLogin(hintMsg, retryDetail)
           return
         }
       }
@@ -228,7 +237,7 @@ export default function App() {
                 <StrangeGuard>
                   <Routes>
                     <Route path="/welcome"       element={<StrangeWelcomePage />} />
-                    <Route path="/"              element={<LandingPage />} />
+                    <Route path="/"              element={<LandingRoute />} />
                     <Route path="/home"          element={<MainPage />} />
                     <Route path="/more"          element={<MoreRolePage />} />
                     <Route path="/models"        element={<Navigate to="/home" replace />} />

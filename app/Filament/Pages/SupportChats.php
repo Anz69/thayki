@@ -26,6 +26,7 @@ class SupportChats extends Page
     public ?int   $selectedChatId = null;
     public string $newMessage     = '';
     public string $search         = '';
+    public string $activeTab      = 'users';
 
     protected $listeners = ['$refresh', 'new-message-received' => '$refresh'];
 
@@ -34,10 +35,20 @@ class SupportChats extends Page
         return 'Чат поддержки';
     }
 
+    public function setTab(string $tab): void
+    {
+        $this->activeTab      = $tab;
+        $this->selectedChatId = null;
+        $this->newMessage     = '';
+    }
+
     public function getChats(): \Illuminate\Support\Collection
     {
+        $role = $this->activeTab === 'models' ? UserRole::Model : UserRole::Client;
+
         return Chat::query()
             ->where('type', ChatType::Support)
+            ->whereHas('participants.user', fn ($u) => $u->where('role', $role))
             ->with(['participants.user', 'messages' => fn ($q) => $q->latest()->limit(1)])
             ->when($this->search !== '', fn ($q) => $q->whereHas(
                 'participants.user',
@@ -47,6 +58,34 @@ class SupportChats extends Page
             ))
             ->orderByDesc('last_message_at')
             ->get();
+    }
+
+    public function getUnreadCounts(): array
+    {
+        $supportUserId = User::where('telegram_id', 0)->value('id');
+
+        $countForRole = function (UserRole $role) use ($supportUserId): int {
+            return Chat::query()
+                ->where('type', ChatType::Support)
+                ->whereHas('participants.user', fn ($u) => $u->where('role', $role))
+                ->whereHas('messages', function ($q) use ($supportUserId) {
+                    $q->where(function ($q2) use ($supportUserId) {
+                        $q2->whereNull('read_at')->where('sender_id', '!=', $supportUserId ?? 0);
+                    });
+                })
+                ->count();
+        };
+
+        return [
+            'users'  => $countForRole(UserRole::Client),
+            'models' => $countForRole(UserRole::Model),
+        ];
+    }
+
+    public function getChatHasUnread(Chat $chat): bool
+    {
+        $supportUserId = User::where('telegram_id', 0)->value('id') ?? 0;
+        return $chat->messages->contains(fn ($m) => is_null($m->read_at) && $m->sender_id !== $supportUserId);
     }
 
     public function selectChat(int $id): void

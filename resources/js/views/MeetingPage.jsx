@@ -53,7 +53,8 @@ export default function MeetingPage() {
   const confirmedAvatarRef = useRef(null)
   const confirmedHeadRef   = useRef(null)
   const confirmedSubRef    = useRef(null)
-  const prevStatus = useRef(meeting.status)
+  const prevStatus   = useRef(meeting.status)
+  const animatedRef  = useRef(false)
   const m           = meeting.meeting
   const scheduledAt = m?.scheduled_at ? new Date(m.scheduled_at) : null
   const formattedTime = scheduledAt
@@ -101,7 +102,9 @@ export default function MeetingPage() {
 
   useEffect(() => {
     if (!meeting.status) return
-    if (TERMINAL_STATUSES.includes(meeting.status)) {
+    if (meeting.status === 'completed') {
+      navigate(`/feedback?meeting=${meeting.meeting?.id ?? ''}`)
+    } else if (TERMINAL_STATUSES.includes(meeting.status)) {
       navigate('/home')
     }
   }, [meeting.status])
@@ -184,16 +187,9 @@ export default function MeetingPage() {
     gsap.set(confirmedAvatarRef.current, { autoAlpha: 0, scale: 0.8, y: -20 })
     gsap.set(confirmedHeadRef.current,   { autoAlpha: 0, y: -16 })
     gsap.set(confirmedSubRef.current,    { autoAlpha: 0, y: -12 })
-    if (meeting.status === 'accepted') {
-      gsap.set(pendingRef.current,   { display: 'none' })
-      gsap.set(confirmedRef.current, { display: 'none' })
-    } else if (meeting.status === 'paid' || meeting.status === 'confirmed') {
-      gsap.set(pendingRef.current,  { display: 'none' })
-      gsap.set(acceptedRef.current, { display: 'none' })
-    } else {
-      gsap.set(acceptedRef.current,  { display: 'none' })
-      gsap.set(confirmedRef.current, { display: 'none' })
-    }
+    gsap.set(pendingRef.current,   { display: 'none' })
+    gsap.set(acceptedRef.current,  { display: 'none' })
+    gsap.set(confirmedRef.current, { display: 'none' })
   }, [])
 
   useEffect(() => {
@@ -288,7 +284,18 @@ export default function MeetingPage() {
       animatePendingIn(0)
     }
   }, [meeting.status, animatePendingIn, animateAcceptedIn, animateConfirmedIn])
-  usePageReady(startAnimations)
+  usePageReady(() => {
+    if (meeting.status && !animatedRef.current) {
+      animatedRef.current = true
+      startAnimations()
+    }
+  })
+
+  useEffect(() => {
+    if (!meeting.status || animatedRef.current) return
+    animatedRef.current = true
+    startAnimations()
+  }, [meeting.status])
 
   const handleGoToChat = async () => {
     const meetingId = meeting.meeting?.id

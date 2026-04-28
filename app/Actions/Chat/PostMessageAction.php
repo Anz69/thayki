@@ -23,6 +23,13 @@ class PostMessageAction
             throw DomainException::forbidden('CHAT_FORBIDDEN', 'You are not a participant of this chat.');
         }
 
+        if ($chat->meeting_id !== null) {
+            $mtg = \App\Models\Meeting::query()->find($chat->meeting_id);
+            if ($mtg !== null && in_array($mtg->status->value, ['completed', 'cancelled', 'rejected', 'expired'], true)) {
+                throw DomainException::forbidden('CHAT_LOCKED', 'Встреча завершена, чат заблокирован.');
+            }
+        }
+
         if (($body === null || trim($body) === '') && $attachment === null) {
             throw DomainException::invalid('MESSAGE_EMPTY', 'Message body or attachment is required.');
         }

@@ -18,6 +18,23 @@ use Illuminate\Http\JsonResponse;
 
 class ComplaintController extends Controller
 {
+    public function index(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $meetingId = $request->query('meeting_id');
+
+        $query = Complaint::query()->where('user_id', $user->id);
+        if ($meetingId !== null) {
+            $query->where('meeting_id', (int) $meetingId);
+        }
+
+        $complaints = $query->orderByDesc('created_at')->get();
+
+        return ApiResponse::ok(ComplaintResource::collection($complaints));
+    }
+
     public function store(StoreComplaintRequest $request): JsonResponse
     {
         /** @var User $user */
@@ -36,6 +53,17 @@ class ComplaintController extends Controller
             $isModel  = $profile !== null && $profile->id === $meeting->model_profile_id;
             if ($user->role !== UserRole::Admin && ! $isClient && ! $isModel) {
                 throw DomainException::forbidden('COMPLAINT_FORBIDDEN', 'You are not a participant of this meeting.');
+            }
+        }
+
+        if ($meetingId !== null) {
+            $existing = Complaint::query()
+                ->where('user_id', $user->id)
+                ->where('meeting_id', (int) $meetingId)
+                ->where('subject', (string) $request->input('subject'))
+                ->first();
+            if ($existing !== null) {
+                return ApiResponse::ok(new ComplaintResource($existing));
             }
         }
 

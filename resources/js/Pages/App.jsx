@@ -25,6 +25,8 @@ export default function App() {
   const meetingStore = useMeetingStore()
 
   useEffect(() => {
+    window.Telegram?.WebApp?.expand?.()
+
     if (auth?.user) {
       authStore.setUser(auth.user)
       meetingStore.loadLatest()

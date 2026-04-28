@@ -559,50 +559,58 @@ export default function ChatPage() {
       </div>
 
       <div ref={inputBarRef} className="bg-white px-4 py-3 pb-8 shrink-0 container">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleAttachmentChange}
-        />
-        <div className="flex items-end">
-          <button
-            type="button"
-            disabled={uploading || !chatId}
-            onClick={() => fileInputRef.current?.click()}
-            className="shrink-0 size-11 bg-[#EFEEF3] rounded-full flex items-center justify-center active:opacity-60 transition-opacity mr-3 disabled:opacity-50"
-          >
-            {uploading ? (
-              <div className="w-4 h-4 rounded-full border-2 border-[#7F7F7F] border-t-transparent animate-spin" />
-            ) : (
-              <PaperclipIcon />
-            )}
-          </button>
-
-          <div className="flex-1 min-w-0 bg-[#EFEEF3] rounded-[22px] px-4 py-3 overflow-hidden">
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              value={inputText}
-              onChange={(e) => { setInputText(e.target.value); autoResize() }}
-              onKeyDown={handleKeyDown}
-              placeholder="Сообщение..."
-              className="w-full bg-transparent text-black text-[16px]/[145%] font-normal outline-none placeholder:text-[#ABABAB] resize-none"
-              style={{ maxHeight: 120, display: 'block', overflowY: 'auto', wordBreak: 'break-word', overflowWrap: 'break-word' }}
+        {['completed', 'cancelled', 'rejected', 'expired'].includes(chatInfo?.meeting_status) ? (
+          <div className="w-full py-3 px-4 bg-[#F5F5F7] rounded-2xl text-center text-sm text-[#7F7F7F] font-medium">
+            Встреча завершена — чат закрыт
+          </div>
+        ) : (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAttachmentChange}
             />
-          </div>
+            <div className="flex items-end">
+              <button
+                type="button"
+                disabled={uploading || !chatId}
+                onClick={() => fileInputRef.current?.click()}
+                className="shrink-0 size-11 bg-[#EFEEF3] rounded-full flex items-center justify-center active:opacity-60 transition-opacity mr-3 disabled:opacity-50"
+              >
+                {uploading ? (
+                  <div className="w-4 h-4 rounded-full border-2 border-[#7F7F7F] border-t-transparent animate-spin" />
+                ) : (
+                  <PaperclipIcon />
+                )}
+              </button>
 
-          <div ref={setSendWrapRef} className="shrink-0 overflow-hidden">
-            <button
-              onClick={handleSend}
-              disabled={sending}
-              className="size-11 rounded-full bg-[#E2319B] text-white flex items-center justify-center active:scale-90 transition-transform shrink-0"
-            >
-              <SendIcon />
-            </button>
-          </div>
-        </div>
+              <div className="flex-1 min-w-0 bg-[#EFEEF3] rounded-[22px] px-4 py-3 overflow-hidden">
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  value={inputText}
+                  onChange={(e) => { setInputText(e.target.value); autoResize() }}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Сообщение..."
+                  className="w-full bg-transparent text-black text-[16px]/[145%] font-normal outline-none placeholder:text-[#ABABAB] resize-none"
+                  style={{ maxHeight: 120, display: 'block', overflowY: 'auto', wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                />
+              </div>
+
+              <div ref={setSendWrapRef} className="shrink-0 overflow-hidden">
+                <button
+                  onClick={handleSend}
+                  disabled={sending}
+                  className="size-11 rounded-full bg-[#E2319B] text-white flex items-center justify-center active:scale-90 transition-transform shrink-0"
+                >
+                  <SendIcon />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </section>
   )

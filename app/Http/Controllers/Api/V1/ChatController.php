@@ -92,7 +92,7 @@ class ChatController extends Controller
             throw DomainException::forbidden('CHAT_FORBIDDEN', 'Not a participant.');
         }
 
-        $chat = $action->execute($meeting)->load('participants.user');
+        $chat = $action->execute($meeting)->load(['participants.user', 'meeting']);
 
         return ApiResponse::ok(new ChatResource($chat));
     }

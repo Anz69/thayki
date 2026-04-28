@@ -62,8 +62,9 @@ export default function SupportPage() {
   const loadDone      = useRef(false)
   const initMsgs      = useRef([])
   const prevMsgCount  = useRef(0)
-  const sendingRef    = useRef(false)
-  const fileInputRef  = useRef(null)
+  const sendingRef       = useRef(false)
+  const fileInputRef     = useRef(null)
+  const pendingSavedIds  = useRef(new Set())
 
   const messagesEndRef = useRef(null)
   const headerRef      = useRef(null)
@@ -187,10 +188,14 @@ export default function SupportPage() {
     if (!chatId) return undefined
     return subscribePrivate(`chats.${chatId}`, {
       '.message.sent': (e) => {
-        const msg = e.message ?? e
+        const msg = normalizeMsg(e.message ?? e, myId)
+        if (pendingSavedIds.current.has(msg.id)) {
+          pendingSavedIds.current.delete(msg.id)
+          return
+        }
         setMessages(prev => {
           if (prev.some(m => m.id === msg.id)) return prev
-          return [...prev, normalizeMsg(msg, myId)]
+          return [...prev, msg]
         })
       },
       '.messages.read': (e) => {
@@ -277,6 +282,7 @@ export default function SupportPage() {
         headers: { 'Idempotency-Key': idempotencyKey },
       })
       const saved = normalizeMsg(data.data, myId)
+      pendingSavedIds.current.add(saved.id)
       setMessages(prev => {
         if (prev.some(m => m.id === saved.id && m.id !== optimisticId)) {
           return prev.filter(m => m.id !== optimisticId)
@@ -319,6 +325,7 @@ export default function SupportPage() {
         headers: { 'Idempotency-Key': `att-${chatId}-${optimisticId}` },
       })
       const saved = normalizeMsg(data.data, myId)
+      pendingSavedIds.current.add(saved.id)
       setMessages(prev => prev.map(m => m.id === optimisticId ? saved : m))
     } catch {
       setMessages(prev => prev.filter(m => m.id !== optimisticId))

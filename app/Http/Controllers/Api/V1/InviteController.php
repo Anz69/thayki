@@ -50,7 +50,7 @@ class InviteController extends Controller
         } elseif ($bot !== '') {
             $url = "https://t.me/{$bot}?start={$token}";
         } else {
-            $url = null;
+            throw DomainException::invalid('BOT_NOT_CONFIGURED', 'Бот не настроен. Обратитесь к администратору.');
         }
 
         return ApiResponse::created([
