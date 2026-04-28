@@ -51,8 +51,11 @@ class AuthenticateTelegramUserAction
         $replayKey  = (string) $this->config->get('telegram.replay_cache_prefix', 'tg:initdata:').$validated['hash'];
         $replayTtl  = (int) $this->config->get('telegram.replay_cache_ttl', 60);
 
+
         if (! $this->cache->add($replayKey, 1, $replayTtl)) {
-            throw InvalidInitDataException::replay();
+            logger()->info('[AuthenticateTelegramUserAction] initData replay accepted as idempotent retry', [
+                'replay_key' => $replayKey,
+            ]);
         }
 
         $payload = $validated['user'];
