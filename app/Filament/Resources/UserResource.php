@@ -131,8 +131,15 @@ class UserResource extends Resource
                             'created_by_admin_id' => auth()->id(),
                             'max_uses' => 1,
                         ]);
-                        $bot = (string) config('telegram.bot_username', '');
-                        $url = $bot ? "https://t.me/{$bot}?start={$token}" : '(укажите TELEGRAM_BOT_USERNAME)';
+                        $miniAppUrl = (string) config('telegram.miniapp_url', '');
+                        $bot        = (string) config('telegram.bot_username', '');
+                        if ($miniAppUrl !== '' && str_starts_with($miniAppUrl, 'https://t.me/')) {
+                            $url = rtrim($miniAppUrl, '/').'?startapp='.$token;
+                        } elseif ($bot) {
+                            $url = "https://t.me/{$bot}?start={$token}";
+                        } else {
+                            $url = '(укажите TELEGRAM_MINIAPP_URL или TELEGRAM_BOT_USERNAME)';
+                        }
                         Notification::make()
                             ->title('Invite-ссылка создана')
                             ->body($url)

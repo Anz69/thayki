@@ -42,10 +42,16 @@ class InviteController extends Controller
             'expires_at'         => now()->addDays(7),
         ]);
 
-        $bot = (string) config('telegram.bot_username', '');
-        $url = $bot !== ''
-            ? "https://t.me/{$bot}?start={$token}"
-            : null;
+        $miniAppUrl = (string) config('telegram.miniapp_url', '');
+        $bot        = (string) config('telegram.bot_username', '');
+
+        if ($miniAppUrl !== '' && str_starts_with($miniAppUrl, 'https://t.me/')) {
+            $url = rtrim($miniAppUrl, '/').'?startapp='.$token;
+        } elseif ($bot !== '') {
+            $url = "https://t.me/{$bot}?start={$token}";
+        } else {
+            $url = null;
+        }
 
         return ApiResponse::created([
             'token' => $token,
