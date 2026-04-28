@@ -34,17 +34,27 @@ class SendChatMessageNotificationJob implements ShouldQueue
             $chat = Chat::with(['participants.user', 'meeting'])->find($message->chat_id);
             if ($chat === null) return;
 
-            $sender = $message->sender;
+            $sender    = $message->sender;
             $isSupport = $chat->type === ChatType::Support;
+            $notifier  = Notifier::default();
 
-            $title = $isSupport ? 'Поддержка' : $this->displayName($sender);
-            $text  = "✉️ У вас новое сообщение от <b>{$title}</b>";
+            // Support bot is identified by telegram_id = 0 (see SupportChats::getSupportUser).
+            $senderIsSupport = $isSupport
+                && $sender !== null
+                && (int) ($sender->telegram_id ?? -1) === 0;
 
-            $openPath = $isSupport
-                ? '/support'
-                : "/chat?id={$chat->id}";
+            if ($isSupport && ! $senderIsSupport) {
+                // User wrote to support — participants only contain the user,
+                // so admins would never be reached via the loop below.
+                // Ping all Filament admins directly.
+                $notifier->notifyAdmins(
+                    '💬 Новое сообщение в поддержке от <b>'.$this->displayName($sender).'</b>',
+                );
+            }
 
-            $notifier = Notifier::default();
+            $title    = $senderIsSupport ? 'Поддержка' : $this->displayName($sender);
+            $text     = "✉️ У вас новое сообщение от <b>{$title}</b>";
+            $openPath = $isSupport ? '/support' : "/chat?id={$chat->id}";
 
             foreach ($chat->participants as $participant) {
                 $recipient = $participant->user;
