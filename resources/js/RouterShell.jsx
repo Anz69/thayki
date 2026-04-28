@@ -16,6 +16,7 @@ import { parseTelegramStartParam } from '@/utils/telegramAuth'
 import LandingPage from '@/views/LandingPage'
 import StrangeWelcomePage from '@/views/StrangeWelcomePage'
 import BannedPage from '@/views/BannedPage'
+import ModalMiddle from '@/layout/ModalMiddle'
 
 const HomePage         = lazy(() => import('@/views/HomePage'))
 const ModelPage        = lazy(() => import('@/views/ModelPage'))
@@ -52,33 +53,6 @@ function PageFallback() {
 }
 
 let authRetried = false
-
-function ErrorDetailModal({ detail, onClose }) {
-  return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-end justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/40" />
-      <div
-        className="relative w-full max-w-lg bg-white rounded-t-3xl px-5 pt-5 pb-8 safe-bottom"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-4" />
-        <h2 className="text-sm font-semibold text-gray-800 mb-3">Детали ошибки</h2>
-        <pre className="text-[11px] leading-relaxed text-gray-600 bg-gray-50 rounded-xl p-3 overflow-x-auto whitespace-pre-wrap break-all">
-          {JSON.stringify(detail, null, 2)}
-        </pre>
-        <button
-          onClick={onClose}
-          className="mt-4 w-full py-3 rounded-2xl bg-gray-100 text-gray-700 text-sm font-medium active:opacity-70"
-        >
-          Закрыть
-        </button>
-      </div>
-    </div>
-  )
-}
 
 function AuthErrorScreen() {
   const authStore    = useAuthStore()
@@ -184,12 +158,20 @@ function AuthErrorScreen() {
         </button>
       </div>
 
-      {showDetail && (
-        <ErrorDetailModal
-          detail={detail ?? { message: 'Детали ошибки недоступны' }}
-          onClose={() => setShowDetail(false)}
-        />
-      )}
+      <ModalMiddle isOpen={showDetail} onClose={() => setShowDetail(false)}>
+        <div className="px-5 pb-6">
+          <p className="text-base font-semibold text-gray-900 mb-3">Детали ошибки</p>
+          <pre className="text-[11px] leading-relaxed text-gray-600 bg-gray-50 rounded-2xl p-4 overflow-x-auto whitespace-pre-wrap break-all">
+            {JSON.stringify(detail ?? { message: 'Детали ошибки недоступны' }, null, 2)}
+          </pre>
+          <button
+            onClick={() => setShowDetail(false)}
+            className="mt-4 w-full py-3 rounded-2xl bg-gray-100 text-gray-700 text-sm font-medium active:opacity-70 transition-opacity"
+          >
+            Закрыть
+          </button>
+        </div>
+      </ModalMiddle>
     </>
   )
 }
