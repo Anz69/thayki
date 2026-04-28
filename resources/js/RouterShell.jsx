@@ -1,4 +1,4 @@
-import { useEffect, useRef, lazy, Suspense } from 'react'
+import { useEffect, useRef, lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { registerOverlay, registerPageRoot } from '@/utils/pageTransition'
 import RouteChangeEffect from '@/components/RouteChangeEffect'
@@ -53,10 +53,39 @@ function PageFallback() {
 
 let authRetried = false
 
+function ErrorDetailModal({ detail, onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-end justify-center"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/40" />
+      <div
+        className="relative w-full max-w-lg bg-white rounded-t-3xl px-5 pt-5 pb-8 safe-bottom"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-4" />
+        <h2 className="text-sm font-semibold text-gray-800 mb-3">Детали ошибки</h2>
+        <pre className="text-[11px] leading-relaxed text-gray-600 bg-gray-50 rounded-xl p-3 overflow-x-auto whitespace-pre-wrap break-all">
+          {JSON.stringify(detail, null, 2)}
+        </pre>
+        <button
+          onClick={onClose}
+          className="mt-4 w-full py-3 rounded-2xl bg-gray-100 text-gray-700 text-sm font-medium active:opacity-70"
+        >
+          Закрыть
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function AuthErrorScreen() {
   const authStore    = useAuthStore()
   const meetingStore = useMeetingStore()
   const hint         = authStore.authErrorHint
+  const detail       = authStore.authErrorDetail
+  const [showDetail, setShowDetail] = useState(false)
 
   useEffect(() => {
     if (authRetried) return
@@ -107,36 +136,61 @@ function AuthErrorScreen() {
             authStore.setBanned()
             return
           }
+          const retryDetail = {
+            step: 'retry POST /auth/telegram',
+            status: err?.response?.status ?? null,
+            code: code ?? null,
+            message: err?.response?.data?.error?.message ?? err?.message ?? null,
+            hasBrowserToken: !!browserToken,
+            hasInviteToken: !!inviteToken,
+          }
+          authStore.setNeedsLogin(null, retryDetail)
+          return
         }
       }
 
-      authStore.setNeedsLogin()
+      authStore.setNeedsLogin(null, { step: 'retry', message: initData ? 'Сервер вернул пустой ответ' : 'initData недоступен' })
     }
 
     retry().catch(() => authStore.setNeedsLogin())
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-8 text-center bg-white">
-      <div className="flex flex-col items-center gap-3">
-        <span className="text-5xl select-none">😕</span>
-        <h1 className="text-xl font-semibold text-black">Ошибка входа</h1>
-        <p className="text-sm text-[#7F7F7F] leading-relaxed">
-          Не удалось войти в приложение.<br />Попробуйте перезагрузить страницу.
-        </p>
-        {hint && (
-          <p className="text-xs text-[#AAAAAA] leading-relaxed mt-1 max-w-xs">
-            {hint}
+    <>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-8 text-center bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-5xl select-none">😕</span>
+          <h1 className="text-xl font-semibold text-black">Ошибка входа</h1>
+          <p className="text-sm text-[#7F7F7F] leading-relaxed">
+            Не удалось войти в приложение.<br />Попробуйте перезагрузить страницу.
           </p>
-        )}
+          {hint && (
+            <p className="text-xs text-[#AAAAAA] leading-relaxed mt-1 max-w-xs">
+              {hint}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={() => { authRetried = false; window.location.reload() }}
+          className="w-full max-w-xs py-4 rounded-full bg-[#E2319B] text-white text-base font-semibold active:opacity-80 transition-opacity"
+        >
+          Перезагрузить страницу
+        </button>
+        <button
+          onClick={() => setShowDetail(true)}
+          className="text-xs text-[#CCCCCC] underline underline-offset-2 active:opacity-60 transition-opacity"
+        >
+          Посмотреть причину ошибки
+        </button>
       </div>
-      <button
-        onClick={() => { authRetried = false; window.location.reload() }}
-        className="w-full max-w-xs py-4 rounded-full bg-[#E2319B] text-white text-base font-semibold active:opacity-80 transition-opacity"
-      >
-        Перезагрузить страницу
-      </button>
-    </div>
+
+      {showDetail && (
+        <ErrorDetailModal
+          detail={detail ?? { message: 'Детали ошибки недоступны' }}
+          onClose={() => setShowDetail(false)}
+        />
+      )}
+    </>
   )
 }
 
