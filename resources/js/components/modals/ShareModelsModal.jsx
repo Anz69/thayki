@@ -273,11 +273,10 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
             <button
               key={model.id}
               onClick={(event) => toggleModel(model.id, event.currentTarget)}
-              className={`w-full text-left rounded-2xl border p-2.5 flex items-center gap-3 transition-all duration-200 ${
-                selectedIds.includes(model.id)
+              className={`w-full text-left rounded-2xl border p-2.5 flex items-center gap-3 transition-all duration-200 ${selectedIds.includes(model.id)
                   ? 'border-[#E2319B] bg-[#FDF0F8] shadow-[0_4px_14px_rgba(226,49,155,0.12)]'
                   : 'border-black/10 bg-white active:bg-[#F7F7FA]'
-              }`}
+                }`}
             >
               <div className="size-12 rounded-xl overflow-hidden bg-[#EFEEF3] shrink-0">
                 {model.photoUrl ? (
@@ -292,9 +291,8 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
                   {model.price ? `от ฿ ${Number(model.price).toLocaleString()}/ч` : 'Цена не указана'}
                 </p>
               </div>
-              <div className={`size-5 rounded-full border-2 transition-colors flex items-center justify-center ${
-                selectedIds.includes(model.id) ? 'border-[#E2319B] bg-[#E2319B]' : 'border-[#C9C7CF] bg-white'
-              }`}>
+              <div className={`size-5 rounded-full border-2 transition-colors flex items-center justify-center ${selectedIds.includes(model.id) ? 'border-[#E2319B] bg-[#E2319B]' : 'border-[#C9C7CF] bg-white'
+                }`}>
                 {selectedIds.includes(model.id) ? <span className="text-white text-[10px] font-bold leading-none">✓</span> : null}
               </div>
             </button>
@@ -320,11 +318,11 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
               onClick={copyText}
               className="py-2.5 rounded-2xl bg-[#F5F5F7] text-black text-sm font-[500] active:bg-[#ECEAEC] transition-colors flex items-center justify-center gap-2"
             >
+              <span>Скопировать текст</span>
               <div className="relative w-[18px] h-[18px]">
                 <div ref={setCopyIconRef} className="absolute inset-0 flex items-center justify-center"><IconCopy /></div>
                 <div ref={setCheckIconRef} className="absolute inset-0 flex items-center justify-center"><IconCheck /></div>
               </div>
-              <span>Скопировать текст</span>
             </button>
           </div>
           {status ? (
