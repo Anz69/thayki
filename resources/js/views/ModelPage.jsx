@@ -9,6 +9,7 @@ import Media from '@/components/sections/modelSelectInfo/Media'
 import useBookingStore from '@/stores/useBookingStore'
 import useMeetingStore from '@/stores/useMeetingStore'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
+import ModalMiddle from '@/layout/ModalMiddle'
 import api, { extractErrorMessage } from '@/utils/api'
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'paid', 'confirmed']
@@ -18,6 +19,11 @@ export default function ModelPage() {
   const store      = useBookingStore()
   const meeting    = useMeetingStore()
   const navigate   = useTransitionNavigate()
+
+  // Render this route as a bottom-sheet modal (see ShareModelsModal UX).
+  const [modalOpen, setModalOpen] = useState(true)
+  const handleClose = useCallback(() => setModalOpen(false), [])
+  const handleAfterClose = useCallback(() => navigate('/home', { replace: true }), [navigate])
 
   const [model,   setModel]   = useState(null)
   const [loading, setLoading] = useState(true)
@@ -194,6 +200,15 @@ export default function ModelPage() {
   }, [])
 
   useEffect(() => {
+    if (!modalOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [modalOpen])
+
+  useEffect(() => {
     if (!id) return
     let cancelled = false
     setLoading(true)
@@ -235,7 +250,9 @@ export default function ModelPage() {
   const [rightErr, setRightErr] = useState(false)
 
   return (
-    <section className="flex flex-col gap-7 pt-4">
+    <ModalMiddle isOpen={modalOpen} onClose={handleClose} onAfterClose={handleAfterClose}>
+      <div style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', maxHeight: '92dvh' }}>
+        <section className="flex flex-col gap-7 pt-4">
       <header
         ref={headerRef}
         className="invisible w-full py-5 border-b border-white bg-white/90 backdrop-blur-xs sticky top-0 z-50"
@@ -398,6 +415,8 @@ export default function ModelPage() {
           </div>
         </div>
       </main>
-    </section>
+        </section>
+      </div>
+    </ModalMiddle>
   )
 }
