@@ -78,7 +78,7 @@ export default function BecomeModelPage() {
     api.get('/model-application')
       .then(() => {
         if (cancelled) return
-        navigate('/application-pending', { replace: true })
+        navigate('/home', { replace: true })
       })
       .catch((err) => {
         if (cancelled) return
@@ -144,7 +144,7 @@ export default function BecomeModelPage() {
       } catch (err) {
         const errData = err?.response?.data?.error
         if (errData?.code === 'APPLICATION_ALREADY_SUBMITTED') {
-          navigate('/application-pending', { replace: true })
+          navigate('/home', { replace: true })
           return
         }
         const msg = errData?.message ?? err?.response?.data?.message ?? err?.message ?? 'Ошибка. Попробуйте ещё раз'
