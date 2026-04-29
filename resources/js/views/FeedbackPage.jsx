@@ -204,7 +204,7 @@ export default function FeedbackPage() {
             {/* Header block */}
             <div className="flex flex-col items-center gap-3 text-center py-2 pt-12">
       
-              <h2 className="text-black text-2xl/[120%] font-semibold">
+              <h2 className="text-black text-2xl/[120%] font-[500]">
                 {bothDone ? 'Всё отправлено!' : 'Встреча завершена'}
               </h2>
               <p className="text-[#7F7F7F] text-sm/[150%] max-w-[280px]">
@@ -229,7 +229,7 @@ export default function FeedbackPage() {
                 ].join(' ')}
               >
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                  <span className={['text-base/[100%] font-semibold', hasReview ? 'text-[#7F7F7F]' : 'text-white'].join(' ')}>
+                  <span className={['text-base/[100%] font-[500]', hasReview ? 'text-[#7F7F7F]' : 'text-white'].join(' ')}>
                     {hasReview ? 'Отзыв отправлен' : 'Оставить отзыв'}
                   </span>
                   <span className={['text-xs/[140%]', hasReview ? 'text-[#BDBDBD]' : 'text-white/75'].join(' ')}>
@@ -255,7 +255,7 @@ export default function FeedbackPage() {
                 ].join(' ')}
               >
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                  <span className={['text-base/[100%] font-semibold', hasComplaint ? 'text-[#7F7F7F]' : 'text-white'].join(' ')}>
+                  <span className={['text-base/[100%] font-[500]', hasComplaint ? 'text-[#7F7F7F]' : 'text-white'].join(' ')}>
                     {hasComplaint ? 'Жалоба отправлена' : 'Сообщить о проблеме'}
                   </span>
                   <span className={['text-xs/[140%]', hasComplaint ? 'text-[#BDBDBD]' : 'text-[#888]'].join(' ')}>
@@ -273,19 +273,18 @@ export default function FeedbackPage() {
             {/* Home button */}
             <button
               onClick={() => navigate('/home')}
-              className="w-full py-4 rounded-full bg-black/5 text-black text-base/[100%] font-semibold active:bg-[#ECEAEC] transition-colors mt-2"
+              className="w-full py-4 rounded-full bg-black/5 text-black text-base/[100%] font-[500] active:bg-[#ECEAEC] transition-colors mt-2"
             >
               На главную
             </button>
           </div>
         )}
 
-        {/* ── Review form ── */}
         {mode === 'review' && (
           <div className="flex flex-col gap-5 pt-2">
 
             <div className="flex flex-col gap-1.5">
-              <p className="text-black text-base/[100%] font-semibold">Оцените встречу</p>
+              <p className="text-black text-base/[100%] font-[500]">Оцените встречу</p>
               <p className="text-[#7F7F7F] text-sm/[140%]">Ваш отзыв увидят другие пользователи.</p>
             </div>
 
@@ -330,7 +329,7 @@ export default function FeedbackPage() {
               onClick={submitReview}
               disabled={submitting || (stars === 0 && body.trim().length < 3)}
               className={[
-                'w-full py-4 rounded-full text-base/[100%] font-semibold transition-opacity',
+                'w-full py-4 rounded-full text-base/[100%] font-[500] transition-opacity',
                 (submitting || (stars === 0 && body.trim().length < 3))
                   ? 'bg-[#F0F0F0] text-[#BDBDBD] cursor-not-allowed'
                   : 'bg-[#E2319B] text-white active:opacity-80',
@@ -346,7 +345,7 @@ export default function FeedbackPage() {
           <div className="flex flex-col gap-5 pt-2">
 
             <div className="flex flex-col gap-1.5">
-              <p className="text-black text-base/[100%] font-semibold">Опишите проблему</p>
+              <p className="text-black text-base/[100%] font-[500]">Опишите проблему</p>
               <p className="text-[#7F7F7F] text-sm/[140%]">Чем подробнее — тем быстрее разберёмся.</p>
             </div>
 
@@ -374,7 +373,7 @@ export default function FeedbackPage() {
               onClick={submitComplaint}
               disabled={submitting || body.trim().length < 3}
               className={[
-                'w-full py-4 rounded-full text-base/[100%] font-semibold transition-opacity',
+                'w-full py-4 rounded-full text-base/[100%] font-[500] transition-opacity',
                 (submitting || body.trim().length < 3)
                   ? 'bg-[#F0F0F0] text-[#BDBDBD] cursor-not-allowed'
                   : 'bg-[#1C1C1E] text-white active:opacity-80',
