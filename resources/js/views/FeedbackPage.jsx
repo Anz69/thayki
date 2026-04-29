@@ -203,9 +203,7 @@ export default function FeedbackPage() {
 
             {/* Header block */}
             <div className="flex flex-col items-center gap-3 text-center py-2">
-              <div className="w-16 h-16 rounded-full bg-[#E2319B]/10 flex items-center justify-center text-[32px] select-none">
-                {bothDone ? '🎉' : '💬'}
-              </div>
+      
               <h2 className="text-black text-2xl/[120%] font-semibold">
                 {bothDone ? 'Всё отправлено!' : 'Встреча завершена'}
               </h2>
@@ -230,7 +228,7 @@ export default function FeedbackPage() {
                     : 'bg-[#E2319B] active:opacity-80',
                 ].join(' ')}
               >
-                <span className="text-2xl select-none">{hasReview ? '✅' : '⭐'}</span>
+                <span className="text-2xl select-none"></span>
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                   <span className={['text-base/[100%] font-semibold', hasReview ? 'text-[#7F7F7F]' : 'text-white'].join(' ')}>
                     {hasReview ? 'Отзыв отправлен' : 'Оставить отзыв'}
@@ -257,7 +255,6 @@ export default function FeedbackPage() {
                     : 'bg-[#1C1C1E] active:opacity-80',
                 ].join(' ')}
               >
-                <span className="text-2xl select-none">{hasComplaint ? '✅' : '⚠️'}</span>
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                   <span className={['text-base/[100%] font-semibold', hasComplaint ? 'text-[#7F7F7F]' : 'text-white'].join(' ')}>
                     {hasComplaint ? 'Жалоба отправлена' : 'Сообщить о проблеме'}
@@ -364,7 +361,7 @@ export default function FeedbackPage() {
             />
 
             <div className="bg-[#FFF8F0] rounded-2xl px-4 py-3 flex gap-3 items-start">
-              <span className="text-base select-none mt-0.5">💡</span>
+
               <p className="text-[#7F7F7F] text-xs/[150%]">
                 После отправки жалобы с вами свяжутся в чате поддержки. Обычно это занимает до 24 часов.
               </p>
