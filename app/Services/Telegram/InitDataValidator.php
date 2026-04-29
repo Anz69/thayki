@@ -60,7 +60,7 @@ class InitDataValidator
         $providedHash = (string) $pairs['hash'];
 
         $dataPairs = $pairs;
-        unset($dataPairs['hash'], $dataPairs['signature']);
+        unset($dataPairs['hash']);
         ksort($dataPairs);
 
         $dataCheckString = implode("\n", array_map(
