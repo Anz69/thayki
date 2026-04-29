@@ -215,7 +215,6 @@ function StrangeGuard({ children }) {
 function ModelApplicationPendingGuard({ children }) {
   const { user } = useAuthStore()
   const location = useLocation()
-  const [checking, setChecking] = useState(false)
   const [hasActiveApplication, setHasActiveApplication] = useState(false)
 
   useEffect(() => {
@@ -223,7 +222,6 @@ function ModelApplicationPendingGuard({ children }) {
 
     if (!user || user.role !== 'client') {
       setHasActiveApplication(false)
-      setChecking(false)
       return () => { cancelled = true }
     }
 
@@ -233,11 +231,9 @@ function ModelApplicationPendingGuard({ children }) {
       && now - modelAppGuardCache.checkedAt < MODEL_APP_GUARD_TTL_MS
     ) {
       setHasActiveApplication(modelAppGuardCache.hasActive)
-      setChecking(false)
       return () => { cancelled = true }
     }
 
-    setChecking(true)
     api.get('/model-application')
       .then((res) => {
         if (cancelled) return
@@ -245,15 +241,12 @@ function ModelApplicationPendingGuard({ children }) {
         const hasActive = status === 'submitted'
         setHasActiveApplication(hasActive)
         modelAppGuardCache = { userId: user.id, hasActive, checkedAt: Date.now() }
-        setChecking(false)
       })
       .catch((err) => {
         if (cancelled) return
-        const status = err?.response?.status
-        const hasActive = status !== 404 ? hasActiveApplication : false
+        const hasActive = false
         setHasActiveApplication(hasActive)
         modelAppGuardCache = { userId: user.id, hasActive, checkedAt: Date.now() }
-        setChecking(false)
       })
 
     return () => { cancelled = true }

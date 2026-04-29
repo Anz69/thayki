@@ -48,6 +48,8 @@ export default function BottomNav() {
   const auth         = useAuthStore()
 
   const { pathname } = location
+  const hiddenPaths = new Set(['/become-model', '/application-pending', '/welcome'])
+  if (hiddenPaths.has(pathname) || pathname === '/') return null
 
   const isModel = auth.isModel()
 
