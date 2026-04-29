@@ -7,7 +7,6 @@ namespace App\Actions\ModelApplication;
 use App\Enums\ModelApplicationStatus;
 use App\Enums\UserRole;
 use App\Exceptions\DomainException;
-use App\Models\AppSetting;
 use App\Models\ModelApplication;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
@@ -17,7 +16,6 @@ class SubmitModelApplicationAction
 {
     public function __construct(
         private readonly AuditLogger $audit,
-        private readonly ApproveModelApplicationAction $approveAction,
     ) {}
 
     /**
@@ -57,10 +55,6 @@ class SubmitModelApplicationAction
 
             return $application;
         });
-
-        if (AppSetting::bool('auto_approve_applications', false)) {
-            $application = $this->approveAction->execute($application);
-        }
 
         return $application;
     }
