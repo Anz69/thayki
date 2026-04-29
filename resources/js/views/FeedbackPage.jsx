@@ -273,7 +273,7 @@ export default function FeedbackPage() {
             {/* Home button */}
             <button
               onClick={() => navigate('/home')}
-              className="w-full py-4 rounded-full bg-black/10 text-black text-base/[100%] font-semibold active:bg-[#ECEAEC] transition-colors mt-2"
+              className="w-full py-4 rounded-full bg-black/5 text-black text-base/[100%] font-semibold active:bg-[#ECEAEC] transition-colors mt-2"
             >
               На главную
             </button>
