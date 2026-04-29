@@ -123,7 +123,9 @@ export default function HomePage() {
           <button
             ref={shareBtnRef}
             onClick={() => setIsShareOpen(true)}
-            className="invisible px-2.5 py-3 bg-[#EFEEF3] text-black text-base/[80%] font-medium active:bg-[#E0DEDF] transition-colors duration-200 cursor-pointer rounded-full"
+            disabled={loading || models.length === 0}
+            title={models.length === 0 ? 'Сначала загрузите модели' : 'Поделиться подборкой'}
+            className="invisible px-2.5 py-3 bg-[#EFEEF3] text-black text-base/[80%] font-medium active:bg-[#E0DEDF] transition-colors duration-200 cursor-pointer rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Поделиться
           </button>

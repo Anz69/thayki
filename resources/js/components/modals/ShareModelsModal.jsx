@@ -48,9 +48,13 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     })
   ), [models])
 
+  const totalModels = preparedModels.length
+  const effectiveMax = Math.min(MAX_SELECTED, Math.max(totalModels, 1))
+  const isSingleModel = totalModels === 1
+
   useEffect(() => {
     if (!isOpen) return
-    setSelectedIds([])
+    setSelectedIds(isSingleModel ? preparedModels.map((model) => model.id) : [])
     setStatus('')
     const timer = setTimeout(() => {
       const cards = Array.from(listRef.current?.children ?? [])
@@ -66,7 +70,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
       })
     }, 120)
     return () => clearTimeout(timer)
-  }, [isOpen, preparedModels.length])
+  }, [isOpen, isSingleModel, preparedModels])
 
   const selectedModels = useMemo(
     () => preparedModels.filter((model) => selectedIds.includes(model.id)),
@@ -86,11 +90,15 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     ].join('\n')
   }, [selectedModels, botUsername])
 
+  const previewText = selectedModels.length === 0
+    ? 'Выберите модели, и мы подготовим сообщение со ссылками.'
+    : selectedModels.slice(0, 2).map((m) => `${m.name}${m.age ? `, ${m.age}` : ''}`).join(' • ')
+
   const toggleModel = (id) => {
     setSelectedIds((prev) => {
       if (prev.includes(id)) return prev.filter((item) => item !== id)
-      if (prev.length >= MAX_SELECTED) {
-        setStatus(`Можно выбрать максимум ${MAX_SELECTED} моделей`)
+      if (prev.length >= effectiveMax) {
+        setStatus(`Можно выбрать максимум ${effectiveMax} ${effectiveMax === 1 ? 'модель' : 'моделей'}`)
         return prev
       }
       return [...prev, id]
@@ -98,10 +106,10 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   }
 
   const selectAll = () => {
-    const next = preparedModels.slice(0, MAX_SELECTED).map((model) => model.id)
+    const next = preparedModels.slice(0, effectiveMax).map((model) => model.id)
     setSelectedIds(next)
-    if (preparedModels.length > MAX_SELECTED) {
-      setStatus(`Выбраны первые ${MAX_SELECTED} моделей`)
+    if (preparedModels.length > effectiveMax) {
+      setStatus(`Выбраны первые ${effectiveMax} моделей`)
     } else {
       setStatus('')
     }
@@ -116,7 +124,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
 
   const shareBotOnly = () => {
     const url = botLink(botUsername)
-    const text = 'Открой бота Thaiky:'
+    const text = 'Открой бота Thaiky'
     const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`
     window.open(tgUrl, '_blank', 'noopener,noreferrer')
   }
@@ -131,7 +139,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   const shareNative = async () => {
     if (!canShare) return
     if (!navigator.share) {
-      setStatus('Системный share недоступен, используйте копирование')
+      setStatus('Системный способ «Поделиться» недоступен, используйте копирование')
       return
     }
     try {
@@ -161,9 +169,9 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
       <div className="px-4 pb-4 sm:px-5 sm:pb-5 flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-black text-xl/[100%] font-semibold">Поделиться моделями</h2>
-            <p className="text-[#7F7F7F] text-sm mt-1">
-              Выберите моделей и отправьте ссылки на бота с открытием их профилей.
+            <h2 className="text-black text-xl/[100%] font-semibold">Поделиться подборкой</h2>
+            <p className="text-[#7F7F7F] text-sm mt-1 leading-snug">
+              Выберите модели и отправьте сообщение со ссылками, которые откроют их профили в боте.
             </p>
           </div>
           <button
@@ -174,20 +182,24 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
           </button>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between bg-[#F6F5F9] rounded-2xl px-3 py-2.5">
           <p className="text-xs text-[#7F7F7F]">
-            Выбрано: <span className="text-black font-semibold">{selectedIds.length}</span> / {MAX_SELECTED}
+            Выбрано <span className="text-black font-semibold">{selectedIds.length}</span> из <span className="text-black font-semibold">{totalModels}</span>
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button onClick={shareBotOnly} className="text-xs px-2.5 py-1.5 bg-[#EAF6FF] rounded-full text-[#0A77B8] font-medium">
               Поделиться ботом
             </button>
-            <button onClick={selectAll} className="text-xs px-2.5 py-1.5 bg-[#EFEEF3] rounded-full text-black font-medium">
-              Выбрать все
-            </button>
-            <button onClick={clearSelection} className="text-xs px-2.5 py-1.5 bg-[#F6F6F9] rounded-full text-[#7F7F7F] font-medium">
-              Сбросить
-            </button>
+            {!isSingleModel && (
+              <>
+                <button onClick={selectAll} className="text-xs px-2.5 py-1.5 bg-[#EFEEF3] rounded-full text-black font-medium">
+                  Выбрать все
+                </button>
+                <button onClick={clearSelection} className="text-xs px-2.5 py-1.5 bg-[#F0F0F3] rounded-full text-[#6B6B75] font-medium">
+                  Сбросить
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -198,7 +210,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
               onClick={() => toggleModel(model.id)}
               className={`w-full text-left rounded-2xl border p-2.5 flex items-center gap-3 transition-all duration-200 ${
                 selectedIds.includes(model.id)
-                  ? 'border-[#E2319B] bg-[#FDF0F8]'
+                  ? 'border-[#E2319B] bg-[#FDF0F8] shadow-[0_4px_14px_rgba(226,49,155,0.12)]'
                   : 'border-black/10 bg-white active:bg-[#F7F7FA]'
               }`}
             >
@@ -215,35 +227,47 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
                   {model.price ? `от ฿ ${Number(model.price).toLocaleString()}/ч` : 'Цена не указана'}
                 </p>
               </div>
-              <div className={`size-5 rounded-full border-2 transition-colors ${
+              <div className={`size-5 rounded-full border-2 transition-colors flex items-center justify-center ${
                 selectedIds.includes(model.id) ? 'border-[#E2319B] bg-[#E2319B]' : 'border-[#C9C7CF] bg-white'
-              }`} />
+              }`}>
+                {selectedIds.includes(model.id) ? <span className="text-white text-[10px] font-bold leading-none">✓</span> : null}
+              </div>
             </button>
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-2xl bg-[#F6F5F9] px-3 py-2.5">
+          <p className="text-[11px] uppercase tracking-wide text-[#8D8B97] font-semibold">Предпросмотр</p>
+          <p className="text-sm text-[#434150] mt-1">
+            {previewText}
+            {selectedModels.length > 2 ? ` и еще ${selectedModels.length - 2}` : ''}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2">
           <button
             onClick={shareToTelegram}
             disabled={!canShare}
-            className="py-3 rounded-2xl bg-[#229ED9] text-white text-sm font-semibold disabled:opacity-40"
+            className="py-3 rounded-2xl bg-[#E2319B] text-white text-sm font-semibold disabled:opacity-40"
           >
-            Telegram
+            Отправить в Telegram
           </button>
-          <button
-            onClick={shareNative}
-            disabled={!canShare}
-            className="py-3 rounded-2xl bg-[#EFEEF3] text-black text-sm font-semibold disabled:opacity-40"
-          >
-            Share
-          </button>
-          <button
-            onClick={copyText}
-            disabled={!canShare}
-            className="py-3 rounded-2xl bg-black text-white text-sm font-semibold disabled:opacity-40"
-          >
-            Копировать
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={shareNative}
+              disabled={!canShare}
+              className="py-3 rounded-2xl bg-[#EFEEF3] text-black text-sm font-semibold disabled:opacity-40"
+            >
+              Поделиться
+            </button>
+            <button
+              onClick={copyText}
+              disabled={!canShare}
+              className="py-3 rounded-2xl bg-black text-white text-sm font-semibold disabled:opacity-40"
+            >
+              Скопировать текст
+            </button>
+          </div>
         </div>
 
         <div className="min-h-5">
