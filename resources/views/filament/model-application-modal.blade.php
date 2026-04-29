@@ -197,7 +197,7 @@
                             type="button"
                             data-photo-close
                             onclick="event && event.stopPropagation && event.stopPropagation();(function(){var overlay=document.getElementById('modelAppPhotoOverlay-{{ $record->id }}');if(!overlay)return;overlay.style.display='none';overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';})();"
-                            style="position:absolute; right:0; top:-2px; width:44px; height:44px; border-radius:999px; border:none; background:rgba(255,255,255,0.12); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;"
+                            style="position:absolute; right:0; top:-50px; width:44px; height:44px; border-radius:999px; border:none; background:rgba(255,255,255,0.12); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;"
                             aria-label="Закрыть просмотр"
                         >
                             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
