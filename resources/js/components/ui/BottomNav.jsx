@@ -271,6 +271,17 @@ export default function BottomNav() {
 
   }, [activeIndex, renderedSlot])
 
+  useEffect(() => {
+    if (!renderedTabs || activeIndex < 0) return
+    const raf = requestAnimationFrame(() => {
+      const pos = measureBtn(activeIndex)
+      const ind = indicatorRef.current
+      if (!pos || !ind) return
+      gsap.to(ind, { left: pos.left, width: pos.width, opacity: 1, duration: 0.22, ease: 'expo.out', overwrite: 'auto' })
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [meeting.meeting?.id, meeting.status])
+
   return (
     <div
       ref={wrapperRef}
