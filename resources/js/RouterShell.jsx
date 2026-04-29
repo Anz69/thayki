@@ -60,6 +60,8 @@ function PageFallback() {
 }
 
 let authRetried = false
+const MODEL_APP_GUARD_TTL_MS = 10000
+let modelAppGuardCache = { userId: null, hasActive: false, checkedAt: 0 }
 
 function AuthErrorScreen() {
   const authStore = useAuthStore()
@@ -213,7 +215,7 @@ function StrangeGuard({ children }) {
 function ModelApplicationPendingGuard({ children }) {
   const { user } = useAuthStore()
   const location = useLocation()
-  const [checking, setChecking] = useState(true)
+  const [checking, setChecking] = useState(false)
   const [hasActiveApplication, setHasActiveApplication] = useState(false)
 
   useEffect(() => {
@@ -225,29 +227,37 @@ function ModelApplicationPendingGuard({ children }) {
       return () => { cancelled = true }
     }
 
+    const now = Date.now()
+    if (
+      modelAppGuardCache.userId === user.id
+      && now - modelAppGuardCache.checkedAt < MODEL_APP_GUARD_TTL_MS
+    ) {
+      setHasActiveApplication(modelAppGuardCache.hasActive)
+      setChecking(false)
+      return () => { cancelled = true }
+    }
+
     setChecking(true)
     api.get('/model-application')
       .then((res) => {
         if (cancelled) return
         const status = res?.data?.data?.status
-        setHasActiveApplication(status === 'submitted')
+        const hasActive = status === 'submitted'
+        setHasActiveApplication(hasActive)
+        modelAppGuardCache = { userId: user.id, hasActive, checkedAt: Date.now() }
         setChecking(false)
       })
       .catch((err) => {
         if (cancelled) return
         const status = err?.response?.status
-        if (status === 404) {
-          setHasActiveApplication(false)
-        } else {
-          setHasActiveApplication(false)
-        }
+        const hasActive = status !== 404 ? hasActiveApplication : false
+        setHasActiveApplication(hasActive)
+        modelAppGuardCache = { userId: user.id, hasActive, checkedAt: Date.now() }
         setChecking(false)
       })
 
     return () => { cancelled = true }
-  }, [user?.id, user?.role, location.pathname])
-
-  if (checking) return null
+  }, [user?.id, user?.role])
 
   if (hasActiveApplication && location.pathname !== '/application-pending') {
     return <Navigate to="/application-pending" replace />

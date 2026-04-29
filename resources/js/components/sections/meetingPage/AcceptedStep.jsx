@@ -52,7 +52,7 @@ export default function AcceptedStep({
       <button
         ref={payBtnRef}
         onClick={onPayment}
-        className="flex items-center gap-2.5 bg-[#E2319B] text-white p-4.5 rounded-full text-base/[100%] font-medium active:scale-95 transition-transform duration-150 shadow-[0_4px_20px_rgba(226,49,155,0.35)]"
+        className="flex items-center gap-2.5 bg-[#E2319B] text-white p-4.5 rounded-full text-base/[100%] font-medium active:opacity-85 transition-opacity duration-150 shadow-[0_4px_20px_rgba(226,49,155,0.35)]"
       >
         <PayIcon />
         Оплатить встречу

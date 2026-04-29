@@ -153,10 +153,10 @@ export default function MeetingPage() {
   }, [])
   const animateAcceptedIn = useCallback((delay = 0) => {
     const tl = gsap.timeline({ delay })
-    tl.to(acceptedAvatarRef.current, { scale: 1, autoAlpha: 1, duration: 0.55, ease: 'back.out(1.3)'    })
-      .to(acceptedHeadRef.current,   { y: 0, autoAlpha: 1, duration: 0.45, ease: 'expo.out'              }, 0.14)
-      .to(acceptedSubRef.current,    { y: 0, autoAlpha: 1, duration: 0.4,  ease: 'power3.out'            }, 0.22)
-      .to(payBtnRef.current,         { y: 0, autoAlpha: 1, scale: 1, duration: 0.55, ease: 'back.out(2)' }, 0.3)
+    tl.to(acceptedAvatarRef.current, { scale: 1, autoAlpha: 1, duration: 0.55, ease: 'back.out(1.3)', overwrite: 'auto' })
+      .to(acceptedHeadRef.current,   { y: 0, autoAlpha: 1, duration: 0.45, ease: 'expo.out', overwrite: 'auto' }, 0.14)
+      .to(acceptedSubRef.current,    { y: 0, autoAlpha: 1, duration: 0.4,  ease: 'power3.out', overwrite: 'auto' }, 0.22)
+      .to(payBtnRef.current,         { y: 0, autoAlpha: 1, scale: 1, duration: 0.5, ease: 'power3.out', overwrite: 'auto' }, 0.3)
     return tl
   }, [])
   const animateConfirmedIn = useCallback((delay = 0) => {

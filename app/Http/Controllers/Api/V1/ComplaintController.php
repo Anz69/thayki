@@ -69,11 +69,12 @@ class ComplaintController extends Controller
         }
 
         /** @var Complaint $complaint */
+        $body = trim((string) $request->input('body', ''));
         $complaint = Complaint::query()->create([
             'user_id'    => $user->id,
             'meeting_id' => $meetingId,
             'subject'    => $request->input('subject'),
-            'body'       => (string) $request->input('body'),
+            'body'       => $body,
             'status'     => Complaint::STATUS_PENDING,
         ]);
 
