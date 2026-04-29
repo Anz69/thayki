@@ -198,17 +198,17 @@ export default function ModelMeetingPage() {
     if (stage === 'accepted') {
       gsap.set(pendingRef.current,   { display: 'none' })
       gsap.set(confirmedRef.current, { display: 'none' })
-      gsap.set(waitingRef.current,   { display: 'flex', opacity: 0 })
+      gsap.set(waitingRef.current,   { display: 'flex', opacity: 1 })
       animateWaitingIn(0.18)
     } else if (stage === 'confirmed') {
       gsap.set(pendingRef.current, { display: 'none' })
       gsap.set(waitingRef.current, { display: 'none' })
-      gsap.set(confirmedRef.current, { display: 'flex', opacity: 0 })
+      gsap.set(confirmedRef.current, { display: 'flex', opacity: 1 })
       animateConfirmedIn(0.18)
     } else {
       gsap.set(waitingRef.current,   { display: 'none' })
       gsap.set(confirmedRef.current, { display: 'none' })
-      gsap.set(pendingRef.current,   { display: 'flex', opacity: 0 })
+      gsap.set(pendingRef.current,   { display: 'flex', opacity: 1 })
       if (headerSupportRef.current) gsap.to(headerSupportRef.current, { autoAlpha: 1, duration: 0.3, delay: 0.16 })
       animatePendingIn(0.18)
     }

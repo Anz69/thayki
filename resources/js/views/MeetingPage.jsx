@@ -200,13 +200,13 @@ export default function MeetingPage() {
       .to(backBtnRef.current,     { x: 0, autoAlpha: 1, duration: 0.3,  ease: 'back.out(1.5)' }, 0.06)
       .to(headerTitleRef.current, { y: 0, autoAlpha: 1, duration: 0.3,  ease: 'expo.out'      }, 0.1)
     if (stage === 'accepted') {
-      gsap.set(acceptedRef.current, { display: 'flex', opacity: 0 })
+      gsap.set(acceptedRef.current, { display: 'flex', opacity: 1 })
       animateAcceptedIn(0.18)
     } else if (stage === 'confirmed') {
-      gsap.set(confirmedRef.current, { display: 'flex', opacity: 0 })
+      gsap.set(confirmedRef.current, { display: 'flex', opacity: 1 })
       animateConfirmedIn(0.18)
     } else {
-      gsap.set(pendingRef.current, { display: 'flex', opacity: 0 })
+      gsap.set(pendingRef.current, { display: 'flex', opacity: 1 })
       animatePendingIn(0.18)
     }
   }, [meeting.status, animatePendingIn, animateAcceptedIn, animateConfirmedIn])
