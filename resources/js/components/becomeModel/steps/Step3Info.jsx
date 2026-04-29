@@ -108,13 +108,13 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
           </div>
           <div className="flex flex-col gap-1.5">
             <FieldLabel>Размер груди</FieldLabel>
-            <div ref={bustWrapRef} className="bg-[#F5F5F5] rounded-[14px] px-4 py-[14px]">
+            <div ref={bustWrapRef} className="bg-[#F5F5F5] rounded-[14px] px-4 ">
               <CustomSelect value={bust} onChange={setBust} options={BUST_OPTIONS} onOpen={() => handleSelectOpen(bustWrapRef)} />
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
             <FieldLabel>Размер попы</FieldLabel>
-            <div ref={buttWrapRef} className="bg-[#F5F5F5] rounded-[14px] px-4 py-[14px]">
+            <div ref={buttWrapRef} className="bg-[#F5F5F5] rounded-[14px] px-4 ">
               <CustomSelect value={butt} onChange={setButt} options={BUTT_OPTIONS} onOpen={() => handleSelectOpen(buttWrapRef)} />
             </div>
           </div>

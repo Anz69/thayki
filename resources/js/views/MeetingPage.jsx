@@ -159,25 +159,8 @@ export default function MeetingPage() {
       .to(confirmedSubRef.current,    { y: 0, autoAlpha: 1, duration: 0.4,  ease: 'power3.out'          }, 0.22)
     return tl
   }, [])
-  const startAnimations = useCallback(() => {
-    animatedRef.current = true
-    const status = meeting.status
-    const tl = gsap.timeline()
-    tl.to(headerRef.current,      { y: 0, autoAlpha: 1, duration: 0.38, ease: 'expo.out'      })
-      .to(backBtnRef.current,     { x: 0, autoAlpha: 1, duration: 0.3,  ease: 'back.out(1.5)' }, 0.06)
-      .to(headerTitleRef.current, { y: 0, autoAlpha: 1, duration: 0.3,  ease: 'expo.out'      }, 0.1)
-    if (status === 'accepted') {
-      gsap.set(acceptedRef.current, { display: 'flex', opacity: 0 })
-      animateAcceptedIn(0.18)
-    } else if (status === 'paid' || status === 'confirmed') {
-      gsap.set(confirmedRef.current, { display: 'flex', opacity: 0 })
-      animateConfirmedIn(0.18)
-    } else {
-      gsap.set(pendingRef.current, { display: 'flex', opacity: 0 })
-      animatePendingIn(0.18)
-    }
-  }, [meeting.status, animatePendingIn, animateAcceptedIn, animateConfirmedIn])
-  useLayoutEffect(() => {
+
+  const prepareInitialState = useCallback(() => {
     gsap.set(headerRef.current,      { autoAlpha: 0, y: -44 })
     gsap.set(backBtnRef.current,     { autoAlpha: 0, x: -20 })
     gsap.set(headerTitleRef.current, { autoAlpha: 0, y: -10 })
@@ -198,6 +181,28 @@ export default function MeetingPage() {
     gsap.set(confirmedRef.current, { display: 'none' })
     isInitialStatePreparedRef.current = true
   }, [])
+
+  const startAnimations = useCallback(() => {
+    animatedRef.current = true
+    const status = meeting.status
+    const tl = gsap.timeline()
+    tl.to(headerRef.current,      { y: 0, autoAlpha: 1, duration: 0.38, ease: 'expo.out'      })
+      .to(backBtnRef.current,     { x: 0, autoAlpha: 1, duration: 0.3,  ease: 'back.out(1.5)' }, 0.06)
+      .to(headerTitleRef.current, { y: 0, autoAlpha: 1, duration: 0.3,  ease: 'expo.out'      }, 0.1)
+    if (status === 'accepted') {
+      gsap.set(acceptedRef.current, { display: 'flex', opacity: 0 })
+      animateAcceptedIn(0.18)
+    } else if (status === 'paid' || status === 'confirmed') {
+      gsap.set(confirmedRef.current, { display: 'flex', opacity: 0 })
+      animateConfirmedIn(0.18)
+    } else {
+      gsap.set(pendingRef.current, { display: 'flex', opacity: 0 })
+      animatePendingIn(0.18)
+    }
+  }, [meeting.status, animatePendingIn, animateAcceptedIn, animateConfirmedIn])
+  useLayoutEffect(() => {
+    prepareInitialState()
+  }, [prepareInitialState])
 
   useEffect(() => {
     return () => {
@@ -295,20 +300,35 @@ export default function MeetingPage() {
   const tryStartAnimations = useCallback(() => {
     if (!pageReadyRef.current) return
     if (!isInitialStatePreparedRef.current) return
+    if (!meeting.meeting?.id) return
     if (!meeting.status) return
+    if (meeting.isBootstrapping) return
     if (animatedRef.current) return
 
     startAnimations()
-  }, [meeting.status, startAnimations])
+  }, [meeting.meeting?.id, meeting.status, meeting.isBootstrapping, startAnimations])
+
+  useEffect(() => {
+    if (!meeting.meeting?.id) return
+    animatedRef.current = false
+    prevStatus.current = meeting.status
+    isInitialStatePreparedRef.current = false
+    queueMicrotask(() => {
+      prepareInitialState()
+      tryStartAnimations()
+    })
+  }, [meeting.meeting?.id, meeting.status, prepareInitialState, tryStartAnimations])
 
   usePageReady(() => {
     pageReadyRef.current = true
-    tryStartAnimations()
+    requestAnimationFrame(() => {
+      tryStartAnimations()
+    })
   })
 
   useEffect(() => {
     tryStartAnimations()
-  }, [tryStartAnimations])
+  }, [tryStartAnimations, meeting.status, meeting.meeting?.id, meeting.isBootstrapping])
 
   const handleGoToChat = async () => {
     const meetingId = meeting.meeting?.id
