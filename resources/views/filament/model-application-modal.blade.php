@@ -14,6 +14,7 @@
             return null;
         }
 
+   
         if (filter_var($url, FILTER_VALIDATE_URL)) {
             return $url;
         }
@@ -22,11 +23,12 @@
             return url($url);
         }
 
+
         if (str_starts_with($url, 'storage/')) {
             return asset($url);
         }
 
-        return null;
+        return asset('storage/'.$url);
     };
 
     $photos = collect($payload['photos'] ?? [])
