@@ -76,8 +76,15 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     () => preparedModels.filter((model) => selectedIds.includes(model.id)),
     [preparedModels, selectedIds],
   )
+  const isBotFallback = selectedModels.length === 0
 
   const shareText = useMemo(() => {
+    if (selectedModels.length === 0) {
+      return [
+        'Открой бота Thaiky',
+        botLink(botUsername),
+      ].join('\n')
+    }
     const lines = selectedModels.map((model) => {
       const url = modelShareLink(model.id, botUsername)
       return `• ${model.name}${model.age ? `, ${model.age}` : ''}\n${url}`
@@ -91,7 +98,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   }, [selectedModels, botUsername])
 
   const previewText = selectedModels.length === 0
-    ? 'Выберите модели, и мы подготовим сообщение со ссылками.'
+    ? 'Если ничего не выбрано, отправим ссылку на бота.'
     : selectedModels.slice(0, 2).map((m) => `${m.name}${m.age ? `, ${m.age}` : ''}`).join(' • ')
 
   const toggleModel = (id) => {
@@ -120,24 +127,18 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     setStatus('')
   }
 
-  const canShare = selectedIds.length > 0
-
-  const shareBotOnly = () => {
+  const sharePayload = useMemo(() => {
     const url = botLink(botUsername)
-    const text = 'Открой бота Thaiky'
-    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`
-    window.open(tgUrl, '_blank', 'noopener,noreferrer')
-  }
+    return { url, text: shareText }
+  }, [botUsername, shareText])
 
   const shareToTelegram = () => {
-    if (!canShare) return
-    const url = botLink(botUsername)
-    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`
+    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(sharePayload.url)}&text=${encodeURIComponent(sharePayload.text)}`
     window.open(tgUrl, '_blank', 'noopener,noreferrer')
+    setStatus(isBotFallback ? 'Отправлена ссылка на бота' : 'Сообщение с моделями отправлено')
   }
 
   const shareNative = async () => {
-    if (!canShare) return
     if (!navigator.share) {
       setStatus('Системный способ «Поделиться» недоступен, используйте копирование')
       return
@@ -145,20 +146,19 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     try {
       await navigator.share({
         title: 'Thaiky',
-        text: shareText,
-        url: botLink(botUsername),
+        text: sharePayload.text,
+        url: sharePayload.url,
       })
-      setStatus('Сообщение отправлено')
+      setStatus(isBotFallback ? 'Ссылка на бота отправлена' : 'Сообщение отправлено')
     } catch {
       setStatus('Отправка отменена')
     }
   }
 
   const copyText = async () => {
-    if (!canShare) return
     try {
-      await navigator.clipboard.writeText(shareText)
-      setStatus('Текст со ссылками скопирован')
+      await navigator.clipboard.writeText(sharePayload.text)
+      setStatus(isBotFallback ? 'Ссылка на бота скопирована' : 'Текст со ссылками скопирован')
     } catch {
       setStatus('Не удалось скопировать текст')
     }
@@ -187,9 +187,6 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
             Выбрано <span className="text-black font-semibold">{selectedIds.length}</span> из <span className="text-black font-semibold">{totalModels}</span>
           </p>
           <div className="flex items-center gap-1.5">
-            <button onClick={shareBotOnly} className="text-xs px-2.5 py-1.5 bg-[#EAF6FF] rounded-full text-[#0A77B8] font-medium">
-              Поделиться ботом
-            </button>
             {!isSingleModel && (
               <>
                 <button onClick={selectAll} className="text-xs px-2.5 py-1.5 bg-[#EFEEF3] rounded-full text-black font-medium">
@@ -247,23 +244,20 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
         <div className="grid grid-cols-1 gap-2">
           <button
             onClick={shareToTelegram}
-            disabled={!canShare}
-            className="py-3 rounded-2xl bg-[#E2319B] text-white text-sm font-semibold disabled:opacity-40"
+            className="py-3 rounded-2xl bg-[#E2319B] text-white text-sm font-semibold"
           >
             Отправить в Telegram
           </button>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={shareNative}
-              disabled={!canShare}
-              className="py-3 rounded-2xl bg-[#EFEEF3] text-black text-sm font-semibold disabled:opacity-40"
+              className="py-3 rounded-2xl bg-[#EFEEF3] text-black text-sm font-semibold"
             >
               Поделиться
             </button>
             <button
               onClick={copyText}
-              disabled={!canShare}
-              className="py-3 rounded-2xl bg-black text-white text-sm font-semibold disabled:opacity-40"
+              className="py-3 rounded-2xl bg-black text-white text-sm font-semibold"
             >
               Скопировать текст
             </button>

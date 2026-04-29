@@ -84,8 +84,8 @@ class SendMeetingStatusNotification
                     break;
 
                 case MeetingStatus::Expired:
-                    $notifier->notifyUser($client, "⌛ Время на ответ истекло — бронь отменена.", $clientPath);
-                    $notifier->notifyUser($model, "⌛ Бронь от {$this->displayName($client)} истекла.", $modelPath);
+                    $notifier->notifyUser($client, "⌛ Время на ответ истекло — бронь отменена.");
+                    $notifier->notifyUser($model, "⌛ Бронь от {$this->displayName($client)} истекла.");
                     break;
 
                 case MeetingStatus::Cancelled:
