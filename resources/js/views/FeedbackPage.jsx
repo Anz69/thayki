@@ -228,7 +228,6 @@ export default function FeedbackPage() {
                     : 'bg-[#E2319B] active:opacity-80',
                 ].join(' ')}
               >
-                <span className="text-2xl select-none"></span>
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                   <span className={['text-base/[100%] font-semibold', hasReview ? 'text-[#7F7F7F]' : 'text-white'].join(' ')}>
                     {hasReview ? 'Отзыв отправлен' : 'Оставить отзыв'}
