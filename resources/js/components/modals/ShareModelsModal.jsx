@@ -41,7 +41,7 @@ function buildShareText(selectedModels, botUsername, inviteToken = '') {
     const startLink = modelShareLink(model.id, botUsername, inviteToken)
     return [
       `👤 ${model.name}${model.age ? `, ${model.age}` : ''}`,
-      `🔗 ${startLink}`,
+      `🔗 посмотреть → ${startLink}`,
     ].join('\n')
   }).join('\n\n')
 
@@ -52,6 +52,25 @@ function buildShareText(selectedModels, botUsername, inviteToken = '') {
     '',
     blocks,
   ].join('\n')
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    const el = document.createElement('textarea')
+    el.value = text
+    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none'
+    document.body.appendChild(el)
+    el.focus()
+    el.select()
+    try {
+      return document.execCommand('copy')
+    } finally {
+      document.body.removeChild(el)
+    }
+  }
 }
 
 const IconCopy = () => (
@@ -322,7 +341,8 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
         payload = buildPayloadWithToken(token)
       }
       const fullText = payload.url ? `${payload.url}\n${payload.text}` : payload.text
-      await navigator.clipboard.writeText(fullText)
+      const ok = await copyToClipboard(fullText)
+      if (!ok) throw new Error('copy failed')
       setStatus('')
       clearTimeout(copyTimerRef.current)
       gsap.to(copyIconRef.current, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
