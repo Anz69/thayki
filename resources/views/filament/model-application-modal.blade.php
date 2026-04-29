@@ -110,7 +110,7 @@
                 @endforeach
             </div>
         @else
-            <div style="border: 1px dashed #3a4352; border-radius: 14px; background: #141a23; padding: 12px; font-size: 13px; line-height: 18px; color: #8f98a8;">
+            <div style="border: 1px dashed #3a4352; border-radius: 14px; background: #ffffff05; padding: 12px; font-size: 13px; line-height: 18px; color: #8f98a8;">
                 Прайс не заполнен.
             </div>
         @endif
@@ -137,7 +137,7 @@
                 @endforeach
             </div>
         @else
-            <div style="border: 1px dashed #3a4352; border-radius: 14px; background: #141a23; padding: 12px; font-size: 13px; line-height: 18px; color: #8f98a8;">
+            <div style="border: 1px dashed #3a4352; border-radius: 14px; background: #ffffff05; padding: 12px; font-size: 13px; line-height: 18px; color: #8f98a8;">
                 Фотографии не приложены.
             </div>
         @endif
