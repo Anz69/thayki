@@ -32,26 +32,33 @@ function botLink(botUsername) {
 function buildShareText(selectedModels, botUsername, inviteToken = '') {
   if (selectedModels.length === 0) {
     return [
+      `<a href="${botLink(botUsername)}">☝️ Открывай профили и выбирай</a>`,
       '🤖 Thaiky — бот с моделями',
       '✨ Открой и выбери подходящую модель в боте',
     ].join('\n')
   }
 
+  const homePath = `/home?invite_token=${inviteToken}`
+  const homeStartApp = encodeStartPath(homePath)
+  const botHomeLink = homeStartApp
+    ? `https://t.me/${botUsername}?startapp=${homeStartApp}`
+    : botLink(botUsername)
 
-  const [firstModel, ...restModels] = selectedModels
-  const firstLine = `👤 ${firstModel.name}${firstModel.age ? `, ${firstModel.age}` : ''}`
+  const topLink = `<a href="${botHomeLink}">☝️ Открывай профили и выбирай</a>`
 
-  const lines = restModels.map((model) => {
-    const url = modelShareLink(model.id, botUsername, inviteToken)
-    return `👤 ${model.name}${model.age ? `, ${model.age}` : ''} — ${url}`
-  })
+  const blocks = selectedModels.map((model) => {
+    const startLink = modelShareLink(model.id, botUsername, inviteToken)
+    return [
+      `👤 ${model.name}${model.age ? `, ${model.age}` : ''}`,
+      `🔗 <a href="${startLink}">открыть</a>`,
+    ].join('\n')
+  }).join('\n\n')
 
   return [
+    topLink,
     '🔥 Подборка моделей в Thaiky',
     '',
-    firstLine,
-    ...lines,
-    '👇 Открывай профили и выбирай',
+    blocks,
   ].join('\n')
 }
 
@@ -232,11 +239,12 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
 
   const buildPayloadWithToken = useCallback((token = inviteToken) => {
     const text = buildShareText(selectedModels, botUsername, token)
-    // В `t.me/share/url` параметр `url` влияет на то, что Telegram показывает как preview.
-    // Для подборки используем deeplink первой выбранной модели.
-    const first = selectedModels?.[0]
-    const url = first
-      ? modelShareLink(first.id, botUsername, token)
+    // В `t.me/share/url` параметр `url` влияет на то, что Telegram показывает как preview/первую ссылку.
+    // По плану: preview должен вести на home-путь с invite_token (а не на deeplink первой модели).
+    const homePath = `/home?invite_token=${token}`
+    const homeStartApp = encodeStartPath(homePath)
+    const url = homeStartApp
+      ? `https://t.me/${botUsername}?startapp=${homeStartApp}`
       : botLink(botUsername)
     return { url, text }
   }, [inviteToken, selectedModels, botUsername])
