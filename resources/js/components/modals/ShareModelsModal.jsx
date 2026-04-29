@@ -33,22 +33,25 @@ function buildShareText(selectedModels, botUsername, inviteToken = '') {
   if (selectedModels.length === 0) {
     return [
       '🤖 Thaiky — бот с моделями',
-      '✨ Открой и выбери подходящую модель',
-      botLink(botUsername),
+      '✨ Открой и выбери подходящую модель в боте',
     ].join('\n')
   }
 
-  const lines = selectedModels.map((model) => {
+
+  const [firstModel, ...restModels] = selectedModels
+  const firstLine = `👤 ${firstModel.name}${firstModel.age ? `, ${firstModel.age}` : ''}`
+
+  const lines = restModels.map((model) => {
     const url = modelShareLink(model.id, botUsername, inviteToken)
-    return `👤 ${model.name}${model.age ? `, ${model.age}` : ''}\n🔗 ${url}`
+    return `👤 ${model.name}${model.age ? `, ${model.age}` : ''} — ${url}`
   })
 
   return [
     '🔥 Подборка моделей в Thaiky',
     '',
+    firstLine,
     ...lines,
-    '',
-    '👇 Открывай профили по ссылкам ниже',
+    '👇 Открывай профили и выбирай',
   ].join('\n')
 }
 
