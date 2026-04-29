@@ -225,18 +225,12 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   }
 
   const sharePayload = useMemo(() => {
-    if (selectedModels.length === 0) {
-      return { url: botLink(botUsername), text: shareText }
-    }
-    return { url: '', text: shareText }
-  }, [botUsername, shareText, selectedModels.length])
+    return { url: botLink(botUsername), text: shareText }
+  }, [botUsername, shareText])
 
   const buildPayloadWithToken = useCallback((token = inviteToken) => {
     const text = buildShareText(selectedModels, botUsername, token)
-    if (selectedModels.length === 0) {
-      return { url: botLink(botUsername), text }
-    }
-    return { url: '', text }
+    return { url: botLink(botUsername), text }
   }, [inviteToken, selectedModels, botUsername])
 
   const ensureInviteToken = useCallback(async () => {
@@ -277,7 +271,12 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
       payload = buildPayloadWithToken(token)
     }
     const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(payload.url)}&text=${encodeURIComponent(payload.text)}`
-    window.open(tgUrl, '_blank', 'noopener,noreferrer')
+    const tg = window.Telegram?.WebApp
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(tgUrl)
+    } else {
+      window.open(tgUrl, '_blank', 'noopener,noreferrer')
+    }
     setStatus(isBotFallback ? 'Отправлена ссылка на бота' : 'Сообщение с моделями отправлено')
   }
 
