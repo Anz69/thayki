@@ -24,7 +24,9 @@ class MeetingResource extends Resource
     {
         return $form->schema([
             Forms\Components\Select::make('status')->label('Статус')
-                ->options(collect(MeetingStatus::cases())->mapWithKeys(fn ($c) => [$c->value => $c->value]))
+                ->options(collect(MeetingStatus::cases())
+                    ->filter(fn ($c) => $c !== MeetingStatus::Confirmed)
+                    ->mapWithKeys(fn ($c) => [$c->value => $c->label()]))
                 ->required(),
             Forms\Components\DateTimePicker::make('scheduled_at')->label('Дата встречи')->required(),
             Forms\Components\TextInput::make('duration_hours')->label('Длительность (ч)')->numeric()->required(),
@@ -42,11 +44,22 @@ class MeetingResource extends Resource
                     ->formatStateUsing(fn ($record) => "{$record->client?->first_name} {$record->client?->last_name}"),
                 Tables\Columns\TextColumn::make('modelProfile.display_name')->label('Модель'),
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')
+                    ->formatStateUsing(fn (string $state): string =>
+                        MeetingStatus::tryFrom($state)?->label() ?? $state
+                    )
                     ->colors([
                         'warning' => MeetingStatus::Pending->value,
                         'primary' => MeetingStatus::Accepted->value,
-                        'success' => MeetingStatus::Completed->value,
-                        'danger'  => MeetingStatus::Cancelled->value,
+                        'success' => fn ($state) => in_array($state, [
+                            MeetingStatus::Completed->value,
+                            MeetingStatus::Paid->value,
+                            MeetingStatus::Confirmed->value,
+                        ]),
+                        'danger'  => fn ($state) => in_array($state, [
+                            MeetingStatus::Cancelled->value,
+                            MeetingStatus::Rejected->value,
+                            MeetingStatus::Expired->value,
+                        ]),
                     ]),
                 Tables\Columns\TextColumn::make('scheduled_at')->label('Дата')->dateTime('d.m.Y H:i')->sortable(),
                 Tables\Columns\TextColumn::make('duration_hours')->label('Ч'),
@@ -55,7 +68,7 @@ class MeetingResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Статус')
-                    ->options(collect(MeetingStatus::cases())->mapWithKeys(fn ($c) => [$c->value => $c->value])),
+                    ->options(collect(MeetingStatus::cases())->mapWithKeys(fn ($c) => [$c->value => $c->label()])),
             ])
             ->actions([Tables\Actions\EditAction::make()->label('Изменить')])
             ->defaultSort('created_at', 'desc');

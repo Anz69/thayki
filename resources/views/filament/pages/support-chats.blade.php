@@ -106,7 +106,7 @@
                         $initial    = strtoupper(substr($client?->first_name ?? 'U', 0, 1));
                         $fullName   = trim(($client?->first_name ?? '').' '.($client?->last_name ?? '')) ?: 'Пользователь';
                         $isSelected = $selectedChatId === $chat->id;
-                        $hasUnread  = $this->getChatHasUnread($chat);
+                        $unreadCount = (int) ($chat->unread_count ?? 0);
                         $lastMsgPreview = $lastMsg
                             ? ($lastMsg->attachment_path ? '📷 Фото' : Str::limit($lastMsg->body, 34))
                             : '';
@@ -133,8 +133,10 @@
                                     <span style="font-size:13px;font-weight:600;color:{{ $isSelected ? '#fff' : '#ccc' }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                                         {{ $fullName }}
                                     </span>
-                                    @if($hasUnread)
-                                        <span style="width:7px;height:7px;border-radius:50%;background:#E2319B;flex-shrink:0;display:inline-block;"></span>
+                                    @if($unreadCount > 0)
+                                        <span style="min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#E2319B;color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;">
+                                            {{ $unreadCount > 99 ? '99+' : $unreadCount }}
+                                        </span>
                                     @endif
                                 </div>
                                 @if($lastMsg)
@@ -317,10 +319,14 @@
         if (e.key === 'Escape') closeLightbox();
     });
 
+    let _attachLock = false;
     function handleAdminAttach(event) {
+        if (_attachLock) return;
+        _attachLock = true;
+
         const file = event.target.files[0];
         event.target.value = '';
-        if (!file) return;
+        if (!file) { _attachLock = false; return; }
 
         const btn = document.getElementById('admin-attach-btn');
         if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
@@ -330,6 +336,7 @@
             const data = e.target.result;
             @this.call('uploadAttachment', { data: data, mime: file.type, name: file.name })
                 .finally(function() {
+                    _attachLock = false;
                     if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
                 });
         };

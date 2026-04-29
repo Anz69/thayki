@@ -109,3 +109,8 @@ export function formatRussianDaySeparator(iso) {
     ? `${day} ${month}, ${time}`
     : `${day} ${month} ${year}, ${time}`
 }
+
+export function isOnlineNow(isoDate, thresholdMs = 5 * 60 * 1000) {
+  if (!isoDate) return false
+  return Date.now() - new Date(isoDate).getTime() < thresholdMs
+}

@@ -69,12 +69,27 @@ export default function BottomNav() {
   const widthSnap  = useRef(null)
   const skipFirst3 = useRef(true)
   const skipFirst5 = useRef(true)
+  const ordersButtonRef  = useRef(null)
+  const prevMeetingActive = useRef(false)
 
   useEffect(() => {
     if (!auth.isModel() && !meeting.meeting) {
       meeting.loadLatest()
     }
   }, [])
+
+  useEffect(() => {
+    const terminal = ['cancelled', 'rejected', 'expired', 'completed']
+    const isActive = !!(meeting.meeting?.id) && !terminal.includes(meeting.status) && !auth.isModel()
+    if (!prevMeetingActive.current && isActive && ordersButtonRef.current) {
+      gsap.fromTo(
+        ordersButtonRef.current,
+        { autoAlpha: 0, scale: 0.8 },
+        { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'back.out(1.3)', overwrite: true },
+      )
+    }
+    prevMeetingActive.current = isActive
+  }, [meeting.meeting?.id, meeting.status])
 
   const clientCancel  = () => meeting.openCancel()
   const modelCancel   = () => modelMeeting.openCancel()
@@ -286,6 +301,7 @@ export default function BottomNav() {
 
               {renderedSlot === 'tabs' && !auth.isModel() && meeting.meeting && !['cancelled', 'rejected', 'expired', 'completed'].includes(meeting.status) && (
                 <button
+                  ref={ordersButtonRef}
                   onClick={() => {
                     const meetingId = meeting.meeting?.id
                     nav(meetingId ? `/meeting?id=${meetingId}` : '/meeting')

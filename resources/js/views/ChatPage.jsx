@@ -10,6 +10,7 @@ import {
   formatRussianRelative,
   formatRussianDaySeparator,
   isSameDay,
+  isOnlineNow,
 } from '@/utils/datetime'
 import PhotoViewer from '@/components/ui/PhotoViewer'
 
@@ -163,7 +164,16 @@ export default function ChatPage() {
       setInitialLoad(false)
     })
 
-    return () => { cancelled = true }
+    const pollInterval = setInterval(() => {
+      api.get('/chats').then(res => {
+        if (cancelled || !isMountedRef.current) return
+        const chats = res.data.data ?? []
+        const info = chats.find(c => String(c.id) === String(chatId))
+        if (info) setChatInfo(info)
+      }).catch(() => {})
+    }, 30_000)
+
+    return () => { cancelled = true; clearInterval(pollInterval) }
   }, [chatId, myId, reloadKey])
 
   useEffect(() => {
@@ -439,7 +449,9 @@ export default function ChatPage() {
                 <div className="bg-[#F5F5F7] rounded-full px-4 py-2">
                   <span className="text-[#7F7F7F] text-sm/[80%] font-medium">
                     {chatInfo?.other_user?.last_seen_at
-                      ? formatRussianRelative(chatInfo.other_user.last_seen_at, { feminine: true })
+                      ? isOnlineNow(chatInfo.other_user.last_seen_at)
+                        ? 'в сети'
+                        : formatRussianRelative(chatInfo.other_user.last_seen_at, { feminine: true })
                       : contactName}
                   </span>
                 </div>

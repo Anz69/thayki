@@ -21,6 +21,20 @@ enum MeetingStatus: string
         return [self::Pending, self::Accepted, self::Paid, self::Confirmed];
     }
 
+    public function label(): string
+    {
+        return match ($this) {
+            self::Pending   => 'Ожидание',
+            self::Accepted  => 'Принята',
+            self::Rejected  => 'Отклонена',
+            self::Expired   => 'Истекла',
+            self::Paid      => 'Оплачена',
+            self::Confirmed => 'Подтверждена',
+            self::Completed => 'Завершена',
+            self::Cancelled => 'Отменена',
+        };
+    }
+
     public function isTerminal(): bool
     {
         return in_array($this, [self::Rejected, self::Expired, self::Completed, self::Cancelled], true);
