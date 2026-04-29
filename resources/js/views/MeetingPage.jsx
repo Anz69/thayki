@@ -57,9 +57,6 @@ export default function MeetingPage() {
   const animatedRef  = useRef(false)
   const pageReadyRef = useRef(false)
   const isInitialStatePreparedRef = useRef(false)
-  const startQueuedRef = useRef(false)
-  const startRaf1Ref = useRef(null)
-  const startRaf2Ref = useRef(null)
   const m           = meeting.meeting
   const scheduledAt = m?.scheduled_at ? new Date(m.scheduled_at) : null
   const formattedTime = scheduledAt
@@ -204,8 +201,6 @@ export default function MeetingPage() {
 
   useEffect(() => {
     return () => {
-      if (startRaf1Ref.current) cancelAnimationFrame(startRaf1Ref.current)
-      if (startRaf2Ref.current) cancelAnimationFrame(startRaf2Ref.current)
       mascotLoopRef.current?.kill()
       gsap.killTweensOf([
         headerRef.current, backBtnRef.current, headerTitleRef.current,
@@ -302,19 +297,8 @@ export default function MeetingPage() {
     if (!isInitialStatePreparedRef.current) return
     if (!meeting.status) return
     if (animatedRef.current) return
-    if (startQueuedRef.current) return
 
-    startQueuedRef.current = true
-    startRaf1Ref.current = requestAnimationFrame(() => {
-      startRaf2Ref.current = requestAnimationFrame(() => {
-        startQueuedRef.current = false
-        if (!pageReadyRef.current) return
-        if (!isInitialStatePreparedRef.current) return
-        if (!meeting.status) return
-        if (animatedRef.current) return
-        startAnimations()
-      })
-    })
+    startAnimations()
   }, [meeting.status, startAnimations])
 
   usePageReady(() => {

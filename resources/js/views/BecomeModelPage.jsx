@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect, useCallback } from 'react'
+import { useState, useRef, useLayoutEffect, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import gsap from 'gsap'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -72,6 +72,25 @@ export default function BecomeModelPage() {
   const animating = useRef(false)
   const formData  = useRef({})
 
+  useEffect(() => {
+    let cancelled = false
+
+    api.get('/model-application')
+      .then(() => {
+        if (cancelled) return
+        navigate('/application-pending', { replace: true })
+      })
+      .catch((err) => {
+        if (cancelled) return
+        const status = err?.response?.status
+        if (status === 404) return
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [navigate])
+
   useLayoutEffect(() => {
     slidesRef.current.forEach((el, i) => {
       if (!el) return
@@ -124,6 +143,10 @@ export default function BecomeModelPage() {
         navigate('/application-pending')
       } catch (err) {
         const errData = err?.response?.data?.error
+        if (errData?.code === 'APPLICATION_ALREADY_SUBMITTED') {
+          navigate('/application-pending', { replace: true })
+          return
+        }
         const msg = errData?.message ?? err?.response?.data?.message ?? err?.message ?? 'Ошибка. Попробуйте ещё раз'
         setSubmitError(msg)
         setSubmitting(false)

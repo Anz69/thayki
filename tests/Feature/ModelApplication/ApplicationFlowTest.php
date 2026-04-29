@@ -33,6 +33,19 @@ it('lets a client submit an application', function (): void {
     expect(ModelApplication::query()->where('user_id', $user->id)->count())->toBe(1);
 });
 
+it('forbids submitting model application more than once', function (): void {
+    $user = User::factory()->create();
+    Sanctum::actingAs($user, ['role:client']);
+
+    $this->postJson('/api/v1/model-application', submitPayload())->assertCreated();
+
+    $second = $this->postJson('/api/v1/model-application', submitPayload());
+    $second->assertStatus(409);
+    $second->assertJsonPath('error.code', 'APPLICATION_ALREADY_SUBMITTED');
+
+    expect(ModelApplication::query()->where('user_id', $user->id)->count())->toBe(1);
+});
+
 it('creates a model profile on admin approval', function (): void {
     $admin = User::factory()->admin()->create();
     $user = User::factory()->create();

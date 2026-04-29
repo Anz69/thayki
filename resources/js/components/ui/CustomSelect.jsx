@@ -77,7 +77,7 @@ export default function CustomSelect({ value, onChange, options = [], onOpen }) 
       <button
         type="button"
         onClick={toggle}
-        className="flex items-center justify-between active:opacity-70 transition-opacity"
+        className="w-full min-h-10 py-1 flex items-center justify-between active:opacity-70 transition-opacity"
       >
         <span className="text-black text-sm/[100%] font-medium">{current?.label}</span>
         <div ref={chevronRef} style={{ display: 'flex', transformOrigin: 'center' }}>

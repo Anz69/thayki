@@ -29,18 +29,27 @@ class SubmitModelApplicationAction
             throw DomainException::forbidden('APPLICATION_NOT_ALLOWED', 'Admins cannot submit model applications.');
         }
 
+        $existing = ModelApplication::query()
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($existing !== null) {
+            throw DomainException::conflict(
+                'APPLICATION_ALREADY_SUBMITTED',
+                'Вы уже отправили заявку на модель. Повторная отправка недоступна.',
+            );
+        }
+
         $application = DB::transaction(function () use ($user, $payload): ModelApplication {
             /** @var ModelApplication $application */
-            $application = ModelApplication::query()->updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'payload' => $payload,
-                    'status' => ModelApplicationStatus::Submitted,
-                    'reviewed_by' => null,
-                    'reviewed_at' => null,
-                    'review_note' => null,
-                ],
-            );
+            $application = ModelApplication::query()->create([
+                'user_id' => $user->id,
+                'payload' => $payload,
+                'status' => ModelApplicationStatus::Submitted,
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+                'review_note' => null,
+            ]);
 
             $this->audit->log('model_application.submitted', $user, $application, [
                 'application_id' => $application->id,
