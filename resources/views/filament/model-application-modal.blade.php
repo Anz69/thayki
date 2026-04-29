@@ -14,11 +14,24 @@
             return null;
         }
 
-        return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
+        if (filter_var($url, FILTER_VALIDATE_URL)) {
+            return $url;
+        }
+
+        if (str_starts_with($url, '/')) {
+            return url($url);
+        }
+
+        if (str_starts_with($url, 'storage/')) {
+            return asset($url);
+        }
+
+        return null;
     };
 
     $photos = collect($payload['photos'] ?? [])
-        ->filter(fn ($photo) => is_string($photo) && filter_var($photo, FILTER_VALIDATE_URL))
+        ->map(fn ($photo) => $safeUrl($photo))
+        ->filter()
         ->values();
 
     $priceOptions = collect($payload['price_options'] ?? [])
@@ -59,7 +72,7 @@
                     {{ $record->user?->username ? '@'.$record->user->username : 'username не указан' }}
                 </p>
             </div>
-            <div style="display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid #3b4352; background: #1a212d; padding: 7px 12px; font-size: 12px; line-height: 14px; font-weight: 600; color: #e5ebf7;">
+            <div style="display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid #3b4352; background: #ffffff05; padding: 7px 12px; font-size: 12px; line-height: 14px; font-weight: 600; color: #e5ebf7;">
                 Статус: {{ $record->status?->value ?? $record->status ?? '—' }}
             </div>
         </div>
@@ -75,21 +88,12 @@
                 'Вес' => $formatMeasure($payload['weight_kg'] ?? null, 'кг'),
                 'Бюст' => $valueOrDash($payload['bust_size'] ?? null),
                 'Ягодицы' => $valueOrDash($payload['butt_size'] ?? null),
-                'График' => $valueOrDash($payload['schedule'] ?? null),
-                'Ставка в час' => $formatMoney($payload['hourly_rate_thb'] ?? null),
             ] as $label => $value)
                 <div style="border: 1px solid #2a2f39; border-radius: 14px; background: #ffffff05; padding: 11px 12px;">
                     <p style="margin: 0; font-size: 11px; line-height: 14px; color: #8f98a8;">{{ $label }}</p>
                     <p style="margin: 5px 0 0; font-size: 14px; line-height: 18px; font-weight: 600; color: #f2f6ff;">{{ $value }}</p>
                 </div>
             @endforeach
-        </div>
-    </section>
-
-    <section style="display: flex; flex-direction: column; gap: 10px;">
-        <h3 style="margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8f98a8;">О себе</h3>
-        <div style="border: 1px solid #2a2f39; border-radius: 14px; background: #ffffff05; padding: 12px; font-size: 14px; line-height: 22px; color: #d8deea; white-space: pre-wrap;">
-            {{ $valueOrDash($payload['description'] ?? null) }}
         </div>
     </section>
 
@@ -122,7 +126,7 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
                 @foreach($photos as $photo)
                     <a
-                        href="{{ $safeUrl($photo) }}"
+                        href="{{ $photo }}"
                         target="_blank"
                         rel="noopener noreferrer"
                         style="position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 14px; border: 1px solid #2a2f39; background: #ffffff05;"
