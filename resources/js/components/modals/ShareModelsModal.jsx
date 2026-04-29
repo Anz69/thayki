@@ -323,8 +323,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     try {
       await navigator.share({
         title: 'Thaiky',
-        text: payload.text,
-        url: payload.url,
+        text: payload.url ? `${payload.url}\n${payload.text}` : payload.text,
       })
       setStatus(isBotFallback ? 'Ссылка на бота отправлена' : 'Сообщение отправлено')
     } catch {
