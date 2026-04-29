@@ -9,25 +9,19 @@ import Media from '@/components/sections/modelSelectInfo/Media'
 import useBookingStore from '@/stores/useBookingStore'
 import useMeetingStore from '@/stores/useMeetingStore'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
-import ModalMiddle from '@/layout/ModalMiddle'
 import api, { extractErrorMessage } from '@/utils/api'
 import ShareModelsModal from '@/components/modals/ShareModelsModal'
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'paid', 'confirmed']
 
 export default function ModelPage() {
-  const { id }     = useParams()
-  const store      = useBookingStore()
-  const meeting    = useMeetingStore()
-  const navigate   = useTransitionNavigate()
+  const { id }  = useParams()
+  const store   = useBookingStore()
+  const meeting = useMeetingStore()
+  const navigate = useTransitionNavigate()
 
-  // Render this route as a bottom-sheet modal (see ShareModelsModal UX).
-  const [modalOpen, setModalOpen] = useState(true)
-  const handleClose = useCallback(() => setModalOpen(false), [])
-  const handleAfterClose = useCallback(() => navigate('/home', { replace: true }), [navigate])
-
-  const [model,   setModel]   = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [model,     setModel]     = useState(null)
+  const [loading,   setLoading]   = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [shareModalOpen, setShareModalOpen] = useState(false)
 
@@ -143,12 +137,10 @@ export default function ModelPage() {
     gsap.set(headerRef.current,      { autoAlpha: 0, y: -44 })
     gsap.set(backBtnRef.current,     { autoAlpha: 0, x: -20 })
     gsap.set(headerTitleRef.current, { autoAlpha: 0, y: -10 })
-
-
     gsap.set([ageRef.current, nameRef.current], { y: '-110%' })
-    gsap.set(descRef.current,       { autoAlpha: 0, y: 12 })
-    gsap.set(tabSectionRef.current, { autoAlpha: 0, y: 18, willChange: 'transform, opacity' })
-    gsap.set(bookBtnRef.current,    { autoAlpha: 0, scale: 0.72, willChange: 'transform, opacity' })
+    gsap.set(descRef.current,        { autoAlpha: 0, y: 12 })
+    gsap.set(tabSectionRef.current,  { autoAlpha: 0, y: 18, willChange: 'transform, opacity' })
+    gsap.set(bookBtnRef.current,     { autoAlpha: 0, scale: 0.72, willChange: 'transform, opacity' })
     gsap.set(mediaContentRef.current, { display: 'none' })
     if (tab0Ref.current) tab0Ref.current.style.color = '#000'
     if (tab1Ref.current) tab1Ref.current.style.color = '#7F7F7F'
@@ -174,15 +166,6 @@ export default function ModelPage() {
       ])
     }
   }, [])
-
-  useEffect(() => {
-    if (!modalOpen) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [modalOpen])
 
   useEffect(() => {
     if (!id) return
@@ -226,178 +209,172 @@ export default function ModelPage() {
   const [rightErr, setRightErr] = useState(false)
 
   return (
-    <>
-    <ModalMiddle isOpen={modalOpen} onClose={handleClose} onAfterClose={handleAfterClose}>
-      <div style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', maxHeight: '92dvh' }}>
-        <section className="flex flex-col gap-7 pt-4">
-      <header
-        ref={headerRef}
-        className="invisible w-full py-5 border-b border-white bg-white/90 backdrop-blur-xs sticky top-0 z-50"
-      >
-        <div className="container flex items-center relative">
-          <TransitionLink
-            ref={backBtnRef}
-            to="/home"
-            className="invisible px-2.5 py-3 bg-[#EFEEF3] absolute left-4 text-black text-base/[80%] font-medium hover:bg-[#E0DEDF] transition-all duration-300 cursor-pointer rounded-full"
-          >
-            Назад
-          </TransitionLink>
-          <div className="w-full flex items-center justify-center">
-            <h1 ref={headerTitleRef} className="invisible text-black text-base/[100%] font-medium">
-              Модель
-            </h1>
-          </div>
-          <button
-            type="button"
-            disabled={!model}
-            onClick={handleShare}
-            className="absolute right-4 px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors disabled:opacity-40"
-            aria-label="Поделиться"
-          >
-            Поделиться
-          </button>
-        </div>
-      </header>
-
-      {createPortal(
-        (() => {
-          const activeMeeting = ACTIVE_STATUSES.includes(meeting.meeting?.status ?? '')
-            ? meeting.meeting
-            : null
-
-          return activeMeeting ? (
-            <button
-              ref={bookBtnRef}
-              onClick={() => navigate(`/meeting?id=${activeMeeting.id}`)}
-              className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto"
-              style={{ willChange: 'transform, opacity' }}
+    <div>
+      <section className="flex flex-col gap-7 pt-4">
+        <header
+          ref={headerRef}
+          className="invisible w-full py-5 border-b border-white bg-white/90 backdrop-blur-xs sticky top-0 z-50"
+        >
+          <div className="container flex items-center relative">
+            <TransitionLink
+              ref={backBtnRef}
+              to="/home"
+              className="invisible px-2.5 py-3 bg-[#EFEEF3] absolute left-4 text-black text-base/[80%] font-medium hover:bg-[#E0DEDF] transition-all duration-300 cursor-pointer rounded-full"
             >
-              <div className="p-3 bg-[#232323] rounded-full text-white text-base/[100%] font-medium">
-                Перейти к встрече →
-              </div>
-            </button>
-          ) : (
-            <button
-              ref={bookBtnRef}
-              onClick={() => store.open(model)}
-              className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto"
-              style={{ willChange: 'transform, opacity' }}
-            >
-              <div className="p-3 bg-[#E2319B] rounded-full text-white text-base/[100%] font-medium">
-                Забронировать встречу
-              </div>
-            </button>
-          )
-        })(),
-        document.body,
-      )}
-
-      <main className="flex flex-col gap-6 items-center relative pb-28">
-        {loadError && !loading && !model && (
-          <div className="flex flex-col items-center gap-3 py-20 container">
-            <div className="text-[#7F7F7F] text-sm text-center max-w-[260px]">
-              {loadError}
+              Назад
+            </TransitionLink>
+            <div className="w-full flex items-center justify-center">
+              <h1 ref={headerTitleRef} className="invisible text-black text-base/[100%] font-medium">
+                Модель
+              </h1>
             </div>
             <button
-              onClick={() => navigate('/home')}
-              className="px-4 py-2.5 bg-[#EFEEF3] text-black text-sm font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
+              type="button"
+              disabled={!model}
+              onClick={handleShare}
+              className="absolute right-4 px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors disabled:opacity-40"
+              aria-label="Поделиться"
             >
-              К списку моделей
+              Поделиться
             </button>
           </div>
+        </header>
+
+        {createPortal(
+          (() => {
+            const activeMeeting = ACTIVE_STATUSES.includes(meeting.meeting?.status ?? '')
+              ? meeting.meeting
+              : null
+
+            return activeMeeting ? (
+              <button
+                ref={bookBtnRef}
+                onClick={() => navigate(`/meeting?id=${activeMeeting.id}`)}
+                className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto"
+                style={{ willChange: 'transform, opacity' }}
+              >
+                <div className="p-3 bg-[#232323] rounded-full text-white text-base/[100%] font-medium">
+                  Перейти к встрече →
+                </div>
+              </button>
+            ) : (
+              <button
+                ref={bookBtnRef}
+                onClick={() => store.open(model)}
+                className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto"
+                style={{ willChange: 'transform, opacity' }}
+              >
+                <div className="p-3 bg-[#E2319B] rounded-full text-white text-base/[100%] font-medium">
+                  Забронировать встречу
+                </div>
+              </button>
+            )
+          })(),
+          document.body,
         )}
 
-        <div className="relative w-[160px] h-[210px] container">
-          {/* Wrapper-div всегда в DOM — на него вешается ref для GSAP.
-              Изображение рендерится только когда URL есть. */}
-          <div ref={mainPhotoRef} className="w-full h-full relative z-10 rounded-2xl overflow-hidden" style={{ visibility: 'hidden' }}>
-            {mainPhoto?.url && !mainErr && (
-              <img
-                src={mainPhoto.url}
-                alt={model?.display_name ?? 'girl'}
-                className="w-full h-full object-cover"
-                onError={() => setMainErr(true)}
-              />
-            )}
-          </div>
-          <div ref={leftPhotoRef} className="w-[110px] h-[148px] absolute -top-4 -left-16 rounded-xl overflow-hidden" style={{ visibility: 'hidden' }}>
-            {leftPhoto?.url && !leftErr && (
-              <img
-                src={leftPhoto.url}
-                alt=""
-                className="w-full h-full object-cover"
-                onError={() => setLeftErr(true)}
-              />
-            )}
-          </div>
-          <div ref={rightPhotoRef} className="w-[124px] h-[150px] absolute -top-4 -right-16 rounded-xl overflow-hidden" style={{ visibility: 'hidden' }}>
-            {rightPhoto?.url && !rightErr && (
-              <img
-                src={rightPhoto.url}
-                alt=""
-                className="w-full h-full object-cover"
-                onError={() => setRightErr(true)}
-              />
-            )}
-          </div>
-        </div>
+        <main className="flex flex-col gap-6 items-center relative pb-28">
+          {loadError && !loading && !model && (
+            <div className="flex flex-col items-center gap-3 py-20 container">
+              <div className="text-[#7F7F7F] text-sm text-center max-w-[260px]">
+                {loadError}
+              </div>
+              <button
+                onClick={() => navigate('/home')}
+                className="px-4 py-2.5 bg-[#EFEEF3] text-black text-sm font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
+              >
+                К списку моделей
+              </button>
+            </div>
+          )}
 
-        <div className="flex flex-col gap-4 text-center container">
-          <div className="overflow-hidden">
-            <h2 ref={ageRef} className="text-[#7F7F7F] text-base/[100%] font-medium">
-              {model ? `${model.age} лет` : '—'}
-            </h2>
+          <div className="relative w-[160px] h-[210px] container">
+            <div ref={mainPhotoRef} className="w-full h-full relative z-10 rounded-2xl overflow-hidden" style={{ visibility: 'hidden' }}>
+              {mainPhoto?.url && !mainErr && (
+                <img
+                  src={mainPhoto.url}
+                  alt={model?.display_name ?? 'girl'}
+                  className="w-full h-full object-cover"
+                  onError={() => setMainErr(true)}
+                />
+              )}
+            </div>
+            <div ref={leftPhotoRef} className="w-[110px] h-[148px] absolute -top-4 -left-16 rounded-xl overflow-hidden" style={{ visibility: 'hidden' }}>
+              {leftPhoto?.url && !leftErr && (
+                <img
+                  src={leftPhoto.url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  onError={() => setLeftErr(true)}
+                />
+              )}
+            </div>
+            <div ref={rightPhotoRef} className="w-[124px] h-[150px] absolute -top-4 -right-16 rounded-xl overflow-hidden" style={{ visibility: 'hidden' }}>
+              {rightPhoto?.url && !rightErr && (
+                <img
+                  src={rightPhoto.url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  onError={() => setRightErr(true)}
+                />
+              )}
+            </div>
           </div>
-          <div className="overflow-hidden">
-            <h1 ref={nameRef} className="text-black text-2xl/[100%] font-bold">
-              {model?.display_name ?? ''}
-            </h1>
-          </div>
-          <p ref={descRef} className="invisible text-[#7F7F7F] text-[13px]/[160%] font-medium">
-            {model?.description ?? ''}
-          </p>
-        </div>
 
-        <div ref={tabSectionRef} className="invisible flex flex-col gap-6 w-full items-center">
-          <div className="relative gap-2 p-1 flex items-center bg-[#EFEEF3] rounded-full w-max">
-            <button
-              ref={tab0Ref}
-              onClick={() => switchTab(0)}
-              className="px-5 py-2 relative z-10 text-sm font-medium transition-colors duration-300"
-            >
-              Информация
-            </button>
-            <button
-              ref={tab1Ref}
-              onClick={() => switchTab(1)}
-              className="px-5 py-2 relative z-10 text-sm font-medium transition-colors duration-300"
-            >
-              Медиа
-            </button>
-            <div
-              ref={tabIndicatorRef}
-              className="absolute top-1 h-[calc(100%-8px)] bg-white rounded-full shadow-sm z-0"
-            />
+          <div className="flex flex-col gap-4 text-center container">
+            <div className="overflow-hidden">
+              <h2 ref={ageRef} className="text-[#7F7F7F] text-base/[100%] font-medium">
+                {model ? `${model.age} лет` : '—'}
+              </h2>
+            </div>
+            <div className="overflow-hidden">
+              <h1 ref={nameRef} className="text-black text-2xl/[100%] font-bold">
+                {model?.display_name ?? ''}
+              </h1>
+            </div>
+            <p ref={descRef} className="invisible text-[#7F7F7F] text-[13px]/[160%] font-medium">
+              {model?.description ?? ''}
+            </p>
           </div>
-          <div ref={infoContentRef} className="w-full">
-            <Info model={model} />
-          </div>
-          <div ref={mediaContentRef} className="w-full">
-            <Media photos={model?.photos ?? []} />
-          </div>
-        </div>
-      </main>
-        </section>
-      </div>
-    </ModalMiddle>
 
-    {shareModalOpen && (
-      <ShareModelsModal
-        isOpen={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        models={model ? [model] : []}
-      />
-    )}
-    </>
+          <div ref={tabSectionRef} className="invisible flex flex-col gap-6 w-full items-center">
+            <div className="relative gap-2 p-1 flex items-center bg-[#EFEEF3] rounded-full w-max">
+              <button
+                ref={tab0Ref}
+                onClick={() => switchTab(0)}
+                className="px-5 py-2 relative z-10 text-sm font-medium transition-colors duration-300"
+              >
+                Информация
+              </button>
+              <button
+                ref={tab1Ref}
+                onClick={() => switchTab(1)}
+                className="px-5 py-2 relative z-10 text-sm font-medium transition-colors duration-300"
+              >
+                Медиа
+              </button>
+              <div
+                ref={tabIndicatorRef}
+                className="absolute top-1 h-[calc(100%-8px)] bg-white rounded-full shadow-sm z-0"
+              />
+            </div>
+            <div ref={infoContentRef} className="w-full">
+              <Info model={model} />
+            </div>
+            <div ref={mediaContentRef} className="w-full">
+              <Media photos={model?.photos ?? []} />
+            </div>
+          </div>
+        </main>
+      </section>
+
+      {shareModalOpen && (
+        <ShareModelsModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          models={model ? [model] : []}
+        />
+      )}
+    </div>
   )
 }
