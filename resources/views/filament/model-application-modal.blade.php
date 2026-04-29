@@ -41,33 +41,33 @@
         ->filter()
         ->values();
 
-    $contact = is_array($payload['contact'] ?? null) ? $payload['contact'] : [];
-    $telegram = trim((string) ($contact['telegram'] ?? ''));
-    $telegram = ltrim($telegram, '@');
-
     $userName = trim("{$record->user?->first_name} {$record->user?->last_name}");
     $userName = $userName !== '' ? $userName : ($record->user?->username ?? 'Пользователь');
 @endphp
 
-<div class="space-y-5">
-    <section class="rounded-2xl border border-gray-200 bg-linear-to-br from-white to-gray-50 p-4 shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="min-w-0">
-                <p class="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">Профиль кандидата</p>
-                <p class="mt-1 text-lg font-medium text-gray-900">{{ $userName }}</p>
-                <p class="mt-0.5 text-sm text-gray-600">
+<div style="display: flex; flex-direction: column; gap: 18px; padding: 2px 0 4px;">
+    <section style="border: 1px solid #2a2f39; background: #131821; border-radius: 16px; padding: 16px;">
+        <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px;">
+            <div style="min-width: 0;">
+                <p style="margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8f98a8;">
+                    Профиль кандидата
+                </p>
+                <p style="margin: 6px 0 0; font-size: 24px; line-height: 28px; font-weight: 700; color: #f8fbff;">
+                    {{ $userName }}
+                </p>
+                <p style="margin: 6px 0 0; font-size: 13px; line-height: 16px; color: #9ea7b7;">
                     {{ $record->user?->username ? '@'.$record->user->username : 'username не указан' }}
                 </p>
             </div>
-            <div class="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-xs font-medium text-gray-700 ring-1 ring-gray-200">
+            <div style="display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid #3b4352; background: #1a212d; padding: 7px 12px; font-size: 12px; line-height: 14px; font-weight: 600; color: #e5ebf7;">
                 Статус: {{ $record->status?->value ?? $record->status ?? '—' }}
             </div>
         </div>
     </section>
 
-    <section class="space-y-2.5">
-        <h3 class="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">Параметры</h3>
-        <div class="grid gap-2.5 sm:grid-cols-2">
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+        <h3 style="margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8f98a8;">Параметры</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;">
             @foreach([
                 'Имя/псевдоним' => $valueOrDash($payload['display_name'] ?? null),
                 'Возраст' => $formatMeasure($payload['age'] ?? null, 'лет'),
@@ -78,100 +78,85 @@
                 'График' => $valueOrDash($payload['schedule'] ?? null),
                 'Ставка в час' => $formatMoney($payload['hourly_rate_thb'] ?? null),
             ] as $label => $value)
-                <div class="rounded-xl border border-gray-200 bg-white px-3.5 py-3">
-                    <p class="text-[11px] text-gray-500">{{ $label }}</p>
-                    <p class="mt-1 text-sm font-medium text-gray-900">{{ $value }}</p>
+                <div style="border: 1px solid #2a2f39; border-radius: 14px; background: #11161f; padding: 11px 12px;">
+                    <p style="margin: 0; font-size: 11px; line-height: 14px; color: #8f98a8;">{{ $label }}</p>
+                    <p style="margin: 5px 0 0; font-size: 14px; line-height: 18px; font-weight: 600; color: #f2f6ff;">{{ $value }}</p>
                 </div>
             @endforeach
         </div>
     </section>
 
-    <section class="space-y-2.5">
-        <h3 class="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">О себе</h3>
-        <div class="rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+        <h3 style="margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8f98a8;">О себе</h3>
+        <div style="border: 1px solid #2a2f39; border-radius: 14px; background: #11161f; padding: 12px; font-size: 14px; line-height: 22px; color: #d8deea; white-space: pre-wrap;">
             {{ $valueOrDash($payload['description'] ?? null) }}
         </div>
     </section>
 
-    <section class="space-y-2.5">
-        <h3 class="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">Прайс</h3>
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+        <h3 style="margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8f98a8;">Прайс</h3>
         @if($priceOptions->isNotEmpty())
-            <div class="space-y-2">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
                 @foreach($priceOptions as $option)
-                    <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-3.5 py-3">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #2a2f39; border-radius: 14px; background: #11161f; padding: 12px;">
                         <div>
-                            <p class="text-sm font-medium text-gray-900">{{ $option['label'] }}</p>
-                            <p class="text-[11px] text-gray-500">{{ $option['hours'] ? ($option['hours'].' ч') : 'Длительность не указана' }}</p>
+                            <p style="margin: 0; font-size: 14px; line-height: 18px; font-weight: 600; color: #f2f6ff;">{{ $option['label'] }}</p>
+                            <p style="margin: 4px 0 0; font-size: 11px; line-height: 14px; color: #8f98a8;">
+                                {{ $option['hours'] ? ($option['hours'].' ч') : 'Длительность не указана' }}
+                            </p>
                         </div>
-                        <p class="text-sm font-medium text-gray-900">{{ $formatMoney($option['price_thb']) }}</p>
+                        <p style="margin: 0; font-size: 14px; line-height: 18px; font-weight: 700; color: #f2f6ff;">{{ $formatMoney($option['price_thb']) }}</p>
                     </div>
                 @endforeach
             </div>
         @else
-            <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-3.5 py-3 text-sm text-gray-500">
+            <div style="border: 1px dashed #3a4352; border-radius: 14px; background: #141a23; padding: 12px; font-size: 13px; line-height: 18px; color: #8f98a8;">
                 Прайс не заполнен.
             </div>
         @endif
     </section>
 
-    <section class="space-y-2.5">
-        <h3 class="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">Контакты</h3>
-        <div class="grid gap-2.5 sm:grid-cols-2">
-            <div class="rounded-xl border border-gray-200 bg-white px-3.5 py-3">
-                <p class="text-[11px] text-gray-500">Телефон</p>
-                <p class="mt-1 text-sm font-medium text-gray-900">{{ $valueOrDash($contact['phone'] ?? null) }}</p>
-            </div>
-            <div class="rounded-xl border border-gray-200 bg-white px-3.5 py-3">
-                <p class="text-[11px] text-gray-500">Telegram</p>
-                @if($telegram !== '')
-                    <a class="mt-1 inline-flex text-sm font-medium text-primary-600 hover:text-primary-500" href="https://t.me/{{ $telegram }}" target="_blank" rel="noopener noreferrer">
-                        @{{ $telegram }}
-                    </a>
-                @else
-                    <p class="mt-1 text-sm font-medium text-gray-900">—</p>
-                @endif
-            </div>
-        </div>
-    </section>
-
-    <section class="space-y-2.5">
-        <h3 class="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">Фото</h3>
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+        <h3 style="margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8f98a8;">Фото</h3>
         @if($photos->isNotEmpty())
-            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
                 @foreach($photos as $photo)
                     <a
                         href="{{ $safeUrl($photo) }}"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="group block aspect-3/4 overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
+                        style="position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 14px; border: 1px solid #2a2f39; background: #11161f;"
                     >
                         <img
                             src="{{ $photo }}"
                             alt="Фото модели"
                             loading="lazy"
-                            class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+                            style="display: block; width: 100%; height: 100%; object-fit: cover;"
                         >
                     </a>
                 @endforeach
             </div>
         @else
-            <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-3.5 py-3 text-sm text-gray-500">
+            <div style="border: 1px dashed #3a4352; border-radius: 14px; background: #141a23; padding: 12px; font-size: 13px; line-height: 18px; color: #8f98a8;">
                 Фотографии не приложены.
             </div>
         @endif
     </section>
 
-    <section class="space-y-2.5">
-        <h3 class="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">Служебная информация</h3>
-        <div class="rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-700">
-            <p><span class="text-gray-500">ID заявки:</span> <span class="font-medium text-gray-900">{{ $record->id }}</span></p>
-            <p class="mt-1"><span class="text-gray-500">Подана:</span> <span class="font-medium text-gray-900">{{ $record->created_at?->format('d.m.Y H:i') ?? '—' }}</span></p>
-            <p class="mt-1"><span class="text-gray-500">Обновлена:</span> <span class="font-medium text-gray-900">{{ $record->updated_at?->format('d.m.Y H:i') ?? '—' }}</span></p>
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+        <h3 style="margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8f98a8;">Служебная информация</h3>
+        <div style="border: 1px solid #2a2f39; border-radius: 14px; background: #11161f; padding: 12px; font-size: 13px; line-height: 20px; color: #c8d0df;">
+            <p style="margin: 0;"><span style="color: #8f98a8;">ID заявки:</span> <span style="font-weight: 600; color: #f2f6ff;">{{ $record->id }}</span></p>
+            <p style="margin: 4px 0 0;"><span style="color: #8f98a8;">Подана:</span> <span style="font-weight: 600; color: #f2f6ff;">{{ $record->created_at?->format('d.m.Y H:i') ?? '—' }}</span></p>
+            <p style="margin: 4px 0 0;"><span style="color: #8f98a8;">Обновлена:</span> <span style="font-weight: 600; color: #f2f6ff;">{{ $record->updated_at?->format('d.m.Y H:i') ?? '—' }}</span></p>
         </div>
+
         @if(filled($record->review_note ?? null) || filled($record->admin_note ?? null))
-            <div class="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-900 whitespace-pre-wrap">
-                <p class="text-[11px] font-medium uppercase tracking-[0.16em] text-amber-700">Заметка администратора</p>
-                <p class="mt-1.5">{{ $valueOrDash($record->review_note ?? $record->admin_note ?? null) }}</p>
+            <div style="border: 1px solid #6b5614; border-radius: 14px; background: #2e250d; padding: 12px; font-size: 13px; line-height: 20px; color: #f6e9bf; white-space: pre-wrap;">
+                <p style="margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #f2d986;">
+                    Заметка администратора
+                </p>
+                <p style="margin: 6px 0 0;">{{ $valueOrDash($record->review_note ?? $record->admin_note ?? null) }}</p>
             </div>
         @endif
     </section>
