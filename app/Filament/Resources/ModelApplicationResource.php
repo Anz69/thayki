@@ -85,8 +85,20 @@ class ModelApplicationResource extends Resource
                     ->label('Просмотр')
                     ->icon('heroicon-o-eye')
                     ->color('gray')
-                    ->modalHeading(fn (ModelApplication $r) => 'Заявка #'.$r->id.' — '.trim("{$r->user?->first_name} {$r->user?->last_name}"))
-                    ->modalWidth('3xl')
+                    ->modalHeading(function (ModelApplication $r): string {
+                        $name = trim("{$r->user?->first_name} {$r->user?->last_name}") ?: ($r->user?->username ?? 'Пользователь');
+                        return "Заявка #{$r->id} — {$name}";
+                    })
+                    ->modalDescription(function (ModelApplication $r): string {
+                        $username = $r->user?->username ? '@'.$r->user->username : '—';
+                        $status = $r->status instanceof ModelApplicationStatus ? $r->status->value : (string) $r->status;
+                        $createdAt = $r->created_at?->format('d.m.Y H:i') ?? '—';
+                        return "Статус: {$status} · Username: {$username} · Подана: {$createdAt}";
+                    })
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Закрыть')
+                    ->stickyModalHeader()
+                    ->modalWidth('5xl')
                     ->modalContent(fn (ModelApplication $r) => view('filament.model-application-modal', ['record' => $r])),
                 Tables\Actions\EditAction::make()->label('Изменить'),
             ])

@@ -1,0 +1,255 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import gsap from 'gsap'
+import ModalMiddle from '@/layout/ModalMiddle'
+
+const MAX_SELECTED = 8
+
+function encodeStartPath(path) {
+  try {
+    const bytes = new TextEncoder().encode(path)
+    let binary = ''
+    for (const byte of bytes) binary += String.fromCharCode(byte)
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+  } catch {
+    return ''
+  }
+}
+
+function modelShareLink(modelId, botUsername) {
+  const path = `/model/${modelId}`
+  if (!botUsername) return `${window.location.origin}${path}`
+  const startApp = encodeStartPath(path)
+  return `https://t.me/${botUsername}?startapp=${startApp}`
+}
+
+function botLink(botUsername) {
+  return botUsername ? `https://t.me/${botUsername}` : window.location.origin
+}
+
+export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
+  const listRef = useRef(null)
+  const [selectedIds, setSelectedIds] = useState([])
+  const [status, setStatus] = useState('')
+  const botUsername = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME ?? '').trim().replace(/^@/, '')
+
+  const preparedModels = useMemo(() => (
+    models.map((model) => {
+      const mainPhoto = model.photos?.find((photo) => photo.is_main) ?? model.photos?.[0]
+      const minPrice = model.price_options?.length
+        ? Math.min(...model.price_options.map((price) => price.price_thb))
+        : model.hourly_rate_thb
+      return {
+        id: model.id,
+        name: model.display_name ?? 'Модель',
+        age: model.age ?? null,
+        price: minPrice ?? null,
+        photoUrl: mainPhoto?.url ?? null,
+      }
+    })
+  ), [models])
+
+  useEffect(() => {
+    if (!isOpen) return
+    setSelectedIds([])
+    setStatus('')
+    const timer = setTimeout(() => {
+      const cards = Array.from(listRef.current?.children ?? [])
+      if (!cards.length) return
+      gsap.set(cards, { autoAlpha: 0, y: 16, scale: 0.98 })
+      gsap.to(cards, {
+        autoAlpha: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.32,
+        ease: 'power3.out',
+        stagger: 0.04,
+      })
+    }, 120)
+    return () => clearTimeout(timer)
+  }, [isOpen, preparedModels.length])
+
+  const selectedModels = useMemo(
+    () => preparedModels.filter((model) => selectedIds.includes(model.id)),
+    [preparedModels, selectedIds],
+  )
+
+  const shareText = useMemo(() => {
+    const lines = selectedModels.map((model) => {
+      const url = modelShareLink(model.id, botUsername)
+      return `• ${model.name}${model.age ? `, ${model.age}` : ''}\n${url}`
+    })
+    return [
+      'Подборка моделей в Thaiky',
+      botLink(botUsername),
+      '',
+      ...lines,
+    ].join('\n')
+  }, [selectedModels, botUsername])
+
+  const toggleModel = (id) => {
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((item) => item !== id)
+      if (prev.length >= MAX_SELECTED) {
+        setStatus(`Можно выбрать максимум ${MAX_SELECTED} моделей`)
+        return prev
+      }
+      return [...prev, id]
+    })
+  }
+
+  const selectAll = () => {
+    const next = preparedModels.slice(0, MAX_SELECTED).map((model) => model.id)
+    setSelectedIds(next)
+    if (preparedModels.length > MAX_SELECTED) {
+      setStatus(`Выбраны первые ${MAX_SELECTED} моделей`)
+    } else {
+      setStatus('')
+    }
+  }
+
+  const clearSelection = () => {
+    setSelectedIds([])
+    setStatus('')
+  }
+
+  const canShare = selectedIds.length > 0
+
+  const shareBotOnly = () => {
+    const url = botLink(botUsername)
+    const text = 'Открой бота Thaiky:'
+    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`
+    window.open(tgUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const shareToTelegram = () => {
+    if (!canShare) return
+    const url = botLink(botUsername)
+    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`
+    window.open(tgUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const shareNative = async () => {
+    if (!canShare) return
+    if (!navigator.share) {
+      setStatus('Системный share недоступен, используйте копирование')
+      return
+    }
+    try {
+      await navigator.share({
+        title: 'Thaiky',
+        text: shareText,
+        url: botLink(botUsername),
+      })
+      setStatus('Сообщение отправлено')
+    } catch {
+      setStatus('Отправка отменена')
+    }
+  }
+
+  const copyText = async () => {
+    if (!canShare) return
+    try {
+      await navigator.clipboard.writeText(shareText)
+      setStatus('Текст со ссылками скопирован')
+    } catch {
+      setStatus('Не удалось скопировать текст')
+    }
+  }
+
+  return (
+    <ModalMiddle isOpen={isOpen} onClose={onClose}>
+      <div className="px-4 pb-4 sm:px-5 sm:pb-5 flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-black text-xl/[100%] font-semibold">Поделиться моделями</h2>
+            <p className="text-[#7F7F7F] text-sm mt-1">
+              Выберите моделей и отправьте ссылки на бота с открытием их профилей.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="px-3 py-2 bg-[#EFEEF3] rounded-full text-xs font-medium text-black active:bg-[#E0DEDF] transition-colors"
+          >
+            Закрыть
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-[#7F7F7F]">
+            Выбрано: <span className="text-black font-semibold">{selectedIds.length}</span> / {MAX_SELECTED}
+          </p>
+          <div className="flex items-center gap-2">
+            <button onClick={shareBotOnly} className="text-xs px-2.5 py-1.5 bg-[#EAF6FF] rounded-full text-[#0A77B8] font-medium">
+              Поделиться ботом
+            </button>
+            <button onClick={selectAll} className="text-xs px-2.5 py-1.5 bg-[#EFEEF3] rounded-full text-black font-medium">
+              Выбрать все
+            </button>
+            <button onClick={clearSelection} className="text-xs px-2.5 py-1.5 bg-[#F6F6F9] rounded-full text-[#7F7F7F] font-medium">
+              Сбросить
+            </button>
+          </div>
+        </div>
+
+        <div ref={listRef} className="max-h-[46dvh] overflow-y-auto grid grid-cols-1 gap-2.5 pr-1">
+          {preparedModels.map((model) => (
+            <button
+              key={model.id}
+              onClick={() => toggleModel(model.id)}
+              className={`w-full text-left rounded-2xl border p-2.5 flex items-center gap-3 transition-all duration-200 ${
+                selectedIds.includes(model.id)
+                  ? 'border-[#E2319B] bg-[#FDF0F8]'
+                  : 'border-black/10 bg-white active:bg-[#F7F7FA]'
+              }`}
+            >
+              <div className="size-12 rounded-xl overflow-hidden bg-[#EFEEF3] shrink-0">
+                {model.photoUrl ? (
+                  <img src={model.photoUrl} alt={model.name} className="w-full h-full object-cover" />
+                ) : null}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-black truncate">
+                  {model.name}{model.age ? `, ${model.age}` : ''}
+                </p>
+                <p className="text-xs text-[#7F7F7F] mt-0.5">
+                  {model.price ? `от ฿ ${Number(model.price).toLocaleString()}/ч` : 'Цена не указана'}
+                </p>
+              </div>
+              <div className={`size-5 rounded-full border-2 transition-colors ${
+                selectedIds.includes(model.id) ? 'border-[#E2319B] bg-[#E2319B]' : 'border-[#C9C7CF] bg-white'
+              }`} />
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={shareToTelegram}
+            disabled={!canShare}
+            className="py-3 rounded-2xl bg-[#229ED9] text-white text-sm font-semibold disabled:opacity-40"
+          >
+            Telegram
+          </button>
+          <button
+            onClick={shareNative}
+            disabled={!canShare}
+            className="py-3 rounded-2xl bg-[#EFEEF3] text-black text-sm font-semibold disabled:opacity-40"
+          >
+            Share
+          </button>
+          <button
+            onClick={copyText}
+            disabled={!canShare}
+            className="py-3 rounded-2xl bg-black text-white text-sm font-semibold disabled:opacity-40"
+          >
+            Копировать
+          </button>
+        </div>
+
+        <div className="min-h-5">
+          {status ? <p className="text-xs text-[#7F7F7F]">{status}</p> : null}
+        </div>
+      </div>
+    </ModalMiddle>
+  )
+}

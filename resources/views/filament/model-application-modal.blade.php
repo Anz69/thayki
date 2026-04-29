@@ -1,102 +1,178 @@
 @php
-    $p       = $record->payload ?? [];
-    $photos  = $p['photos'] ?? [];
-    $prices  = $p['price_options'] ?? [];
-    $contact = $p['contact'] ?? [];
+    $payload = is_array($record->payload) ? $record->payload : [];
+
+    $valueOrDash = static fn ($value): string => filled($value) ? (string) $value : '—';
+    $formatMoney = static fn ($value): string => is_numeric($value) ? ('฿ '.number_format((float) $value)) : '—';
+    $formatMeasure = static fn ($value, string $unit): string => is_numeric($value) ? ((string) $value.' '.$unit) : '—';
+    $safeUrl = static function ($url): ?string {
+        if (! is_string($url)) {
+            return null;
+        }
+
+        $url = trim($url);
+        if ($url === '') {
+            return null;
+        }
+
+        return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
+    };
+
+    $photos = collect($payload['photos'] ?? [])
+        ->filter(fn ($photo) => is_string($photo) && filter_var($photo, FILTER_VALIDATE_URL))
+        ->values();
+
+    $priceOptions = collect($payload['price_options'] ?? [])
+        ->filter(fn ($option) => is_array($option))
+        ->map(function (array $option) {
+            $label = trim((string) ($option['label'] ?? ''));
+            $hours = $option['hours'] ?? null;
+            $price = $option['price_thb'] ?? null;
+
+            if ($label === '' && ! is_numeric($hours) && ! is_numeric($price)) {
+                return null;
+            }
+
+            return [
+                'label' => $label !== '' ? $label : 'Тариф',
+                'hours' => is_numeric($hours) ? (int) $hours : null,
+                'price_thb' => is_numeric($price) ? (float) $price : null,
+            ];
+        })
+        ->filter()
+        ->values();
+
+    $contact = is_array($payload['contact'] ?? null) ? $payload['contact'] : [];
+    $telegram = trim((string) ($contact['telegram'] ?? ''));
+    $telegram = ltrim($telegram, '@');
+
+    $userName = trim("{$record->user?->first_name} {$record->user?->last_name}");
+    $userName = $userName !== '' ? $userName : ($record->user?->username ?? 'Пользователь');
 @endphp
 
-<div style="padding:4px 0;display:flex;flex-direction:column;gap:20px;">
-
-    {{-- Photos --}}
-    @if(!empty($photos))
-    <div>
-        <p style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#6b7280;margin-bottom:8px;">Фотографии</p>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">
-            @foreach($photos as $photo)
-                <a href="{{ $photo }}" target="_blank" style="display:block;width:100px;height:100px;border-radius:10px;overflow:hidden;background:#f3f4f6;flex-shrink:0;">
-                    <img src="{{ $photo }}" alt="Фото" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
-                </a>
-            @endforeach
+<div class="space-y-6">
+    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Профиль кандидата</p>
+                <p class="mt-1 text-base font-semibold text-gray-900">{{ $userName }}</p>
+                <p class="mt-0.5 text-sm text-gray-600">
+                    {{ $record->user?->username ? '@'.$record->user->username : 'username не указан' }}
+                </p>
+            </div>
+            <div class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-gray-200">
+                Статус: {{ $record->status?->value ?? $record->status ?? '—' }}
+            </div>
         </div>
     </div>
-    @endif
 
-    {{-- Main params --}}
-    <div>
-        <p style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#6b7280;margin-bottom:8px;">Параметры</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
+    <section class="space-y-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Параметры</h3>
+        <div class="grid gap-3 sm:grid-cols-2">
             @foreach([
-                'Имя/псевдоним'   => $p['display_name'] ?? '—',
-                'Возраст'         => isset($p['age']) ? $p['age'].' лет' : '—',
-                'Рост'            => isset($p['height_cm']) ? $p['height_cm'].' см' : '—',
-                'Вес'             => isset($p['weight_kg']) ? $p['weight_kg'].' кг' : '—',
-                'Бюст'            => $p['bust_size'] ?? '—',
-                'Ягодицы'         => $p['butt_size'] ?? '—',
-                'График'          => $p['schedule'] ?? '—',
-                'Ставка в час'    => isset($p['hourly_rate_thb']) ? '฿ '.number_format($p['hourly_rate_thb']) : '—',
+                'Имя/псевдоним' => $valueOrDash($payload['display_name'] ?? null),
+                'Возраст' => $formatMeasure($payload['age'] ?? null, 'лет'),
+                'Рост' => $formatMeasure($payload['height_cm'] ?? null, 'см'),
+                'Вес' => $formatMeasure($payload['weight_kg'] ?? null, 'кг'),
+                'Бюст' => $valueOrDash($payload['bust_size'] ?? null),
+                'Ягодицы' => $valueOrDash($payload['butt_size'] ?? null),
+                'График' => $valueOrDash($payload['schedule'] ?? null),
+                'Ставка в час' => $formatMoney($payload['hourly_rate_thb'] ?? null),
             ] as $label => $value)
-                <div style="background:#f9fafb;border-radius:8px;padding:8px 12px;">
-                    <p style="font-size:11px;color:#9ca3af;margin-bottom:2px;">{{ $label }}</p>
-                    <p style="font-size:14px;font-weight:600;color:#111827;">{{ $value }}</p>
+                <div class="rounded-lg border border-gray-200 bg-white p-3">
+                    <p class="text-xs text-gray-500">{{ $label }}</p>
+                    <p class="mt-1 text-sm font-semibold text-gray-900">{{ $value }}</p>
                 </div>
             @endforeach
         </div>
-    </div>
+    </section>
 
-    {{-- Description --}}
-    @if(!empty($p['description']))
-    <div>
-        <p style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#6b7280;margin-bottom:6px;">О себе</p>
-        <div style="background:#f9fafb;border-radius:8px;padding:12px;font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">{{ $p['description'] }}</div>
-    </div>
-    @endif
-
-    {{-- Price options --}}
-    @if(!empty($prices))
-    <div>
-        <p style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#6b7280;margin-bottom:8px;">Прайс</p>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-            @foreach($prices as $opt)
-                <div style="display:flex;align-items:center;justify-content:space-between;background:#f9fafb;border-radius:8px;padding:8px 14px;">
-                    <span style="font-size:14px;color:#374151;">{{ $opt['label'] ?? '—' }}
-                        @if(!empty($opt['hours']))
-                            <span style="font-size:12px;color:#9ca3af;margin-left:4px;">{{ $opt['hours'] }} ч</span>
-                        @endif
-                    </span>
-                    <span style="font-size:14px;font-weight:700;color:#111827;">฿ {{ isset($opt['price_thb']) ? number_format($opt['price_thb']) : '—' }}</span>
-                </div>
-            @endforeach
+    <section class="space-y-2">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">О себе</h3>
+        <div class="rounded-lg border border-gray-200 bg-white p-3 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+            {{ $valueOrDash($payload['description'] ?? null) }}
         </div>
-    </div>
-    @endif
+    </section>
 
-    {{-- Contact --}}
-    @if(!empty($contact))
-    <div>
-        <p style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#6b7280;margin-bottom:8px;">Контакты</p>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-            @if(!empty($contact['phone']))
-                <div style="background:#f9fafb;border-radius:8px;padding:8px 14px;">
-                    <span style="font-size:12px;color:#9ca3af;">Телефон: </span>
-                    <span style="font-size:14px;color:#374151;">{{ $contact['phone'] }}</span>
-                </div>
-            @endif
-            @if(!empty($contact['telegram']))
-                <div style="background:#f9fafb;border-radius:8px;padding:8px 14px;">
-                    <span style="font-size:12px;color:#9ca3af;">Telegram: </span>
-                    <a href="https://t.me/{{ ltrim($contact['telegram'], '@') }}" target="_blank" style="font-size:14px;color:#3b82f6;">@{{ ltrim($contact['telegram'], '@') }}</a>
-                </div>
-            @endif
+    <section class="space-y-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Прайс</h3>
+        @if($priceOptions->isNotEmpty())
+            <div class="space-y-2">
+                @foreach($priceOptions as $option)
+                    <div class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">{{ $option['label'] }}</p>
+                            <p class="text-xs text-gray-500">{{ $option['hours'] ? ($option['hours'].' ч') : 'Длительность не указана' }}</p>
+                        </div>
+                        <p class="text-sm font-semibold text-gray-900">{{ $formatMoney($option['price_thb']) }}</p>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 text-sm text-gray-500">
+                Прайс не заполнен.
+            </div>
+        @endif
+    </section>
+
+    <section class="space-y-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Контакты</h3>
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-lg border border-gray-200 bg-white p-3">
+                <p class="text-xs text-gray-500">Телефон</p>
+                <p class="mt-1 text-sm font-semibold text-gray-900">{{ $valueOrDash($contact['phone'] ?? null) }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-3">
+                <p class="text-xs text-gray-500">Telegram</p>
+                @if($telegram !== '')
+                    <a class="mt-1 inline-flex text-sm font-semibold text-primary-600 hover:text-primary-500" href="https://t.me/{{ $telegram }}" target="_blank" rel="noopener noreferrer">
+                        @{{ $telegram }}
+                    </a>
+                @else
+                    <p class="mt-1 text-sm font-semibold text-gray-900">—</p>
+                @endif
+            </div>
         </div>
-    </div>
-    @endif
+    </section>
 
-    {{-- Admin note / review --}}
-    @if($record->review_note)
-    <div>
-        <p style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#6b7280;margin-bottom:6px;">Заметка администратора</p>
-        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;font-size:14px;color:#374151;">{{ $record->review_note }}</div>
-    </div>
-    @endif
+    <section class="space-y-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Фото</h3>
+        @if($photos->isNotEmpty())
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                @foreach($photos as $photo)
+                    <a
+                        href="{{ $safeUrl($photo) }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="group block aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-100"
+                    >
+                        <img
+                            src="{{ $photo }}"
+                            alt="Фото модели"
+                            loading="lazy"
+                            class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                        >
+                    </a>
+                @endforeach
+            </div>
+        @else
+            <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 text-sm text-gray-500">
+                Фотографии не приложены.
+            </div>
+        @endif
+    </section>
 
+    <section class="space-y-2">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Служебная информация</h3>
+        <div class="rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-700">
+            <p><span class="text-gray-500">ID заявки:</span> <span class="font-semibold text-gray-900">{{ $record->id }}</span></p>
+            <p class="mt-1"><span class="text-gray-500">Подана:</span> <span class="font-semibold text-gray-900">{{ $record->created_at?->format('d.m.Y H:i') ?? '—' }}</span></p>
+            <p class="mt-1"><span class="text-gray-500">Обновлена:</span> <span class="font-semibold text-gray-900">{{ $record->updated_at?->format('d.m.Y H:i') ?? '—' }}</span></p>
+        </div>
+        @if(filled($record->review_note ?? null) || filled($record->admin_note ?? null))
+            <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 whitespace-pre-wrap">
+                <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Заметка администратора</p>
+                <p class="mt-1">{{ $valueOrDash($record->review_note ?? $record->admin_note ?? null) }}</p>
+            </div>
+        @endif
+    </section>
 </div>

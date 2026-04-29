@@ -2,6 +2,7 @@ import { useRef, useEffect, useLayoutEffect, useState } from 'react'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import TransitionLink from '@/components/TransitionLink'
+import ShareModelsModal from '@/components/modals/ShareModelsModal'
 import api, { extractErrorMessage } from '@/utils/api'
 
 function ModelCard({ model }) {
@@ -48,6 +49,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [isShareOpen, setIsShareOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -120,6 +122,7 @@ export default function HomePage() {
           </h1>
           <button
             ref={shareBtnRef}
+            onClick={() => setIsShareOpen(true)}
             className="invisible px-2.5 py-3 bg-[#EFEEF3] text-black text-base/[80%] font-medium active:bg-[#E0DEDF] transition-colors duration-200 cursor-pointer rounded-full"
           >
             Поделиться
@@ -175,6 +178,12 @@ export default function HomePage() {
           ))
         )}
       </section>
+
+      <ShareModelsModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        models={models}
+      />
     </main>
   )
 }
