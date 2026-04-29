@@ -202,7 +202,7 @@ export default function FeedbackPage() {
             )}
 
             {/* Header block */}
-            <div className="flex flex-col items-center gap-3 text-center py-2 pt-20">
+            <div className="flex flex-col items-center gap-3 text-center py-2 pt-12">
       
               <h2 className="text-black text-2xl/[120%] font-semibold">
                 {bothDone ? 'Всё отправлено!' : 'Встреча завершена'}
@@ -273,7 +273,7 @@ export default function FeedbackPage() {
             {/* Home button */}
             <button
               onClick={() => navigate('/home')}
-              className="w-full py-4 rounded-full bg-[#F5F5F7] text-[#7F7F7F] text-base/[100%] font-semibold active:bg-[#ECEAEC] transition-colors mt-2"
+              className="w-full py-4 rounded-full bg-[#1C1C1E] text-white text-base/[100%] font-semibold active:bg-[#ECEAEC] transition-colors mt-2"
             >
               На главную
             </button>
