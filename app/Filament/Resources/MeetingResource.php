@@ -37,6 +37,10 @@ class MeetingResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $statusValue = static fn ($state): string => $state instanceof MeetingStatus
+            ? $state->value
+            : (string) ($state ?? '');
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id')->sortable()->label('ID'),
@@ -44,22 +48,20 @@ class MeetingResource extends Resource
                     ->formatStateUsing(fn ($record) => "{$record->client?->first_name} {$record->client?->last_name}"),
                 Tables\Columns\TextColumn::make('modelProfile.display_name')->label('Модель'),
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')
-                    ->formatStateUsing(fn ($state): string =>
-                        MeetingStatus::tryFrom((string) $state)?->label() ?? ((string) $state !== '' ? (string) $state : '—')
-                    )
+                    ->formatStateUsing(fn ($state): string => MeetingStatus::tryFrom($statusValue($state))?->label() ?: ($statusValue($state) !== '' ? $statusValue($state) : '—'))
                     ->colors([
-                        'warning' => MeetingStatus::Pending->value,
-                        'primary' => MeetingStatus::Accepted->value,
-                        'success' => fn ($state) => in_array($state, [
+                        'warning' => fn ($state) => $statusValue($state) === MeetingStatus::Pending->value,
+                        'primary' => fn ($state) => $statusValue($state) === MeetingStatus::Accepted->value,
+                        'success' => fn ($state) => in_array($statusValue($state), [
                             MeetingStatus::Completed->value,
                             MeetingStatus::Paid->value,
                             MeetingStatus::Confirmed->value,
-                        ]),
-                        'danger'  => fn ($state) => in_array($state, [
+                        ], true),
+                        'danger'  => fn ($state) => in_array($statusValue($state), [
                             MeetingStatus::Cancelled->value,
                             MeetingStatus::Rejected->value,
                             MeetingStatus::Expired->value,
-                        ]),
+                        ], true),
                     ]),
                 Tables\Columns\TextColumn::make('scheduled_at')->label('Дата')->dateTime('d.m.Y H:i')->sortable(),
                 Tables\Columns\TextColumn::make('duration_hours')->label('Ч'),
