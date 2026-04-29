@@ -85,7 +85,7 @@ export default function CustomSelect({ value, onChange, options = [], onOpen }) 
         </div>
       </button>
       <div ref={listRef} style={{ height: 0, overflow: 'hidden' }}>
-        <div className="flex flex-col pt-3 pb-1 gap-1">
+        <div className="flex flex-col pb-1 gap-1">
           {items.map((item) => (
             <button
               key={item.value}

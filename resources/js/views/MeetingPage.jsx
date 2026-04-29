@@ -317,7 +317,7 @@ export default function MeetingPage() {
       prepareInitialState()
       tryStartAnimations()
     })
-  }, [meeting.meeting?.id, meeting.status, prepareInitialState, tryStartAnimations])
+  }, [meeting.meeting?.id, prepareInitialState, tryStartAnimations])
 
   usePageReady(() => {
     pageReadyRef.current = true
@@ -327,8 +327,9 @@ export default function MeetingPage() {
   })
 
   useEffect(() => {
+    if (animatedRef.current) return
     tryStartAnimations()
-  }, [tryStartAnimations, meeting.status, meeting.meeting?.id, meeting.isBootstrapping])
+  }, [tryStartAnimations])
 
   const handleGoToChat = async () => {
     const meetingId = meeting.meeting?.id

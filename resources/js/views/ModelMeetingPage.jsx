@@ -173,18 +173,11 @@ export default function ModelMeetingPage() {
     gsap.set(confirmedCardRef.current,   { autoAlpha: 0, y: -24 })
     gsap.set(confirmedRowsRef.current.filter(Boolean), { opacity: 0, y: -10 })
 
-    if (meeting.status === 'accepted') {
-      gsap.set(pendingRef.current,   { display: 'none' })
-      gsap.set(confirmedRef.current, { display: 'none' })
-    } else if (meeting.status === 'paid' || meeting.status === 'confirmed') {
-      gsap.set(pendingRef.current, { display: 'none' })
-      gsap.set(waitingRef.current, { display: 'none' })
-    } else {
-      gsap.set(waitingRef.current,   { display: 'none' })
-      gsap.set(confirmedRef.current, { display: 'none' })
-    }
+    gsap.set(pendingRef.current,   { display: 'none' })
+    gsap.set(waitingRef.current,   { display: 'none' })
+    gsap.set(confirmedRef.current, { display: 'none' })
     isInitialStatePreparedRef.current = true
-  }, [meeting.status])
+  }, [])
 
   const startAnimations = useCallback(() => {
     animatedRef.current = true
@@ -338,7 +331,7 @@ export default function ModelMeetingPage() {
       prepareInitialState()
       tryStartAnimations()
     })
-  }, [meeting.meeting?.id, meeting.status, prepareInitialState, tryStartAnimations])
+  }, [meeting.meeting?.id, prepareInitialState, tryStartAnimations])
 
   usePageReady(() => {
     pageReadyRef.current = true
@@ -348,8 +341,9 @@ export default function ModelMeetingPage() {
   })
 
   useEffect(() => {
+    if (animatedRef.current) return
     tryStartAnimations()
-  }, [tryStartAnimations, meeting.status, meeting.meeting?.id, meeting.isBootstrapping])
+  }, [tryStartAnimations])
 
   return (
     <section className="flex flex-col min-h-screen">
