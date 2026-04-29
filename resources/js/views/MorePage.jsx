@@ -194,6 +194,8 @@ export default function MorePage() {
       .to(section2Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.20)
   })
 
+  const activeMeetings = meetings
+
   useEffect(() => {
     if (!loadingMeetings && activeMeetings.length > 0) {
       gsap.fromTo(
@@ -205,8 +207,6 @@ export default function MorePage() {
       gsap.to(ordersRef.current, { autoAlpha: 0, duration: 0.25 })
     }
   }, [loadingMeetings, activeMeetings.length])
-
-  const activeMeetings = meetings
 
   return (
     <>
