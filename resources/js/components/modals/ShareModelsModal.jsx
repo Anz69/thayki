@@ -81,16 +81,18 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   const shareText = useMemo(() => {
     if (selectedModels.length === 0) {
       return [
-        'Открой бота Thaiky',
+        '🤖 Thaiky — бот с моделями',
+        '✨ Открой и выбери подходящую модель:',
         botLink(botUsername),
       ].join('\n')
     }
     const lines = selectedModels.map((model) => {
       const url = modelShareLink(model.id, botUsername)
-      return `• ${model.name}${model.age ? `, ${model.age}` : ''}\n${url}`
+      return `👤 ${model.name}${model.age ? `, ${model.age}` : ''}\n🔗 ${url}`
     })
     return [
-      'Подборка моделей в Thaiky',
+      '🔥 Подборка моделей в Thaiky',
+      '👇 Открывай профили по ссылкам ниже',
       botLink(botUsername),
       '',
       ...lines,
