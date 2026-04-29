@@ -5,6 +5,20 @@
     $formatMoney = static fn ($value): string => is_numeric($value) ? ('฿ '.number_format((float) $value)) : '—';
     $formatMeasure = static fn ($value, string $unit): string => is_numeric($value) ? ((string) $value.' '.$unit) : '—';
     $safeUrl = static function ($url): ?string {
+        if (is_array($url)) {
+            // Backward-compatible shape support:
+            // - { url: "..." }
+            // - { path: "..." }
+            return $url['url'] ?? $url['path'] ?? null
+                ? $safeUrl($url['url'] ?? $url['path'])
+                : null;
+        }
+        if (is_object($url)) {
+            /** @var object $url */
+            $maybeUrl = $url->url ?? $url->path ?? null;
+            return is_string($maybeUrl) ? $safeUrl($maybeUrl) : null;
+        }
+
         if (! is_string($url)) {
             return null;
         }
@@ -14,7 +28,6 @@
             return null;
         }
 
-   
         if (filter_var($url, FILTER_VALIDATE_URL)) {
             return $url;
         }

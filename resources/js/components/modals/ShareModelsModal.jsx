@@ -270,7 +270,8 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
       if (!token) return
       payload = buildPayloadWithToken(token)
     }
-    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(payload.url)}&text=${encodeURIComponent(payload.text)}`
+  
+    const tgUrl = `https://t.me/share/url?text=${encodeURIComponent(payload.text)}`
     const tg = window.Telegram?.WebApp
     if (tg?.openTelegramLink) {
       tg.openTelegramLink(tgUrl)
