@@ -75,6 +75,7 @@ class ChatResource extends JsonResource
             'id'              => $this->id,
             'type'            => $this->type->value,
             'meeting_id'      => $this->meeting_id,
+            'meeting_status'  => $this->whenLoaded('meeting', fn () => $this->meeting?->status?->value),
             'name'            => $this->whenLoaded('participants', function () use ($myId) {
                 $other = $this->participants->first(fn ($p) => $p->user_id !== $myId);
                 if (! $other?->user) return null;

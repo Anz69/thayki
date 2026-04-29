@@ -213,10 +213,6 @@ export default function ModelMorePage() {
           <div ref={section1Ref} className="flex flex-col gap-4">
             <SectionLabel>Важное</SectionLabel>
             <MenuItem icon={<IconUser />} label="Профиль" onClick={() => navigate('/profile')} />
-            <div className="w-full flex items-center justify-between bg-[#F5F5F7] rounded-2xl px-4 py-4">
-              <span className="text-black text-[15px]/[100%] font-medium">Получать уведомления в ТГ</span>
-              <Toggle value={notifications} onChange={handleNotificationsChange} />
-            </div>
           </div>
 
           <div ref={section2Ref} className="flex flex-col gap-4">

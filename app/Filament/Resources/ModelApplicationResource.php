@@ -9,6 +9,8 @@ use App\Filament\Resources\ModelApplicationResource\Pages;
 use App\Models\ModelApplication;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -79,9 +81,33 @@ class ModelApplicationResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn (ModelApplication $r) => $r->status === ModelApplicationStatus::Submitted)
                     ->action(fn (ModelApplication $r) => app(RejectModelApplicationAction::class)->execute($r)),
+                Tables\Actions\Action::make('view')
+                    ->label('Просмотр')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->modalHeading(fn (ModelApplication $r) => 'Заявка #'.$r->id.' — '.trim("{$r->user?->first_name} {$r->user?->last_name}"))
+                    ->modalWidth('3xl')
+                    ->modalContent(fn (ModelApplication $r) => view('filament.model-application-modal', ['record' => $r])),
                 Tables\Actions\EditAction::make()->label('Изменить'),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make('Анкета')->schema([
+                Infolists\Components\TextEntry::make('payload.display_name')->label('Имя / псевдоним'),
+                Infolists\Components\TextEntry::make('payload.age')->label('Возраст')->suffix(' лет'),
+                Infolists\Components\TextEntry::make('payload.height_cm')->label('Рост')->suffix(' см'),
+                Infolists\Components\TextEntry::make('payload.weight_kg')->label('Вес')->suffix(' кг'),
+                Infolists\Components\TextEntry::make('payload.bust_size')->label('Бюст'),
+                Infolists\Components\TextEntry::make('payload.butt_size')->label('Ягодицы'),
+                Infolists\Components\TextEntry::make('payload.schedule')->label('График'),
+                Infolists\Components\TextEntry::make('payload.hourly_rate_thb')->label('Ставка в час')->prefix('฿ '),
+                Infolists\Components\TextEntry::make('payload.description')->label('О себе')->columnSpanFull(),
+            ])->columns(2),
+        ]);
     }
 
     public static function getRelations(): array { return []; }

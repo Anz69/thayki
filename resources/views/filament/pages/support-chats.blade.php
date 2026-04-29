@@ -59,7 +59,31 @@
         <div class="flex flex-col shrink-0" style="width:300px; border-right:1px solid #1e1e1e; background:#0d0d0d;">
 
             <div style="padding:16px 14px 12px; border-bottom:1px solid #1e1e1e;">
-                <p style="font-size:11px;font-weight:600;letter-spacing:.08em;color:#555;text-transform:uppercase;margin-bottom:10px;">Чаты</p>
+                @php $unread = $this->getUnreadCounts(); @endphp
+                <div style="display:flex;gap:6px;margin-bottom:10px;">
+                    <button
+                        wire:click="setTab('users')"
+                        style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:background .12s,color .12s;
+                               background:{{ $activeTab === 'users' ? '#E2319B' : '#1a1a1a' }};
+                               color:{{ $activeTab === 'users' ? '#fff' : '#888' }};"
+                    >
+                        Пользователи
+                        @if($unread['users'] > 0)
+                            <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:{{ $activeTab === 'users' ? 'rgba(255,255,255,0.3)' : '#E2319B' }};color:#fff;font-size:10px;margin-left:4px;">{{ $unread['users'] }}</span>
+                        @endif
+                    </button>
+                    <button
+                        wire:click="setTab('models')"
+                        style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:background .12s,color .12s;
+                               background:{{ $activeTab === 'models' ? '#E2319B' : '#1a1a1a' }};
+                               color:{{ $activeTab === 'models' ? '#fff' : '#888' }};"
+                    >
+                        Модели
+                        @if($unread['models'] > 0)
+                            <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:{{ $activeTab === 'models' ? 'rgba(255,255,255,0.3)' : '#E2319B' }};color:#fff;font-size:10px;margin-left:4px;">{{ $unread['models'] }}</span>
+                        @endif
+                    </button>
+                </div>
                 <div style="position:relative;">
                     <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#444;width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0Z"/>
@@ -82,6 +106,7 @@
                         $initial    = strtoupper(substr($client?->first_name ?? 'U', 0, 1));
                         $fullName   = trim(($client?->first_name ?? '').' '.($client?->last_name ?? '')) ?: 'Пользователь';
                         $isSelected = $selectedChatId === $chat->id;
+                        $hasUnread  = $this->getChatHasUnread($chat);
                         $lastMsgPreview = $lastMsg
                             ? ($lastMsg->attachment_path ? '📷 Фото' : Str::limit($lastMsg->body, 34))
                             : '';
@@ -104,9 +129,14 @@
                         </div>
                         <div style="flex:1;min-width:0;">
                             <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
-                                <span style="font-size:13px;font-weight:600;color:{{ $isSelected ? '#fff' : '#ccc' }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                    {{ $fullName }}
-                                </span>
+                                <div style="display:flex;align-items:center;gap:5px;min-width:0;">
+                                    <span style="font-size:13px;font-weight:600;color:{{ $isSelected ? '#fff' : '#ccc' }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                        {{ $fullName }}
+                                    </span>
+                                    @if($hasUnread)
+                                        <span style="width:7px;height:7px;border-radius:50%;background:#E2319B;flex-shrink:0;display:inline-block;"></span>
+                                    @endif
+                                </div>
                                 @if($lastMsg)
                                     <span style="font-size:10px;color:#444;flex-shrink:0;">{{ $lastMsg->created_at->diffForHumans(short: true) }}</span>
                                 @endif

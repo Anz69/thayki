@@ -1,4 +1,4 @@
-import { useEffect, useRef, lazy, Suspense } from 'react'
+import { useEffect, useRef, lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { registerOverlay, registerPageRoot } from '@/utils/pageTransition'
 import RouteChangeEffect from '@/components/RouteChangeEffect'
@@ -16,6 +16,7 @@ import { parseTelegramStartParam } from '@/utils/telegramAuth'
 import LandingPage from '@/views/LandingPage'
 import StrangeWelcomePage from '@/views/StrangeWelcomePage'
 import BannedPage from '@/views/BannedPage'
+import ModalMiddle from '@/layout/ModalMiddle'
 
 const HomePage         = lazy(() => import('@/views/HomePage'))
 const ModelPage        = lazy(() => import('@/views/ModelPage'))
@@ -31,6 +32,12 @@ const BecomeModelPage          = lazy(() => import('@/views/BecomeModelPage'))
 const ApplicationPendingPage   = lazy(() => import('@/views/ApplicationPendingPage'))
 const SupportPage              = lazy(() => import('@/views/SupportPage'))
 const FeedbackPage             = lazy(() => import('@/views/FeedbackPage'))
+
+function LandingRoute() {
+  const { user } = useAuthStore()
+  if (user) return <Navigate to="/home" replace />
+  return <LandingPage />
+}
 
 function MainPage() {
   const { user } = useAuthStore()
@@ -57,6 +64,8 @@ function AuthErrorScreen() {
   const authStore    = useAuthStore()
   const meetingStore = useMeetingStore()
   const hint         = authStore.authErrorHint
+  const detail       = authStore.authErrorDetail
+  const [showDetail, setShowDetail] = useState(false)
 
   useEffect(() => {
     if (authRetried) return
@@ -107,36 +116,73 @@ function AuthErrorScreen() {
             authStore.setBanned()
             return
           }
+          const retryDetail = {
+            step: 'retry POST /auth/telegram',
+            status: err?.response?.status ?? null,
+            code: code ?? null,
+            message: err?.response?.data?.error?.message ?? err?.message ?? null,
+            hasBrowserToken: !!browserToken,
+            hasInviteToken: !!inviteToken,
+          }
+          const serverMsg = err?.response?.data?.error?.message ?? null
+          const hintMsg = code === 'INIT_DATA_INVALID'
+            ? (serverMsg && serverMsg.includes('BOT_TOKEN') ? serverMsg : 'Ошибка конфигурации бота. Проверьте TELEGRAM_BOT_TOKEN на сервере.')
+            : null
+          authStore.setNeedsLogin(hintMsg, retryDetail)
+          return
         }
       }
 
-      authStore.setNeedsLogin()
+      authStore.setNeedsLogin(null, { step: 'retry', message: initData ? 'Сервер вернул пустой ответ' : 'initData недоступен' })
     }
 
     retry().catch(() => authStore.setNeedsLogin())
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-8 text-center bg-white">
-      <div className="flex flex-col items-center gap-3">
-        <span className="text-5xl select-none">😕</span>
-        <h1 className="text-xl font-semibold text-black">Ошибка входа</h1>
-        <p className="text-sm text-[#7F7F7F] leading-relaxed">
-          Не удалось войти в приложение.<br />Попробуйте перезагрузить страницу.
-        </p>
-        {hint && (
-          <p className="text-xs text-[#AAAAAA] leading-relaxed mt-1 max-w-xs">
-            {hint}
+    <>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-8 text-center bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-5xl select-none">😕</span>
+          <h1 className="text-xl font-semibold text-black">Ошибка входа</h1>
+          <p className="text-sm text-[#7F7F7F] leading-relaxed">
+            Не удалось войти в приложение.<br />Попробуйте перезагрузить страницу.
           </p>
-        )}
+          {hint && (
+            <p className="text-xs text-[#AAAAAA] leading-relaxed mt-1 max-w-xs">
+              {hint}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={() => { authRetried = false; window.location.reload() }}
+          className="w-full max-w-xs py-4 rounded-full bg-[#E2319B] text-white text-base font-semibold active:opacity-80 transition-opacity"
+        >
+          Перезагрузить страницу
+        </button>
+        <button
+          onClick={() => setShowDetail(true)}
+          className="text-xs text-[#CCCCCC] underline underline-offset-2 active:opacity-60 transition-opacity"
+        >
+          Посмотреть причину ошибки
+        </button>
       </div>
-      <button
-        onClick={() => { authRetried = false; window.location.reload() }}
-        className="w-full max-w-xs py-4 rounded-full bg-[#E2319B] text-white text-base font-semibold active:opacity-80 transition-opacity"
-      >
-        Перезагрузить страницу
-      </button>
-    </div>
+
+      <ModalMiddle isOpen={showDetail} onClose={() => setShowDetail(false)}>
+        <div className="px-5 pb-6">
+          <p className="text-base font-semibold text-gray-900 mb-3">Детали ошибки</p>
+          <pre className="text-[11px] leading-relaxed text-gray-600 bg-gray-50 rounded-2xl p-4 overflow-x-auto whitespace-pre-wrap break-all">
+            {JSON.stringify(detail ?? { message: 'Детали ошибки недоступны' }, null, 2)}
+          </pre>
+          <button
+            onClick={() => setShowDetail(false)}
+            className="mt-4 w-full py-3 rounded-2xl bg-gray-100 text-gray-700 text-sm font-medium active:opacity-70 transition-opacity"
+          >
+            Закрыть
+          </button>
+        </div>
+      </ModalMiddle>
+    </>
   )
 }
 
@@ -192,7 +238,7 @@ export default function App() {
                 <StrangeGuard>
                   <Routes>
                     <Route path="/welcome"       element={<StrangeWelcomePage />} />
-                    <Route path="/"              element={<LandingPage />} />
+                    <Route path="/"              element={<LandingRoute />} />
                     <Route path="/home"          element={<MainPage />} />
                     <Route path="/more"          element={<MoreRolePage />} />
                     <Route path="/models"        element={<Navigate to="/home" replace />} />

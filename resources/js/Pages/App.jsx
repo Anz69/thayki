@@ -25,6 +25,8 @@ export default function App() {
   const meetingStore = useMeetingStore()
 
   useEffect(() => {
+    window.Telegram?.WebApp?.expand?.()
+
     if (auth?.user) {
       authStore.setUser(auth.user)
       meetingStore.loadLatest()
@@ -80,15 +82,23 @@ export default function App() {
             authStore.setBanned()
             return
           }
-          authStore.setNeedsLogin('Telegram вернул ошибку авторизации. Попробуйте перезагрузить через несколько секунд.')
+          const detail = {
+            step: 'POST /auth/telegram',
+            status: err?.response?.status ?? null,
+            code: code ?? null,
+            message: err?.response?.data?.error?.message ?? err?.message ?? null,
+            hasBrowserToken: !!browserToken,
+            hasInviteToken: !!inviteToken,
+          }
+          authStore.setNeedsLogin('Telegram вернул ошибку авторизации. Попробуйте перезагрузить через несколько секунд.', detail)
           return
         }
 
-        authStore.setNeedsLogin()
+        authStore.setNeedsLogin(null, { step: 'POST /auth/telegram', message: 'Ответ сервера не содержал токен' })
         return
       }
 
-      authStore.setNeedsLogin('Не удалось получить данные авторизации из Telegram.')
+      authStore.setNeedsLogin('Не удалось получить данные авторизации из Telegram.', { step: 'initData check', message: 'window.Telegram.WebApp.initData отсутствует' })
     }
 
     resolveAuth().catch(() => authStore.setNeedsLogin())

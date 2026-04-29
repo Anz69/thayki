@@ -110,6 +110,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/chats/{chat}/read', [ChatController::class, 'markRead'])->name('chats.markRead');
 
         // Complaints (post-meeting feedback / abuse report)
+        Route::get('/complaints',  [ComplaintController::class, 'index'])->name('complaints.index');
         Route::post('/complaints', [ComplaintController::class, 'store'])
             ->middleware('idempotency')
             ->name('complaints.store');
