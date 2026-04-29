@@ -288,33 +288,34 @@ export default function App() {
               <AuthGuard>
                 <StrangeGuard>
                   <ModelApplicationPendingGuard>
-                    <Routes>
-                      <Route path="/welcome" element={<StrangeWelcomePage />} />
-                      <Route path="/" element={<LandingRoute />} />
-                      <Route path="/home" element={<MainPage />} />
-                      <Route path="/more" element={<MoreRolePage />} />
-                      <Route path="/models" element={<Navigate to="/home" replace />} />
-                      <Route path="/model-more" element={<Navigate to="/more" replace />} />
-                      <Route path="/model/:id" element={<ModelPage />} />
-                      <Route path="/meeting" element={<MeetingRolePage />} />
-                      <Route path="/model-meeting" element={<Navigate to="/meeting" replace />} />
-                      <Route path="/chat" element={<ChatPage />} />
-                      <Route path="/support" element={<SupportPage />} />
-                      <Route path="/roadmap" element={<RoadmapPage />} />
-                      <Route path="/profile" element={<ProfilePage />} />
-                      <Route path="/become-model" element={<BecomeModelPage />} />
-                      <Route path="/application-pending" element={<ApplicationPendingPage />} />
-                      <Route path="/feedback" element={<FeedbackPage />} />
-                      <Route path="*" element={<Navigate to="/home" replace />} />
-                    </Routes>
+                    <>
+                      <Routes>
+                        <Route path="/welcome" element={<StrangeWelcomePage />} />
+                        <Route path="/" element={<LandingRoute />} />
+                        <Route path="/home" element={<MainPage />} />
+                        <Route path="/more" element={<MoreRolePage />} />
+                        <Route path="/models" element={<Navigate to="/home" replace />} />
+                        <Route path="/model-more" element={<Navigate to="/more" replace />} />
+                        <Route path="/model/:id" element={<ModelPage />} />
+                        <Route path="/meeting" element={<MeetingRolePage />} />
+                        <Route path="/model-meeting" element={<Navigate to="/meeting" replace />} />
+                        <Route path="/chat" element={<ChatPage />} />
+                        <Route path="/support" element={<SupportPage />} />
+                        <Route path="/roadmap" element={<RoadmapPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/become-model" element={<BecomeModelPage />} />
+                        <Route path="/application-pending" element={<ApplicationPendingPage />} />
+                        <Route path="/feedback" element={<FeedbackPage />} />
+                        <Route path="*" element={<Navigate to="/home" replace />} />
+                      </Routes>
+                      <BottomNav />
+                    </>
                   </ModelApplicationPendingGuard>
                 </StrangeGuard>
               </AuthGuard>
             </Suspense>
           </ErrorBoundary>
         </div>
-
-        <BottomNav />
 
         <PhotoViewer />
         <RegistrationModal />

@@ -145,7 +145,7 @@ export default function BecomeModelPage() {
         await api.post('/model-application', payload, {
           headers: { 'Idempotency-Key': `model-app-${Date.now()}` },
         })
-        navigate('/application-pending')
+        navigate('/application-pending', { replace: true })
       } catch (err) {
         const errData = err?.response?.data?.error
         if (errData?.code === 'APPLICATION_ALREADY_SUBMITTED') {

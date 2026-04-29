@@ -10,12 +10,14 @@ use App\Exceptions\DomainException;
 use App\Models\ModelApplication;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
+use App\Services\Telegram\Notifier;
 use Illuminate\Support\Facades\DB;
 
 class SubmitModelApplicationAction
 {
     public function __construct(
         private readonly AuditLogger $audit,
+        private readonly Notifier $notifier,
     ) {}
 
     /**
@@ -56,6 +58,25 @@ class SubmitModelApplicationAction
             return $application;
         });
 
+        $this->notifier->notifyUser(
+            $user,
+            "📝 Заявка модели отправлена и передана на модерацию.\nМы сообщим, когда статус изменится.",
+            '/application-pending',
+            'Открыть заявку',
+        );
+        $this->notifier->notifyAdmins(
+            "📝 Новая заявка модели #{$application->id} от {$this->displayName($user)}.",
+            '/admin/model-applications',
+            'Открыть в админке',
+        );
+
         return $application;
+    }
+
+    private function displayName(User $user): string
+    {
+        $name = trim(($user->first_name ?? '').' '.($user->last_name ?? ''));
+
+        return $name !== '' ? $name : ($user->username ?? 'пользователь');
     }
 }

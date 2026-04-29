@@ -15,11 +15,15 @@ use App\Models\ModelProfile;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\Audit\AuditLogger;
+use App\Services\Telegram\Notifier;
 use Illuminate\Support\Facades\DB;
 
 class ApproveModelApplicationAction
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly Notifier $notifier,
+    ) {}
 
     public function execute(ModelApplication $application, ?User $reviewer = null): ModelApplication
     {
@@ -27,7 +31,7 @@ class ApproveModelApplicationAction
             throw DomainException::conflict('APPLICATION_NOT_SUBMITTED', 'Only submitted applications can be approved.');
         }
 
-        return DB::transaction(function () use ($application, $reviewer): ModelApplication {
+        $application = DB::transaction(function () use ($application, $reviewer): ModelApplication {
             $user = $application->user()->lockForUpdate()->firstOrFail();
 
             $payload = $application->payload;
@@ -99,5 +103,22 @@ class ApproveModelApplicationAction
 
             return $application->refresh();
         });
+
+        $user = $application->user;
+        if ($user !== null) {
+            $this->notifier->notifyUser(
+                $user,
+                "✅ Заявка модели одобрена! Профиль активирован, можно принимать бронирования.",
+                '/home',
+                'Открыть профиль',
+            );
+        }
+        $this->notifier->notifyAdmins(
+            "✅ Заявка модели #{$application->id} одобрена.",
+            '/admin/model-applications',
+            'Открыть в админке',
+        );
+
+        return $application;
     }
 }

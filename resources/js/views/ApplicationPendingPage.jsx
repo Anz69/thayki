@@ -13,10 +13,12 @@ export default function ApplicationPendingPage() {
   const ring1Ref   = useRef(null)
   const iconRef    = useRef(null)
   const checkRef   = useRef(null)
+  const crossRef   = useRef(null)
   const headRef    = useRef(null)
   const subRef     = useRef(null)
-  const approvedRef = useRef(false)
+  const finalStateRef = useRef(null)
   const loopTlRef   = useRef(null)
+  const pollIdRef   = useRef(null)
 
   useEffect(() => {
     if (user?.role === 'model') navigate('/home', { replace: true })
@@ -26,6 +28,7 @@ export default function ApplicationPendingPage() {
     gsap.set([ring3Ref.current, ring2Ref.current, ring1Ref.current], { scale: 0, opacity: 0 })
     gsap.set(iconRef.current,  { scale: 0, opacity: 0, rotation: -20 })
     gsap.set(checkRef.current, { scale: 0, opacity: 0 })
+    gsap.set(crossRef.current, { scale: 0.6, opacity: 0 })
     gsap.set([headRef.current, subRef.current], { autoAlpha: 0, y: 18 })
   }, [])
 
@@ -49,18 +52,26 @@ export default function ApplicationPendingPage() {
 
     return () => {
       loopTl.kill()
-      gsap.killTweensOf([ring1Ref.current, ring2Ref.current, ring3Ref.current, iconRef.current, checkRef.current, headRef.current, subRef.current])
+      gsap.killTweensOf([ring1Ref.current, ring2Ref.current, ring3Ref.current, iconRef.current, checkRef.current, crossRef.current, headRef.current, subRef.current])
     }
   }, [])
 
   useEffect(() => {
+    const stopPolling = () => {
+      if (pollIdRef.current) {
+        clearInterval(pollIdRef.current)
+        pollIdRef.current = null
+      }
+    }
+
     const checkStatus = async () => {
-      if (approvedRef.current) return
+      if (finalStateRef.current) return
       try {
         const res    = await api.get('/model-application')
         const status = res.data?.data?.status
         if (status === 'approved') {
-          approvedRef.current = true
+          finalStateRef.current = 'approved'
+          stopPolling()
           loopTlRef.current?.pause()
           gsap.killTweensOf([ring2Ref.current, ring3Ref.current])
 
@@ -90,14 +101,52 @@ export default function ApplicationPendingPage() {
             .to(subRef.current,   { opacity: 0, duration: 0.18 }, 0.3)
             .to(subRef.current,   { opacity: 1, duration: 0.28 }, 0.56)
             .to(ring1Ref.current, { scale: 1.06, duration: 0.16, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 0.64)
+          return
+        }
+
+        if (status === 'rejected') {
+          finalStateRef.current = 'rejected'
+          stopPolling()
+          loopTlRef.current?.pause()
+          gsap.killTweensOf([ring2Ref.current, ring3Ref.current])
+
+          const tl = gsap.timeline({
+            onComplete: () => {
+              navigate('/home', { replace: true })
+            },
+          })
+
+          tl.to([ring3Ref.current, ring2Ref.current], {
+            scale: 0.45,
+            opacity: 0,
+            duration: 0.28,
+            ease: 'power2.inOut',
+          })
+            .to(ring1Ref.current, {
+              borderColor: '#B4235E',
+              backgroundColor: '#FFF0F6',
+              duration: 0.28,
+              ease: 'power2.out',
+            }, 0.1)
+            .to(iconRef.current, { scale: 0.45, opacity: 0, duration: 0.18, ease: 'power2.in' }, 0.08)
+            .fromTo(crossRef.current, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' }, 0.2)
+            .to(headRef.current, { opacity: 0, duration: 0.18 }, 0.18)
+            .to(subRef.current,  { opacity: 0, duration: 0.18 }, 0.22)
+            .call(() => {
+              if (headRef.current) headRef.current.textContent = 'Заявка отклонена'
+              if (subRef.current) subRef.current.textContent = 'Вернемся на главную страницу...'
+            }, [], 0.42)
+            .to(headRef.current, { opacity: 1, duration: 0.26, ease: 'power2.out' }, 0.44)
+            .to(subRef.current,  { opacity: 1, duration: 0.26, ease: 'power2.out' }, 0.5)
+            .to(ring1Ref.current, { scale: 1.05, duration: 0.14, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 0.62)
         }
       } catch {
       }
     }
 
     checkStatus()
-    const id = setInterval(checkStatus, 3000)
-    return () => clearInterval(id)
+    pollIdRef.current = setInterval(checkStatus, 3000)
+    return () => stopPolling()
   }, [])
 
   return (
@@ -143,6 +192,11 @@ export default function ApplicationPendingPage() {
           <div ref={checkRef} className="absolute" style={{ opacity: 0 }}>
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
               <path d="M7 18L14.5 25.5L29 11" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div ref={crossRef} className="absolute" style={{ opacity: 0 }}>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <path d="M12 12L24 24M24 12L12 24" stroke="#B4235E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
         </div>
