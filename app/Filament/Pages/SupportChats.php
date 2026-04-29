@@ -8,6 +8,7 @@ use App\Enums\ChatType;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\Chat;
+use App\Models\ChatParticipant;
 use App\Models\Message;
 use App\Models\User;
 use Filament\Notifications\Notification;
@@ -45,15 +46,36 @@ class SupportChats extends Page
     public function getChats(): \Illuminate\Support\Collection
     {
         $role          = $this->activeTab === 'models' ? UserRole::Model : UserRole::Client;
-        $supportUserId = User::where('telegram_id', 0)->value('id') ?? 0;
+        $supportUserId = $this->getSupportUser()->id;
 
         return Chat::query()
             ->where('type', ChatType::Support)
             ->whereHas('participants.user', fn ($u) => $u->where('role', $role))
             ->with(['participants.user', 'messages' => fn ($q) => $q->latest()->limit(1)])
             ->withCount(['messages as unread_count' => fn ($q) => $q
-                ->whereNull('read_at')
-                ->where('sender_id', '!=', $supportUserId),
+                ->where('sender_id', '!=', $supportUserId)
+                ->where(function ($w) use ($supportUserId) {
+                    $w
+                        // If support participant row is missing, treat messages as unread.
+                        ->whereNotExists(function ($sub) use ($supportUserId) {
+                            $sub
+                                ->selectRaw('1')
+                                ->from('chat_participants as cp')
+                                ->whereColumn('cp.chat_id', 'messages.chat_id')
+                                ->where('cp.user_id', $supportUserId);
+                        })
+                        ->orWhereExists(function ($sub) use ($supportUserId) {
+                            $sub
+                                ->selectRaw('1')
+                                ->from('chat_participants as cp')
+                                ->whereColumn('cp.chat_id', 'messages.chat_id')
+                                ->where('cp.user_id', $supportUserId)
+                                ->where(function ($sq) {
+                                    $sq->whereNull('cp.last_read_at')
+                                        ->orWhereColumn('messages.created_at', '>', 'cp.last_read_at');
+                                });
+                        });
+                }),
             ])
             ->when($this->search !== '', fn ($q) => $q->whereHas(
                 'participants.user',
@@ -67,12 +89,32 @@ class SupportChats extends Page
 
     public function getUnreadCounts(): array
     {
-        $supportUserId = User::where('telegram_id', 0)->value('id') ?? 0;
+        $supportUserId = $this->getSupportUser()->id;
 
         $countForRole = function (UserRole $role) use ($supportUserId): int {
             return Message::query()
-                ->whereNull('read_at')
                 ->where('sender_id', '!=', $supportUserId)
+                ->where(function ($w) use ($supportUserId) {
+                    $w
+                        ->whereNotExists(function ($sub) use ($supportUserId) {
+                            $sub
+                                ->selectRaw('1')
+                                ->from('chat_participants as cp')
+                                ->whereColumn('cp.chat_id', 'messages.chat_id')
+                                ->where('cp.user_id', $supportUserId);
+                        })
+                        ->orWhereExists(function ($sub) use ($supportUserId) {
+                            $sub
+                                ->selectRaw('1')
+                                ->from('chat_participants as cp')
+                                ->whereColumn('cp.chat_id', 'messages.chat_id')
+                                ->where('cp.user_id', $supportUserId)
+                                ->where(function ($sq) {
+                                    $sq->whereNull('cp.last_read_at')
+                                        ->orWhereColumn('messages.created_at', '>', 'cp.last_read_at');
+                                });
+                        });
+                })
                 ->whereHas('chat', fn ($q) => $q
                     ->where('type', ChatType::Support)
                     ->whereHas('participants.user', fn ($u) => $u->where('role', $role))
@@ -90,6 +132,7 @@ class SupportChats extends Page
     {
         $this->selectedChatId = $id;
         $this->newMessage     = '';
+        $this->markSelectedChatAsRead($id);
     }
 
     public function getSelectedChat(): ?Chat
@@ -107,11 +150,35 @@ class SupportChats extends Page
             return collect();
         }
 
+        $this->markSelectedChatAsRead($this->selectedChatId);
+
         return Message::query()
             ->where('chat_id', $this->selectedChatId)
             ->with('sender')
             ->orderBy('created_at')
             ->get();
+    }
+
+    private function markSelectedChatAsRead(?int $chatId): void
+    {
+        if (! $chatId) {
+            return;
+        }
+
+        $supportUser = $this->getSupportUser();
+        $now = now();
+
+        ChatParticipant::query()->updateOrCreate(
+            ['chat_id' => $chatId, 'user_id' => $supportUser->id],
+            ['role' => ChatParticipantRole::Support, 'last_read_at' => $now],
+        );
+
+        // Keep message-level read marks in sync for legacy consumers.
+        Message::query()
+            ->where('chat_id', $chatId)
+            ->where('sender_id', '!=', $supportUser->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => $now]);
     }
 
     private function getSupportUser(): User
