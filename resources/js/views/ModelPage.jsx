@@ -226,6 +226,7 @@ export default function ModelPage() {
   const [rightErr, setRightErr] = useState(false)
 
   return (
+    <>
     <ModalMiddle isOpen={modalOpen} onClose={handleClose} onAfterClose={handleAfterClose}>
       <div style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', maxHeight: '92dvh' }}>
         <section className="flex flex-col gap-7 pt-4">
@@ -395,5 +396,6 @@ export default function ModelPage() {
       onClose={() => setShareModalOpen(false)}
       models={model ? [model] : []}
     />
+    </>
   )
 }
