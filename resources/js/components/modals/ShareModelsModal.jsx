@@ -46,7 +46,7 @@ function buildShareText(selectedModels, botUsername, inviteToken = '') {
   }).join('\n\n')
 
   return [
-    '☝️ Открывай профили и выбирай',
+    '☝️ Открывай и выбирай',
     '',
     '🔥 Подборка моделей в Thaiky',
     '',

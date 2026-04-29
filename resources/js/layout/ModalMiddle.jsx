@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 
 export default function ModalMiddle({ isOpen, onClose, onAfterClose, children }) {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(isOpen)
   const rootRef   = useRef(null)
   const sheetRef  = useRef(null)
   const handleRef = useRef(null)
