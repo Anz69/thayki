@@ -56,6 +56,10 @@ export default function MeetingPage() {
   const prevStatus   = useRef(meeting.status)
   const animatedRef  = useRef(false)
   const pageReadyRef = useRef(false)
+  const isInitialStatePreparedRef = useRef(false)
+  const startQueuedRef = useRef(false)
+  const startRaf1Ref = useRef(null)
+  const startRaf2Ref = useRef(null)
   const m           = meeting.meeting
   const scheduledAt = m?.scheduled_at ? new Date(m.scheduled_at) : null
   const formattedTime = scheduledAt
@@ -195,10 +199,13 @@ export default function MeetingPage() {
     gsap.set(pendingRef.current,   { display: 'none' })
     gsap.set(acceptedRef.current,  { display: 'none' })
     gsap.set(confirmedRef.current, { display: 'none' })
+    isInitialStatePreparedRef.current = true
   }, [])
 
   useEffect(() => {
     return () => {
+      if (startRaf1Ref.current) cancelAnimationFrame(startRaf1Ref.current)
+      if (startRaf2Ref.current) cancelAnimationFrame(startRaf2Ref.current)
       mascotLoopRef.current?.kill()
       gsap.killTweensOf([
         headerRef.current, backBtnRef.current, headerTitleRef.current,
@@ -292,9 +299,22 @@ export default function MeetingPage() {
   }, [meeting.status, animatePendingIn, animateAcceptedIn, animateConfirmedIn])
   const tryStartAnimations = useCallback(() => {
     if (!pageReadyRef.current) return
+    if (!isInitialStatePreparedRef.current) return
     if (!meeting.status) return
     if (animatedRef.current) return
-    startAnimations()
+    if (startQueuedRef.current) return
+
+    startQueuedRef.current = true
+    startRaf1Ref.current = requestAnimationFrame(() => {
+      startRaf2Ref.current = requestAnimationFrame(() => {
+        startQueuedRef.current = false
+        if (!pageReadyRef.current) return
+        if (!isInitialStatePreparedRef.current) return
+        if (!meeting.status) return
+        if (animatedRef.current) return
+        startAnimations()
+      })
+    })
   }, [meeting.status, startAnimations])
 
   usePageReady(() => {

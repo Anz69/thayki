@@ -44,8 +44,8 @@ class MeetingResource extends Resource
                     ->formatStateUsing(fn ($record) => "{$record->client?->first_name} {$record->client?->last_name}"),
                 Tables\Columns\TextColumn::make('modelProfile.display_name')->label('Модель'),
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')
-                    ->formatStateUsing(fn (string $state): string =>
-                        MeetingStatus::tryFrom($state)?->label() ?? $state
+                    ->formatStateUsing(fn ($state): string =>
+                        MeetingStatus::tryFrom((string) $state)?->label() ?? ((string) $state !== '' ? (string) $state : '—')
                     )
                     ->colors([
                         'warning' => MeetingStatus::Pending->value,
@@ -64,7 +64,7 @@ class MeetingResource extends Resource
                 Tables\Columns\TextColumn::make('scheduled_at')->label('Дата')->dateTime('d.m.Y H:i')->sortable(),
                 Tables\Columns\TextColumn::make('duration_hours')->label('Ч'),
                 Tables\Columns\TextColumn::make('price_thb')->label('Цена')
-                    ->formatStateUsing(fn ($state) => '฿ ' . number_format($state)),
+                    ->formatStateUsing(fn ($state) => '฿ ' . number_format((float) ($state ?? 0))),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Статус')
