@@ -211,7 +211,7 @@
                             data-photo-main
                             src=""
                             alt="Фото"
-                            style="max-width:100%; max-height:calc(100dvh - 210px); width:auto; height:auto; object-fit:contain; user-select:none; pointer-events:none;"
+                            style="max-width:100%; width:250px; height:auto; object-fit:contain; user-select:none; pointer-events:none;"
                         >
                     </div>
                 </div>
