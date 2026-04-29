@@ -32,30 +32,21 @@ function botLink(botUsername) {
 function buildShareText(selectedModels, botUsername, inviteToken = '') {
   if (selectedModels.length === 0) {
     return [
-      `<a href="${botLink(botUsername)}">☝️ Открывай профили и выбирай</a>`,
       '🤖 Thaiky — бот с моделями',
       '✨ Открой и выбери подходящую модель в боте',
     ].join('\n')
   }
 
-  const homePath = `/home?invite_token=${inviteToken}`
-  const homeStartApp = encodeStartPath(homePath)
-  const botHomeLink = homeStartApp
-    ? `https://t.me/${botUsername}?startapp=${homeStartApp}`
-    : botLink(botUsername)
-
-  const topLink = `<a href="${botHomeLink}">☝️ Открывай профили и выбирай</a>`
-
   const blocks = selectedModels.map((model) => {
     const startLink = modelShareLink(model.id, botUsername, inviteToken)
     return [
       `👤 ${model.name}${model.age ? `, ${model.age}` : ''}`,
-      `🔗 <a href="${startLink}">открыть</a>`,
+      `🔗 ${startLink}`,
     ].join('\n')
   }).join('\n\n')
 
   return [
-    topLink,
+    '☝️ Открывай профили и выбирай',
     '🔥 Подборка моделей в Thaiky',
     '',
     blocks,
@@ -329,7 +320,8 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
         if (!token) return
         payload = buildPayloadWithToken(token)
       }
-      await navigator.clipboard.writeText(payload.text)
+      const fullText = payload.url ? `${payload.url}\n${payload.text}` : payload.text
+      await navigator.clipboard.writeText(fullText)
       setStatus('')
       clearTimeout(copyTimerRef.current)
       gsap.to(copyIconRef.current, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
