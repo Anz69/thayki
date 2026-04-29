@@ -138,12 +138,13 @@
     <section style="display: flex; flex-direction: column; gap: 10px;">
         <h3 style="margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8f98a8;">Фото</h3>
         @if($photos->isNotEmpty())
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
+            <div id="modelAppPhotoRoot-{{ $record->id }}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
                 @foreach($photos as $photo)
-                    <a
-                        href="{{ $photo }}"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <button
+                        type="button"
+                        data-photo-src="{{ $photo }}"
+                        data-photo-index="{{ $loop->index }}"
+                        data-photo-alt="Фото модели"
                         style="position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 14px; border: 1px solid #2a2f39; background: #ffffff05;"
                     >
                         <img
@@ -152,9 +153,139 @@
                             loading="lazy"
                             style="display: block; width: 100%; height: 100%; object-fit: cover;"
                         >
-                    </a>
+                    </button>
                 @endforeach
             </div>
+
+            {{-- Photo overlay viewer (arrows + ESC) --}}
+            <div
+                id="modelAppPhotoOverlay-{{ $record->id }}"
+                style="display:none; position:fixed; inset:0; z-index:999999; background: rgba(0,0,0,0.88); align-items:center; justify-content:center; padding:24px;"
+                aria-hidden="true"
+            >
+                <div style="position:relative; width:100%; max-width:980px; display:flex; flex-direction:column; gap:14px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                        <button
+                            type="button"
+                            data-photo-prev
+                            style="width:44px; height:44px; border-radius:999px; border:none; background:rgba(255,255,255,0.12); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;"
+                            aria-label="Предыдущее фото"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                <path d="M11.5 3.5L6.5 9L11.5 14.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </button>
+
+                        <div style="flex:1; text-align:center; color:#fff; font-weight:600; font-size:14px; line-height:18px;" data-photo-counter></div>
+
+                        <button
+                            type="button"
+                            data-photo-next
+                            style="width:44px; height:44px; border-radius:999px; border:none; background:rgba(255,255,255,0.12); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;"
+                            aria-label="Следующее фото"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                <path d="M6.5 3.5L11.5 9L6.5 14.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </button>
+
+                        <button
+                            type="button"
+                            data-photo-close
+                            style="position:absolute; right:0; top:-2px; width:44px; height:44px; border-radius:999px; border:none; background:rgba(255,255,255,0.12); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;"
+                            aria-label="Закрыть просмотр"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M1 1L13 13M13 1L1 13" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.04); border-radius:16px; overflow:hidden;">
+                        <img
+                            data-photo-main
+                            src=""
+                            alt="Фото"
+                            style="max-width:100%; max-height:calc(100dvh - 210px); width:auto; height:auto; object-fit:contain; user-select:none; pointer-events:none;"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                (function () {
+                    const root = document.getElementById('modelAppPhotoRoot-{{ $record->id }}');
+                    const overlay = document.getElementById('modelAppPhotoOverlay-{{ $record->id }}');
+                    if (!root || !overlay) return;
+
+                    const counterEl = overlay.querySelector('[data-photo-counter]');
+                    const imgEl = overlay.querySelector('[data-photo-main]');
+                    const prevBtn = overlay.querySelector('[data-photo-prev]');
+                    const nextBtn = overlay.querySelector('[data-photo-next]');
+                    const closeBtn = overlay.querySelector('[data-photo-close]');
+
+                    const photoBtns = Array.from(root.querySelectorAll('[data-photo-src]'));
+                    const photos = photoBtns.map((b) => ({
+                        src: b.getAttribute('data-photo-src'),
+                        alt: b.getAttribute('data-photo-alt') || 'Фото модели',
+                    })).filter(p => p.src);
+
+                    if (!photos.length) return;
+
+                    let index = 0;
+                    const render = (nextIndex) => {
+                        index = (nextIndex + photos.length) % photos.length;
+                        const p = photos[index];
+                        imgEl.src = p.src;
+                        imgEl.alt = p.alt;
+                        counterEl.textContent = `Фото ${index + 1} из ${photos.length}`;
+                    };
+
+                    const open = (startIndex) => {
+                        render(startIndex ?? 0);
+                        overlay.style.display = 'flex';
+                        overlay.setAttribute('aria-hidden', 'false');
+                        document.body.style.overflow = 'hidden';
+                    };
+
+                    const close = () => {
+                        overlay.style.display = 'none';
+                        overlay.setAttribute('aria-hidden', 'true');
+                        document.body.style.overflow = '';
+                    };
+
+                    photoBtns.forEach((btn, i) => {
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            open(i);
+                        });
+                    });
+
+                    prevBtn && prevBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        render(index - 1);
+                    });
+                    nextBtn && nextBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        render(index + 1);
+                    });
+                    closeBtn && closeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        close();
+                    });
+
+                    overlay.addEventListener('click', (e) => {
+                        if (e.target === overlay) close();
+                    });
+
+                    document.addEventListener('keydown', (e) => {
+                        if (overlay.style.display === 'none') return;
+                        if (e.key === 'Escape') close();
+                        if (e.key === 'ArrowLeft') render(index - 1);
+                        if (e.key === 'ArrowRight') render(index + 1);
+                    });
+                })();
+            </script>
         @else
             <div style="border: 1px dashed #3a4352; border-radius: 14px; background: #ffffff05; padding: 12px; font-size: 13px; line-height: 18px; color: #8f98a8;">
                 Фотографии не приложены.

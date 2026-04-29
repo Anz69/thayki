@@ -49,7 +49,6 @@ function buildShareText(selectedModels, botUsername, inviteToken = '') {
     ...lines,
     '',
     '👇 Открывай профили по ссылкам ниже',
-    botLink(botUsername),
   ].join('\n')
 }
 
@@ -230,7 +229,13 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
 
   const buildPayloadWithToken = useCallback((token = inviteToken) => {
     const text = buildShareText(selectedModels, botUsername, token)
-    return { url: botLink(botUsername), text }
+    // В `t.me/share/url` параметр `url` влияет на то, что Telegram показывает как preview.
+    // Для подборки используем deeplink первой выбранной модели.
+    const first = selectedModels?.[0]
+    const url = first
+      ? modelShareLink(first.id, botUsername, token)
+      : botLink(botUsername)
+    return { url, text }
   }, [inviteToken, selectedModels, botUsername])
 
   const ensureInviteToken = useCallback(async () => {
@@ -271,7 +276,8 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
       payload = buildPayloadWithToken(token)
     }
   
-    const tgUrl = `https://t.me/share/url?text=${encodeURIComponent(payload.text)}`
+    // Важно: Telegram ожидает `url=`. Иначе иногда происходит редирект/неверный результат.
+    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(payload.url)}&text=${encodeURIComponent(payload.text)}`
     const tg = window.Telegram?.WebApp
     if (tg?.openTelegramLink) {
       tg.openTelegramLink(tgUrl)

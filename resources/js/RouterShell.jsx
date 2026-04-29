@@ -18,24 +18,25 @@ import StrangeWelcomePage from '@/views/StrangeWelcomePage'
 import BannedPage from '@/views/BannedPage'
 import ModalMiddle from '@/layout/ModalMiddle'
 
-const HomePage         = lazy(() => import('@/views/HomePage'))
-const ModelPage        = lazy(() => import('@/views/ModelPage'))
-const MeetingPage      = lazy(() => import('@/views/MeetingPage'))
+const HomePage = lazy(() => import('@/views/HomePage'))
+const ModelPage = lazy(() => import('@/views/ModelPage'))
+const MeetingPage = lazy(() => import('@/views/MeetingPage'))
 const ModelMeetingPage = lazy(() => import('@/views/ModelMeetingPage'))
-const ChatPage         = lazy(() => import('@/views/ChatPage'))
-const RoadmapPage      = lazy(() => import('@/views/RoadmapPage'))
-const MorePage         = lazy(() => import('@/views/MorePage'))
-const ModelMorePage    = lazy(() => import('@/views/ModelMorePage'))
-const ProfilePage      = lazy(() => import('@/views/ProfilePage'))
-const ClientPage       = lazy(() => import('@/views/ClientPage'))
-const BecomeModelPage          = lazy(() => import('@/views/BecomeModelPage'))
-const ApplicationPendingPage   = lazy(() => import('@/views/ApplicationPendingPage'))
-const SupportPage              = lazy(() => import('@/views/SupportPage'))
-const FeedbackPage             = lazy(() => import('@/views/FeedbackPage'))
+const ChatPage = lazy(() => import('@/views/ChatPage'))
+const RoadmapPage = lazy(() => import('@/views/RoadmapPage'))
+const MorePage = lazy(() => import('@/views/MorePage'))
+const ModelMorePage = lazy(() => import('@/views/ModelMorePage'))
+const ProfilePage = lazy(() => import('@/views/ProfilePage'))
+const ClientPage = lazy(() => import('@/views/ClientPage'))
+const BecomeModelPage = lazy(() => import('@/views/BecomeModelPage'))
+const ApplicationPendingPage = lazy(() => import('@/views/ApplicationPendingPage'))
+const SupportPage = lazy(() => import('@/views/SupportPage'))
+const FeedbackPage = lazy(() => import('@/views/FeedbackPage'))
 
 function LandingRoute() {
   const { user } = useAuthStore()
-  if (user) return <Navigate to="/home" replace />
+  if (!user) return <LandingPage />
+  if (user?.role === 'model') return <Navigate to="/home" replace />
   return <LandingPage />
 }
 
@@ -61,10 +62,10 @@ function PageFallback() {
 let authRetried = false
 
 function AuthErrorScreen() {
-  const authStore    = useAuthStore()
+  const authStore = useAuthStore()
   const meetingStore = useMeetingStore()
-  const hint         = authStore.authErrorHint
-  const detail       = authStore.authErrorDetail
+  const hint = authStore.authErrorHint
+  const detail = authStore.authErrorDetail
   const [showDetail, setShowDetail] = useState(false)
 
   useEffect(() => {
@@ -89,16 +90,16 @@ function AuthErrorScreen() {
         clearToken()
       }
 
-      const tg       = window.Telegram?.WebApp
+      const tg = window.Telegram?.WebApp
       const initData = tg?.initData
       if (initData) {
-        const startParam   = tg?.initDataUnsafe?.start_param ?? ''
+        const startParam = tg?.initDataUnsafe?.start_param ?? ''
         const { browserToken, inviteToken } = parseTelegramStartParam(startParam)
         try {
           const { data } = await api.post('/auth/telegram', {
             init_data: initData,
             ...(browserToken ? { browser_token: browserToken } : {}),
-            ...(inviteToken  ? { invite_token:  inviteToken  } : {}),
+            ...(inviteToken ? { invite_token: inviteToken } : {}),
           })
           if (data.ok && data.data?.token && data.data?.user) {
             authStore.setUser(data.data.user, data.data.token)
@@ -210,7 +211,7 @@ function StrangeGuard({ children }) {
 }
 
 export default function App() {
-  const overlayRef  = useRef(null)
+  const overlayRef = useRef(null)
   const pageRootRef = useRef(null)
 
   useEffect(() => {
@@ -237,22 +238,22 @@ export default function App() {
               <AuthGuard>
                 <StrangeGuard>
                   <Routes>
-                    <Route path="/welcome"       element={<StrangeWelcomePage />} />
-                    <Route path="/"              element={<LandingRoute />} />
-                    <Route path="/home"          element={<MainPage />} />
-                    <Route path="/more"          element={<MoreRolePage />} />
-                    <Route path="/models"        element={<Navigate to="/home" replace />} />
-                    <Route path="/model-more"    element={<Navigate to="/more" replace />} />
-                    <Route path="/model/:id"     element={<ModelPage />} />
-                    <Route path="/meeting"       element={<MeetingRolePage />} />
+                    <Route path="/welcome" element={<StrangeWelcomePage />} />
+                    <Route path="/" element={<LandingRoute />} />
+                    <Route path="/home" element={<MainPage />} />
+                    <Route path="/more" element={<MoreRolePage />} />
+                    <Route path="/models" element={<Navigate to="/home" replace />} />
+                    <Route path="/model-more" element={<Navigate to="/more" replace />} />
+                    <Route path="/model/:id" element={<ModelPage />} />
+                    <Route path="/meeting" element={<MeetingRolePage />} />
                     <Route path="/model-meeting" element={<Navigate to="/meeting" replace />} />
-                    <Route path="/chat"          element={<ChatPage />} />
-                    <Route path="/support"       element={<SupportPage />} />
-                    <Route path="/roadmap"       element={<RoadmapPage />} />
-                    <Route path="/profile"              element={<ProfilePage />} />
-                    <Route path="/become-model"         element={<BecomeModelPage />} />
-                    <Route path="/application-pending"  element={<ApplicationPendingPage />} />
-                    <Route path="/feedback"             element={<FeedbackPage />} />
+                    <Route path="/chat" element={<ChatPage />} />
+                    <Route path="/support" element={<SupportPage />} />
+                    <Route path="/roadmap" element={<RoadmapPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/become-model" element={<BecomeModelPage />} />
+                    <Route path="/application-pending" element={<ApplicationPendingPage />} />
+                    <Route path="/feedback" element={<FeedbackPage />} />
                     <Route path="*" element={<Navigate to="/home" replace />} />
                   </Routes>
                 </StrangeGuard>
