@@ -14,6 +14,12 @@ import { subscribePrivate } from '@/utils/safeEcho'
 import { useStatusPolling } from '@/composables/useStatusPolling'
 
 const TERMINAL_STATUSES = ['rejected', 'expired', 'cancelled', 'completed']
+const normalizeStage = (status) => {
+  if (status === 'accepted') return 'accepted'
+  if (status === 'paid' || status === 'confirmed') return 'confirmed'
+  if (status === 'pending') return 'pending'
+  return null
+}
 
 const formatDate = (date) => {
   if (!date) return '—'
@@ -59,6 +65,7 @@ export default function ModelMeetingPage() {
   const animatedRef        = useRef(false)
   const pageReadyRef       = useRef(false)
   const isInitialStatePreparedRef = useRef(false)
+  const animationSessionRef = useRef({ meetingId: null, started: false })
 
   const meetingIdParam = params.get('id')
   useEffect(() => {
@@ -180,18 +187,20 @@ export default function ModelMeetingPage() {
   }, [])
 
   const startAnimations = useCallback(() => {
+    const session = animationSessionRef.current
+    session.started = true
     animatedRef.current = true
-    const status = meeting.status
+    const stage = normalizeStage(meeting.status)
     const tl = gsap.timeline()
     tl.to(headerRef.current,      { y: 0, autoAlpha: 1, duration: 0.38, ease: 'expo.out' })
       .to(backBtnRef.current,     { x: 0, autoAlpha: 1, duration: 0.3,  ease: 'back.out(1.5)' }, 0.06)
       .to(headerTitleRef.current, { y: 0, autoAlpha: 1, duration: 0.3,  ease: 'expo.out' }, 0.1)
-    if (status === 'accepted') {
+    if (stage === 'accepted') {
       gsap.set(pendingRef.current,   { display: 'none' })
       gsap.set(confirmedRef.current, { display: 'none' })
       gsap.set(waitingRef.current,   { display: 'flex', opacity: 0 })
       animateWaitingIn(0.18)
-    } else if (status === 'paid' || status === 'confirmed') {
+    } else if (stage === 'confirmed') {
       gsap.set(pendingRef.current, { display: 'none' })
       gsap.set(waitingRef.current, { display: 'none' })
       gsap.set(confirmedRef.current, { display: 'flex', opacity: 0 })
@@ -227,7 +236,9 @@ export default function ModelMeetingPage() {
     const from = prevStatus.current
     const to = meeting.status
     prevStatus.current = to
-    if (!to) return
+    const fromStage = normalizeStage(from)
+    const toStage = normalizeStage(to)
+    if (!toStage || fromStage === toStage) return
     if (!animatedRef.current) return
 
     const transition = (fromEl, toEl, initToEl, animateToEl) => {
@@ -243,7 +254,7 @@ export default function ModelMeetingPage() {
       })
     }
 
-    if (!from && to === 'accepted') {
+    if (toStage === 'accepted' && fromStage === 'pending') {
       gsap.to(headerSupportRef.current, { opacity: 0, duration: 0.2 })
       transition(
         pendingRef.current,
@@ -257,7 +268,7 @@ export default function ModelMeetingPage() {
       )
       return
     }
-    if (!from && (to === 'paid' || to === 'confirmed')) {
+    if (toStage === 'confirmed' && fromStage === 'pending') {
       gsap.to(headerSupportRef.current, { opacity: 0, duration: 0.2 })
       transition(
         pendingRef.current,
@@ -273,21 +284,7 @@ export default function ModelMeetingPage() {
       )
       return
     }
-    if (from === 'pending' && to === 'accepted') {
-      gsap.to(headerSupportRef.current, { opacity: 0, duration: 0.2 })
-      transition(
-        pendingRef.current,
-        waitingRef.current,
-        () => {
-          gsap.set(waitingAvatarRef.current, { scale: 0.8, opacity: 0, y: -20 })
-          gsap.set(waitingHeadRef.current,   { y: -16, opacity: 0 })
-          gsap.set(waitingSubRef.current,    { y: -12, opacity: 0 })
-        },
-        animateWaitingIn,
-      )
-      return
-    }
-    if (from === 'accepted' && (to === 'paid' || to === 'confirmed')) {
+    if (toStage === 'confirmed' && fromStage === 'accepted') {
       transition(
         waitingRef.current,
         confirmedRef.current,
@@ -302,28 +299,64 @@ export default function ModelMeetingPage() {
       )
       return
     }
-    if (to === 'pending') {
+    if (toStage === 'pending') {
       if (headerSupportRef.current) gsap.to(headerSupportRef.current, { autoAlpha: 1, duration: 0.2 })
       gsap.set(waitingRef.current, { display: 'none', opacity: 0 })
       gsap.set(confirmedRef.current, { display: 'none', opacity: 0 })
       gsap.set(pendingRef.current, { display: 'flex', opacity: 1 })
       animatePendingIn(0)
+      return
+    }
+    if (toStage === 'accepted') {
+      gsap.to(headerSupportRef.current, { opacity: 0, duration: 0.2 })
+      gsap.set(pendingRef.current, { display: 'none', opacity: 0 })
+      gsap.set(confirmedRef.current, { display: 'none', opacity: 0 })
+      gsap.set(waitingRef.current, { display: 'flex', opacity: 0 })
+      gsap.set(waitingAvatarRef.current, { scale: 0.8, opacity: 0, y: -20 })
+      gsap.set(waitingHeadRef.current,   { y: -16, opacity: 0 })
+      gsap.set(waitingSubRef.current,    { y: -12, opacity: 0 })
+      gsap.to(waitingRef.current, { opacity: 1, duration: 0.15, ease: 'power2.out' })
+      animateWaitingIn(0.08)
+      return
+    }
+    if (toStage === 'confirmed') {
+      gsap.to(headerSupportRef.current, { opacity: 0, duration: 0.2 })
+      gsap.set(pendingRef.current, { display: 'none', opacity: 0 })
+      gsap.set(waitingRef.current, { display: 'none', opacity: 0 })
+      gsap.set(confirmedRef.current, { display: 'flex', opacity: 0 })
+      gsap.set(confirmedAvatarRef.current, { scale: 0.8, opacity: 0, y: -20 })
+      gsap.set(confirmedHeadRef.current,   { y: -16, opacity: 0 })
+      gsap.set(confirmedSubRef.current,    { y: -12, opacity: 0 })
+      gsap.set(confirmedCardRef.current,   { y: -24, opacity: 0 })
+      gsap.set(confirmedRowsRef.current.filter(Boolean), { opacity: 0, y: -10 })
+      gsap.to(confirmedRef.current, { opacity: 1, duration: 0.15, ease: 'power2.out' })
+      animateConfirmedIn(0.08)
     }
   }, [meeting.status, animatePendingIn, animateWaitingIn, animateConfirmedIn])
 
   const tryStartAnimations = useCallback(() => {
+    const meetingId = meeting.meeting?.id
+    const session = animationSessionRef.current
+    if (!meetingId) return
+    if (session.meetingId !== meetingId) {
+      session.meetingId = meetingId
+      session.started = false
+    }
     if (!pageReadyRef.current) return
     if (!isInitialStatePreparedRef.current) return
-    if (!meeting.meeting?.id) return
-    if (!meeting.status) return
-    if (meeting.isBootstrapping) return
-    if (animatedRef.current) return
+    if (!normalizeStage(meeting.status)) return
+    if (session.started || animatedRef.current) return
 
     startAnimations()
-  }, [meeting.meeting?.id, meeting.status, meeting.isBootstrapping, startAnimations])
+  }, [meeting.meeting?.id, meeting.status, startAnimations])
 
   useEffect(() => {
-    if (!meeting.meeting?.id) return
+    const meetingId = meeting.meeting?.id
+    if (!meetingId) return
+    const session = animationSessionRef.current
+    if (session.meetingId === meetingId && session.started) return
+    session.meetingId = meetingId
+    session.started = false
     animatedRef.current = false
     prevStatus.current = meeting.status
     isInitialStatePreparedRef.current = false
@@ -341,7 +374,7 @@ export default function ModelMeetingPage() {
   })
 
   useEffect(() => {
-    if (animatedRef.current) return
+    if (animationSessionRef.current.started) return
     tryStartAnimations()
   }, [tryStartAnimations])
 
