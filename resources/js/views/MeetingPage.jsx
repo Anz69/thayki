@@ -55,6 +55,7 @@ export default function MeetingPage() {
   const confirmedSubRef    = useRef(null)
   const prevStatus   = useRef(meeting.status)
   const animatedRef  = useRef(false)
+  const pageReadyRef = useRef(false)
   const m           = meeting.meeting
   const scheduledAt = m?.scheduled_at ? new Date(m.scheduled_at) : null
   const formattedTime = scheduledAt
@@ -79,10 +80,10 @@ export default function MeetingPage() {
   ]
   const meetingIdParam = params.get('id')
   useEffect(() => {
-    meeting.reset()
     if (meetingIdParam) {
       meeting.load(meetingIdParam)
     } else {
+      meeting.reset()
       meeting.loadLatest()
     }
   }, [meetingIdParam])
@@ -289,16 +290,21 @@ export default function MeetingPage() {
       animatePendingIn(0)
     }
   }, [meeting.status, animatePendingIn, animateAcceptedIn, animateConfirmedIn])
+  const tryStartAnimations = useCallback(() => {
+    if (!pageReadyRef.current) return
+    if (!meeting.status) return
+    if (animatedRef.current) return
+    startAnimations()
+  }, [meeting.status, startAnimations])
+
   usePageReady(() => {
-    if (meeting.status && !animatedRef.current) {
-      startAnimations()
-    }
+    pageReadyRef.current = true
+    tryStartAnimations()
   })
 
   useEffect(() => {
-    if (!meeting.status || animatedRef.current) return
-    startAnimations()
-  }, [meeting.status])
+    tryStartAnimations()
+  }, [tryStartAnimations])
 
   const handleGoToChat = async () => {
     const meetingId = meeting.meeting?.id

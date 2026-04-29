@@ -50,14 +50,22 @@ export default function BottomNav() {
   const { pathname } = location
 
   const isModel = auth.isModel()
-  const targetSlot  = getSlot(pathname, meeting.status, modelMeeting.status, isModel)
-  const targetTabs  = getTabsForSlot(targetSlot)
-  const activeIndex = targetTabs
-    ? targetTabs.findIndex(t => t.match.includes(pathname))
-    : -1
 
-  const [renderedSlot, setRenderedSlot] = useState(targetSlot)
+  const initialSlot = getSlot(pathname, meeting.status, modelMeeting.status, isModel)
+  const [renderedSlot, setRenderedSlot] = useState(initialSlot)
   const [avatarFailed, setAvatarFailed] = useState(false)
+
+  const rawTargetSlot = getSlot(pathname, meeting.status, modelMeeting.status, isModel)
+  const isMeetingBootstrapping = pathname === '/meeting'
+    && (
+      isModel
+        ? (modelMeeting.isBootstrapping || (modelMeeting.isLoading && !modelMeeting.status))
+        : (meeting.isBootstrapping || (meeting.isLoading && !meeting.status))
+    )
+  const targetSlot = isMeetingBootstrapping ? renderedSlot : rawTargetSlot
+  const targetTabs = getTabsForSlot(targetSlot)
+  const activeIndex = targetTabs ? targetTabs.findIndex(t => t.match.includes(pathname)) : -1
+
   const renderedTabs = getTabsForSlot(renderedSlot)
 
   const wrapperRef   = useRef(null)
@@ -184,6 +192,7 @@ export default function BottomNav() {
 
   useEffect(() => {
     if (skipFirst3.current) { skipFirst3.current = false; return }
+    if (isMeetingBootstrapping) return
 
     const wrapper   = wrapperRef.current
     const inner     = innerRef.current
@@ -228,7 +237,7 @@ export default function BottomNav() {
       onComplete: () => setRenderedSlot(targetSlot),
     })
 
-  }, [targetSlot])
+  }, [targetSlot, isMeetingBootstrapping])
 
   useLayoutEffect(() => {
     const isTabs = renderedSlot === 'tabs'
@@ -270,17 +279,6 @@ export default function BottomNav() {
     gsap.to(ind, { left: pos.left, width: pos.width, opacity: 1, duration: 0.38, ease: 'expo.out', overwrite: 'auto' })
 
   }, [activeIndex, renderedSlot])
-
-  useEffect(() => {
-    if (!renderedTabs || activeIndex < 0) return
-    const raf = requestAnimationFrame(() => {
-      const pos = measureBtn(activeIndex)
-      const ind = indicatorRef.current
-      if (!pos || !ind) return
-      gsap.to(ind, { left: pos.left, width: pos.width, opacity: 1, duration: 0.22, ease: 'expo.out', overwrite: 'auto' })
-    })
-    return () => cancelAnimationFrame(raf)
-  }, [meeting.meeting?.id, meeting.status])
 
   return (
     <div

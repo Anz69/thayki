@@ -57,13 +57,14 @@ export default function ModelMeetingPage() {
   const confirmedRowsRef   = useRef([])
   const prevStatus         = useRef(meeting.status)
   const animatedRef        = useRef(false)
+  const pageReadyRef       = useRef(false)
 
   const meetingIdParam = params.get('id')
   useEffect(() => {
-    meeting.reset()
     if (meetingIdParam) {
       meeting.load(meetingIdParam)
     } else {
+      meeting.reset()
       meeting.loadLatest()
     }
   }, [meetingIdParam])
@@ -311,16 +312,21 @@ export default function ModelMeetingPage() {
     }
   }, [meeting.status, animatePendingIn, animateWaitingIn, animateConfirmedIn])
 
+  const tryStartAnimations = useCallback(() => {
+    if (!pageReadyRef.current) return
+    if (!meeting.status) return
+    if (animatedRef.current) return
+    startAnimations()
+  }, [meeting.status, startAnimations])
+
   usePageReady(() => {
-    if (meeting.status && !animatedRef.current) {
-      startAnimations()
-    }
+    pageReadyRef.current = true
+    tryStartAnimations()
   })
 
   useEffect(() => {
-    if (!meeting.status || animatedRef.current) return
-    startAnimations()
-  }, [meeting.status])
+    tryStartAnimations()
+  }, [tryStartAnimations])
 
   return (
     <section className="flex flex-col min-h-screen">

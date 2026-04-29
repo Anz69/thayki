@@ -5,6 +5,7 @@ import { logError } from '@/utils/logger'
 const useModelMeetingStore = create((set, get) => ({
   meeting:      null,
   status:       null,
+  isBootstrapping: false,
   isFinishOpen: false,
   isCancelOpen: false,
   isLoading:    false,
@@ -12,7 +13,7 @@ const useModelMeetingStore = create((set, get) => ({
   errorStatus:  null,
 
   async loadLatest() {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, isBootstrapping: true, error: null })
     try {
       const { data } = await api.get('/meetings', {
         params: {
@@ -23,21 +24,21 @@ const useModelMeetingStore = create((set, get) => ({
       })
       const meetings = data.data ?? []
       const active   = meetings[0] ?? null
-      set({ meeting: active, status: active?.status ?? null, isLoading: false })
+      set({ meeting: active, status: active?.status ?? null, isLoading: false, isBootstrapping: false })
     } catch (e) {
-      set({ error: e.message, isLoading: false })
+      set({ error: e.message, isLoading: false, isBootstrapping: false })
     }
   },
 
   async load(id) {
-    set({ isLoading: true, error: null, errorStatus: null })
+    set({ isLoading: true, isBootstrapping: true, error: null, errorStatus: null })
     try {
       const { data } = await api.get(`/meetings/${id}`)
       const m = data.data
-      set({ meeting: m, status: m.status, isLoading: false })
+      set({ meeting: m, status: m.status, isLoading: false, isBootstrapping: false })
     } catch (e) {
       const status = e?.response?.status ?? null
-      set({ error: e.message, errorStatus: status, isLoading: false })
+      set({ error: e.message, errorStatus: status, isLoading: false, isBootstrapping: false })
     }
   },
 
@@ -120,7 +121,7 @@ const useModelMeetingStore = create((set, get) => ({
   closeCancel() { set({ isCancelOpen: false }) },
 
   reset() {
-    set({ meeting: null, status: null, isFinishOpen: false, isCancelOpen: false, isLoading: false, error: null, errorStatus: null })
+    set({ meeting: null, status: null, isBootstrapping: false, isFinishOpen: false, isCancelOpen: false, isLoading: false, error: null, errorStatus: null })
   },
 }))
 
