@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
+import api from '@/utils/api'
 
 const MAX_SELECTED = 8
 
@@ -15,8 +16,10 @@ function encodeStartPath(path) {
   }
 }
 
-function modelShareLink(modelId, botUsername) {
-  const path = `/model/${modelId}`
+function modelShareLink(modelId, botUsername, inviteToken = '') {
+  const path = inviteToken
+    ? `/model/${modelId}?invite_token=${encodeURIComponent(inviteToken)}`
+    : `/model/${modelId}`
   if (!botUsername) return `${window.location.origin}${path}`
   const startApp = encodeStartPath(path)
   return `https://t.me/${botUsername}?startapp=${startApp}`
@@ -24,6 +27,30 @@ function modelShareLink(modelId, botUsername) {
 
 function botLink(botUsername) {
   return botUsername ? `https://t.me/${botUsername}` : window.location.origin
+}
+
+function buildShareText(selectedModels, botUsername, inviteToken = '') {
+  if (selectedModels.length === 0) {
+    return [
+      '🤖 Thaiky — бот с моделями',
+      '✨ Открой и выбери подходящую модель',
+      botLink(botUsername),
+    ].join('\n')
+  }
+
+  const lines = selectedModels.map((model) => {
+    const url = modelShareLink(model.id, botUsername, inviteToken)
+    return `👤 ${model.name}${model.age ? `, ${model.age}` : ''}\n🔗 ${url}`
+  })
+
+  return [
+    '🔥 Подборка моделей в Thaiky',
+    '',
+    ...lines,
+    '',
+    '👇 Открывай профили по ссылкам ниже',
+    botLink(botUsername),
+  ].join('\n')
 }
 
 const IconCopy = () => (
@@ -47,8 +74,13 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   const copyIconRef = useRef(null)
   const checkIconRef = useRef(null)
   const copyTimerRef = useRef(null)
+  const listViewportRef = useRef(null)
+  const [showTopFade, setShowTopFade] = useState(false)
+  const [showBottomFade, setShowBottomFade] = useState(false)
   const [selectedIds, setSelectedIds] = useState([])
   const [status, setStatus] = useState('')
+  const [inviteToken, setInviteToken] = useState('')
+  const [inviteLoading, setInviteLoading] = useState(false)
   const botUsername = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME ?? '').trim().replace(/^@/, '')
 
   const setCopyIconRef = useCallback((el) => {
@@ -85,6 +117,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     if (!isOpen) return
     setSelectedIds(isSingleModel ? preparedModels.map((model) => model.id) : [])
     setStatus('')
+    setInviteToken('')
     clearTimeout(copyTimerRef.current)
     if (copyIconRef.current) gsap.set(copyIconRef.current, { autoAlpha: 1, scale: 1 })
     if (checkIconRef.current) gsap.set(checkIconRef.current, { autoAlpha: 0, scale: 0.5 })
@@ -123,32 +156,35 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     }
   }, [isOpen, isSingleModel, preparedModels])
 
+  const updateScrollFade = useCallback(() => {
+    const el = listViewportRef.current
+    if (!el) return
+    const maxScroll = el.scrollHeight - el.clientHeight
+    if (maxScroll <= 2) {
+      setShowTopFade(false)
+      setShowBottomFade(false)
+      return
+    }
+    setShowTopFade(el.scrollTop > 2)
+    setShowBottomFade(el.scrollTop < maxScroll - 2)
+  }, [])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const rafId = requestAnimationFrame(updateScrollFade)
+    return () => cancelAnimationFrame(rafId)
+  }, [isOpen, preparedModels.length, updateScrollFade])
+
   const selectedModels = useMemo(
     () => preparedModels.filter((model) => selectedIds.includes(model.id)),
     [preparedModels, selectedIds],
   )
   const isBotFallback = selectedModels.length === 0
 
-  const shareText = useMemo(() => {
-    if (selectedModels.length === 0) {
-      return [
-        '🤖 Thaiky — бот с моделями',
-        '✨ Открой и выбери подходящую модель:',
-        botLink(botUsername),
-      ].join('\n')
-    }
-    const lines = selectedModels.map((model) => {
-      const url = modelShareLink(model.id, botUsername)
-      return `👤 ${model.name}${model.age ? `, ${model.age}` : ''}\n🔗 ${url}`
-    })
-    return [
-      '🔥 Подборка моделей в Thaiky',
-      '👇 Открывай профили по ссылкам ниже',
-      botLink(botUsername),
-      '',
-      ...lines,
-    ].join('\n')
-  }, [selectedModels, botUsername])
+  const shareText = useMemo(
+    () => buildShareText(selectedModels, botUsername, inviteToken),
+    [selectedModels, botUsername, inviteToken],
+  )
 
   useEffect(() => {
     if (!isOpen || !counterRef.current) return
@@ -189,17 +225,69 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   }
 
   const sharePayload = useMemo(() => {
-    const url = botLink(botUsername)
-    return { url, text: shareText }
-  }, [botUsername, shareText])
+    if (selectedModels.length === 0) {
+      return { url: botLink(botUsername), text: shareText }
+    }
+    return { url: '', text: shareText }
+  }, [botUsername, shareText, selectedModels.length])
 
-  const shareToTelegram = () => {
-    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(sharePayload.url)}&text=${encodeURIComponent(sharePayload.text)}`
+  const buildPayloadWithToken = useCallback((token = inviteToken) => {
+    const text = buildShareText(selectedModels, botUsername, token)
+    if (selectedModels.length === 0) {
+      return { url: botLink(botUsername), text }
+    }
+    return { url: '', text }
+  }, [inviteToken, selectedModels, botUsername])
+
+  const ensureInviteToken = useCallback(async () => {
+    if (inviteToken) return inviteToken
+    if (inviteLoading) return ''
+    setInviteLoading(true)
+    try {
+      const res = await api.post('/invites/share', null, {
+        headers: { 'Idempotency-Key': `share-modal-invite-${Date.now()}` },
+      })
+      const url = res?.data?.data?.url ?? ''
+      let tokenFromUrl = ''
+      try {
+        const parsed = new URL(url)
+        tokenFromUrl = parsed.searchParams.get('startapp') ?? parsed.searchParams.get('start') ?? ''
+      } catch {
+        tokenFromUrl = ''
+      }
+      if (!tokenFromUrl) {
+        setStatus('Не удалось получить инвайт. Попробуйте еще раз.')
+        return ''
+      }
+      setInviteToken(tokenFromUrl)
+      return tokenFromUrl
+    } catch {
+      setStatus('Не удалось создать инвайт-ссылку')
+      return ''
+    } finally {
+      setInviteLoading(false)
+    }
+  }, [inviteLoading, inviteToken])
+
+  const shareToTelegram = async () => {
+    let payload = sharePayload
+    if (selectedModels.length > 0) {
+      const token = await ensureInviteToken()
+      if (!token) return
+      payload = buildPayloadWithToken(token)
+    }
+    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(payload.url)}&text=${encodeURIComponent(payload.text)}`
     window.open(tgUrl, '_blank', 'noopener,noreferrer')
     setStatus(isBotFallback ? 'Отправлена ссылка на бота' : 'Сообщение с моделями отправлено')
   }
 
   const shareNative = async () => {
+    let payload = sharePayload
+    if (selectedModels.length > 0) {
+      const token = await ensureInviteToken()
+      if (!token) return
+      payload = buildPayloadWithToken(token)
+    }
     if (!navigator.share) {
       setStatus('Системный способ «Поделиться» недоступен, используйте копирование')
       return
@@ -207,8 +295,8 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     try {
       await navigator.share({
         title: 'Thaiky',
-        text: sharePayload.text,
-        url: sharePayload.url,
+        text: payload.text,
+        url: payload.url,
       })
       setStatus(isBotFallback ? 'Ссылка на бота отправлена' : 'Сообщение отправлено')
     } catch {
@@ -218,7 +306,13 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
 
   const copyText = async () => {
     try {
-      await navigator.clipboard.writeText(sharePayload.text)
+      let payload = sharePayload
+      if (selectedModels.length > 0) {
+        const token = await ensureInviteToken()
+        if (!token) return
+        payload = buildPayloadWithToken(token)
+      }
+      await navigator.clipboard.writeText(payload.text)
       setStatus('')
       clearTimeout(copyTimerRef.current)
       gsap.to(copyIconRef.current, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
@@ -268,35 +362,49 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
           </div>
         </div>
 
-        <div ref={listRef} className="max-h-[46dvh] overflow-y-auto grid grid-cols-1 gap-2.5 pr-1">
-          {preparedModels.map((model) => (
-            <button
-              key={model.id}
-              onClick={(event) => toggleModel(model.id, event.currentTarget)}
-              className={`w-full text-left rounded-2xl border p-2.5 flex items-center gap-3 transition-all duration-200 ${selectedIds.includes(model.id)
-                  ? 'border-[#E2319B] bg-[#FDF0F8] shadow-[0_4px_14px_rgba(226,49,155,0.12)]'
-                  : 'border-black/10 bg-white active:bg-[#F7F7FA]'
-                }`}
-            >
-              <div className="size-12 rounded-xl overflow-hidden bg-[#EFEEF3] shrink-0">
-                {model.photoUrl ? (
-                  <img src={model.photoUrl} alt={model.name} className="w-full h-full object-cover" />
-                ) : null}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-[500] text-black truncate">
-                  {model.name}{model.age ? `, ${model.age}` : ''}
-                </p>
-                <p className="text-xs text-[#7F7F7F] mt-0.5">
-                  {model.price ? `от ฿ ${Number(model.price).toLocaleString()}/ч` : 'Цена не указана'}
-                </p>
-              </div>
-              <div className={`size-5 rounded-full border-2 transition-colors flex items-center justify-center ${selectedIds.includes(model.id) ? 'border-[#E2319B] bg-[#E2319B]' : 'border-[#C9C7CF] bg-white'
-                }`}>
-                {selectedIds.includes(model.id) ? <span className="text-white text-[10px] font-bold leading-none">✓</span> : null}
-              </div>
-            </button>
-          ))}
+        <div className="relative">
+          <div
+            ref={listViewportRef}
+            onScroll={updateScrollFade}
+            className="max-h-[34dvh] overflow-y-auto pr-1"
+          >
+            <div ref={listRef} className="grid grid-cols-1 gap-2.5">
+              {preparedModels.map((model) => (
+                <button
+                  key={model.id}
+                  onClick={(event) => toggleModel(model.id, event.currentTarget)}
+                  className={`w-full text-left rounded-2xl border p-2.5 flex items-center gap-3 transition-all duration-200 ${selectedIds.includes(model.id)
+                    ? 'border-[#E2319B] bg-[#FDF0F8] shadow-[0_4px_14px_rgba(226,49,155,0.12)]'
+                    : 'border-black/10 bg-white active:bg-[#F7F7FA]'
+                    }`}
+                >
+                  <div className="size-12 rounded-xl overflow-hidden bg-[#EFEEF3] shrink-0">
+                    {model.photoUrl ? (
+                      <img src={model.photoUrl} alt={model.name} className="w-full h-full object-cover" />
+                    ) : null}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-[500] text-black truncate">
+                      {model.name}{model.age ? `, ${model.age}` : ''}
+                    </p>
+                    <p className="text-xs text-[#7F7F7F] mt-0.5">
+                      {model.price ? `от ฿ ${Number(model.price).toLocaleString()}/ч` : 'Цена не указана'}
+                    </p>
+                  </div>
+                  <div className={`size-5 rounded-full border-2 transition-colors flex items-center justify-center ${selectedIds.includes(model.id) ? 'border-[#E2319B] bg-[#E2319B]' : 'border-[#C9C7CF] bg-white'
+                    }`}>
+                    {selectedIds.includes(model.id) ? <span className="text-white text-[10px] font-bold leading-none">✓</span> : null}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div
+            className={`pointer-events-none absolute top-0 left-0 right-1 h-8 rounded-t-2xl bg-gradient-to-b from-white to-transparent transition-opacity duration-200 ${showTopFade ? 'opacity-100' : 'opacity-0'}`}
+          />
+          <div
+            className={`pointer-events-none absolute bottom-0 left-0 right-1 h-8 rounded-b-2xl bg-gradient-to-t from-white to-transparent transition-opacity duration-200 ${showBottomFade ? 'opacity-100' : 'opacity-0'}`}
+          />
         </div>
 
         <div ref={footerRef} className="grid grid-cols-1 gap-2 pt-1">
@@ -318,7 +426,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
               onClick={copyText}
               className="py-2.5 rounded-2xl bg-[#F5F5F7] text-black text-sm font-[500] active:bg-[#ECEAEC] transition-colors flex items-center justify-center gap-2"
             >
-              <span>Скопировать текст</span>
+              <span>Скопировать</span>
               <div className="relative w-[18px] h-[18px]">
                 <div ref={setCopyIconRef} className="absolute inset-0 flex items-center justify-center"><IconCopy /></div>
                 <div ref={setCheckIconRef} className="absolute inset-0 flex items-center justify-center"><IconCheck /></div>
