@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\ModelApplicationStatus;
 use App\Enums\UserRole;
+use App\Models\AppSetting;
 use App\Models\ModelApplication;
 use App\Models\ModelProfile;
 use App\Models\User;
@@ -33,7 +34,37 @@ it('lets a client submit an application', function (): void {
     expect(ModelApplication::query()->where('user_id', $user->id)->count())->toBe(1);
 });
 
+it('keeps application submitted when auto-approve is disabled', function (): void {
+    AppSetting::set('auto_approve_applications', 'false');
+
+    $user = User::factory()->create();
+    Sanctum::actingAs($user, ['role:client']);
+
+    $response = $this->postJson('/api/v1/model-application', submitPayload());
+    $response->assertCreated();
+    $response->assertJsonPath('data.status', ModelApplicationStatus::Submitted->value);
+
+    expect(ModelProfile::query()->where('user_id', $user->id)->exists())->toBeFalse();
+    expect($user->refresh()->role)->toBe(UserRole::Client);
+});
+
+it('auto-approves application when flag is enabled', function (): void {
+    AppSetting::set('auto_approve_applications', 'true');
+
+    $user = User::factory()->create();
+    Sanctum::actingAs($user, ['role:client']);
+
+    $response = $this->postJson('/api/v1/model-application', submitPayload());
+    $response->assertCreated();
+    $response->assertJsonPath('data.status', ModelApplicationStatus::Approved->value);
+
+    expect(ModelProfile::query()->where('user_id', $user->id)->exists())->toBeTrue();
+    expect($user->refresh()->role)->toBe(UserRole::Model);
+});
+
 it('forbids submitting model application more than once', function (): void {
+    AppSetting::set('auto_approve_applications', 'false');
+
     $user = User::factory()->create();
     Sanctum::actingAs($user, ['role:client']);
 

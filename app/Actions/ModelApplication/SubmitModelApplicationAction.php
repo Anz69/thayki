@@ -58,7 +58,7 @@ class SubmitModelApplicationAction
             return $application;
         });
 
-        if (AppSetting::bool('auto_approve_applications')) {
+        if (AppSetting::bool('auto_approve_applications', false)) {
             $application = $this->approveAction->execute($application);
         }
 
