@@ -145,6 +145,7 @@
                         data-photo-src="{{ $photo }}"
                         data-photo-index="{{ $loop->index }}"
                         data-photo-alt="Фото модели"
+                        onclick="(function(){var overlay=document.getElementById('modelAppPhotoOverlay-{{ $record->id }}');var root=document.getElementById('modelAppPhotoRoot-{{ $record->id }}');if(!overlay||!root)return;var photoBtns=Array.from(root.querySelectorAll('[data-photo-src]'));var photos=photoBtns.map(function(b){return{src:b.getAttribute('data-photo-src'),alt:b.getAttribute('data-photo-alt')||'Фото модели'}}).filter(function(p){return p.src});if(!photos.length)return;var counterEl=overlay.querySelector('[data-photo-counter]');var imgEl=overlay.querySelector('[data-photo-main]');var render=function(i){var index=(i+photos.length)%photos.length;overlay.dataset.photoIndex=String(index);var p=photos[index];imgEl.src=p.src;imgEl.alt=p.alt;counterEl.textContent='Фото '+(index+1)+' из '+photos.length;};var startIndex=Number(this.getAttribute('data-photo-index')||0);render(startIndex);overlay.style.display='flex';overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';document.addEventListener('keydown',function onKeyDown(e){if(e.key==='Escape'){overlay.style.display='none';overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';}}, {once:true});}).call(this);"
                         style="position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 14px; border: 1px solid #2a2f39; background: #ffffff05;"
                     >
                         <img
@@ -160,6 +161,7 @@
             {{-- Photo overlay viewer (arrows + ESC) --}}
             <div
                 id="modelAppPhotoOverlay-{{ $record->id }}"
+                onclick="if(event && event.target===event.currentTarget){var overlay=document.getElementById('modelAppPhotoOverlay-{{ $record->id }}');if(!overlay)return;overlay.style.display='none';overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';}"
                 style="display:none; position:fixed; inset:0; z-index:999999; background: rgba(0,0,0,0.88); align-items:center; justify-content:center; padding:24px;"
                 aria-hidden="true"
             >
@@ -168,6 +170,7 @@
                         <button
                             type="button"
                             data-photo-prev
+                            onclick="event && event.stopPropagation && event.stopPropagation();(function(){var overlay=document.getElementById('modelAppPhotoOverlay-{{ $record->id }}');if(!overlay||overlay.style.display==='none')return;var root=document.getElementById('modelAppPhotoRoot-{{ $record->id }}');if(!root)return;var photoBtns=Array.from(root.querySelectorAll('[data-photo-src]'));var photos=photoBtns.map(function(b){return{src:b.getAttribute('data-photo-src'),alt:b.getAttribute('data-photo-alt')||'Фото модели'}}).filter(function(p){return p.src});if(!photos.length)return;var counterEl=overlay.querySelector('[data-photo-counter]');var imgEl=overlay.querySelector('[data-photo-main]');var current=Number(overlay.dataset.photoIndex||0);var next=current-1;var index=(next+photos.length)%photos.length;overlay.dataset.photoIndex=String(index);var p=photos[index];imgEl.src=p.src;imgEl.alt=p.alt;counterEl.textContent='Фото '+(index+1)+' из '+photos.length;})();"
                             style="width:44px; height:44px; border-radius:999px; border:none; background:rgba(255,255,255,0.12); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;"
                             aria-label="Предыдущее фото"
                         >
@@ -181,6 +184,7 @@
                         <button
                             type="button"
                             data-photo-next
+                            onclick="event && event.stopPropagation && event.stopPropagation();(function(){var overlay=document.getElementById('modelAppPhotoOverlay-{{ $record->id }}');if(!overlay||overlay.style.display==='none')return;var root=document.getElementById('modelAppPhotoRoot-{{ $record->id }}');if(!root)return;var photoBtns=Array.from(root.querySelectorAll('[data-photo-src]'));var photos=photoBtns.map(function(b){return{src:b.getAttribute('data-photo-src'),alt:b.getAttribute('data-photo-alt')||'Фото модели'}}).filter(function(p){return p.src});if(!photos.length)return;var counterEl=overlay.querySelector('[data-photo-counter]');var imgEl=overlay.querySelector('[data-photo-main]');var current=Number(overlay.dataset.photoIndex||0);var next=current+1;var index=(next+photos.length)%photos.length;overlay.dataset.photoIndex=String(index);var p=photos[index];imgEl.src=p.src;imgEl.alt=p.alt;counterEl.textContent='Фото '+(index+1)+' из '+photos.length;})();"
                             style="width:44px; height:44px; border-radius:999px; border:none; background:rgba(255,255,255,0.12); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;"
                             aria-label="Следующее фото"
                         >
@@ -192,6 +196,7 @@
                         <button
                             type="button"
                             data-photo-close
+                            onclick="event && event.stopPropagation && event.stopPropagation();(function(){var overlay=document.getElementById('modelAppPhotoOverlay-{{ $record->id }}');if(!overlay)return;overlay.style.display='none';overlay.setAttribute('aria-hidden','true');document.body.style.overflow='';})();"
                             style="position:absolute; right:0; top:-2px; width:44px; height:44px; border-radius:999px; border:none; background:rgba(255,255,255,0.12); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;"
                             aria-label="Закрыть просмотр"
                         >
@@ -211,81 +216,6 @@
                     </div>
                 </div>
             </div>
-
-            <script>
-                (function () {
-                    const root = document.getElementById('modelAppPhotoRoot-{{ $record->id }}');
-                    const overlay = document.getElementById('modelAppPhotoOverlay-{{ $record->id }}');
-                    if (!root || !overlay) return;
-
-                    const counterEl = overlay.querySelector('[data-photo-counter]');
-                    const imgEl = overlay.querySelector('[data-photo-main]');
-                    const prevBtn = overlay.querySelector('[data-photo-prev]');
-                    const nextBtn = overlay.querySelector('[data-photo-next]');
-                    const closeBtn = overlay.querySelector('[data-photo-close]');
-
-                    const photoBtns = Array.from(root.querySelectorAll('[data-photo-src]'));
-                    const photos = photoBtns.map((b) => ({
-                        src: b.getAttribute('data-photo-src'),
-                        alt: b.getAttribute('data-photo-alt') || 'Фото модели',
-                    })).filter(p => p.src);
-
-                    if (!photos.length) return;
-
-                    let index = 0;
-                    const render = (nextIndex) => {
-                        index = (nextIndex + photos.length) % photos.length;
-                        const p = photos[index];
-                        imgEl.src = p.src;
-                        imgEl.alt = p.alt;
-                        counterEl.textContent = `Фото ${index + 1} из ${photos.length}`;
-                    };
-
-                    const open = (startIndex) => {
-                        render(startIndex ?? 0);
-                        overlay.style.display = 'flex';
-                        overlay.setAttribute('aria-hidden', 'false');
-                        document.body.style.overflow = 'hidden';
-                    };
-
-                    const close = () => {
-                        overlay.style.display = 'none';
-                        overlay.setAttribute('aria-hidden', 'true');
-                        document.body.style.overflow = '';
-                    };
-
-                    photoBtns.forEach((btn, i) => {
-                        btn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            open(i);
-                        });
-                    });
-
-                    prevBtn && prevBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        render(index - 1);
-                    });
-                    nextBtn && nextBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        render(index + 1);
-                    });
-                    closeBtn && closeBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        close();
-                    });
-
-                    overlay.addEventListener('click', (e) => {
-                        if (e.target === overlay) close();
-                    });
-
-                    document.addEventListener('keydown', (e) => {
-                        if (overlay.style.display === 'none') return;
-                        if (e.key === 'Escape') close();
-                        if (e.key === 'ArrowLeft') render(index - 1);
-                        if (e.key === 'ArrowRight') render(index + 1);
-                    });
-                })();
-            </script>
         @else
             <div style="border: 1px dashed #3a4352; border-radius: 14px; background: #ffffff05; padding: 12px; font-size: 13px; line-height: 18px; color: #8f98a8;">
                 Фотографии не приложены.
