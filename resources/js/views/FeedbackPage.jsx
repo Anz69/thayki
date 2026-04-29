@@ -202,7 +202,7 @@ export default function FeedbackPage() {
             )}
 
             {/* Header block */}
-            <div className="flex flex-col items-center gap-3 text-center py-2">
+            <div className="flex flex-col items-center gap-3 text-center py-2 pt-20">
       
               <h2 className="text-black text-2xl/[120%] font-semibold">
                 {bothDone ? 'Всё отправлено!' : 'Встреча завершена'}
