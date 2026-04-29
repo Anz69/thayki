@@ -190,10 +190,21 @@ export default function MorePage() {
     gsap.timeline()
       .to(headerRef.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
       .to(userCardRef.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.08)
-      .to(ordersRef.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.14)
-      .to(section1Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.20)
-      .to(section2Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.26)
+      .to(section1Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.14)
+      .to(section2Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.20)
   })
+
+  useEffect(() => {
+    if (!loadingMeetings && activeMeetings.length > 0) {
+      gsap.fromTo(
+        ordersRef.current,
+        { autoAlpha: 0, y: 16 },
+        { autoAlpha: 1, y: 0, duration: 0.45, ease: 'expo.out' },
+      )
+    } else if (!loadingMeetings && activeMeetings.length === 0) {
+      gsap.to(ordersRef.current, { autoAlpha: 0, duration: 0.25 })
+    }
+  }, [loadingMeetings, activeMeetings.length])
 
   const activeMeetings = meetings
 
@@ -222,29 +233,23 @@ export default function MorePage() {
           </div>
 
 
-          {/* The "Текущие заказы" section is hidden entirely when the user
-              has no active bookings. Showing an empty-state placeholder
-              looked like clutter in screenshots; the screen is much
-              cleaner without it. */}
-          {(loadingMeetings || activeMeetings.length > 0) && (
-            <div ref={ordersRef} className="flex flex-col gap-3">
-              <SectionLabel>Текущие заказы</SectionLabel>
-              <div className="flex flex-col gap-2 rounded-2xl overflow-hidden">
-                {loadingMeetings ? (
-                  <p className="text-[#7F7F7F] text-sm/[100%] font-medium px-4 py-3.5">Загрузка...</p>
-                ) : (
-                  activeMeetings.map(m => (
+          <div ref={ordersRef} className="flex flex-col gap-3">
+            {activeMeetings.length > 0 && (
+              <>
+                <SectionLabel>Текущие заказы</SectionLabel>
+                <div className="flex flex-col gap-2 rounded-2xl overflow-hidden">
+                  {activeMeetings.map(m => (
                     <OrderCard
                       key={m.id}
                       meeting={m}
                       currentUserId={auth.user?.id}
                       onClick={() => navigate(`/meeting?id=${m.id}`)}
                     />
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           <div ref={section1Ref} className="flex flex-col gap-4">
             <SectionLabel>Важное</SectionLabel>

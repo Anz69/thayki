@@ -56,6 +56,7 @@ export default function ModelMeetingPage() {
   const confirmedCardRef   = useRef(null)
   const confirmedRowsRef   = useRef([])
   const prevStatus         = useRef(meeting.status)
+  const animatedRef        = useRef(false)
 
   const meetingIdParam = params.get('id')
   useEffect(() => {
@@ -154,16 +155,26 @@ export default function ModelMeetingPage() {
   }, [])
 
   const startAnimations = useCallback(() => {
+    animatedRef.current = true
     const status = meeting.status
     const tl = gsap.timeline()
     tl.to(headerRef.current,      { y: 0, autoAlpha: 1, duration: 0.38, ease: 'expo.out' })
       .to(backBtnRef.current,     { x: 0, autoAlpha: 1, duration: 0.3,  ease: 'back.out(1.5)' }, 0.06)
       .to(headerTitleRef.current, { y: 0, autoAlpha: 1, duration: 0.3,  ease: 'expo.out' }, 0.1)
     if (status === 'accepted') {
+      gsap.set(pendingRef.current,   { display: 'none' })
+      gsap.set(confirmedRef.current, { display: 'none' })
+      gsap.set(waitingRef.current,   { display: 'flex', opacity: 0 })
       animateWaitingIn(0.18)
     } else if (status === 'paid' || status === 'confirmed') {
+      gsap.set(pendingRef.current, { display: 'none' })
+      gsap.set(waitingRef.current, { display: 'none' })
+      gsap.set(confirmedRef.current, { display: 'flex', opacity: 0 })
       animateConfirmedIn(0.18)
     } else {
+      gsap.set(waitingRef.current,   { display: 'none' })
+      gsap.set(confirmedRef.current, { display: 'none' })
+      gsap.set(pendingRef.current,   { display: 'flex', opacity: 0 })
       if (headerSupportRef.current) gsap.to(headerSupportRef.current, { autoAlpha: 1, duration: 0.3, delay: 0.16 })
       animatePendingIn(0.18)
     }
@@ -217,6 +228,7 @@ export default function ModelMeetingPage() {
     const to = meeting.status
     prevStatus.current = to
     if (!to) return
+    if (!animatedRef.current) return
 
     const transition = (fromEl, toEl, initToEl, animateToEl) => {
       gsap.to(fromEl, {
@@ -299,7 +311,16 @@ export default function ModelMeetingPage() {
     }
   }, [meeting.status, animatePendingIn, animateWaitingIn, animateConfirmedIn])
 
-  usePageReady(startAnimations)
+  usePageReady(() => {
+    if (meeting.status && !animatedRef.current) {
+      startAnimations()
+    }
+  })
+
+  useEffect(() => {
+    if (!meeting.status || animatedRef.current) return
+    startAnimations()
+  }, [meeting.status])
 
   return (
     <section className="flex flex-col min-h-screen">

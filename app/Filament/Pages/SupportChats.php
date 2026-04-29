@@ -44,12 +44,17 @@ class SupportChats extends Page
 
     public function getChats(): \Illuminate\Support\Collection
     {
-        $role = $this->activeTab === 'models' ? UserRole::Model : UserRole::Client;
+        $role          = $this->activeTab === 'models' ? UserRole::Model : UserRole::Client;
+        $supportUserId = User::where('telegram_id', 0)->value('id') ?? 0;
 
         return Chat::query()
             ->where('type', ChatType::Support)
             ->whereHas('participants.user', fn ($u) => $u->where('role', $role))
             ->with(['participants.user', 'messages' => fn ($q) => $q->latest()->limit(1)])
+            ->withCount(['messages as unread_count' => fn ($q) => $q
+                ->whereNull('read_at')
+                ->where('sender_id', '!=', $supportUserId),
+            ])
             ->when($this->search !== '', fn ($q) => $q->whereHas(
                 'participants.user',
                 fn ($u) => $u->where('first_name', 'like', "%{$this->search}%")
@@ -62,17 +67,16 @@ class SupportChats extends Page
 
     public function getUnreadCounts(): array
     {
-        $supportUserId = User::where('telegram_id', 0)->value('id');
+        $supportUserId = User::where('telegram_id', 0)->value('id') ?? 0;
 
         $countForRole = function (UserRole $role) use ($supportUserId): int {
-            return Chat::query()
-                ->where('type', ChatType::Support)
-                ->whereHas('participants.user', fn ($u) => $u->where('role', $role))
-                ->whereHas('messages', function ($q) use ($supportUserId) {
-                    $q->where(function ($q2) use ($supportUserId) {
-                        $q2->whereNull('read_at')->where('sender_id', '!=', $supportUserId ?? 0);
-                    });
-                })
+            return Message::query()
+                ->whereNull('read_at')
+                ->where('sender_id', '!=', $supportUserId)
+                ->whereHas('chat', fn ($q) => $q
+                    ->where('type', ChatType::Support)
+                    ->whereHas('participants.user', fn ($u) => $u->where('role', $role))
+                )
                 ->count();
         };
 
@@ -80,12 +84,6 @@ class SupportChats extends Page
             'users'  => $countForRole(UserRole::Client),
             'models' => $countForRole(UserRole::Model),
         ];
-    }
-
-    public function getChatHasUnread(Chat $chat): bool
-    {
-        $supportUserId = User::where('telegram_id', 0)->value('id') ?? 0;
-        return $chat->messages->contains(fn ($m) => is_null($m->read_at) && $m->sender_id !== $supportUserId);
     }
 
     public function selectChat(int $id): void
