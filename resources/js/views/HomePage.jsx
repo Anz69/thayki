@@ -1,4 +1,4 @@
-import { useRef, useEffect, useLayoutEffect, useState } from 'react'
+import { useRef, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import TransitionLink from '@/components/TransitionLink'
@@ -6,6 +6,7 @@ import ShareModelsModal from '@/components/modals/ShareModelsModal'
 import api, { extractErrorMessage } from '@/utils/api'
 
 function ModelCard({ model }) {
+  if (!model || typeof model !== 'object') return null
   const photos = Array.isArray(model?.photos) ? model.photos.filter(Boolean) : []
   const prices = Array.isArray(model?.price_options) ? model.price_options.filter(Boolean) : []
   const mainPhoto = photos.find((p) => p?.is_main) ?? photos[0]
@@ -52,13 +53,22 @@ export default function HomePage() {
   const [error,   setError]   = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [isShareOpen, setIsShareOpen] = useState(false)
+  const safeModels = useMemo(() => (
+    Array.isArray(models)
+      ? models.filter((model) => model && typeof model === 'object' && model.id != null)
+      : []
+  ), [models])
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
     api.get('/catalog/models', { params: { per_page: 20 } })
-      .then(r => { if (!cancelled) setModels(r.data.data ?? []) })
+      .then((r) => {
+        if (cancelled) return
+        const list = Array.isArray(r?.data?.data) ? r.data.data : []
+        setModels(list)
+      })
       .catch((err) => {
         if (cancelled) return
         setError(extractErrorMessage(err, 'Не удалось загрузить моделей'))
@@ -93,7 +103,7 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    if (loading || !models.length || !gridRef.current) return
+    if (loading || !safeModels.length || !gridRef.current) return
     const cards = Array.from(gridRef.current.children)
     gsap.set(cards, { autoAlpha: 0, y: 52, scale: 0.93, willChange: 'transform, opacity' })
     gsap.to(cards, {
@@ -101,7 +111,7 @@ export default function HomePage() {
       duration: 0.55, stagger: { each: 0.07, from: 'start' },
       ease: 'power4.out', clearProps: 'transform,will-change',
     })
-  }, [loading, models])
+  }, [loading, safeModels.length])
 
   useEffect(() => {
     return () => {
@@ -125,8 +135,8 @@ export default function HomePage() {
           <button
             ref={shareBtnRef}
             onClick={() => setIsShareOpen(true)}
-            disabled={loading || models.length === 0}
-            title={models.length === 0 ? 'Сначала загрузите модели' : 'Поделиться подборкой'}
+            disabled={loading || safeModels.length === 0}
+            title={safeModels.length === 0 ? 'Сначала загрузите модели' : 'Поделиться подборкой'}
             className="invisible px-2.5 py-3 bg-[#EFEEF3] text-black text-base/[80%] font-medium active:bg-[#E0DEDF] transition-colors duration-200 cursor-pointer rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Поделиться
@@ -170,12 +180,12 @@ export default function HomePage() {
               Попробовать снова
             </button>
           </div>
-        ) : models.length === 0 ? (
+        ) : safeModels.length === 0 ? (
           <div className="col-span-2 text-center text-[#7F7F7F] py-20 text-sm">
             Моделей пока нет
           </div>
         ) : (
-          models.map(m => (
+          safeModels.map((m) => (
             <div key={m.id} className="invisible">
               <ModelCard model={m} />
             </div>
@@ -186,7 +196,7 @@ export default function HomePage() {
       <ShareModelsModal
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
-        models={models}
+        models={safeModels}
       />
     </main>
   )
