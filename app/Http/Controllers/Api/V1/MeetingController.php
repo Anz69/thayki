@@ -13,6 +13,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\CreateMeetingRequest;
 use App\Http\Resources\MeetingResource;
 use App\Jobs\ExpirePendingMeetingJob;
+use App\Models\AppSetting;
 use App\Models\Meeting;
 use App\Models\User;
 use App\Support\ApiResponse;
@@ -79,6 +80,11 @@ class MeetingController extends Controller
             page: (int) $request->input('page', 1),
         );
 
+        $normalized = $paginator->getCollection()->map(function (Meeting $meeting) use ($user) {
+            return $this->expireStalePendingIfNeeded($meeting, $user);
+        });
+        $paginator->setCollection($normalized);
+
         return ApiResponse::ok(
             MeetingResource::collection($paginator->getCollection())->resolve(),
             [
@@ -114,12 +120,17 @@ class MeetingController extends Controller
             return ApiResponse::error('NOT_FOUND', 'No active meeting found.', null, 404);
         }
 
+        $meeting = $this->expireStalePendingIfNeeded($meeting, $user);
+
         return ApiResponse::ok(new MeetingResource($meeting));
     }
 
     public function show(Request $request, Meeting $meeting): JsonResponse
     {
         $this->authorizeAccess($request->user(), $meeting);
+        /** @var User $user */
+        $user = $request->user();
+        $meeting = $this->expireStalePendingIfNeeded($meeting, $user);
 
         return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'modelProfile.user', 'client'])));
     }
@@ -233,6 +244,27 @@ class MeetingController extends Controller
         $profile = $user->modelProfile()->first();
         if ($profile === null || $profile->id !== $meeting->model_profile_id) {
             throw DomainException::forbidden('MEETING_FORBIDDEN', 'Only the model can perform this action.');
+        }
+    }
+
+    private function expireStalePendingIfNeeded(Meeting $meeting, User $actor): Meeting
+    {
+        if ($meeting->status !== MeetingStatus::Pending || $meeting->created_at === null) {
+            return $meeting;
+        }
+
+        $ttl = (int) (AppSetting::get('meeting_pending_ttl') ?? config('app.meeting_pending_ttl', env('MEETING_PENDING_TTL', 600)));
+        $ttl = $ttl > 0 ? $ttl : 600;
+        $expireAt = $meeting->created_at->copy()->addSeconds($ttl);
+        if ($expireAt->isFuture()) {
+            return $meeting;
+        }
+
+        try {
+            $transition = app(TransitionMeetingStatusAction::class);
+            return $transition->execute($meeting, MeetingStatus::Expired, $actor, 'auto-expired-fallback');
+        } catch (\Throwable) {
+            return $meeting->fresh() ?? $meeting;
         }
     }
 }

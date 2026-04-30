@@ -11,6 +11,7 @@ use App\Models\Meeting;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Expires every Pending meeting whose age exceeds the configured TTL.
@@ -41,14 +42,21 @@ class ExpirePendingMeetingsCommand extends Command
             ->limit(200)
             ->pluck('id');
 
+        Log::info('[ExpirePendingMeetingsCommand] tick', [
+            'ttl_seconds' => $ttl,
+            'cutoff' => $cutoff->toDateTimeString(),
+            'candidates_count' => $candidates->count(),
+        ]);
+
         if ($candidates->isEmpty()) {
             return self::SUCCESS;
         }
 
         $expired = 0;
+        $skipped = 0;
 
         foreach ($candidates as $meetingId) {
-            DB::transaction(function () use ($meetingId, $transition, $ttl, &$expired): void {
+            DB::transaction(function () use ($meetingId, $transition, $ttl, &$expired, &$skipped): void {
                 /** @var Meeting|null $meeting */
                 $meeting = Meeting::query()->whereKey($meetingId)->lockForUpdate()->first();
 
@@ -56,10 +64,12 @@ class ExpirePendingMeetingsCommand extends Command
                     || $meeting->status !== MeetingStatus::Pending
                     || $meeting->created_at === null
                 ) {
+                    $skipped++;
                     return;
                 }
 
                 if ($meeting->created_at->copy()->addSeconds($ttl)->isFuture()) {
+                    $skipped++;
                     return;
                 }
 
@@ -68,6 +78,13 @@ class ExpirePendingMeetingsCommand extends Command
                 $expired++;
             });
         }
+
+        Log::info('[ExpirePendingMeetingsCommand] result', [
+            'ttl_seconds' => $ttl,
+            'expired' => $expired,
+            'skipped' => $skipped,
+            'candidate_ids' => $candidates->values()->all(),
+        ]);
 
         if ($expired > 0) {
             $this->info("Expired {$expired} meeting(s).");
