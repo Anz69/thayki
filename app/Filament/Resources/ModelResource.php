@@ -110,7 +110,8 @@ class ModelResource extends Resource
                 Tables\Columns\ImageColumn::make('photo_url')->label('Фото')->circular(),
                 Tables\Columns\TextColumn::make('first_name')->label('Имя')
                     ->formatStateUsing(fn ($record) => trim("{$record->first_name} {$record->last_name}"))
-                    ->searchable(['first_name', 'last_name']),
+                    ->searchable(['first_name', 'last_name'])
+                    ->url(fn (User $record): string => self::getUrl('edit', ['record' => $record])),
                 Tables\Columns\TextColumn::make('username')->label('@username')->searchable()
                     ->formatStateUsing(fn ($state) => $state ? "@{$state}" : '—')
                     ->url(fn (User $record): ?string => $record->username ? "https://t.me/{$record->username}" : null, true),

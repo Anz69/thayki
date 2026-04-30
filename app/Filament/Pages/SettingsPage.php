@@ -28,13 +28,11 @@ class SettingsPage extends Page implements HasForms
 
     public function mount(): void
     {
-        $pendingTtl  = (int) AppSetting::get('meeting_pending_ttl',  env('MEETING_PENDING_TTL',  600));
-        $confirmTtl  = (int) AppSetting::get('meeting_model_confirm_ttl', env('MEETING_MODEL_CONFIRM_TTL', 7200));
+        $pendingTtl = (int) AppSetting::get('meeting_pending_ttl', env('MEETING_PENDING_TTL', 600));
 
         $this->form->fill([
-            'auto_approve_applications'  => AppSetting::bool('auto_approve_applications'),
-            'meeting_pending_ttl_min'    => (int) round($pendingTtl / 60),
-            'meeting_confirm_ttl_min'    => (int) round($confirmTtl / 60),
+            'auto_approve_applications' => AppSetting::bool('auto_approve_applications'),
+            'meeting_pending_ttl_min'   => (int) round($pendingTtl / 60),
         ]);
     }
 
@@ -52,26 +50,17 @@ class SettingsPage extends Page implements HasForms
                     ]),
 
                 Section::make('Тайм-ауты встреч')
-                    ->description('Управление временем автоматической отмены заказов')
+                    ->description('Если модель не ответила на заказ за указанное время — заказ автоматически переходит в статус «Истёк»')
                     ->schema([
                         TextInput::make('meeting_pending_ttl_min')
-                            ->label('Ожидание ответа модели (минуты)')
-                            ->helperText('Заказ переходит в «Истёк» если модель не ответила за это время')
+                            ->label('Ожидание ответа модели')
+                            ->helperText('Через сколько минут без ответа заказ истекает')
                             ->numeric()
                             ->minValue(1)
                             ->maxValue(1440)
                             ->suffix('мин')
                             ->required(),
-                        TextInput::make('meeting_confirm_ttl_min')
-                            ->label('Авто-отмена без подтверждения (минуты)')
-                            ->helperText('Заказ отменяется автоматически если модель не подтвердила встречу')
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(10080)
-                            ->suffix('мин')
-                            ->required(),
-                    ])
-                    ->columns(2),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -81,8 +70,7 @@ class SettingsPage extends Page implements HasForms
         $data = $this->form->getState();
 
         AppSetting::set('auto_approve_applications', $data['auto_approve_applications'] ? 'true' : 'false');
-        AppSetting::set('meeting_pending_ttl',       (string) ((int) $data['meeting_pending_ttl_min'] * 60));
-        AppSetting::set('meeting_model_confirm_ttl', (string) ((int) $data['meeting_confirm_ttl_min'] * 60));
+        AppSetting::set('meeting_pending_ttl', (string) ((int) $data['meeting_pending_ttl_min'] * 60));
 
         Notification::make()
             ->title('Настройки сохранены')

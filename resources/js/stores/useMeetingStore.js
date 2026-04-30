@@ -2,6 +2,20 @@ import { create } from 'zustand'
 import api from '@/utils/api'
 import { logError } from '@/utils/logger'
 
+const STAGE_RANK = {
+  pending: 10,
+  accepted: 20,
+  paid: 30,
+  confirmed: 40,
+}
+
+function shouldKeepCurrentStatus(currentStatus, incomingStatus) {
+  const currentRank = STAGE_RANK[currentStatus] ?? null
+  const incomingRank = STAGE_RANK[incomingStatus] ?? null
+  if (currentRank == null || incomingRank == null) return false
+  return incomingRank < currentRank
+}
+
 const useMeetingStore = create((set, get) => ({
   meeting:        null,
   status:         null,
@@ -24,7 +38,20 @@ const useMeetingStore = create((set, get) => ({
       })
       const meetings = data.data ?? []
       const active   = meetings[0] ?? null
-      set({ meeting: active, status: active?.status ?? null, isLoading: false, isBootstrapping: false })
+      set((state) => {
+        const incomingStatus = active?.status ?? null
+        const currentMeetingId = state.meeting?.id ?? null
+        const incomingMeetingId = active?.id ?? null
+        const keepCurrent = currentMeetingId === incomingMeetingId
+          && shouldKeepCurrentStatus(state.status, incomingStatus)
+
+        return {
+          meeting: active,
+          status: keepCurrent ? state.status : incomingStatus,
+          isLoading: false,
+          isBootstrapping: false,
+        }
+      })
     } catch (e) {
       set({ error: e.message, isLoading: false, isBootstrapping: false })
     }
@@ -35,7 +62,17 @@ const useMeetingStore = create((set, get) => ({
     try {
       const { data } = await api.get(`/meetings/${id}`)
       const m = data.data
-      set({ meeting: m, status: m.status, isLoading: false, isBootstrapping: false })
+      set((state) => {
+        const keepCurrent = state.meeting?.id === m?.id
+          && shouldKeepCurrentStatus(state.status, m?.status ?? null)
+
+        return {
+          meeting: m,
+          status: keepCurrent ? state.status : m.status,
+          isLoading: false,
+          isBootstrapping: false,
+        }
+      })
     } catch (e) {
       const status = e?.response?.status ?? null
       set({ error: e.message, errorStatus: status, isLoading: false, isBootstrapping: false })
@@ -43,10 +80,13 @@ const useMeetingStore = create((set, get) => ({
   },
 
   setStatus(status) {
-    set((s) => ({
-      status,
-      meeting: s.meeting ? { ...s.meeting, status } : s.meeting,
-    }))
+    set((s) => {
+      const nextStatus = shouldKeepCurrentStatus(s.status, status) ? s.status : status
+      return {
+        status: nextStatus,
+        meeting: s.meeting ? { ...s.meeting, status: nextStatus } : s.meeting,
+      }
+    })
   },
 
   setMeeting(meeting) {

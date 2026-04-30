@@ -1,33 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import gsap from 'gsap'
 import ModalSheet from '@/layout/ModalSheet'
-const FAQ_ITEMS = [
-  {
-    id: 1,
-    question: 'Как выбрать подходящую модель?',
-    answer: 'Просмотрите анкеты моделей, обратите внимание на фото, описание и рейтинг. Вы можете фильтровать по параметрам внешности и графику работы.',
-  },
-  {
-    id: 2,
-    question: 'Как происходит оплата встречи?',
-    answer: 'Оплата производится через приложение банковской картой или криптовалютой. Средства хранятся в сервисе до завершения встречи, после чего переводятся модели.',
-  },
-  {
-    id: 3,
-    question: 'Можно ли отменить бронирование?',
-    answer: 'Да, бронирование можно отменить не позднее чем за 2 часа до встречи. В таком случае возврат средств происходит в течение 1–3 рабочих дней.',
-  },
-  {
-    id: 4,
-    question: 'Как связаться с моделью перед встречей?',
-    answer: 'После подтверждения бронирования вам открывается чат с моделью. Там вы можете уточнить детали встречи.',
-  },
-  {
-    id: 5,
-    question: 'Что делать, если модель не пришла?',
-    answer: 'Если модель не явилась в течение 30 минут, вы можете отметить это в приложении. Встреча будет отменена, а средства возвращены в полном объёме.',
-  },
-]
+import api from '@/utils/api'
+
 function AccordionItem({ item, isOpen, onToggle }) {
   const bodyRef    = useRef(null)
   const chevronRef = useRef(null)
@@ -59,7 +34,7 @@ function AccordionItem({ item, isOpen, onToggle }) {
   useEffect(() => {
     if (chevronRef.current) gsap.set(chevronRef.current, { rotation: isOpen ? 180 : 0 })
     if (bodyRef.current)    gsap.set(bodyRef.current,    { height: isOpen ? 'auto' : 0 })
-  }, []) 
+  }, [])
   return (
     <div className="bg-[#F5F5F7] rounded-2xl overflow-hidden">
       <button
@@ -81,14 +56,23 @@ function AccordionItem({ item, isOpen, onToggle }) {
     </div>
   )
 }
+
 export default function FaqModal({ isOpen, onClose }) {
   const [openId, setOpenId] = useState(null)
+  const [items, setItems]   = useState([])
+  const fetchedRef          = useRef(false)
+
   const toggle = useCallback((id) => {
     setOpenId((prev) => (prev === id ? null : id))
   }, [])
+
   useEffect(() => {
-    if (!isOpen) setOpenId(null)
+    if (!isOpen) { setOpenId(null); return }
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+    api.get('/faq').then(r => setItems(r.data.data ?? [])).catch(() => {})
   }, [isOpen])
+
   return (
     <ModalSheet isOpen={isOpen} onClose={onClose} height="95dvh">
       <div className="flex items-center justify-between px-5 py-4 shrink-0">
@@ -110,16 +94,20 @@ export default function FaqModal({ isOpen, onClose }) {
         <h3 className="text-2xl/[100%] font-[500] text-black mb-6">
           Не нашли ответа в функционале нашего приложения?
         </h3>
-        <div className="flex flex-col gap-3">
-          {FAQ_ITEMS.map((item) => (
-            <AccordionItem
-              key={item.id}
-              item={item}
-              isOpen={openId === item.id}
-              onToggle={toggle}
-            />
-          ))}
-        </div>
+        {items.length === 0 ? (
+          <p className="text-[#7F7F7F] text-sm text-center py-8">Загрузка…</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {items.map((item) => (
+              <AccordionItem
+                key={item.id}
+                item={item}
+                isOpen={openId === item.id}
+                onToggle={toggle}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </ModalSheet>
   )

@@ -350,13 +350,11 @@ export default function ModelPage() {
         </main>
       </section>
 
-      {shareModalOpen && (
-        <ShareModelsModal
-          isOpen={shareModalOpen}
-          onClose={() => setShareModalOpen(false)}
-          models={model ? [model] : []}
-        />
-      )}
+      <ShareModelsModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        models={model ? [model] : []}
+      />
     </div>
   )
 }

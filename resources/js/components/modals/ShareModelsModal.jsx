@@ -29,6 +29,12 @@ function botLink(botUsername) {
   return botUsername ? `https://t.me/${botUsername}` : window.location.origin
 }
 
+function botStartLink(botUsername, startToken = '') {
+  if (!botUsername) return window.location.origin
+  if (!startToken) return `https://t.me/${botUsername}`
+  return `https://t.me/${botUsername}?start=${encodeURIComponent(startToken)}`
+}
+
 function buildShareText(selectedModels, botUsername, inviteToken = '') {
   if (selectedModels.length === 0) {
     return [
@@ -244,19 +250,12 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     setStatus('')
   }
 
-  const sharePayload = useMemo(() => {
-    return { url: botLink(botUsername), text: shareText }
-  }, [botUsername, shareText])
+  const sharePayload = useMemo(() => ({ url: botLink(botUsername), text: shareText }), [botUsername, shareText])
 
   const buildPayloadWithToken = useCallback((token = inviteToken) => {
     const text = buildShareText(selectedModels, botUsername, token)
-    // В `t.me/share/url` параметр `url` влияет на то, что Telegram показывает как preview/первую ссылку.
-    // По плану: preview должен вести на home-путь с invite_token (а не на deeplink первой модели).
-    const homePath = `/home?invite_token=${token}`
-    const homeStartApp = encodeStartPath(homePath)
-    const url = homeStartApp
-      ? `https://t.me/${botUsername}?startapp=${homeStartApp}`
-      : botLink(botUsername)
+    // По плану: home-шаринг идет через `start` (бот сначала открывается как бот, а не mini app).
+    const url = botStartLink(botUsername, token)
     return { url, text }
   }, [inviteToken, selectedModels, botUsername])
 

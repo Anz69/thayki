@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\PaymentAdminController;
 use App\Http\Controllers\Api\V1\Admin\RoadmapAdminController;
 use App\Http\Controllers\Api\V1\Admin\WithdrawalAdminController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\FaqController;
 use App\Http\Controllers\Api\V1\PhotoUploadController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\ChatController;
@@ -35,6 +36,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/catalog/models/{id}/booked-slots', [CatalogController::class, 'bookedSlots'])
             ->name('catalog.bookedSlots');
         Route::get('/roadmap', [RoadmapController::class, 'index'])->name('roadmap.index');
+        Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
     });
 
     // ------------------------------------------------------------------------

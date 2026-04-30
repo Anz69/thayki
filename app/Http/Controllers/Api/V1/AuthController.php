@@ -32,7 +32,7 @@ class AuthController extends Controller
         }
 
         $inviteToken = (string) $request->input('invite_token', '');
-        if ($inviteToken !== '' && $result['user']->is_strange) {
+        if ($inviteToken !== '') {
             $this->tryApplyInvite($result['user'], $inviteToken);
             $result['user']->refresh();
         }

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
+import FaqModal from '@/components/modals/FaqModal'
 import HowItWorksModal from '@/components/modals/HowItWorksModal'
 import WithdrawModal from '@/components/modals/WithdrawModal'
 import GradientBorder from '@/components/ui/GradientBorder'
@@ -132,6 +133,7 @@ export default function MorePage() {
   const navigate = useTransitionNavigate()
   const auth = useAuthStore()
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
+  const [faqOpen, setFaqOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
   const [notifications, setNotifications] = useState(
     auth.user?.notifications_enabled ?? true
@@ -279,6 +281,16 @@ export default function MorePage() {
             <SectionLabel>Дополнительно</SectionLabel>
 
             <button
+              onClick={() => setFaqOpen(true)}
+              className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
+            >
+              <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
+                <IconQuestion />
+              </span>
+              <span className="text-black text-[16px]/[100%] font-medium">F.A.Q.</span>
+            </button>
+
+            <button
               onClick={() => navigate('/support')}
               className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
             >
@@ -294,6 +306,7 @@ export default function MorePage() {
       </section>
 
       <HowItWorksModal isOpen={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
+      <FaqModal isOpen={faqOpen} onClose={() => setFaqOpen(false)} />
       <WithdrawModal
         isOpen={withdrawOpen}
         onClose={() => setWithdrawOpen(false)}

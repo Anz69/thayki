@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ComplaintResource\Pages;
+use App\Filament\Resources\MeetingResource;
+use App\Filament\Resources\UserResource;
 use App\Models\Complaint;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -42,9 +44,15 @@ class ComplaintResource extends Resource
                 Tables\Columns\TextColumn::make('id')->sortable()->label('ID'),
                 Tables\Columns\TextColumn::make('user.first_name')->label('От пользователя')
                     ->formatStateUsing(fn ($record) => trim("{$record->user?->first_name} {$record->user?->last_name}")
-                        ?: ($record->user?->username ?? '—')),
+                        ?: ($record->user?->username ?? '—'))
+                    ->url(fn (Complaint $record): ?string => $record->user_id
+                        ? UserResource::getUrl('edit', ['record' => $record->user_id])
+                        : null),
                 Tables\Columns\TextColumn::make('meeting_id')->label('Бронь')
-                    ->formatStateUsing(fn ($state) => $state ? "#{$state}" : '—'),
+                    ->formatStateUsing(fn ($state) => $state ? "#{$state}" : '—')
+                    ->url(fn (Complaint $record): ?string => $record->meeting_id
+                        ? MeetingResource::getUrl('edit', ['record' => $record->meeting_id])
+                        : null),
                 Tables\Columns\TextColumn::make('subject')->label('Тема')->limit(40),
                 Tables\Columns\TextColumn::make('body')->label('Текст')->limit(80),
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')
@@ -87,6 +95,13 @@ class ComplaintResource extends Resource
                         Notification::make()->title('Жалоба отклонена')->success()->send();
                     }),
                 Tables\Actions\EditAction::make()->label('Открыть'),
+                Tables\Actions\Action::make('open_meeting')
+                    ->label('Открыть бронь')
+                    ->icon('heroicon-o-calendar-days')
+                    ->visible(fn (Complaint $record): bool => (int) ($record->meeting_id ?? 0) > 0)
+                    ->url(fn (Complaint $record): ?string => $record->meeting_id
+                        ? MeetingResource::getUrl('edit', ['record' => $record->meeting_id])
+                        : null),
             ])
             ->defaultSort('created_at', 'desc');
     }

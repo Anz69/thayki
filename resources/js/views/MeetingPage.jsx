@@ -190,6 +190,7 @@ export default function MeetingPage() {
   }, [])
 
   const startAnimations = useCallback(() => {
+    if (animatedRef.current) return
     const session = animationSessionRef.current
     session.started = true
     animatedRef.current = true
