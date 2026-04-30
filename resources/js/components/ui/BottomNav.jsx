@@ -196,6 +196,12 @@ export default function BottomNav() {
 
   useEffect(() => {
     if (isHiddenPath) return
+    if (renderedSlot === null && targetSlot) {
+      skipFirst3.current = false
+      setRenderedSlot(targetSlot)
+      gsap.fromTo(wrapperRef.current, { y: 20, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.32, ease: 'expo.out' })
+      return
+    }
     if (skipFirst3.current) { skipFirst3.current = false; return }
     if (isMeetingBootstrapping) return
 
