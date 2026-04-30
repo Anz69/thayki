@@ -46,6 +46,7 @@ class MessageSent implements ShouldBroadcastNow
             'id'              => $this->message->id,
             'chat_id'         => $this->message->chat_id,
             'sender_id'       => $this->message->sender_id,
+            'client_message_id' => $this->message->client_message_id,
             'body'            => $this->message->body,
             'attachment_url'  => $this->message->attachmentUrl(),
             'attachment_mime' => $this->message->attachment_mime,

@@ -36,6 +36,7 @@ function normalizeMsg(raw, myUserId) {
     : raw.time ?? ''
   return {
     id:           raw.id,
+    clientMessageId: raw.client_message_id ?? raw.clientMessageId ?? null,
     from:         isMe ? 'user' : 'them',
     text:         raw.body ?? raw.text ?? '',
     time,
@@ -45,7 +46,49 @@ function normalizeMsg(raw, myUserId) {
     showAvatar:   raw.showAvatar ?? false,
     senderName:   raw.user?.name ?? raw.sender?.name ?? '',
     senderAvatar: raw.user?.avatar ?? raw.sender?.avatar ?? null,
+    readAt:       raw.read_at ?? raw.readAt ?? null,
   }
+}
+
+function mergeIncomingMessage(prev, incoming, myId) {
+  const normalized = normalizeMsg(incoming, myId)
+
+  const byServerId = prev.findIndex((m) => String(m.id) === String(normalized.id))
+  if (byServerId !== -1) {
+    const next = prev.slice()
+    next[byServerId] = { ...next[byServerId], ...normalized, uploading: false }
+    return next
+  }
+
+  if (normalized.clientMessageId) {
+    const byClientId = prev.findIndex((m) => m.clientMessageId === normalized.clientMessageId)
+    if (byClientId !== -1) {
+      const next = prev.slice()
+      next[byClientId] = { ...next[byClientId], ...normalized, uploading: false }
+      return next
+    }
+  }
+
+  const normalizedText = String(normalized.text ?? '').trim()
+  const normalizedTime = normalized.createdAt ? new Date(normalized.createdAt).getTime() : null
+  if (normalized.from === 'user') {
+    const fallbackIdx = prev.findIndex((m) => {
+      if (m.from !== 'user') return false
+      if (!(typeof m.id === 'string' && m.id.startsWith('opt-'))) return false
+      const sameText = String(m.text ?? '').trim() === normalizedText
+      if (!sameText) return false
+      if (!normalizedTime) return true
+      if (!m.time) return true
+      return true
+    })
+    if (fallbackIdx !== -1) {
+      const next = prev.slice()
+      next[fallbackIdx] = { ...next[fallbackIdx], ...normalized, uploading: false }
+      return next
+    }
+  }
+
+  return [...prev, normalized]
 }
 
 function AvatarImg({ src, name, size, className = '' }) {
@@ -182,22 +225,7 @@ export default function ChatPage() {
       '.message.sent': (e) => {
         if (!isMountedRef.current) return
         const msg = e.message ?? e
-        setMessages(prev => {
-          if (prev.some(m => m.id === msg.id)) return prev
-          if (msg.sender_id === myId) {
-            const idx = prev.findIndex(
-              m => typeof m.id === 'string' && m.id.startsWith('opt-')
-                && m.from === 'user'
-                && (m.text ?? '') === (msg.body ?? msg.text ?? ''),
-            )
-            if (idx !== -1) {
-              const next = prev.slice()
-              next[idx] = normalizeMsg(msg, myId)
-              return next
-            }
-          }
-          return [...prev, normalizeMsg(msg, myId)]
-        })
+        setMessages(prev => mergeIncomingMessage(prev, msg, myId))
       },
       '.messages.read': (e) => {
         if (!isMountedRef.current) return
@@ -323,12 +351,15 @@ export default function ChatPage() {
     sendingRef.current = true
     setSending(true)
 
-    const optimisticId = `opt-${Date.now()}`
+    const clientMessageId = `cmsg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const optimisticId = `opt-${clientMessageId}`
     const optimistic = {
       id:   optimisticId,
+      clientMessageId,
       from: 'user',
       text,
       type: 'text',
+      status: 'pending',
       time: (() => {
         const now = new Date()
         return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -340,17 +371,11 @@ export default function ChatPage() {
 
     const idempotencyKey = `msg-${chatId}-${optimisticId}`
     try {
-      const { data } = await api.post(`/chats/${chatId}/messages`, { body: text }, {
+      const { data } = await api.post(`/chats/${chatId}/messages`, { body: text, client_message_id: clientMessageId }, {
         headers: { 'Idempotency-Key': idempotencyKey },
       })
       if (!isMountedRef.current) return
-      const saved = normalizeMsg(data.data, myId)
-      setMessages(prev => {
-        if (prev.some(m => m.id === saved.id && m.id !== optimisticId)) {
-          return prev.filter(m => m.id !== optimisticId)
-        }
-        return prev.map(m => m.id === optimisticId ? saved : m)
-      })
+      setMessages(prev => mergeIncomingMessage(prev, data.data, myId))
     } catch {
       if (isMountedRef.current) {
         setMessages(prev => prev.filter(m => m.id !== optimisticId))
@@ -368,16 +393,19 @@ export default function ChatPage() {
     if (!file || !chatId || uploading) return
 
     setUploading(true)
-    const optimisticId = `opt-att-${Date.now()}`
+    const clientMessageId = `cmsg-att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const optimisticId = `opt-${clientMessageId}`
     const previewUrl = URL.createObjectURL(file)
     setMessages(prev => [...prev, {
       id: optimisticId,
+      clientMessageId,
       from: 'user',
       text: '',
       type: 'image',
       attachmentUrl: previewUrl,
       attachmentMime: file.type,
       uploading: true,
+      status: 'pending',
       time: (() => {
         const now = new Date()
         return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -387,12 +415,12 @@ export default function ChatPage() {
     try {
       const fd = new FormData()
       fd.append('attachment', file)
+      fd.append('client_message_id', clientMessageId)
       const { data } = await api.post(`/chats/${chatId}/messages`, fd, {
         headers: { 'Idempotency-Key': `att-${chatId}-${optimisticId}` },
       })
       if (!isMountedRef.current) return
-      const saved = normalizeMsg(data.data, myId)
-      setMessages(prev => prev.map(m => m.id === optimisticId ? saved : m))
+      setMessages(prev => mergeIncomingMessage(prev, data.data, myId))
     } catch {
       if (isMountedRef.current) {
         setMessages(prev => prev.filter(m => m.id !== optimisticId))

@@ -22,6 +22,7 @@ class MessageResource extends JsonResource
             'id'              => $this->id,
             'chat_id'         => $this->chat_id,
             'sender_id'       => $this->sender_id,
+            'client_message_id' => $this->client_message_id,
             'body'            => $this->body,
             'type'            => $this->attachment_path ? 'image' : 'text',
             'attachment_url'  => $this->attachmentUrl(),

@@ -142,6 +142,7 @@ class ChatController extends Controller
             $chat,
             $request->input('body'),
             $request->file('attachment'),
+            $request->input('client_message_id'),
         );
 
         return ApiResponse::created(new MessageResource($message->load('sender')));

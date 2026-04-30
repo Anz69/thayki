@@ -17,7 +17,13 @@ use Illuminate\Support\Str;
 
 class PostMessageAction
 {
-    public function execute(User $sender, Chat $chat, ?string $body, ?UploadedFile $attachment = null): Message
+    public function execute(
+        User $sender,
+        Chat $chat,
+        ?string $body,
+        ?UploadedFile $attachment = null,
+        ?string $clientMessageId = null,
+    ): Message
     {
         if (! $chat->isParticipant($sender)) {
             throw DomainException::forbidden('CHAT_FORBIDDEN', 'You are not a participant of this chat.');
@@ -72,6 +78,7 @@ class PostMessageAction
                 'chat_id'          => $chat->id,
                 'sender_id'        => $sender->id,
                 'body'             => $body,
+                'client_message_id'=> $clientMessageId,
                 'attachment_disk'  => $path !== null ? $disk : null,
                 'attachment_path'  => $path,
                 'attachment_mime'  => $mime,

@@ -21,6 +21,7 @@ class PostMessageRequest extends FormRequest
         return [
             'body' => ['nullable', 'string', 'max:4096'],
             'attachment' => ['sometimes', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf,mp4,mp3,ogg,wav'],
+            'client_message_id' => ['nullable', 'string', 'max:100'],
         ];
     }
 }
