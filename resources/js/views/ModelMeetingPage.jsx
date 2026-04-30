@@ -1,5 +1,5 @@
 import { useRef, useEffect, useLayoutEffect, useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
@@ -39,6 +39,7 @@ const formatDate = (date) => {
 
 export default function ModelMeetingPage() {
   const navigate = useTransitionNavigate()
+  const navigateRaw = useNavigate()
   const meeting  = useModelMeetingStore()
   const { user } = useAuthStore()
   const [params] = useSearchParams()
@@ -66,6 +67,7 @@ export default function ModelMeetingPage() {
   const pageReadyRef       = useRef(false)
   const isInitialStatePreparedRef = useRef(false)
   const animationSessionRef = useRef({ meetingId: null, started: false })
+  const terminalRedirectDoneRef = useRef(false)
 
   const meetingIdParam = params.get('id')
   useEffect(() => {
@@ -79,16 +81,19 @@ export default function ModelMeetingPage() {
 
   useEffect(() => {
     if (meeting.errorStatus === 403 || meeting.errorStatus === 404) {
-      navigate('/home')
+      navigateRaw('/home', { replace: true })
     }
-  }, [meeting.errorStatus])
+  }, [meeting.errorStatus, navigateRaw])
 
   useEffect(() => {
     if (!meeting.status) return
     if (TERMINAL_STATUSES.includes(meeting.status)) {
-      navigate('/more')
+      if (terminalRedirectDoneRef.current) return
+      terminalRedirectDoneRef.current = true
+      meeting.reset()
+      navigateRaw('/home', { replace: true })
     }
-  }, [meeting.status])
+  }, [meeting.status, meeting, navigateRaw])
 
   useEffect(() => {
     const meetingId = meeting.meeting?.id
@@ -435,8 +440,6 @@ export default function ModelMeetingPage() {
         onClose={() => meeting.closeFinish()}
         onConfirm={async () => {
           await meeting.complete()
-          meeting.reset()
-          navigate('/more')
         }}
       />
       <CancelMeetingModal
@@ -444,8 +447,6 @@ export default function ModelMeetingPage() {
         onClose={() => meeting.closeCancel()}
         onConfirm={async () => {
           await meeting.cancel()
-          meeting.reset()
-          navigate('/more')
         }}
       />
     </section>
