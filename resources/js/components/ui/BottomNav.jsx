@@ -83,10 +83,11 @@ export default function BottomNav() {
   const prevMeetingActive = useRef(false)
 
   useEffect(() => {
-    if (!isHiddenPath && !auth.isModel() && !meeting.meeting) {
+    if (isHiddenPath) return
+    if (!auth.isModel() && !meeting.meeting) {
       meeting.loadLatest()
     }
-  }, [isHiddenPath, auth, meeting])
+  }, [isHiddenPath, auth.user?.role, meeting.meeting?.id])
 
   useEffect(() => {
     if (isHiddenPath) return
