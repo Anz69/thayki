@@ -45,8 +45,15 @@ class MeetingResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')->sortable()->label('ID'),
                 Tables\Columns\TextColumn::make('client.first_name')->label('Клиент')
-                    ->formatStateUsing(fn ($record) => "{$record->client?->first_name} {$record->client?->last_name}"),
-                Tables\Columns\TextColumn::make('modelProfile.display_name')->label('Модель'),
+                    ->formatStateUsing(fn ($record) => trim("{$record->client?->first_name} {$record->client?->last_name}")
+                        ?: ($record->client?->username ?? '—'))
+                    ->url(fn (Meeting $record): ?string => $record->client_id
+                        ? UserResource::getUrl('edit', ['record' => $record->client_id])
+                        : null),
+                Tables\Columns\TextColumn::make('modelProfile.display_name')->label('Модель')
+                    ->url(fn (Meeting $record): ?string => $record->modelProfile?->user_id
+                        ? ModelResource::getUrl('edit', ['record' => $record->modelProfile->user_id])
+                        : null),
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')
                     ->formatStateUsing(fn ($state): string => MeetingStatus::tryFrom($statusValue($state))?->label() ?: ($statusValue($state) !== '' ? $statusValue($state) : '—'))
                     ->colors([

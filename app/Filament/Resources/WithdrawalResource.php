@@ -41,7 +41,10 @@ class WithdrawalResource extends Resource
                 Tables\Columns\TextColumn::make('id')->sortable()->label('ID'),
                 Tables\Columns\TextColumn::make('user.first_name')->label('Модель')
                     ->formatStateUsing(fn ($record) => trim("{$record->user?->first_name} {$record->user?->last_name}")
-                        ?: ($record->user?->username ?? '—')),
+                        ?: ($record->user?->username ?? '—'))
+                    ->url(fn (Withdrawal $record): ?string => $record->user_id
+                        ? ModelResource::getUrl('edit', ['record' => $record->user_id])
+                        : null),
                 Tables\Columns\TextColumn::make('user.username')->label('Telegram')
                     ->formatStateUsing(fn ($state) => $state ? "@{$state}" : '—')
                     ->url(
