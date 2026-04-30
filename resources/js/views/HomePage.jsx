@@ -6,9 +6,11 @@ import ShareModelsModal from '@/components/modals/ShareModelsModal'
 import api, { extractErrorMessage } from '@/utils/api'
 
 function ModelCard({ model }) {
-  const mainPhoto = model.photos?.find(p => p.is_main) ?? model.photos?.[0]
-  const minPrice  = model.price_options?.length
-    ? Math.min(...model.price_options.map(p => p.price_thb))
+  const photos = Array.isArray(model?.photos) ? model.photos.filter(Boolean) : []
+  const prices = Array.isArray(model?.price_options) ? model.price_options.filter(Boolean) : []
+  const mainPhoto = photos.find((p) => p?.is_main) ?? photos[0]
+  const minPrice  = prices.length
+    ? Math.min(...prices.map((p) => Number(p?.price_thb)).filter((v) => Number.isFinite(v)))
     : model.hourly_rate_thb
 
   return (

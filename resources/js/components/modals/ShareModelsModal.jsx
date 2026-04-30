@@ -121,9 +121,14 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
 
   const preparedModels = useMemo(() => (
     models.map((model) => {
-      const mainPhoto = model.photos?.find((photo) => photo.is_main) ?? model.photos?.[0]
-      const minPrice = model.price_options?.length
-        ? Math.min(...model.price_options.map((price) => price.price_thb))
+      const photos = Array.isArray(model?.photos) ? model.photos.filter(Boolean) : []
+      const priceOptions = Array.isArray(model?.price_options) ? model.price_options.filter(Boolean) : []
+      const mainPhoto = photos.find((photo) => photo?.is_main) ?? photos[0]
+      const numericPrices = priceOptions
+        .map((price) => Number(price?.price_thb))
+        .filter((value) => Number.isFinite(value))
+      const minPrice = numericPrices.length
+        ? Math.min(...numericPrices)
         : model.hourly_rate_thb
       return {
         id: model.id,
