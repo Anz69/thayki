@@ -49,7 +49,7 @@ export default function BottomNav() {
 
   const { pathname } = location
   const hiddenPaths = new Set(['/become-model', '/application-pending', '/welcome'])
-  if (hiddenPaths.has(pathname) || pathname === '/') return null
+  const isHiddenPath = hiddenPaths.has(pathname) || pathname === '/'
 
   const isModel = auth.isModel()
 
@@ -83,12 +83,13 @@ export default function BottomNav() {
   const prevMeetingActive = useRef(false)
 
   useEffect(() => {
-    if (!auth.isModel() && !meeting.meeting) {
+    if (!isHiddenPath && !auth.isModel() && !meeting.meeting) {
       meeting.loadLatest()
     }
-  }, [])
+  }, [isHiddenPath, auth, meeting])
 
   useEffect(() => {
+    if (isHiddenPath) return
     const terminal = ['cancelled', 'rejected', 'expired', 'completed']
     const isActive = !!(meeting.meeting?.id) && !terminal.includes(meeting.status) && !auth.isModel()
     if (!prevMeetingActive.current && isActive && ordersButtonRef.current) {
@@ -193,6 +194,7 @@ export default function BottomNav() {
   }, [])
 
   useEffect(() => {
+    if (isHiddenPath) return
     if (skipFirst3.current) { skipFirst3.current = false; return }
     if (isMeetingBootstrapping) return
 
@@ -271,6 +273,7 @@ export default function BottomNav() {
   }, [renderedSlot])
 
   useEffect(() => {
+    if (isHiddenPath) return
     if (skipFirst5.current) { skipFirst5.current = false; return }
     if (!renderedTabs || activeIndex < 0) return
 
@@ -281,6 +284,8 @@ export default function BottomNav() {
     gsap.to(ind, { left: pos.left, width: pos.width, opacity: 1, duration: 0.38, ease: 'expo.out', overwrite: 'auto' })
 
   }, [activeIndex, renderedSlot])
+
+  if (isHiddenPath) return null
 
   return (
     <div

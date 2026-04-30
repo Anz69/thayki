@@ -17,7 +17,7 @@ export default class ErrorBoundary extends Component {
 
   constructor(props) {
     super(props)
-    this.state = { error: null, showDetail: false }
+    this.state = { error: null, showDetail: false, componentStack: null, errorRoute: null, errorAt: null }
   }
 
   static getDerivedStateFromError(error) {
@@ -26,6 +26,11 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary]', error, info?.componentStack)
+    this.setState({
+      componentStack: info?.componentStack ?? null,
+      errorRoute: window.location?.pathname ?? null,
+      errorAt: new Date().toISOString(),
+    })
     this.tryRecoverChunkError(error)
   }
 
@@ -57,7 +62,7 @@ export default class ErrorBoundary extends Component {
 
   handleRetry = () => {
     try { sessionStorage.removeItem(ErrorBoundary.chunkReloadKey) } catch {}
-    this.setState({ error: null, showDetail: false })
+    this.setState({ error: null, showDetail: false, componentStack: null, errorRoute: null, errorAt: null })
   }
 
   openDetail = () => {
@@ -165,6 +170,9 @@ export default class ErrorBoundary extends Component {
                 name: this.state.error?.name ?? 'Error',
                 message: this.state.error?.message ?? 'Детали ошибки недоступны',
                 stack: this.state.error?.stack ?? null,
+                componentStack: this.state.componentStack ?? null,
+                route: this.state.errorRoute ?? null,
+                at: this.state.errorAt ?? null,
               }, null, 2)}
             </pre>
             <button
