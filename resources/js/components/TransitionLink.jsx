@@ -11,9 +11,17 @@ const TransitionLink = forwardRef(function TransitionLink(
   const handleClick = async (e) => {
     e.preventDefault()
     onClick?.(e)
-    setPageReady(false)
-    await transitionIn()
-    navigate(to)
+    try {
+      setPageReady(false)
+      await transitionIn()
+      navigate(to)
+    } catch {
+      try {
+        window.location.assign(to)
+      } catch {
+        window.location.href = to
+      }
+    }
   }
 
   return (

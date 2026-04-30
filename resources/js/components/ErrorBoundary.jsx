@@ -12,6 +12,8 @@ import { Component } from 'react'
  * render tree from crashing the whole SPA.
  */
 export default class ErrorBoundary extends Component {
+  static chunkReloadKey = '__chunk_reload_once__'
+
   constructor(props) {
     super(props)
     this.state = { error: null }
@@ -23,6 +25,28 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary]', error, info?.componentStack)
+    this.tryRecoverChunkError(error)
+  }
+
+  isChunkLoadError = (error) => {
+    const message = String(error?.message ?? '')
+    const name = String(error?.name ?? '')
+    const stack = String(error?.stack ?? '')
+    const haystack = `${name}\n${message}\n${stack}`
+    return /ChunkLoadError|Failed to fetch dynamically imported module|Importing a module script failed/i.test(haystack)
+  }
+
+  tryRecoverChunkError = (error) => {
+    if (!this.isChunkLoadError(error)) return
+    try {
+      const key = ErrorBoundary.chunkReloadKey
+      const alreadyReloaded = sessionStorage.getItem(key) === '1'
+      if (alreadyReloaded) return
+      sessionStorage.setItem(key, '1')
+      window.location.reload()
+    } catch {
+      // Best-effort recovery only.
+    }
   }
 
   handleReload = () => {
@@ -30,6 +54,7 @@ export default class ErrorBoundary extends Component {
   }
 
   handleRetry = () => {
+    try { sessionStorage.removeItem(ErrorBoundary.chunkReloadKey) } catch {}
     this.setState({ error: null })
   }
 

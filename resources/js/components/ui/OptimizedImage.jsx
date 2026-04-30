@@ -6,12 +6,20 @@ import { forwardRef } from 'react'
  * The <picture> wrapper uses display:contents so it is invisible to layout.
  */
 const OptimizedImage = forwardRef(function OptimizedImage({ src, alt = '', ...props }, ref) {
-  const webpSrc = src.replace(/\.png$/i, '.webp')
+  const normalizedSrc = typeof src === 'string' ? src : ''
+  const hasSource = normalizedSrc.length > 0
+  const webpSrc = hasSource && /\.png$/i.test(normalizedSrc)
+    ? normalizedSrc.replace(/\.png$/i, '.webp')
+    : ''
+
+  if (!hasSource) {
+    return <img ref={ref} src="" alt={alt} {...props} />
+  }
 
   return (
     <picture style={{ display: 'contents' }}>
-      <source srcSet={webpSrc} type="image/webp" />
-      <img ref={ref} src={src} alt={alt} {...props} />
+      {webpSrc ? <source srcSet={webpSrc} type="image/webp" /> : null}
+      <img ref={ref} src={normalizedSrc} alt={alt} {...props} />
     </picture>
   )
 })
