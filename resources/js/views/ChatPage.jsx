@@ -278,6 +278,9 @@ export default function ChatPage() {
 
   const runListEntrance = useCallback(() => {
     if (!listRef.current) return
+    // Lock initial viewport at the latest messages before any fade-in,
+    // so the chat doesn't flash from top to bottom.
+    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
     const msgs = listRef.current.querySelectorAll('[data-msg]')
     if (!msgs.length) {
       entranceComplete.current = true
@@ -332,9 +335,20 @@ export default function ChatPage() {
         const msgs = listRef.current.querySelectorAll('[data-msg]')
         if (msgs.length) {
           const last = msgs[msgs.length - 1]
-          gsap.fromTo(last,
+          const prev = msgs.length > 1 ? msgs[msgs.length - 2] : null
+          const targets = prev ? [prev, last] : [last]
+          gsap.fromTo(
+            targets,
             { y: 12, autoAlpha: 0, scale: 0.98 },
-            { y: 0, autoAlpha: 1, scale: 1, duration: 0.28, ease: 'power2.out', clearProps: 'transform,opacity,visibility' }
+            {
+              y: 0,
+              autoAlpha: 1,
+              scale: 1,
+              duration: 0.28,
+              stagger: 0.04,
+              ease: 'power2.out',
+              clearProps: 'transform,opacity,visibility',
+            },
           )
         }
       }

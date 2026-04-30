@@ -164,6 +164,9 @@ export default function SupportPage() {
 
   function animateMessagesIn() {
     if (!messagesRef.current) return
+    // Keep initial viewport pinned to the latest message to avoid
+    // top flash before the list settles to bottom.
+    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
     gsap.set(messagesRef.current, { autoAlpha: 1 })
     const els = messagesRef.current.querySelectorAll('[data-msg]')
     if (els.length) {
@@ -274,9 +277,20 @@ export default function SupportPage() {
       const els = messagesRef.current?.querySelectorAll('[data-msg]')
       if (els?.length) {
         const last = els[els.length - 1]
-        gsap.fromTo(last,
+        const prev = els.length > 1 ? els[els.length - 2] : null
+        const targets = prev ? [prev, last] : [last]
+        gsap.fromTo(
+          targets,
           { y: 18, autoAlpha: 0, scale: 0.94 },
-          { y: 0, autoAlpha: 1, scale: 1, duration: 0.34, ease: 'back.out(2)', clearProps: 'transform,opacity,visibility' },
+          {
+            y: 0,
+            autoAlpha: 1,
+            scale: 1,
+            duration: 0.34,
+            stagger: 0.05,
+            ease: 'back.out(2)',
+            clearProps: 'transform,opacity,visibility',
+          },
         )
       }
     }

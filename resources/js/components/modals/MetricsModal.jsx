@@ -8,7 +8,7 @@ function Field({ label, children }) {
       <p className="text-[#ABABAB] text-[10px]/[100%] font-semibold uppercase tracking-widest px-1">
         {label}
       </p>
-      <div className="bg-[#F5F5F7] rounded-2xl px-4 py-3.5">
+      <div className="bg-[#F5F5F7] rounded-2xl px-4 ">
         {children}
       </div>
     </div>
