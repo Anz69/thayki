@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import ModalMiddle from '@/layout/ModalMiddle'
 
 /**
  * Top-level Error Boundary.
@@ -16,11 +17,11 @@ export default class ErrorBoundary extends Component {
 
   constructor(props) {
     super(props)
-    this.state = { error: null }
+    this.state = { error: null, showDetail: false }
   }
 
   static getDerivedStateFromError(error) {
-    return { error }
+    return { error, showDetail: false }
   }
 
   componentDidCatch(error, info) {
@@ -50,12 +51,21 @@ export default class ErrorBoundary extends Component {
   }
 
   handleReload = () => {
+    this.setState({ showDetail: false })
     try { window.location.reload() } catch {}
   }
 
   handleRetry = () => {
     try { sessionStorage.removeItem(ErrorBoundary.chunkReloadKey) } catch {}
-    this.setState({ error: null })
+    this.setState({ error: null, showDetail: false })
+  }
+
+  openDetail = () => {
+    this.setState({ showDetail: true })
+  }
+
+  closeDetail = () => {
+    this.setState({ showDetail: false })
   }
 
   render() {
@@ -116,6 +126,66 @@ export default class ErrorBoundary extends Component {
             Перезагрузить
           </button>
         </div>
+
+        <button
+          onClick={this.openDetail}
+          style={{
+            fontSize: 12,
+            color: '#B0B0B5',
+            textDecoration: 'underline',
+            textUnderlineOffset: 2,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            marginTop: 2,
+          }}
+        >
+          Посмотреть причину ошибки
+        </button>
+
+        <ModalMiddle isOpen={this.state.showDetail} onClose={this.closeDetail}>
+          <div style={{ padding: '0 20px 24px' }}>
+            <p style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 12 }}>Детали ошибки</p>
+            <pre
+              style={{
+                fontSize: 11,
+                lineHeight: 1.5,
+                color: '#4B5563',
+                background: '#F9FAFB',
+                borderRadius: 16,
+                padding: 14,
+                overflowX: 'auto',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                maxHeight: '50vh',
+              }}
+            >
+              {JSON.stringify({
+                name: this.state.error?.name ?? 'Error',
+                message: this.state.error?.message ?? 'Детали ошибки недоступны',
+                stack: this.state.error?.stack ?? null,
+              }, null, 2)}
+            </pre>
+            <button
+              onClick={this.closeDetail}
+              style={{
+                marginTop: 12,
+                width: '100%',
+                padding: '12px 0',
+                borderRadius: 14,
+                border: 'none',
+                background: '#F3F4F6',
+                color: '#374151',
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              Закрыть
+            </button>
+          </div>
+        </ModalMiddle>
 
         {import.meta.env.DEV && this.state.error?.message ? (
           <pre

@@ -92,8 +92,9 @@ export default function FeedbackPage() {
       await api.post('/complaints', {
         meeting_id: meetingId ? Number(meetingId) : undefined,
         subject: 'Отзыв',
-        body: stars > 0 ? `★${stars} ${body.trim()}`.trim() : body.trim(),
+        body: stars > 0 ? `${'★'.repeat(stars)} ${body.trim()}`.trim() : body.trim(),
       }, {
+ 
         headers: { 'Idempotency-Key': `review-${meetingId}-${Date.now()}` },
       })
       setHasReview(true)
