@@ -40,7 +40,7 @@ class PostMessageAction
             throw DomainException::invalid('MESSAGE_EMPTY', 'Message body or attachment is required.');
         }
 
-        $message = DB::transaction(function () use ($sender, $chat, $body, $attachment): Message {
+        $message = DB::transaction(function () use ($sender, $chat, $body, $attachment, $clientMessageId): Message {
             $disk = 'public';
             $path = null;
             $mime = null;
@@ -78,11 +78,16 @@ class PostMessageAction
                 'chat_id'          => $chat->id,
                 'sender_id'        => $sender->id,
                 'body'             => $body,
-                'client_message_id'=> $clientMessageId,
                 'attachment_disk'  => $path !== null ? $disk : null,
                 'attachment_path'  => $path,
                 'attachment_mime'  => $mime,
             ]);
+
+            if ($clientMessageId !== null && $clientMessageId !== '') {
+                // Keep this value in-memory for immediate API/Broadcast response
+                // even when the DB schema on the target env doesn't have this column yet.
+                $message->setAttribute('client_message_id', $clientMessageId);
+            }
 
             $chat->update(['last_message_at' => $message->created_at]);
 
