@@ -88,6 +88,28 @@ function mergeIncomingMessage(prev, incoming, myId) {
     }
   }
 
+  // Extra protection for image duplicates when the backend/source sends
+  // the same attachment as a second message with another id.
+  if (normalized.type === 'image' && normalized.attachmentUrl) {
+    const incomingTs = normalized.createdAt ? new Date(normalized.createdAt).getTime() : null
+    const duplicateImageIdx = prev.findIndex((m) => {
+      if (m.from !== normalized.from) return false
+      if (m.type !== 'image') return false
+      if (!m.attachmentUrl) return false
+      if (m.attachmentUrl !== normalized.attachmentUrl) return false
+
+      if (!incomingTs || !m.createdAt) return true
+      const existingTs = new Date(m.createdAt).getTime()
+      return Math.abs(existingTs - incomingTs) <= 5000
+    })
+
+    if (duplicateImageIdx !== -1) {
+      const next = prev.slice()
+      next[duplicateImageIdx] = { ...next[duplicateImageIdx], ...normalized, uploading: false }
+      return next
+    }
+  }
+
   return [...prev, normalized]
 }
 
@@ -340,6 +362,8 @@ export default function ChatPage() {
   }
 
   const sendingRef = useRef(false)
+  const uploadingRef = useRef(false)
+  const lastAttachmentKeyRef = useRef({ key: null, ts: 0 })
   const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
   const [viewerSrc, setViewerSrc] = useState(null)
@@ -390,8 +414,19 @@ export default function ChatPage() {
   const handleAttachmentChange = async (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (!file || !chatId || uploading) return
+    if (!file || !chatId || uploadingRef.current) return
 
+    const attachmentKey = `${chatId}:${file.name}:${file.size}:${file.lastModified}`
+    const nowTs = Date.now()
+    if (
+      lastAttachmentKeyRef.current.key === attachmentKey
+      && nowTs - lastAttachmentKeyRef.current.ts < 5000
+    ) {
+      return
+    }
+    lastAttachmentKeyRef.current = { key: attachmentKey, ts: nowTs }
+
+    uploadingRef.current = true
     setUploading(true)
     const clientMessageId = `cmsg-att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const optimisticId = `opt-${clientMessageId}`
@@ -417,7 +452,7 @@ export default function ChatPage() {
       fd.append('attachment', file)
       fd.append('client_message_id', clientMessageId)
       const { data } = await api.post(`/chats/${chatId}/messages`, fd, {
-        headers: { 'Idempotency-Key': `att-${chatId}-${optimisticId}` },
+        headers: { 'Idempotency-Key': `att-${attachmentKey}` },
       })
       if (!isMountedRef.current) return
       setMessages(prev => mergeIncomingMessage(prev, data.data, myId))
@@ -427,6 +462,7 @@ export default function ChatPage() {
       }
     } finally {
       try { URL.revokeObjectURL(previewUrl) } catch {}
+      uploadingRef.current = false
       if (isMountedRef.current) setUploading(false)
     }
   }

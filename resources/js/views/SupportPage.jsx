@@ -32,6 +32,7 @@ function normalizeMsg(raw, myUserId) {
     : raw.time ?? ''
   return {
     id: raw.id,
+    clientMessageId: raw.client_message_id ?? raw.clientMessageId ?? null,
     from: isMe ? 'user' : 'them',
     isSupport,
     text: raw.body ?? raw.text ?? '',
@@ -39,6 +40,55 @@ function normalizeMsg(raw, myUserId) {
     type: raw.type ?? (raw.attachment_url ? 'image' : 'text'),
     attachmentUrl: raw.attachment_url ?? raw.attachmentUrl ?? null,
   }
+}
+
+function mergeIncomingMessage(prev, incoming, myId) {
+  const normalized = normalizeMsg(incoming, myId)
+
+  const byServerId = prev.findIndex((m) => String(m.id) === String(normalized.id))
+  if (byServerId !== -1) {
+    const next = prev.slice()
+    next[byServerId] = { ...next[byServerId], ...normalized, uploading: false }
+    return next
+  }
+
+  if (normalized.clientMessageId) {
+    const byClientId = prev.findIndex((m) => m.clientMessageId === normalized.clientMessageId)
+    if (byClientId !== -1) {
+      const next = prev.slice()
+      next[byClientId] = { ...next[byClientId], ...normalized, uploading: false }
+      return next
+    }
+  }
+
+  if (normalized.from === 'user') {
+    const fallbackIdx = prev.findIndex((m) =>
+      typeof m.id === 'string'
+      && m.id.startsWith('opt-')
+      && m.from === 'user'
+      && String(m.text ?? '').trim() === String(normalized.text ?? '').trim(),
+    )
+    if (fallbackIdx !== -1) {
+      const next = prev.slice()
+      next[fallbackIdx] = { ...next[fallbackIdx], ...normalized, uploading: false }
+      return next
+    }
+  }
+
+  if (normalized.type === 'image' && normalized.attachmentUrl) {
+    const duplicateImageIdx = prev.findIndex((m) =>
+      m.from === normalized.from
+      && m.type === 'image'
+      && m.attachmentUrl === normalized.attachmentUrl,
+    )
+    if (duplicateImageIdx !== -1) {
+      const next = prev.slice()
+      next[duplicateImageIdx] = { ...next[duplicateImageIdx], ...normalized, uploading: false }
+      return next
+    }
+  }
+
+  return [...prev, normalized]
 }
 
 
@@ -63,8 +113,9 @@ export default function SupportPage() {
   const initMsgs      = useRef([])
   const prevMsgCount  = useRef(0)
   const sendingRef       = useRef(false)
+  const uploadingRef     = useRef(false)
   const fileInputRef     = useRef(null)
-  const pendingSavedIds  = useRef(new Set())
+  const lastAttachmentKeyRef = useRef({ key: null, ts: 0 })
 
   const messagesEndRef = useRef(null)
   const headerRef      = useRef(null)
@@ -188,15 +239,7 @@ export default function SupportPage() {
     if (!chatId) return undefined
     return subscribePrivate(`chats.${chatId}`, {
       '.message.sent': (e) => {
-        const msg = normalizeMsg(e.message ?? e, myId)
-        if (pendingSavedIds.current.has(msg.id)) {
-          pendingSavedIds.current.delete(msg.id)
-          return
-        }
-        setMessages(prev => {
-          if (prev.some(m => m.id === msg.id)) return prev
-          return [...prev, msg]
-        })
+        setMessages(prev => mergeIncomingMessage(prev, e.message ?? e, myId))
       },
       '.messages.read': (e) => {
         if (e.user_id === myId) return
@@ -277,18 +320,12 @@ export default function SupportPage() {
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
     const idempotencyKey = `msg-${chatId}-${optimisticId}`
+    const clientMessageId = `cmsg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     try {
-      const { data } = await api.post(`/chats/${chatId}/messages`, { body: text }, {
+      const { data } = await api.post(`/chats/${chatId}/messages`, { body: text, client_message_id: clientMessageId }, {
         headers: { 'Idempotency-Key': idempotencyKey },
       })
-      const saved = normalizeMsg(data.data, myId)
-      pendingSavedIds.current.add(saved.id)
-      setMessages(prev => {
-        if (prev.some(m => m.id === saved.id && m.id !== optimisticId)) {
-          return prev.filter(m => m.id !== optimisticId)
-        }
-        return prev.map(m => m.id === optimisticId ? saved : m)
-      })
+      setMessages(prev => mergeIncomingMessage(prev, data.data, myId))
     } catch {
       setMessages(prev => prev.filter(m => m.id !== optimisticId))
     } finally {
@@ -300,13 +337,26 @@ export default function SupportPage() {
   const handleAttachmentChange = async (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (!file || !chatId || uploading) return
+    if (!file || !chatId || uploadingRef.current) return
 
+    const attachmentKey = `${chatId}:${file.name}:${file.size}:${file.lastModified}`
+    const nowTs = Date.now()
+    if (
+      lastAttachmentKeyRef.current.key === attachmentKey
+      && nowTs - lastAttachmentKeyRef.current.ts < 5000
+    ) {
+      return
+    }
+    lastAttachmentKeyRef.current = { key: attachmentKey, ts: nowTs }
+
+    uploadingRef.current = true
     setUploading(true)
-    const optimisticId = `opt-att-${Date.now()}`
+    const clientMessageId = `cmsg-att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const optimisticId = `opt-${clientMessageId}`
     const previewUrl = URL.createObjectURL(file)
     setMessages(prev => [...prev, {
       id: optimisticId,
+      clientMessageId,
       from: 'user',
       text: '',
       type: 'image',
@@ -321,16 +371,16 @@ export default function SupportPage() {
     try {
       const fd = new FormData()
       fd.append('attachment', file)
+      fd.append('client_message_id', clientMessageId)
       const { data } = await api.post(`/chats/${chatId}/messages`, fd, {
-        headers: { 'Idempotency-Key': `att-${chatId}-${optimisticId}` },
+        headers: { 'Idempotency-Key': `att-${attachmentKey}` },
       })
-      const saved = normalizeMsg(data.data, myId)
-      pendingSavedIds.current.add(saved.id)
-      setMessages(prev => prev.map(m => m.id === optimisticId ? saved : m))
+      setMessages(prev => mergeIncomingMessage(prev, data.data, myId))
     } catch {
       setMessages(prev => prev.filter(m => m.id !== optimisticId))
     } finally {
       try { URL.revokeObjectURL(previewUrl) } catch {}
+      uploadingRef.current = false
       setUploading(false)
     }
   }
