@@ -14,6 +14,7 @@ class ModelProfileResource extends Resource
 {
     protected static ?string $model = ModelProfile::class;
 
+    protected static bool    $shouldRegisterNavigation = false;
     protected static ?string $navigationIcon  = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationLabel = 'Профили моделей';
     protected static ?string $modelLabel      = 'Профиль модели';

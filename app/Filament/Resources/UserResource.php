@@ -18,9 +18,9 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
     protected static ?string $navigationIcon = 'heroicon-o-users';
-    protected static ?string $navigationLabel = 'Пользователи';
-    protected static ?string $modelLabel = 'Пользователь';
-    protected static ?string $pluralModelLabel = 'Пользователи';
+    protected static ?string $navigationLabel = 'Клиенты';
+    protected static ?string $modelLabel = 'Клиент';
+    protected static ?string $pluralModelLabel = 'Клиенты';
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -33,7 +33,6 @@ class UserResource extends Resource
             Forms\Components\Select::make('role')->label('Роль')
                 ->options([
                     UserRole::Client->value => 'Клиент',
-                    UserRole::Model->value  => 'Модель',
                     UserRole::Admin->value  => 'Администратор',
                 ])->required(),
             Forms\Components\Select::make('status')->label('Статус')
@@ -101,7 +100,6 @@ class UserResource extends Resource
                 Tables\Filters\SelectFilter::make('role')->label('Роль')
                     ->options([
                         UserRole::Client->value => 'Клиент',
-                        UserRole::Model->value  => 'Модель',
                         UserRole::Admin->value  => 'Администратор',
                     ]),
                 Tables\Filters\SelectFilter::make('status')->label('Статус')
@@ -199,6 +197,7 @@ class UserResource extends Resource
                     }),
                 Tables\Actions\EditAction::make()->label('Изменить'),
             ])
+            ->modifyQueryUsing(fn ($query) => $query->where('role', '!=', UserRole::Model->value))
             ->defaultSort('created_at', 'desc');
     }
 

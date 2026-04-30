@@ -11,6 +11,7 @@ import useMeetingStore from '@/stores/useMeetingStore'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api, { extractErrorMessage } from '@/utils/api'
 import ShareModelsModal from '@/components/modals/ShareModelsModal'
+import LazyImg from '@/components/ui/LazyImg'
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'paid', 'confirmed']
 
@@ -204,10 +205,6 @@ export default function ModelPage() {
   const leftPhoto  = allPhotos[1] ?? null
   const rightPhoto = allPhotos[2] ?? null
 
-  const [mainErr,  setMainErr]  = useState(false)
-  const [leftErr,  setLeftErr]  = useState(false)
-  const [rightErr, setRightErr] = useState(false)
-
   return (
     <div>
       <section className="flex flex-col gap-7 pt-4">
@@ -290,33 +287,18 @@ export default function ModelPage() {
 
           <div className="relative w-[160px] h-[210px] container">
             <div ref={mainPhotoRef} className="w-full h-full relative z-10 rounded-2xl overflow-hidden" style={{ visibility: 'hidden' }}>
-              {mainPhoto?.url && !mainErr && (
-                <img
-                  src={mainPhoto.url}
-                  alt={model?.display_name ?? 'girl'}
-                  className="w-full h-full object-cover"
-                  onError={() => setMainErr(true)}
-                />
+              {mainPhoto?.url && (
+                <LazyImg src={mainPhoto.url} alt={model?.display_name ?? 'girl'} className="w-full h-full" />
               )}
             </div>
             <div ref={leftPhotoRef} className="w-[110px] h-[148px] absolute -top-4 -left-16 rounded-xl overflow-hidden" style={{ visibility: 'hidden' }}>
-              {leftPhoto?.url && !leftErr && (
-                <img
-                  src={leftPhoto.url}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  onError={() => setLeftErr(true)}
-                />
+              {leftPhoto?.url && (
+                <LazyImg src={leftPhoto.url} alt="" className="w-full h-full" />
               )}
             </div>
             <div ref={rightPhotoRef} className="w-[124px] h-[150px] absolute -top-4 -right-16 rounded-xl overflow-hidden" style={{ visibility: 'hidden' }}>
-              {rightPhoto?.url && !rightErr && (
-                <img
-                  src={rightPhoto.url}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  onError={() => setRightErr(true)}
-                />
+              {rightPhoto?.url && (
+                <LazyImg src={rightPhoto.url} alt="" className="w-full h-full" />
               )}
             </div>
           </div>

@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import { useCompactMode } from '@/composables/useCompactMode'
+import LazyImg from '@/components/ui/LazyImg'
 
 const PayIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -18,27 +18,19 @@ export default function AcceptedStep({
   modelName,
 }) {
   const isCompact = useCompactMode()
-  const [imgFailed, setImgFailed] = useState(false)
-  const showImg = !!modelAvatarUrl && !imgFailed
 
   return (
     <div
       ref={screenRef}
       className={`flex flex-col items-center container h-full justify-center min-h-full ${isCompact ? 'gap-4' : 'gap-7'}`}
     >
-      <div
-        ref={avatarRef}
-        className={`rounded-full overflow-hidden shrink-0 ${isCompact ? 'w-24 h-24' : 'w-32 h-32'} ${showImg ? '' : 'bg-[#E2319B] flex items-center justify-center'}`}
-      >
-        {showImg ? (
-          <img
-            src={modelAvatarUrl}
-            alt="model"
-            className="w-full h-full object-cover"
-            onError={() => setImgFailed(true)}
-          />
+      <div ref={avatarRef} className={`rounded-full shrink-0 overflow-hidden ${isCompact ? 'w-24 h-24' : 'w-32 h-32'}`}>
+        {modelAvatarUrl ? (
+          <LazyImg src={modelAvatarUrl} alt="model" className="w-full h-full" />
         ) : (
-          <span className="text-white text-4xl font-bold">{(modelName ?? '?')[0]?.toUpperCase()}</span>
+          <div className="w-full h-full bg-[#E2319B] flex items-center justify-center">
+            <span className="text-white text-4xl font-bold">{(modelName ?? '?')[0]?.toUpperCase()}</span>
+          </div>
         )}
       </div>
       <div className="flex flex-col items-center gap-2 text-center">
@@ -52,7 +44,7 @@ export default function AcceptedStep({
       <button
         ref={payBtnRef}
         onClick={onPayment}
-        className="flex items-center gap-2.5 bg-[#E2319B] text-white p-4.5 rounded-full text-base/[100%] font-medium active:opacity-85 transition-opacity duration-150 shadow-[0_4px_20px_rgba(226,49,155,0.35)]"
+        className="flex items-center gap-2.5 bg-[#E2319B] text-white p-4.5 rounded-full text-base/[100%] font-medium active:scale-[0.96] transition-transform duration-100 will-change-transform shadow-[0_4px_20px_rgba(226,49,155,0.35)]"
       >
         <PayIcon />
         Оплатить встречу

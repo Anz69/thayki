@@ -1,4 +1,5 @@
 import usePhotoViewerStore from '@/stores/usePhotoViewerStore'
+import LazyImg from '@/components/ui/LazyImg'
 
 export default function Media({ photos = [] }) {
   const viewer = usePhotoViewerStore()
@@ -34,12 +35,10 @@ export default function Media({ photos = [] }) {
             className="w-full h-[270px] relative overflow-hidden active:scale-95 transition-transform duration-150"
             onClick={() => viewer.open(viewerPhotos, i)}
           >
-            <img
+            <LazyImg
               src={photo.src}
               alt={photo.alt}
-              className="w-full h-full object-cover"
-              draggable={false}
-              loading="lazy"
+              className="w-full h-full"
             />
           </button>
         ))}
