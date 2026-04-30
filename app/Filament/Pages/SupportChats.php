@@ -31,6 +31,36 @@ class SupportChats extends Page
 
     protected $listeners = ['$refresh', 'new-message-received' => '$refresh'];
 
+    public function mount(?int $chat = null): void
+    {
+        $preselect = $chat ?? (int) session()->pull('support_chat_preselect', 0);
+        if ($preselect <= 0) {
+            return;
+        }
+
+        $target = Chat::query()
+            ->with('participants.user')
+            ->whereKey($preselect)
+            ->where('type', ChatType::Support)
+            ->first();
+
+        if ($target === null) {
+            return;
+        }
+
+        $clientOrModel = $target->participants
+            ->map(fn (ChatParticipant $p) => $p->user)
+            ->first(fn (?User $u) => $u !== null && in_array($u->role, [UserRole::Client, UserRole::Model], true));
+
+        if ($clientOrModel?->role === UserRole::Model) {
+            $this->activeTab = 'models';
+        } else {
+            $this->activeTab = 'users';
+        }
+
+        $this->selectChat($target->id);
+    }
+
     public function getTitle(): string|Htmlable
     {
         return 'Чат поддержки';

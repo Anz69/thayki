@@ -7,6 +7,7 @@ namespace App\Actions\Wallet;
 use App\Enums\WalletTransactionType;
 use App\Enums\WithdrawalStatus;
 use App\Exceptions\DomainException;
+use App\Models\AdminUser;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Services\Audit\AuditLogger;
@@ -24,17 +25,17 @@ class ProcessWithdrawalAction
         private readonly AuditLogger $audit,
     ) {}
 
-    public function approve(Withdrawal $withdrawal, ?User $admin = null): Withdrawal
+    public function approve(Withdrawal $withdrawal, User|AdminUser|null $admin = null): Withdrawal
     {
         return $this->transition($withdrawal, $admin, WithdrawalStatus::Approved, null);
     }
 
-    public function markPaid(Withdrawal $withdrawal, ?User $admin = null): Withdrawal
+    public function markPaid(Withdrawal $withdrawal, User|AdminUser|null $admin = null): Withdrawal
     {
         return $this->transition($withdrawal, $admin, WithdrawalStatus::Paid, null);
     }
 
-    public function reject(Withdrawal $withdrawal, ?User $admin = null, ?string $note = null): Withdrawal
+    public function reject(Withdrawal $withdrawal, User|AdminUser|null $admin = null, ?string $note = null): Withdrawal
     {
         return DB::transaction(function () use ($withdrawal, $admin, $note): Withdrawal {
             /** @var Withdrawal $withdrawal */
@@ -46,7 +47,7 @@ class ProcessWithdrawalAction
 
             $withdrawal->update([
                 'status' => WithdrawalStatus::Rejected,
-                'processed_by' => $admin?->id,
+                'processed_by' => $this->resolveProcessedById($admin),
                 'processed_at' => now(),
                 'admin_note' => $note,
             ]);
@@ -61,13 +62,13 @@ class ProcessWithdrawalAction
                 meta: ['reason' => 'withdrawal_rejected'],
             );
 
-            $this->audit->log('withdrawal.rejected', $admin, $withdrawal, ['note' => $note]);
+            $this->audit->log('withdrawal.rejected', $this->resolveAuditActor($admin), $withdrawal, ['note' => $note]);
 
             return $withdrawal->refresh();
         });
     }
 
-    private function transition(Withdrawal $withdrawal, ?User $admin, WithdrawalStatus $next, ?string $note): Withdrawal
+    private function transition(Withdrawal $withdrawal, User|AdminUser|null $admin, WithdrawalStatus $next, ?string $note): Withdrawal
     {
         return DB::transaction(function () use ($withdrawal, $admin, $next, $note): Withdrawal {
             /** @var Withdrawal $withdrawal */
@@ -85,14 +86,24 @@ class ProcessWithdrawalAction
 
             $withdrawal->update([
                 'status' => $next,
-                'processed_by' => $admin?->id,
+                'processed_by' => $this->resolveProcessedById($admin),
                 'processed_at' => now(),
                 'admin_note' => $note,
             ]);
 
-            $this->audit->log('withdrawal.'.$next->value, $admin, $withdrawal, []);
+            $this->audit->log('withdrawal.'.$next->value, $this->resolveAuditActor($admin), $withdrawal, []);
 
             return $withdrawal->refresh();
         });
+    }
+
+    private function resolveProcessedById(User|AdminUser|null $admin): ?int
+    {
+        return $admin instanceof User ? $admin->id : null;
+    }
+
+    private function resolveAuditActor(User|AdminUser|null $admin): ?User
+    {
+        return $admin instanceof User ? $admin : null;
     }
 }

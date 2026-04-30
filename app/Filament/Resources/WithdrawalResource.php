@@ -87,17 +87,12 @@ class WithdrawalResource extends Resource
                         }
                         try {
                             $chat = app(EnsureSupportChatAction::class)->execute($record->user);
-                            Notification::make()
-                                ->title('Чат поддержки готов')
-                                ->body('Перейдите в раздел "Чат поддержки", чтобы написать модели.')
-                                ->success()
-                                ->send();
                             session()->put('support_chat_preselect', $chat->id);
+                            redirect(\App\Filament\Pages\SupportChats::getUrl(['chat' => $chat->id]));
                         } catch (\Throwable $e) {
                             Notification::make()->title('Ошибка: '.$e->getMessage())->danger()->send();
                         }
-                    })
-                    ->url(fn () => \App\Filament\Pages\SupportChats::getUrl()),
+                    }),
 
                 Tables\Actions\Action::make('approve')
                     ->label('Одобрить')
@@ -106,7 +101,6 @@ class WithdrawalResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn (Withdrawal $r) => $r->status === WithdrawalStatus::Pending)
                     ->action(function (Withdrawal $r): void {
-                        /** @var \App\Models\AdminUser $admin */
                         $admin = auth()->user();
                         try {
                             app(ProcessWithdrawalAction::class)->approve($r, $admin);
@@ -122,7 +116,6 @@ class WithdrawalResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn (Withdrawal $r) => $r->status === WithdrawalStatus::Approved)
                     ->action(function (Withdrawal $r): void {
-                        /** @var \App\Models\AdminUser $admin */
                         $admin = auth()->user();
                         try {
                             app(ProcessWithdrawalAction::class)->markPaid($r, $admin);
@@ -141,7 +134,6 @@ class WithdrawalResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn (Withdrawal $r) => in_array($r->status, [WithdrawalStatus::Pending, WithdrawalStatus::Approved], true))
                     ->action(function (Withdrawal $r, array $data): void {
-                        /** @var \App\Models\AdminUser $admin */
                         $admin = auth()->user();
                         try {
                             app(ProcessWithdrawalAction::class)->reject($r, $admin, $data['note'] ?? null);
