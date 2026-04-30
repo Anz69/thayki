@@ -353,7 +353,6 @@ export default function App() {
           overflow-x: hidden;
           scrollbar-width: none;
           position: relative;
-          will-change: transform;
         }
         .page-root::-webkit-scrollbar {
           display: none;

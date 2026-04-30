@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Actions\Booking\TransitionMeetingStatusAction;
 use App\Enums\MeetingStatus;
+use App\Models\AppSetting;
 use App\Models\Meeting;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -37,7 +38,7 @@ class AutoCancelStaleAcceptedMeetingsCommand extends Command
 
     public function handle(TransitionMeetingStatusAction $transition): int
     {
-        $ttlSeconds = (int) config('app.meeting_model_confirm_ttl', env('MEETING_MODEL_CONFIRM_TTL', 7200));
+        $ttlSeconds = (int) (AppSetting::get('meeting_model_confirm_ttl') ?? config('app.meeting_model_confirm_ttl', env('MEETING_MODEL_CONFIRM_TTL', 7200)));
         if ($ttlSeconds <= 0) $ttlSeconds = 7200;
 
         $cutoff = now()->copy()->subSeconds($ttlSeconds);

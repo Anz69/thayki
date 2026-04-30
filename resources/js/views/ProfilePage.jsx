@@ -433,7 +433,7 @@ export default function ProfilePage() {
 
       <div
         ref={mediaBtnRef}
-        className="fixed bottom-6 left-0 right-0 flex justify-center px-5 pointer-events-none"
+        className="fixed bottom-6 left-0 right-0 flex justify-center px-5 pointer-events-none z-[9500]"
         style={{ visibility: 'hidden' }}
       >
         <button

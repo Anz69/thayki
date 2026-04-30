@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Actions\Booking\TransitionMeetingStatusAction;
 use App\Enums\MeetingStatus;
+use App\Models\AppSetting;
 use App\Models\Meeting;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -27,7 +28,7 @@ class ExpirePendingMeetingsCommand extends Command
 
     public function handle(TransitionMeetingStatusAction $transition): int
     {
-        $configured = (int) config('app.meeting_pending_ttl', env('MEETING_PENDING_TTL', 600));
+        $configured = (int) (AppSetting::get('meeting_pending_ttl') ?? config('app.meeting_pending_ttl', env('MEETING_PENDING_TTL', 600)));
         $ttl = $configured > 0 ? $configured : 600;
 
         $cutoff = now()->copy()->subSeconds($ttl);

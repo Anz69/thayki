@@ -26,13 +26,16 @@ class ModelResource extends Resource
 
     public static function form(Form $form): Form
     {
+        $onlyCreate = fn (string $operation): bool => $operation === 'create';
+
         return $form->schema([
             Forms\Components\Section::make('Учётная запись')
                 ->schema([
                     Forms\Components\TextInput::make('first_name')->label('Имя')->required(),
                     Forms\Components\TextInput::make('last_name')->label('Фамилия'),
                     Forms\Components\TextInput::make('username')->label('Username'),
-                    Forms\Components\TextInput::make('telegram_id')->label('Telegram ID')->numeric()->required(),
+                    Forms\Components\TextInput::make('telegram_id')->label('Telegram ID')->numeric()
+                        ->required($onlyCreate),
                     Forms\Components\Select::make('status')->label('Статус')
                         ->options([
                             UserStatus::Active->value => 'Активен',
@@ -48,12 +51,18 @@ class ModelResource extends Resource
             Forms\Components\Section::make('Профиль модели')
                 ->relationship('modelProfile')
                 ->schema([
-                    Forms\Components\TextInput::make('display_name')->label('Отображаемое имя')->required()->maxLength(255),
-                    Forms\Components\TextInput::make('age')->label('Возраст')->numeric()->required(),
-                    Forms\Components\TextInput::make('height_cm')->label('Рост (см)')->numeric()->required(),
-                    Forms\Components\TextInput::make('weight_kg')->label('Вес (кг)')->numeric()->required(),
-                    Forms\Components\TextInput::make('bust_size')->label('Грудь')->required()->maxLength(16),
-                    Forms\Components\TextInput::make('butt_size')->label('Бёдра')->required()->maxLength(16),
+                    Forms\Components\TextInput::make('display_name')->label('Отображаемое имя')
+                        ->required($onlyCreate)->maxLength(255),
+                    Forms\Components\TextInput::make('age')->label('Возраст')->numeric()
+                        ->required($onlyCreate),
+                    Forms\Components\TextInput::make('height_cm')->label('Рост (см)')->numeric()
+                        ->required($onlyCreate),
+                    Forms\Components\TextInput::make('weight_kg')->label('Вес (кг)')->numeric()
+                        ->required($onlyCreate),
+                    Forms\Components\TextInput::make('bust_size')->label('Грудь')
+                        ->required($onlyCreate)->maxLength(16),
+                    Forms\Components\TextInput::make('butt_size')->label('Бёдра')
+                        ->required($onlyCreate)->maxLength(16),
                     Forms\Components\Textarea::make('description')->label('Описание')->columnSpanFull(),
                     Forms\Components\Select::make('schedule')
                         ->label('Расписание')
@@ -62,14 +71,33 @@ class ModelResource extends Resource
                             'day'   => 'День (07:00–20:00)',
                             'night' => 'Ночь (20:00–07:00)',
                         ])
-                        ->required()
+                        ->required($onlyCreate)
                         ->default('any'),
-                    Forms\Components\TextInput::make('hourly_rate_thb')->label('Цена за час (฿)')->numeric()->required(),
+                    Forms\Components\TextInput::make('hourly_rate_thb')->label('Цена за час (฿)')->numeric()
+                        ->required($onlyCreate),
                     Forms\Components\Toggle::make('is_published')->label('Опубликована'),
                     Forms\Components\Toggle::make('is_verified')->label('Верифицирована'),
                     Forms\Components\DateTimePicker::make('published_at')->label('Дата публикации'),
                 ])
                 ->columns(2),
+
+            Forms\Components\Section::make('Кошелёк')
+                ->relationship('wallet')
+                ->schema([
+                    Forms\Components\TextInput::make('balance_minor')
+                        ->label('Баланс (minor)')
+                        ->numeric()
+                        ->minValue(0)
+                        ->helperText('Текущий баланс в минимальных единицах валюты'),
+                    Forms\Components\TextInput::make('locked_minor')
+                        ->label('Заблокировано (minor)')
+                        ->numeric()
+                        ->minValue(0)
+                        ->helperText('Удержано под активные встречи')
+                        ->disabled(),
+                ])
+                ->columns(2)
+                ->visibleOn('edit'),
         ]);
     }
 

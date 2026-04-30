@@ -29,12 +29,14 @@ class UserResource extends Resource
             Forms\Components\TextInput::make('first_name')->label('Имя')->required(),
             Forms\Components\TextInput::make('last_name')->label('Фамилия'),
             Forms\Components\TextInput::make('username')->label('Username'),
-            Forms\Components\TextInput::make('telegram_id')->label('Telegram ID')->numeric()->required(),
+            Forms\Components\TextInput::make('telegram_id')->label('Telegram ID')->numeric()
+                ->required(fn (string $operation): bool => $operation === 'create'),
             Forms\Components\Select::make('role')->label('Роль')
                 ->options([
                     UserRole::Client->value => 'Клиент',
                     UserRole::Admin->value  => 'Администратор',
-                ])->required(),
+                ])
+                ->required(fn (string $operation): bool => $operation === 'create'),
             Forms\Components\Select::make('status')->label('Статус')
                 ->options([
                     UserStatus::Active->value => 'Активен',
@@ -46,19 +48,19 @@ class UserResource extends Resource
             Forms\Components\Toggle::make('notifications_enabled')->label('Уведомления в TG'),
             Forms\Components\DateTimePicker::make('last_auth_at')->label('Последний вход'),
             Forms\Components\Section::make('Кошелёк')
+                ->relationship('wallet')
                 ->schema([
-                    Forms\Components\TextInput::make('wallet_balance_thb')
-                        ->label('Баланс (THB)')
+                    Forms\Components\TextInput::make('balance_minor')
+                        ->label('Баланс (minor)')
                         ->numeric()
-                        ->step(0.01)
                         ->minValue(0)
-                        ->helperText('Текущий доступный баланс'),
-                    Forms\Components\TextInput::make('wallet_locked_thb')
-                        ->label('Заблокировано (THB)')
+                        ->helperText('Текущий доступный баланс в минимальных единицах валюты'),
+                    Forms\Components\TextInput::make('locked_minor')
+                        ->label('Заблокировано (minor)')
                         ->numeric()
-                        ->step(0.01)
                         ->minValue(0)
-                        ->helperText('Сумма, удержанная под активные встречи'),
+                        ->helperText('Сумма, удержанная под активные встречи')
+                        ->disabled(),
                 ])
                 ->columns(2)
                 ->visibleOn('edit'),
