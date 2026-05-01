@@ -48,7 +48,8 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
     gsap.killTweensOf(el.children)
 
     if (isClosingRef.current) {
-      gsap.set(el, { display: 'none', height: 0, opacity: 0, marginTop: -12 })
+      // Do not mutate layout while sheet is closing:
+      // keep the current visual state until ModalMiddle finishes animateOut.
       return
     }
 
