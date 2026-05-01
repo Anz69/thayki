@@ -13,6 +13,7 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
   useEffect(() => { onCloseRef.current = onClose }, [onClose])
 
   const animateOut = useCallback((onComplete) => {
+    gsap.killTweensOf([sheetRef.current, rootRef.current])
     gsap.timeline({ onComplete })
       .to(sheetRef.current,  { y: '100%', duration: 0.32, ease: 'power3.in' }, 0)
       .to(rootRef.current,   { opacity: 0, duration: 0.24, ease: 'power2.in' }, 0.06)

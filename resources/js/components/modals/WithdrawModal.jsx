@@ -25,6 +25,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
   const contentWrapRef = useRef(null)
   const currentViewRef = useRef('amount')
   const amountBtnsRef = useRef(null)
+  const isClosingRef = useRef(false)
 
   const numAmount = Number(amount || 0)
   const amountMinor = Math.round(numAmount * 100)
@@ -32,11 +33,24 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
   const amountOver = numAmount > balance
 
   useEffect(() => {
+    if (!isOpen) {
+      isClosingRef.current = true
+      return
+    }
+    isClosingRef.current = false
+  }, [isOpen])
+
+  useEffect(() => {
     const el = amountBtnsRef.current
     if (!el) return
 
     gsap.killTweensOf(el)
     gsap.killTweensOf(el.children)
+
+    if (isClosingRef.current) {
+      gsap.set(el, { display: 'none', height: 0, opacity: 0, marginTop: -12 })
+      return
+    }
 
     if (!hasAmount) {
       if (!isOpen) {
@@ -77,6 +91,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
   }, [hasAmount, isOpen])
 
   const switchView = useCallback((next) => {
+    if (isClosingRef.current) return
     const prev = currentViewRef.current
     if (prev === next) return
     const prevEl = viewRefs.current[prev]
@@ -190,6 +205,16 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
 
   const handleAfterClose = useCallback(() => {
     const { amount: amountEl, done: doneEl } = viewRefs.current
+    gsap.killTweensOf([
+      amountBtnsRef.current,
+      contentWrapRef.current,
+      amountEl,
+      doneEl,
+    ])
+    if (amountBtnsRef.current?.children?.length) {
+      gsap.killTweensOf(Array.from(amountBtnsRef.current.children))
+    }
+
     const reset = (el, isVisible) => {
       if (!el) return
       gsap.set(el, isVisible
@@ -225,6 +250,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
     setAmount('')
     setError('')
     setSubmitting(false)
+    isClosingRef.current = false
   }, [])
 
   const displayAmount = amount ? `฿ ${amount}` : ''
