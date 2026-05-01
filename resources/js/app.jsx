@@ -2,6 +2,38 @@ import { createInertiaApp } from '@inertiajs/react'
 import { createRoot } from 'react-dom/client'
 import '../css/app.css'
 
+function resolveBuildId() {
+  try {
+    const explicit = import.meta.env.VITE_APP_BUILD_ID
+    if (typeof explicit === 'string' && explicit) return explicit
+  } catch {}
+  try {
+    const script = document.querySelector('script[src*="/build/assets/app-"]')
+    const src = script?.getAttribute('src') ?? ''
+    const match = src.match(/app-([^.]+)\.js$/)
+    if (match?.[1]) return match[1]
+  } catch {}
+  return 'unknown'
+}
+
+try {
+  window.__APP_BUILD_ID__ = resolveBuildId()
+} catch {}
+
+try {
+  window.addEventListener('vite:preloadError', (event) => {
+    event?.preventDefault?.()
+    try {
+      const buildId = String(window.__APP_BUILD_ID__ ?? 'unknown')
+      const key = `__chunk_reload_once__:${buildId}`
+      const alreadyReloaded = sessionStorage.getItem(key) === '1'
+      if (alreadyReloaded) return
+      sessionStorage.setItem(key, '1')
+    } catch {}
+    window.location.reload()
+  })
+} catch {}
+
 function readTelegramStartParam() {
   const sdkValue = window.Telegram?.WebApp?.initDataUnsafe?.start_param
   if (typeof sdkValue === 'string' && sdkValue !== '') return sdkValue

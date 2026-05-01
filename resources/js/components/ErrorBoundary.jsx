@@ -13,7 +13,16 @@ import ModalMiddle from '@/layout/ModalMiddle'
  * render tree from crashing the whole SPA.
  */
 export default class ErrorBoundary extends Component {
-  static chunkReloadKey = '__chunk_reload_once__'
+  static baseChunkReloadKey = '__chunk_reload_once__'
+
+  static chunkReloadKey() {
+    try {
+      const buildId = String(window.__APP_BUILD_ID__ ?? 'unknown')
+      return `${ErrorBoundary.baseChunkReloadKey}:${buildId}`
+    } catch {
+      return `${ErrorBoundary.baseChunkReloadKey}:unknown`
+    }
+  }
 
   constructor(props) {
     super(props)
@@ -45,7 +54,7 @@ export default class ErrorBoundary extends Component {
   tryRecoverChunkError = (error) => {
     if (!this.isChunkLoadError(error)) return
     try {
-      const key = ErrorBoundary.chunkReloadKey
+      const key = ErrorBoundary.chunkReloadKey()
       const alreadyReloaded = sessionStorage.getItem(key) === '1'
       if (alreadyReloaded) return
       sessionStorage.setItem(key, '1')
@@ -61,7 +70,7 @@ export default class ErrorBoundary extends Component {
   }
 
   handleRetry = () => {
-    try { sessionStorage.removeItem(ErrorBoundary.chunkReloadKey) } catch {}
+    try { sessionStorage.removeItem(ErrorBoundary.chunkReloadKey()) } catch {}
     this.setState({ error: null, showDetail: false, componentStack: null, errorRoute: null, errorAt: null })
   }
 

@@ -57,6 +57,8 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
     return () => {
       gsap.killTweensOf(sheetRef.current)
       restorePageFront(0)
+      const depthTarget = document.getElementById('page-depth') ?? document.getElementById('page-root')
+      if (depthTarget) gsap.set(depthTarget, { clearProps: 'transform,opacity,borderRadius,transformOrigin' })
       unlockTelegramVerticalSwipes(true)
       unlockPageRootScroll(true)
     }

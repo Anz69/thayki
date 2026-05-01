@@ -45,6 +45,9 @@ export function restorePageFront(duration = 0.38) {
   const shell = getShell()
   if (!el || !root) return
   gsap.killTweensOf([el, root])
+  const finalizeFrontState = () => {
+    gsap.set(el, { clearProps: 'transform,opacity,borderRadius,transformOrigin' })
+  }
   gsap.to(el, {
     scale: 1,
     y: 0,
@@ -52,8 +55,9 @@ export function restorePageFront(duration = 0.38) {
     opacity: 1,
     duration,
     ease: 'power3.out',
-    onComplete: () => { el.style.transformOrigin = '' },
+    onComplete: finalizeFrontState,
   })
+  if (duration === 0) finalizeFrontState()
   scrollTo(savedScrollY, duration, 'power2.out')
   if (shell) {
     gsap.killTweensOf(shell)

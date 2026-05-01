@@ -1,5 +1,4 @@
 import { useState, useRef, useLayoutEffect, useCallback, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import gsap from 'gsap'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import BecomeModelLanding from '@/components/becomeModel/Landing'
@@ -52,17 +51,9 @@ const SCREENS = [
 const DUR_OUT = 0.28
 const DUR_IN  = 0.48
 
-function clampStep(n) {
-  const parsed = parseInt(n, 10)
-  if (isNaN(parsed)) return 0
-  return Math.max(0, Math.min(parsed, SCREENS.length - 1))
-}
-
 export default function BecomeModelPage() {
   const navigate = useTransitionNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
-
-  const initialStep = clampStep(searchParams.get('step') ?? '0')
+  const initialStep = 0
 
   const [stepIdx, setStepIdx]     = useState(initialStep)
   const [submitting, setSubmitting] = useState(false)
@@ -117,8 +108,6 @@ export default function BecomeModelPage() {
     const nextEl = slidesRef.current[next]
     if (!prevEl || !nextEl) return
 
-    setSearchParams(next === 0 ? {} : { step: String(next) }, { replace: true })
-
     gsap.set(nextEl, { xPercent: forward ? 100 : -100, autoAlpha: 1, pointerEvents: 'none' })
     const tl = gsap.timeline({
       onComplete() {
@@ -130,7 +119,7 @@ export default function BecomeModelPage() {
     })
     tl.to(prevEl, { xPercent: forward ? -22 : 22, autoAlpha: 0, duration: DUR_OUT, ease: 'power2.inOut' })
     tl.to(nextEl, { xPercent: 0, autoAlpha: 1, duration: DUR_IN,  ease: 'power3.out' }, 0)
-  }, [setSearchParams])
+  }, [])
 
   const handleStart = useCallback(() => goTo(1), [goTo])
 
