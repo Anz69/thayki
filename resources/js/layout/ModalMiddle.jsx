@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
+import {
+  lockPageRootScroll,
+  unlockPageRootScroll,
+  lockTelegramVerticalSwipes,
+  unlockTelegramVerticalSwipes,
+} from '@/utils/modalLocks'
 
 export default function ModalMiddle({ isOpen, onClose, onAfterClose, children }) {
   const [isVisible, setIsVisible] = useState(isOpen)
@@ -26,8 +32,12 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
 
   useEffect(() => {
     if (!isVisible) return
-    window.Telegram?.WebApp?.disableVerticalSwipes?.()
-    return () => window.Telegram?.WebApp?.enableVerticalSwipes?.()
+    lockTelegramVerticalSwipes()
+    lockPageRootScroll()
+    return () => {
+      unlockTelegramVerticalSwipes()
+      unlockPageRootScroll()
+    }
   }, [isVisible])
 
   useEffect(() => {

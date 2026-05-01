@@ -8,17 +8,22 @@ const SHELL_LIGHT = '#ffffff'
 let savedScrollY = 0
 
 function getRoot()  { return document.getElementById('page-root') }
+function getDepthTarget() { return document.getElementById('page-depth') ?? getRoot() }
 function getShell() { return document.querySelector('.app-shell') }
 
 function scrollTo(y, duration, ease = 'power3.out') {
-  gsap.to(document.documentElement, { scrollTop: y, duration, ease })
+  const root = getRoot()
+  if (!root) return
+  gsap.to(root, { scrollTop: y, duration, ease })
 }
 
 export function pushPageBack(duration = 0.44) {
-  const el    = getRoot()
+  const el    = getDepthTarget()
+  const root  = getRoot()
   const shell = getShell()
-  if (!el) return
-  savedScrollY = window.scrollY
+  if (!el || !root) return
+  savedScrollY = root.scrollTop
+  gsap.killTweensOf([el, root])
   scrollTo(0, duration * 0.85)
   gsap.to(el, {
     scale: SCALE,
@@ -35,9 +40,11 @@ export function pushPageBack(duration = 0.44) {
 }
 
 export function restorePageFront(duration = 0.38) {
-  const el    = getRoot()
+  const el    = getDepthTarget()
+  const root  = getRoot()
   const shell = getShell()
-  if (!el) return
+  if (!el || !root) return
+  gsap.killTweensOf([el, root])
   gsap.to(el, {
     scale: 1,
     y: 0,
@@ -55,12 +62,13 @@ export function restorePageFront(duration = 0.38) {
 }
 
 export function setPageDepth(progress) {
-  const el    = getRoot()
+  const el    = getDepthTarget()
   const shell = getShell()
   if (!el) return
+  gsap.killTweensOf(el)
   gsap.set(el, {
     scale:        SCALE + (1 - SCALE) * progress,
-    y:            14 * (1 - progress),
+    y:            -24 * (1 - progress),
     borderRadius: `${RADIUS * (1 - progress)}px`,
     opacity:      OPACITY + (1 - OPACITY) * progress,
   })

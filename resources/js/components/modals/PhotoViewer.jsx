@@ -30,12 +30,9 @@ export default function PhotoViewer() {
   }, [store.isOpen, store.currentIndex, store.photos.length])
   useEffect(() => {
     if (store.isOpen) {
-      document.body.style.overflow = 'hidden'
       if (swiperRef.current) {
         swiperRef.current.slideTo(store.currentIndex, 0)
       }
-    } else {
-      document.body.style.overflow = ''
     }
   }, [store.isOpen])
   return (

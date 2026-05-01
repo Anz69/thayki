@@ -291,7 +291,7 @@ export default function App() {
               <AuthGuard>
                 <StrangeGuard>
                   <ModelApplicationPendingGuard>
-                    <>
+                    <div id="page-depth" className="page-depth">
                       <Routes>
                         <Route path="/welcome" element={<StrangeWelcomePage />} />
                         <Route path="/" element={<LandingRoute />} />
@@ -311,8 +311,8 @@ export default function App() {
                         <Route path="/feedback" element={<FeedbackPage />} />
                         <Route path="*" element={<Navigate to="/home" replace />} />
                       </Routes>
-                      <BottomNav />
-                    </>
+                    </div>
+                    <BottomNav />
                   </ModelApplicationPendingGuard>
                 </StrangeGuard>
               </AuthGuard>
@@ -353,6 +353,11 @@ export default function App() {
           overflow-x: hidden;
           scrollbar-width: none;
           position: relative;
+        }
+        .page-depth {
+          min-height: 100%;
+          transform-origin: top center;
+          will-change: transform;
         }
         .page-root::-webkit-scrollbar {
           display: none;

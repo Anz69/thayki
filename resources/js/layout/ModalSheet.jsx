@@ -2,16 +2,25 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { pushPageBack, restorePageFront, setPageDepth } from '@/composables/usePageDepth'
+import {
+  lockPageRootScroll,
+  unlockPageRootScroll,
+  lockTelegramVerticalSwipes,
+  unlockTelegramVerticalSwipes,
+} from '@/utils/modalLocks'
 
 export default function ModalSheet({ isOpen, onClose, height = '95dvh', children }) {
   const [isVisible, setIsVisible] = useState(false)
+  const rootRef   = useRef(null)
   const sheetRef  = useRef(null)
   const handleRef = useRef(null)
+  const backdropPointerDown = useRef(false)
   const touchState = useRef({ startY: 0, startX: 0, isDragging: false, dir: null })
   const onCloseRef = useRef(onClose)
   useEffect(() => { onCloseRef.current = onClose }, [onClose])
 
   const animateOut = useCallback((onComplete) => {
+    gsap.killTweensOf(sheetRef.current)
     restorePageFront(0.38)
     gsap.to(sheetRef.current, { y: '100%', duration: 0.36, ease: 'power3.in', onComplete })
   }, [])
@@ -23,13 +32,19 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
 
   useEffect(() => {
     if (!isVisible) return
-    window.Telegram?.WebApp?.disableVerticalSwipes?.()
-    return () => window.Telegram?.WebApp?.enableVerticalSwipes?.()
+    lockTelegramVerticalSwipes()
+    lockPageRootScroll()
+    return () => {
+      unlockTelegramVerticalSwipes()
+      unlockPageRootScroll()
+    }
   }, [isVisible])
 
   useEffect(() => {
     if (!isVisible || !sheetRef.current) return
     const kids = Array.from(sheetRef.current.children)
+    gsap.killTweensOf(sheetRef.current)
+    gsap.killTweensOf(kids)
     gsap.set(sheetRef.current, { y: '100%' })
     gsap.set(kids, { opacity: 0, y: 16 })
     pushPageBack(0.44)
@@ -37,6 +52,15 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
       .to(sheetRef.current, { y: '0%', duration: 0.44, ease: 'power3.out' }, 0)
       .to(kids, { opacity: 1, y: 0, duration: 0.48, stagger: 0.06, ease: 'power3.out' }, 0.1)
   }, [isVisible])
+
+  useEffect(() => {
+    return () => {
+      gsap.killTweensOf(sheetRef.current)
+      restorePageFront(0)
+      unlockTelegramVerticalSwipes(true)
+      unlockPageRootScroll(true)
+    }
+  }, [])
 
   useEffect(() => {
     const el = handleRef.current
@@ -63,6 +87,7 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
 
       e.preventDefault() // Block Telegram from intercepting
       touchState.current.isDragging = true
+      gsap.killTweensOf(sheetRef.current)
       gsap.set(sheetRef.current, { y: dy * 0.58 })
       setPageDepth(Math.min(dy / 400, 1))
     }
@@ -74,6 +99,7 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
       if (dy > 110) {
         onCloseRef.current()
       } else {
+        gsap.killTweensOf(sheetRef.current)
         gsap.to(sheetRef.current, { y: 0, duration: 0.42, ease: 'back.out(2.2)' })
         pushPageBack(0.42)
       }
@@ -94,6 +120,7 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
       }
       if (touchState.current.dir === 'h' || dy <= 0) return
       touchState.current.isDragging = true
+      gsap.killTweensOf(sheetRef.current)
       gsap.set(sheetRef.current, { y: dy * 0.58 })
       setPageDepth(Math.min(dy / 400, 1))
     }
@@ -106,6 +133,7 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
       if (dy > 110) {
         onCloseRef.current()
       } else {
+        gsap.killTweensOf(sheetRef.current)
         gsap.to(sheetRef.current, { y: 0, duration: 0.42, ease: 'back.out(2.2)' })
         pushPageBack(0.42)
       }
@@ -125,12 +153,20 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
     }
   }, [isVisible])
 
+  const onRootPointerDown = (e) => { backdropPointerDown.current = e.target === rootRef.current }
+  const onRootClick = (e) => {
+    if (!backdropPointerDown.current) return
+    if (e.target !== rootRef.current) return
+    onCloseRef.current()
+  }
+
   if (!isVisible) return null
   return createPortal(
     <>
       <style>{`
         .modal-layout-root {
-          position: fixed; inset: 0; z-index: 10000; pointer-events: none;
+          position: fixed; inset: 0; z-index: 10000; pointer-events: all;
+          background: rgba(0,0,0,0.35);
         }
         .modal-layout-sheet {
           position: absolute; bottom: 0; left: 0; right: 0; background: #fff;
@@ -148,7 +184,12 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
         }
         .modal-layout-handle:active { cursor: grabbing; }
       `}</style>
-      <div className="modal-layout-root">
+      <div
+        ref={rootRef}
+        className="modal-layout-root"
+        onPointerDown={onRootPointerDown}
+        onClick={onRootClick}
+      >
         <div ref={sheetRef} className="modal-layout-sheet" style={{ height }}>
           <div ref={handleRef} className="modal-layout-handle">
             <div style={{ width: 48, height: 4, borderRadius: 9999, background: 'rgba(0,0,0,0.15)' }} />
