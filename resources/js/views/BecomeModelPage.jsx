@@ -8,6 +8,7 @@ import Step2Age    from '@/components/becomeModel/steps/Step2Age'
 import Step3Info   from '@/components/becomeModel/steps/Step3Info'
 import Step4Photos from '@/components/becomeModel/steps/Step4Photos'
 import Step5Prices from '@/components/becomeModel/steps/Step5Prices'
+import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
 
 /** Map collected form data to the POST /model-application payload */
@@ -54,6 +55,7 @@ const DUR_IN  = 0.48
 
 export default function BecomeModelPage() {
   const navigate = useTransitionNavigate()
+  const authStore = useAuthStore()
   const initialStep = 0
 
   const [stepIdx, setStepIdx]     = useState(initialStep)
@@ -75,7 +77,9 @@ export default function BecomeModelPage() {
           navigate('/application-pending', { replace: true })
           return
         }
-        navigate('/home', { replace: true })
+        if (status === 'approved') {
+          navigate('/home', { replace: true })
+        }
       })
       .catch((err) => {
         if (cancelled) return
@@ -87,6 +91,24 @@ export default function BecomeModelPage() {
       cancelled = true
     }
   }, [navigate])
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    const root = document.documentElement
+    if (!vv) return undefined
+    const sync = () => {
+      const overlap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      root.style.setProperty('--keyboard-offset', `${overlap}px`)
+    }
+    vv.addEventListener('resize', sync)
+    vv.addEventListener('scroll', sync)
+    sync()
+    return () => {
+      vv.removeEventListener('resize', sync)
+      vv.removeEventListener('scroll', sync)
+      root.style.removeProperty('--keyboard-offset')
+    }
+  }, [])
 
   useLayoutEffect(() => {
     slidesRef.current.forEach((el, i) => {
@@ -136,11 +158,13 @@ export default function BecomeModelPage() {
           headers: { 'Idempotency-Key': `model-app-${Date.now()}` },
         })
         resetModelAppGuardCache()
+        await authStore.refreshUser()
         navigate('/application-pending', { replace: true })
       } catch (err) {
         const errData = err?.response?.data?.error
         if (errData?.code === 'APPLICATION_ALREADY_SUBMITTED') {
           resetModelAppGuardCache()
+          await authStore.refreshUser()
           navigate('/application-pending', { replace: true })
           return
         }
@@ -151,7 +175,7 @@ export default function BecomeModelPage() {
     } else {
       goTo(nextIdx)
     }
-  }, [goTo, navigate])
+  }, [goTo, navigate, authStore])
 
   const handleBack = useCallback(() => {
     if (stepRef.current === 0) {
@@ -162,7 +186,12 @@ export default function BecomeModelPage() {
   }, [goTo, navigate])
 
   return (
-    <section className="min-h-dvh bg-white relative overflow-hidden">
+    <section
+      className="min-h-dvh bg-white relative overflow-hidden"
+      style={{
+        paddingBottom: 'calc(max(1rem, env(safe-area-inset-bottom, 0px)) + var(--keyboard-offset, 0px))',
+      }}
+    >
       {SCREENS.map(({ component: Comp, isLanding, stepNum }, i) => (
         <div
           key={`screen-${i}`}

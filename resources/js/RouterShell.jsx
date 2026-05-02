@@ -219,13 +219,15 @@ function StrangeGuard({ children }) {
 function ModelApplicationPendingGuard({ children }) {
   const { user } = useAuthStore()
   const location = useLocation()
+  const [gateReady, setGateReady] = useState(false)
   const [hasActiveApplication, setHasActiveApplication] = useState(false)
 
   useEffect(() => {
     let cancelled = false
 
-    if (!user || user.role !== 'client') {
+    if (!user) {
       setHasActiveApplication(false)
+      setGateReady(true)
       return () => { cancelled = true }
     }
 
@@ -235,9 +237,11 @@ function ModelApplicationPendingGuard({ children }) {
       && now - modelAppGuardCache.checkedAt < MODEL_APP_GUARD_TTL_MS
     ) {
       setHasActiveApplication(modelAppGuardCache.hasActive)
+      setGateReady(true)
       return () => { cancelled = true }
     }
 
+    setGateReady(false)
     api.get('/model-application')
       .then((res) => {
         if (cancelled) return
@@ -245,16 +249,22 @@ function ModelApplicationPendingGuard({ children }) {
         const hasActive = status === 'submitted'
         setHasActiveApplication(hasActive)
         modelAppGuardCache = { userId: user.id, hasActive, checkedAt: Date.now() }
+        setGateReady(true)
       })
       .catch((err) => {
         if (cancelled) return
         const hasActive = false
         setHasActiveApplication(hasActive)
         modelAppGuardCache = { userId: user.id, hasActive, checkedAt: Date.now() }
+        setGateReady(true)
       })
 
     return () => { cancelled = true }
-  }, [user?.id, user?.role])
+  }, [user?.id])
+
+  if (!gateReady) {
+    return children
+  }
 
   if (hasActiveApplication && location.pathname !== '/application-pending') {
     return <Navigate to="/application-pending" replace />

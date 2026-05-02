@@ -26,9 +26,7 @@ use Illuminate\Support\Facades\DB;
  */
 class StartHandler
 {
-    public function __construct(private readonly TelegramBotService $bot)
-    {
-    }
+    public function __construct(private readonly TelegramBotService $bot) {}
 
     public static function default(): self
     {
@@ -36,12 +34,14 @@ class StartHandler
     }
 
     /**
-     * @param array $tgFrom Telegram "from" object: id, username, first_name, last_name, language_code
+     * @param  array  $tgFrom  Telegram "from" object: id, username, first_name, last_name, language_code
      */
     public function handle(int $chatId, array $tgFrom, ?string $startParam): void
     {
         $telegramId = (int) ($tgFrom['id'] ?? 0);
-        if ($telegramId <= 0) return;
+        if ($telegramId <= 0) {
+            return;
+        }
 
         $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
 
@@ -55,6 +55,7 @@ class StartHandler
             } else {
                 $this->sendStrangeWelcome($chatId);
             }
+
             return;
         }
 
@@ -62,12 +63,15 @@ class StartHandler
 
         if ($invite === null || ! $invite->isUsable()) {
             $this->sendStrangeWelcome($chatId, expired: $invite !== null);
+
             return;
         }
 
         DB::transaction(function () use ($invite, $user): void {
             $invite = StartInvite::query()->whereKey($invite->id)->lockForUpdate()->first();
-            if ($invite === null || ! $invite->isUsable()) return;
+            if ($invite === null || ! $invite->isUsable()) {
+                return;
+            }
 
             $alreadyUsed = StartInviteUse::query()
                 ->where('invite_id', $invite->id)
@@ -77,17 +81,21 @@ class StartHandler
             if (! $alreadyUsed) {
                 StartInviteUse::query()->create([
                     'invite_id' => $invite->id,
-                    'user_id'   => $user->id,
+                    'user_id' => $user->id,
                 ]);
                 $invite->increment('times_used');
             }
 
             $user->is_strange = false;
+            if ($invite->kind === StartInvite::KIND_MODEL) {
+                $user->role = UserRole::Model;
+            }
             $user->save();
         });
 
         if ($invite->kind === StartInvite::KIND_MODEL) {
             $this->sendModelInviteWelcome($chatId, $user->first_name ?? '');
+
             return;
         }
 
@@ -101,13 +109,13 @@ class StartHandler
             $user = User::query()->lockForUpdate()->firstOrCreate(
                 ['telegram_id' => $telegramId],
                 [
-                    'first_name'    => (string) ($tgFrom['first_name'] ?? 'User'),
-                    'last_name'     => isset($tgFrom['last_name']) ? (string) $tgFrom['last_name'] : null,
-                    'username'      => isset($tgFrom['username']) ? (string) $tgFrom['username'] : null,
+                    'first_name' => (string) ($tgFrom['first_name'] ?? 'User'),
+                    'last_name' => isset($tgFrom['last_name']) ? (string) $tgFrom['last_name'] : null,
+                    'username' => isset($tgFrom['username']) ? (string) $tgFrom['username'] : null,
                     'language_code' => isset($tgFrom['language_code']) ? (string) $tgFrom['language_code'] : null,
-                    'role'          => UserRole::Client,
-                    'status'        => UserStatus::Active,
-                    'tg_chat_id'    => $chatId,
+                    'role' => UserRole::Client,
+                    'status' => UserStatus::Active,
+                    'tg_chat_id' => $chatId,
                 ],
             );
 
@@ -120,7 +128,9 @@ class StartHandler
                 $user->username = (string) $tgFrom['username'];
                 $dirty = true;
             }
-            if ($dirty) $user->save();
+            if ($dirty) {
+                $user->save();
+            }
 
             return $user;
         });

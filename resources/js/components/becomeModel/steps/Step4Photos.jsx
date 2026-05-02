@@ -127,20 +127,24 @@ export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
     setUploading(true)
     setUploadErr(null)
     try {
-      const results = await Promise.all(
-        filledSlots.map(async ({ file }) => {
-          const form = new FormData()
-          form.append('photo', file)
-          const res = await api.post('/uploads/photo', form, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          })
-          return res.data.data ?? res.data
-        }),
-      )
+      const results = []
+      for (const { file } of filledSlots) {
+        const form = new FormData()
+        form.append('photo', file)
+        const res = await api.post('/uploads/photo', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        results.push(res.data.data ?? res.data)
+      }
       const photos = results.map(r => r?.path ?? r?.url).filter(Boolean)
       onNext({ photos })
-    } catch {
-      setUploadErr('Ошибка загрузки фото. Попробуйте снова.')
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error?.message
+        ?? err?.response?.data?.message
+        ?? 'Ошибка загрузки фото. Попробуйте снова.'
+      setUploadErr(msg)
+    } finally {
       setUploading(false)
     }
   }
@@ -150,7 +154,10 @@ export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
       <div className="px-5 pt-8 shrink-0">
         <StepProgress current={stepNum} total={totalSteps} />
       </div>
-      <div className="flex-1 flex flex-col gap-5 px-5 pt-8 min-h-0 overflow-y-auto">
+      <div
+        className="flex-1 flex flex-col gap-5 px-5 pt-8 min-h-0 overflow-y-auto"
+        style={{ paddingBottom: 'calc(1.5rem + var(--keyboard-offset, 0px))' }}
+      >
         <div ref={headRef} className="flex flex-col gap-2.5 shrink-0">
           <h2 className="text-[24px]/[105%] font-[500] text-black tracking-[-0.025em] max-w-[290px]">
             Привяжите фото к вашему профилю

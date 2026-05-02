@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Services\Telegram\Notifier;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class SubmitModelApplicationAction
 {
@@ -50,6 +51,15 @@ class SubmitModelApplicationAction
                 'reviewed_at' => null,
                 'review_note' => null,
             ]);
+
+            $photos = array_values(array_filter((array) ($payload['photos'] ?? [])));
+            if (count($photos) > 0) {
+                $first = (string) $photos[0];
+                $photoUrl = str_starts_with($first, 'http')
+                    ? $first
+                    : Storage::disk('public')->url(ltrim($first, '/'));
+                $user->update(['photo_url' => $photoUrl]);
+            }
 
             $this->audit->log('model_application.submitted', $user, $application, [
                 'application_id' => $application->id,

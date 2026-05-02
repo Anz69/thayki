@@ -137,19 +137,7 @@ export default function ClientPage() {
     fetchMeetings(false)
   }, [location.key, fetchMeetings])
 
-  useEffect(() => {
-    return subscribeActiveMeetingsRefresh(() => fetchMeetings(true))
-  }, [fetchMeetings])
-
-  useEffect(() => {
-    const onPageShow = (e) => {
-      if (e.persisted) fetchMeetings(true)
-    }
-    window.addEventListener('pageshow', onPageShow)
-    return () => window.removeEventListener('pageshow', onPageShow)
-  }, [fetchMeetings])
-
-  useEffect(() => {
+  const fetchBalance = useCallback(() => {
     api.get('/wallet')
       .then(r => {
         const w = r.data.data
@@ -159,6 +147,37 @@ export default function ClientPage() {
       })
       .catch(() => setBalance(0))
   }, [])
+
+  useEffect(() => {
+    return subscribeActiveMeetingsRefresh(() => {
+      fetchMeetings(true)
+      fetchBalance()
+    })
+  }, [fetchMeetings, fetchBalance])
+
+  useEffect(() => {
+    const onPageShow = (e) => {
+      if (e.persisted) {
+        fetchMeetings(true)
+        fetchBalance()
+      }
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [fetchMeetings, fetchBalance])
+
+  useEffect(() => {
+    fetchBalance()
+
+    const onVisibility = () => {
+      if (!document.hidden) {
+        fetchBalance()
+        fetchMeetings(true)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [fetchMeetings, fetchBalance])
 
   useLayoutEffect(() => {
     gsap.set(balanceRef.current,  { autoAlpha: 0, y: 24 })

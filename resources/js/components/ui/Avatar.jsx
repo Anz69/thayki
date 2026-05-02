@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 
 const PALETTE = ['#E2319B', '#7B5BFF', '#229ED9', '#22B573', '#FF7A3D', '#FFB01F']
 
@@ -15,15 +16,16 @@ export default function Avatar({ src, name, size = 112, className = '' }) {
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const letter = (String(name || '?').trim()[0] ?? '?').toUpperCase()
+  const resolvedSrc = useMemo(() => resolveMediaUrl(src), [src])
 
   useEffect(() => {
     setFailed(false)
     setLoaded(false)
-  }, [src])
+  }, [resolvedSrc])
 
   const bg = PALETTE[paletteIndex(name)]
 
-  if (!src || failed) {
+  if (!resolvedSrc || failed) {
     return (
       <div
         style={{ width: size, height: size, background: bg, flexShrink: 0 }}
@@ -48,7 +50,7 @@ export default function Avatar({ src, name, size = 112, className = '' }) {
         }}
       />
       <img
-        src={src}
+        src={resolvedSrc}
         alt=""
         loading="lazy"
         decoding="async"

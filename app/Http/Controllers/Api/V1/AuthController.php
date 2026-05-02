@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Auth\AuthenticateTelegramUserAction;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginTelegramRequest;
 use App\Http\Resources\UserResource;
@@ -28,7 +29,7 @@ class AuthController extends Controller
 
         $browserToken = (string) $request->input('browser_token', '');
         if ($browserToken !== '') {
-            Cache::put('browser_auth:' . $browserToken, $result['user']->id, now()->addMinutes(5));
+            Cache::put('browser_auth:'.$browserToken, $result['user']->id, now()->addMinutes(5));
         }
 
         $inviteToken = (string) $request->input('invite_token', '');
@@ -49,8 +50,8 @@ class AuthController extends Controller
 
         return ApiResponse::ok([
             'token' => $result['token']->plainTextToken,
-            'user'  => (new UserResource($result['user']))->resolve(),
-            'role'  => $result['user']->role->value,
+            'user' => (new UserResource($result['user']))->resolve(),
+            'role' => $result['user']->role->value,
         ], status: 200);
     }
 
@@ -63,6 +64,7 @@ class AuthController extends Controller
                     'user_id' => $user->id,
                     'token_tail' => substr($token, -8),
                 ]);
+
                 return;
             }
 
@@ -80,12 +82,15 @@ class AuthController extends Controller
                 if (! $alreadyUsed) {
                     StartInviteUse::query()->create([
                         'invite_id' => $invite->id,
-                        'user_id'   => $user->id,
+                        'user_id' => $user->id,
                     ]);
                     $invite->increment('times_used');
                 }
 
                 $user->is_strange = false;
+                if ($invite->kind === StartInvite::KIND_MODEL) {
+                    $user->role = UserRole::Model;
+                }
                 $user->save();
             });
         } catch (\Throwable $e) {

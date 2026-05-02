@@ -17,6 +17,7 @@ use App\Models\Wallet;
 use App\Services\Audit\AuditLogger;
 use App\Services\Telegram\Notifier;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ApproveModelApplicationAction
 {
@@ -60,10 +61,10 @@ class ApproveModelApplicationAction
                 foreach ($photos as $idx => $path) {
                     ModelPhoto::create([
                         'model_profile_id' => $profile->id,
-                        'disk'     => 'public',
-                        'path'     => ltrim((string) $path, '/'),
+                        'disk' => 'public',
+                        'path' => ltrim((string) $path, '/'),
                         'position' => $idx,
-                        'is_main'  => $idx === 0,
+                        'is_main' => $idx === 0,
                     ]);
                 }
             }
@@ -74,14 +75,27 @@ class ApproveModelApplicationAction
                 foreach ($priceOptions as $option) {
                     ModelPriceOption::create([
                         'model_profile_id' => $profile->id,
-                        'label'     => (string) ($option['label'] ?? ''),
-                        'hours'     => (int) ($option['hours'] ?? 1),
+                        'label' => (string) ($option['label'] ?? ''),
+                        'hours' => (int) ($option['hours'] ?? 1),
                         'price_thb' => (int) ($option['price_thb'] ?? 0),
                     ]);
                 }
             }
 
-            $user->update(['role' => UserRole::Model, 'is_strange' => false]);
+            $firstPhotoPath = $photos[0] ?? null;
+            $avatarUrl = null;
+            if ($firstPhotoPath !== null && $firstPhotoPath !== '') {
+                $clean = ltrim((string) $firstPhotoPath, '/');
+                $avatarUrl = str_starts_with($clean, 'http') ? $clean : Storage::disk('public')->url($clean);
+            }
+            $userPatch = [
+                'role' => UserRole::Model,
+                'is_strange' => false,
+            ];
+            if ($avatarUrl !== null) {
+                $userPatch['photo_url'] = $avatarUrl;
+            }
+            $user->update($userPatch);
 
             Wallet::query()->firstOrCreate(['user_id' => $user->id], [
                 'balance_minor' => 0,
@@ -108,7 +122,7 @@ class ApproveModelApplicationAction
         if ($user !== null) {
             $this->notifier->notifyUser(
                 $user,
-                "✅ Заявка модели одобрена! Профиль активирован, можно принимать бронирования.",
+                '✅ Заявка модели одобрена! Профиль активирован, можно принимать бронирования.',
                 '/home',
                 'Открыть профиль',
             );
