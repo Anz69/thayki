@@ -19,7 +19,8 @@ class UploadAvatarRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo' => ['required', 'file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
+            // Type checks run in UploadAvatarAction (incl. HEIC by extension / sniffed mime).
+            'photo' => ['required', 'file', 'max:10240'],
         ];
     }
 }

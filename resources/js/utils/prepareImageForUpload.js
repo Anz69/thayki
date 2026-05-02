@@ -3,26 +3,55 @@ const MAX_UPLOAD_BYTES = 9 * 1024 * 1024
 const INITIAL_LONG_EDGE = 1920
 const JPEG_QUALITY = 0.85
 
+function isHeicLikeFile(file) {
+  if (!file) return false
+  const t = (file.type || '').toLowerCase()
+  if (t === 'image/heic' || t === 'image/heif') return true
+  return /\.(heic|heif)$/i.test(file.name || '')
+}
+
+async function heicToJpegFile(file) {
+  const { default: heic2any } = await import('heic2any')
+  const result = await heic2any({
+    blob: file,
+    toType: 'image/jpeg',
+    quality: 0.92,
+  })
+  const blob = Array.isArray(result) ? result[0] : result
+  const base = (file.name || 'photo').replace(/\.[^.]+$/i, '') || 'photo'
+  return new File([blob], `${base}.jpg`, { type: 'image/jpeg', lastModified: Date.now() })
+}
+
 /**
- * Downscale / recompress raster images so uploads stay under limits and load faster.
- * HEIC/HEIF is returned unchanged (browser often cannot decode; server handles if Imagick exists).
+ * Converts HEIC/HEIF to JPEG in the browser when possible, then downscales other rasters.
  *
  * @param {File} file
  * @returns {Promise<File>}
  */
 export async function prepareImageFileForUpload(file) {
-  if (!file || !file.type.startsWith('image/')) {
-    return file
+  if (!file) return file
+
+  let working = file
+  if (isHeicLikeFile(file)) {
+    try {
+      working = await heicToJpegFile(file)
+    } catch {
+      working = file
+    }
   }
-  if (file.type === 'image/heic' || file.type === 'image/heif') {
-    return file
+
+  if (!working.type.startsWith('image/')) {
+    return working
   }
-  if (file.size <= MAX_UPLOAD_BYTES && file.size <= 1.5 * 1024 * 1024) {
-    return file
+  if (working.type === 'image/heic' || working.type === 'image/heif') {
+    return working
+  }
+  if (working.size <= MAX_UPLOAD_BYTES && working.size <= 1.5 * 1024 * 1024) {
+    return working
   }
 
   try {
-    const bitmap = await createImageBitmap(file)
+    const bitmap = await createImageBitmap(working)
     try {
       let longEdgeLimit = INITIAL_LONG_EDGE
       let blob = null
@@ -41,7 +70,7 @@ export async function prepareImageFileForUpload(file) {
         canvas.height = height
         const ctx = canvas.getContext('2d')
         if (!ctx) {
-          return file
+          return working
         }
         ctx.drawImage(bitmap, 0, 0, width, height)
 
@@ -60,16 +89,16 @@ export async function prepareImageFileForUpload(file) {
       }
 
       if (!blob || blob.size > MAX_UPLOAD_BYTES) {
-        return file
+        return working
       }
 
-      const name = file.name.replace(/\.[^.]+$/, '') || 'photo'
+      const name = working.name.replace(/\.[^.]+$/, '') || 'photo'
       return new File([blob], `${name}.jpg`, { type: 'image/jpeg', lastModified: Date.now() })
     } finally {
       bitmap.close()
     }
   } catch {
-    return file
+    return working
   }
 }
 

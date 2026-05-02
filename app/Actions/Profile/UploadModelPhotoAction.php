@@ -8,6 +8,7 @@ use App\Exceptions\DomainException;
 use App\Jobs\ProcessUploadedMediaJob;
 use App\Models\ModelPhoto;
 use App\Models\ModelProfile;
+use App\Support\HeicImageHandler;
 use App\Support\SafeFileExtension;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -30,12 +31,6 @@ class UploadModelPhotoAction
         return DB::transaction(function () use ($profile, $file, $makeMain): ModelPhoto {
             $disk = 'public';
 
-            try {
-                $ext = SafeFileExtension::forImage($file);
-            } catch (\RuntimeException $e) {
-                throw DomainException::invalid('UNSUPPORTED_FILE', 'Неподдерживаемый формат фото.');
-            }
-
             $current = ModelPhoto::query()
                 ->where('model_profile_id', $profile->id)
                 ->lockForUpdate()
@@ -48,20 +43,58 @@ class UploadModelPhotoAction
                 );
             }
 
-            $path = 'model-photos/'.$profile->id.'/'.Str::uuid()->toString().'.'.$ext;
+            $path = 'model-photos/'.$profile->id.'/'.Str::uuid()->toString();
 
-            try {
-                Storage::disk($disk)->putFileAs(dirname($path), $file, basename($path), 'public');
-            } catch (\Throwable $e) {
-                Log::error('[UploadModelPhotoAction] storage put failed', [
-                    'profile_id' => $profile->id,
-                    'disk'       => $disk,
-                    'error'      => $e->getMessage(),
-                ]);
-                throw DomainException::invalid(
-                    'PHOTO_STORAGE_FAILED',
-                    'Не удалось сохранить фото. Попробуйте ещё раз.',
-                );
+            if (HeicImageHandler::isHeic($file)) {
+                try {
+                    $jpeg = HeicImageHandler::toJpegBlob($file);
+                } catch (\RuntimeException $e) {
+                    if ($e->getMessage() === 'imagick_missing') {
+                        throw DomainException::invalid(
+                            'UNSUPPORTED_FILE',
+                            'HEIC на сервере недоступен. Откройте приложение в актуальной версии или сохраните фото как JPEG.',
+                        );
+                    }
+                    throw $e;
+                } catch (\Throwable) {
+                    throw DomainException::invalid(
+                        'UNSUPPORTED_FILE',
+                        'Не удалось обработать HEIC. Сохраните снимок как JPEG.',
+                    );
+                }
+                $path .= '.jpg';
+                try {
+                    Storage::disk($disk)->put($path, $jpeg, 'public');
+                } catch (\Throwable $e) {
+                    Log::error('[UploadModelPhotoAction] HEIC storage put failed', [
+                        'profile_id' => $profile->id,
+                        'error'      => $e->getMessage(),
+                    ]);
+                    throw DomainException::invalid(
+                        'PHOTO_STORAGE_FAILED',
+                        'Не удалось сохранить фото. Попробуйте ещё раз.',
+                    );
+                }
+            } else {
+                try {
+                    $ext = SafeFileExtension::forImage($file);
+                } catch (\RuntimeException $e) {
+                    throw DomainException::invalid('UNSUPPORTED_FILE', 'Неподдерживаемый формат фото.');
+                }
+                $path .= '.'.$ext;
+                try {
+                    Storage::disk($disk)->putFileAs(dirname($path), $file, basename($path), 'public');
+                } catch (\Throwable $e) {
+                    Log::error('[UploadModelPhotoAction] storage put failed', [
+                        'profile_id' => $profile->id,
+                        'disk'       => $disk,
+                        'error'      => $e->getMessage(),
+                    ]);
+                    throw DomainException::invalid(
+                        'PHOTO_STORAGE_FAILED',
+                        'Не удалось сохранить фото. Попробуйте ещё раз.',
+                    );
+                }
             }
 
             if (! Storage::disk($disk)->exists($path)) {

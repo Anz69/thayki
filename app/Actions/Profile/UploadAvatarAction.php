@@ -6,6 +6,7 @@ namespace App\Actions\Profile;
 
 use App\Exceptions\DomainException;
 use App\Models\User;
+use App\Support\HeicImageHandler;
 use App\Support\SafeFileExtension;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -17,13 +18,35 @@ class UploadAvatarAction
     {
         $disk = 'public';
 
-        try {
-            $ext = SafeFileExtension::forImage($file);
-        } catch (\RuntimeException $e) {
-            throw DomainException::invalid('UNSUPPORTED_FILE', 'Unsupported avatar format.');
-        }
+        $basePath = 'avatars/'.$user->id.'/'.Str::uuid()->toString();
+        $jpegBlob = null;
 
-        $path = 'avatars/'.$user->id.'/'.Str::uuid()->toString().'.'.$ext;
+        if (HeicImageHandler::isHeic($file)) {
+            try {
+                $jpegBlob = HeicImageHandler::toJpegBlob($file);
+            } catch (\RuntimeException $e) {
+                if ($e->getMessage() === 'imagick_missing') {
+                    throw DomainException::invalid(
+                        'UNSUPPORTED_FILE',
+                        'HEIC на сервере недоступен. Обновите приложение или загрузите JPEG/PNG.',
+                    );
+                }
+                throw $e;
+            } catch (\Throwable) {
+                throw DomainException::invalid(
+                    'UNSUPPORTED_FILE',
+                    'Не удалось обработать HEIC. Сохраните фото как JPEG.',
+                );
+            }
+            $path = $basePath.'.jpg';
+        } else {
+            try {
+                $ext = SafeFileExtension::forImage($file);
+            } catch (\RuntimeException $e) {
+                throw DomainException::invalid('UNSUPPORTED_FILE', 'Unsupported avatar format.');
+            }
+            $path = $basePath.'.'.$ext;
+        }
 
         if ($user->photo_customized && $user->photo_url) {
             $oldPath = $this->extractLocalPath($user->photo_url);
@@ -32,7 +55,11 @@ class UploadAvatarAction
             }
         }
 
-        Storage::disk($disk)->putFileAs(dirname($path), $file, basename($path), 'public');
+        if ($jpegBlob !== null) {
+            Storage::disk($disk)->put($path, $jpegBlob, 'public');
+        } else {
+            Storage::disk($disk)->putFileAs(dirname($path), $file, basename($path), 'public');
+        }
 
         /** @var \Illuminate\Filesystem\FilesystemAdapter $storage */
         $storage = Storage::disk($disk);

@@ -8,6 +8,7 @@ use App\Exceptions\DomainException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\ApiResponse;
+use App\Support\HeicImageHandler;
 use App\Support\SafeFileExtension;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,9 +37,7 @@ class PhotoUploadController extends Controller
             throw DomainException::invalid('INVALID_UPLOAD', 'Файл не получен.');
         }
 
-        $mime = (string) $file->getMimeType();
-
-        if (in_array($mime, ['image/heic', 'image/heif'], true)) {
+        if (HeicImageHandler::isHeic($file)) {
             return $this->storeHeicAsJpeg($user, $file);
         }
 
@@ -62,18 +61,16 @@ class PhotoUploadController extends Controller
 
     private function storeHeicAsJpeg(User $user, UploadedFile $file): JsonResponse
     {
-        if (! class_exists(\Imagick::class)) {
-            throw DomainException::invalid(
-                'UNSUPPORTED_FILE',
-                'Формат HEIC не поддерживается на сервере. В Настройках → Камера выберите «Наиболее совместимые» или экспортируйте фото как JPEG.',
-            );
-        }
-
         try {
-            $im = new \Imagick;
-            $im->readImageBlob((string) file_get_contents($file->getRealPath()));
-            $im->setImageFormat('jpeg');
-            $jpeg = $im->getImageBlob();
+            $jpeg = HeicImageHandler::toJpegBlob($file);
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'imagick_missing') {
+                throw DomainException::invalid(
+                    'UNSUPPORTED_FILE',
+                    'Формат HEIC требует конвертации. Обновите приложение или в настройках камеры iPhone выберите «Совместимые» (JPEG).',
+                );
+            }
+            throw $e;
         } catch (\Throwable) {
             throw DomainException::invalid(
                 'UNSUPPORTED_FILE',

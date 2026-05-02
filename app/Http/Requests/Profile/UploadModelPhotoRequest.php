@@ -19,7 +19,7 @@ class UploadModelPhotoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo' => ['required', 'file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
+            'photo' => ['required', 'file', 'max:10240'],
             'is_main' => ['sometimes', 'boolean'],
         ];
     }

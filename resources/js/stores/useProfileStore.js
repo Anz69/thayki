@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import api from '@/utils/api'
 import useAuthStore from '@/stores/useAuthStore'
+import { prepareImageFileForUpload } from '@/utils/prepareImageForUpload'
 
 function mapFromApi(data) {
   return {
@@ -60,8 +61,9 @@ const useProfileStore = create((set, get) => ({
   },
 
   uploadAvatar: async (file) => {
+    const ready = await prepareImageFileForUpload(file)
     const fd = new FormData()
-    fd.append('photo', file)
+    fd.append('photo', ready)
     try {
       await api.post('/me/avatar', fd)
       await useAuthStore.getState().refreshUser()
@@ -71,8 +73,9 @@ const useProfileStore = create((set, get) => ({
   },
 
   uploadPhoto: async (file) => {
+    const ready = await prepareImageFileForUpload(file)
     const fd = new FormData()
-    fd.append('photo', file)
+    fd.append('photo', ready)
     const res = await api.post('/me/model-profile/photos', fd)
     const photo = res.data.data
     set((s) => ({ photos: [...s.photos, photo] }))
@@ -88,8 +91,9 @@ const useProfileStore = create((set, get) => ({
     const oldPhotos = get().photos
     const oldIdx = oldPhotos.findIndex((p) => p.id === oldId)
 
+    const ready = await prepareImageFileForUpload(file)
     const fd = new FormData()
-    fd.append('photo', file)
+    fd.append('photo', ready)
     let uploaded = null
     try {
       const res = await api.post('/me/model-profile/photos', fd)
