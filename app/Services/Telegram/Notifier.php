@@ -28,7 +28,7 @@ class Notifier
      * retries, ...), short enough that legit re-notifies within minutes
      * still go through.
      */
-    private const DEDUP_TTL_SECONDS = 60;
+    private const DEDUP_TTL_SECONDS = 15;
 
     public function __construct(private readonly TelegramBotService $bot)
     {

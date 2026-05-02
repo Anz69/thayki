@@ -10,10 +10,7 @@ import api from '@/utils/api'
 import { logError } from '@/utils/logger'
 const IconQuestion = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <g clipPath="url(#clip_q_mm)">
-      <path d="M7.36153 7.31418C7.42966 7.1205 7.53199 6.94248 7.6622 6.7878C7.78455 6.64246 7.93151 6.51773 8.09783 6.41998C8.44115 6.21821 8.8448 6.14445 9.23729 6.21178C9.62978 6.2791 9.98578 6.48315 10.2422 6.7878C10.4987 7.09245 10.6391 7.47804 10.6385 7.87626C10.6385 9.00042 8.95222 9.5625 8.95222 9.5625V9.71778M8.97404 11.8125H8.98154M16.5 9C16.5 13.1421 13.1421 16.5 9 16.5C4.85786 16.5 1.5 13.1421 1.5 9C1.5 4.85786 4.85786 1.5 9 1.5C13.1421 1.5 16.5 4.85786 16.5 9Z" stroke="#777779" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </g>
-    <defs><clipPath id="clip_q_mm"><rect width="18" height="18" fill="white" /></clipPath></defs>
+    <path d="M7.36153 7.31418C7.42966 7.1205 7.53199 6.94248 7.6622 6.7878C7.78455 6.64246 7.93151 6.51773 8.09783 6.41998C8.44115 6.21821 8.8448 6.14445 9.23729 6.21178C9.62978 6.2791 9.98578 6.48315 10.2422 6.7878C10.4987 7.09245 10.6391 7.47804 10.6385 7.87626C10.6385 9.00042 8.95222 9.5625 8.95222 9.5625V9.71778M8.97404 11.8125H8.98154M16.5 9C16.5 13.1421 13.1421 16.5 9 16.5C4.85786 16.5 1.5 13.1421 1.5 9C1.5 4.85786 4.85786 1.5 9 1.5C13.1421 1.5 16.5 4.85786 16.5 9Z" stroke="#777779" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
@@ -166,13 +163,37 @@ export default function ModelMorePage() {
       .catch(logError)
       .finally(() => setLoadingMeetings(false))
 
-    api.get('/wallet')
-      .then((r) => {
-        const w = r.data?.data
-        const minor = (w?.available_minor ?? w?.balance_minor ?? 0)
-        setBalance(Math.floor(minor / 100))
+    const fetchBalance = () => {
+      api.get('/wallet')
+        .then((r) => {
+          const w = r.data?.data
+          const minor = (w?.available_minor ?? w?.balance_minor ?? 0)
+          setBalance(Math.floor(minor / 100))
+        })
+        .catch(() => setBalance(0))
+    }
+    fetchBalance()
+
+    const fetchMeetings = () => {
+      api.get('/meetings', {
+        params: {
+          per_page: 20,
+          role: 'model',
+          statuses: 'pending,accepted,paid,confirmed',
+        },
       })
-      .catch(() => setBalance(0))
+        .then(r => setMeetings(r.data.data ?? []))
+        .catch(logError)
+    }
+
+    const onVisibility = () => {
+      if (!document.hidden) {
+        fetchBalance()
+        fetchMeetings()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
   useLayoutEffect(() => {

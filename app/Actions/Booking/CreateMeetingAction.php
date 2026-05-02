@@ -76,7 +76,10 @@ class CreateMeetingAction
                 }
             }
 
-            $price = $profile->hourly_rate_thb * $durationHours;
+            $matchingOption = $profile->priceOptions()->where('hours', $durationHours)->first();
+            $price = $matchingOption
+                ? $matchingOption->price_thb
+                : $profile->hourly_rate_thb * $durationHours;
 
             /** @var Meeting $meeting */
             $meeting = Meeting::query()->create([

@@ -90,7 +90,7 @@ export default function CryptoStep({ price, onBack, wrapRef, onPaymentConfirmed 
       gsap.to(checkIconRef.current, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
       gsap.to(copyIconRef.current,  { autoAlpha: 1, scale: 1,   duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
     }, 2000)
-    confirmedTimerRef.current = gsap.delayedCall(3, () => onPaymentConfirmed?.())
+    confirmedTimerRef.current = gsap.delayedCall(1, () => onPaymentConfirmed?.())
   }, [selectedCrypto, onPaymentConfirmed])
   return (
     <div className="flex flex-col gap-5 p-6 pt-2">

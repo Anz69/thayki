@@ -32,7 +32,9 @@ function ModelCard({ model }) {
       <div className="absolute bottom-0 left-0 w-full h-28 bg-gradient-to-t from-black/75 to-transparent" />
       <div className="flex flex-col gap-3 relative z-30 px-3.5 py-5">
         <div className="p-2 bg-[#EFEEF3] rounded-2xl text-[#1B1B1B] font-medium text-xs/[100%] w-max">
-          ฿ {minPrice?.toLocaleString()} /ч
+          {prices.length > 0
+            ? `от ฿ ${minPrice?.toLocaleString()}`
+            : `฿ ${minPrice?.toLocaleString()} /ч`}
         </div>
         <h1 className="text-white text-base/[100%] font-medium">
           {model.display_name}, {model.age}

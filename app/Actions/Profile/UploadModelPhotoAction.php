@@ -88,6 +88,13 @@ class UploadModelPhotoAction
                 'is_main' => $makeMain,
             ]);
 
+            $profile->loadMissing('user');
+            $user = $profile->user;
+            if ($user !== null && ! $user->photo_customized) {
+                $url = Storage::disk($disk)->url($path);
+                $user->update(['photo_url' => $url, 'photo_customized' => true]);
+            }
+
             try {
                 ProcessUploadedMediaJob::dispatch($photo->id)->onQueue('media');
             } catch (\Throwable $e) {

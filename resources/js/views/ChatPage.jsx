@@ -163,7 +163,6 @@ export default function ChatPage() {
   const [chatInfo, setChatInfo]     = useState(null)
   const [inputText, setInputText]   = useState('')
   const [loading, setLoading]       = useState(!!chatId)
-  const [initialLoad, setInitialLoad] = useState(!!chatId)
   const [sending, setSending]       = useState(false)
   const [loadError, setLoadError]   = useState(null)
   const [reloadKey, setReloadKey]   = useState(0)
@@ -184,6 +183,8 @@ export default function ChatPage() {
   const isFirstRender     = useRef(true)
   const prevMsgCount      = useRef(0)
   const entranceComplete  = useRef(false)
+  const pageReadyDone     = useRef(false)
+  const loadDoneRef       = useRef(false)
 
   const setSendWrapRef = useCallback((el) => {
     sendWrapRef.current = el
@@ -202,7 +203,6 @@ export default function ChatPage() {
     if (!chatId) { setLoading(false); setInitialLoad(false); setLoadError(null); return }
 
     setLoading(true)
-    setInitialLoad(true)
     setLoadError(null)
     setMessages([])
     setChatInfo(null)
@@ -226,7 +226,6 @@ export default function ChatPage() {
     }).finally(() => {
       if (cancelled || !isMountedRef.current) return
       setLoading(false)
-      setInitialLoad(false)
     })
 
     const pollInterval = setInterval(() => {
@@ -265,34 +264,23 @@ export default function ChatPage() {
     api.post(`/chats/${chatId}/read`).catch(() => {})
   }, [chatId])
 
-  useLayoutEffect(() => {
-    gsap.set(headerRef.current,   { y: -44, autoAlpha: 0 })
-    gsap.set(inputBarRef.current, { y: 32,  autoAlpha: 0 })
-  }, [])
-
-  usePageReady(() => {
-    const tl = gsap.timeline()
-    tl.to(headerRef.current,   { y: 0, autoAlpha: 1, duration: 0.4,  ease: 'expo.out' })
-      .to(inputBarRef.current, { y: 0, autoAlpha: 1, duration: 0.38, ease: 'power2.out' }, 0.1)
-  })
-
   const runListEntrance = useCallback(() => {
     if (!listRef.current) return
-    // Lock initial viewport at the latest messages before any fade-in,
-    // so the chat doesn't flash from top to bottom.
     messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
     const msgs = listRef.current.querySelectorAll('[data-msg]')
     if (!msgs.length) {
+      gsap.set(listRef.current, { autoAlpha: 1 })
       entranceComplete.current = true
       return
     }
-    gsap.set(msgs, { y: 8, autoAlpha: 0 })
+    gsap.set(msgs, { y: 10, autoAlpha: 0 })
+    gsap.set(listRef.current, { autoAlpha: 1 })
     gsap.to(msgs, {
       y: 0,
       autoAlpha: 1,
-      duration: 0.28,
-      stagger: 0.03,
-      ease: 'power2.out',
+      duration: 0.3,
+      stagger: 0.025,
+      ease: 'power3.out',
       clearProps: 'transform,opacity,visibility',
       onComplete: () => {
         const n = listRef.current?.querySelectorAll('[data-msg]')?.length ?? 0
@@ -303,25 +291,45 @@ export default function ChatPage() {
     })
   }, [])
 
+  const tryShowContent = useCallback(() => {
+    if (!pageReadyDone.current || !loadDoneRef.current) return
+    if (entranceComplete.current) return
+    requestAnimationFrame(() => requestAnimationFrame(() => runListEntrance()))
+  }, [runListEntrance])
+
+  useLayoutEffect(() => {
+    gsap.set(headerRef.current,   { y: -44, autoAlpha: 0 })
+    gsap.set(inputBarRef.current, { y: 32,  autoAlpha: 0 })
+    if (listRef.current) gsap.set(listRef.current, { autoAlpha: 0 })
+  }, [])
+
+  usePageReady(() => {
+    const tl = gsap.timeline()
+    tl.to(headerRef.current,   { y: 0, autoAlpha: 1, duration: 0.4,  ease: 'expo.out' })
+      .to(inputBarRef.current, { y: 0, autoAlpha: 1, duration: 0.38, ease: 'power2.out' }, 0.1)
+    pageReadyDone.current = true
+    tryShowContent()
+  })
+
   useEffect(() => {
     entranceComplete.current = false
+    loadDoneRef.current = false
     prevMsgCount.current = 0
     isFirstRender.current = true
+    if (listRef.current) gsap.set(listRef.current, { autoAlpha: 0 })
   }, [chatId])
 
   useEffect(() => {
-    if (loading || !chatId) {
-      if (!loading && !chatId) {
-        entranceComplete.current = true
-      }
+    if (loading) return
+    if (!chatId) {
+      entranceComplete.current = true
+      loadDoneRef.current = true
+      if (listRef.current) gsap.set(listRef.current, { autoAlpha: 1 })
       return
     }
-    if (entranceComplete.current) return
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => { runListEntrance() })
-    })
-    return () => cancelAnimationFrame(id)
-  }, [loading, chatId, runListEntrance])
+    loadDoneRef.current = true
+    tryShowContent()
+  }, [loading, chatId, tryShowContent])
 
   useEffect(() => {
     const currentCount = messages.length
@@ -339,14 +347,14 @@ export default function ChatPage() {
           const targets = prev ? [prev, last] : [last]
           gsap.fromTo(
             targets,
-            { y: 12, autoAlpha: 0, scale: 0.98 },
+            { y: 18, autoAlpha: 0, scale: 0.94 },
             {
               y: 0,
               autoAlpha: 1,
               scale: 1,
-              duration: 0.28,
+              duration: 0.32,
               stagger: 0.04,
-              ease: 'power2.out',
+              ease: 'back.out(2)',
               clearProps: 'transform,opacity,visibility',
             },
           )
@@ -512,29 +520,21 @@ export default function ChatPage() {
       </header>
 
       <div className="flex-1 relative min-h-0">
-        {initialLoad && (
-          <div className="absolute inset-0 z-10 bg-white flex items-center justify-center">
-            <div className="w-7 h-7 rounded-full border-2 border-[#EFEEF3] border-t-[#E2319B] animate-spin" />
-          </div>
-        )}
-
         <div ref={listRef} className="absolute inset-0 overflow-y-auto">
           <div className="flex flex-col px-4 py-4 gap-0 container min-h-0">
 
-            {!initialLoad && (
-              <div data-msg className="flex flex-col items-center gap-3 mb-6">
-                <AvatarImg src={contactAvatar} name={contactName} size={80} />
-                <div className="bg-[#F5F5F7] rounded-full px-4 py-2">
-                  <span className="text-[#7F7F7F] text-sm/[80%] font-medium">
-                    {chatInfo?.other_user?.last_seen_at
-                      ? isOnlineNow(chatInfo.other_user.last_seen_at)
-                        ? 'в сети'
-                        : formatRussianRelative(chatInfo.other_user.last_seen_at, { feminine: true })
-                      : contactName}
-                  </span>
-                </div>
+            <div data-msg className="flex flex-col items-center gap-3 mb-6">
+              <AvatarImg src={contactAvatar} name={contactName} size={80} />
+              <div className="bg-[#F5F5F7] rounded-full px-4 py-2">
+                <span className="text-[#7F7F7F] text-sm/[70%] font-medium">
+                  {chatInfo?.other_user?.last_seen_at
+                    ? isOnlineNow(chatInfo.other_user.last_seen_at)
+                      ? 'в сети'
+                      : formatRussianRelative(chatInfo.other_user.last_seen_at, { feminine: true })
+                    : contactName}
+                </span>
               </div>
-            )}
+            </div>
 
             {!loading && loadError && (
               <div data-msg className="flex flex-col items-center gap-3 py-8">

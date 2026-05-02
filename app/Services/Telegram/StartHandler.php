@@ -46,7 +46,15 @@ class StartHandler
         $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
 
         if ($startParam === null || $startParam === '') {
-            $this->sendStrangeWelcome($chatId);
+            if (! $user->is_strange) {
+                if ($user->role === UserRole::Model) {
+                    $this->sendModelWelcome($chatId, $user->first_name ?? '');
+                } else {
+                    $this->sendVerifiedWelcome($chatId, $user->first_name ?? '');
+                }
+            } else {
+                $this->sendStrangeWelcome($chatId);
+            }
             return;
         }
 
@@ -133,6 +141,17 @@ class StartHandler
         $this->bot->sendMessage(
             $chatId,
             "{$greeting}Доступ открыт. Откройте мини-приложение, чтобы начать.",
+            openPath: '/home',
+            buttonLabel: 'Открыть приложение',
+        );
+    }
+
+    private function sendModelWelcome(int $chatId, string $firstName): void
+    {
+        $greeting = $firstName !== '' ? "Привет, {$firstName}! " : 'Привет! ';
+        $this->bot->sendMessage(
+            $chatId,
+            "{$greeting}Рады видеть вас снова. Откройте приложение для управления встречами.",
             openPath: '/home',
             buttonLabel: 'Открыть приложение',
         );

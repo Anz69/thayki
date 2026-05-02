@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect, useCallback, useEffect } from 'react'
 import gsap from 'gsap'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
+import { resetModelAppGuardCache } from '@/RouterShell'
 import BecomeModelLanding from '@/components/becomeModel/Landing'
 import Step1Name   from '@/components/becomeModel/steps/Step1Name'
 import Step2Age    from '@/components/becomeModel/steps/Step2Age'
@@ -134,10 +135,12 @@ export default function BecomeModelPage() {
         await api.post('/model-application', payload, {
           headers: { 'Idempotency-Key': `model-app-${Date.now()}` },
         })
+        resetModelAppGuardCache()
         navigate('/application-pending', { replace: true })
       } catch (err) {
         const errData = err?.response?.data?.error
         if (errData?.code === 'APPLICATION_ALREADY_SUBMITTED') {
+          resetModelAppGuardCache()
           navigate('/application-pending', { replace: true })
           return
         }

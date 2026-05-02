@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Actions\Chat\EnsureSupportChatAction;
 use App\Actions\Chat\PostMessageAction;
 use App\Enums\ChatParticipantRole;
 use App\Enums\ChatType;
@@ -31,8 +32,17 @@ class SupportChats extends Page
 
     protected $listeners = ['$refresh', 'new-message-received' => '$refresh'];
 
-    public function mount(?int $chat = null): void
+    public function mount(?int $chat = null, ?int $user = null): void
     {
+        // If ?user=X is provided, ensure a support chat exists for that user and preselect it.
+        if ($user !== null && $user > 0) {
+            $targetUser = User::find($user);
+            if ($targetUser !== null) {
+                $ensured = app(EnsureSupportChatAction::class)->execute($targetUser);
+                $chat = $ensured->id;
+            }
+        }
+
         $preselect = $chat ?? (int) session()->pull('support_chat_preselect', 0);
         if ($preselect <= 0) {
             return;

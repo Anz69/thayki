@@ -7,6 +7,7 @@ use App\Filament\Resources\MeetingResource;
 use App\Filament\Resources\UserResource;
 use App\Models\Complaint;
 use Filament\Forms;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -95,6 +96,14 @@ class ComplaintResource extends Resource
                         Notification::make()->title('Жалоба отклонена')->success()->send();
                     }),
                 Tables\Actions\EditAction::make()->label('Открыть'),
+                Tables\Actions\Action::make('open_support_chat')
+                    ->label('Открыть чат')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->color('info')
+                    ->visible(fn (Complaint $record): bool => $record->user_id !== null)
+                    ->url(fn (Complaint $record): string =>
+                        \App\Filament\Pages\SupportChats::getUrl().'?user='.$record->user_id
+                    ),
                 Tables\Actions\Action::make('open_meeting')
                     ->label('Открыть бронь')
                     ->icon('heroicon-o-calendar-days')
@@ -104,6 +113,11 @@ class ComplaintResource extends Resource
                         : null),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('subject', '!=', 'Отзыв');
     }
 
     public static function getRelations(): array { return []; }

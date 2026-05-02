@@ -63,6 +63,10 @@ let authRetried = false
 const MODEL_APP_GUARD_TTL_MS = 10000
 let modelAppGuardCache = { userId: null, hasActive: false, checkedAt: 0 }
 
+export function resetModelAppGuardCache() {
+  modelAppGuardCache = { userId: null, hasActive: false, checkedAt: 0 }
+}
+
 function AuthErrorScreen() {
   const authStore = useAuthStore()
   const meetingStore = useMeetingStore()
