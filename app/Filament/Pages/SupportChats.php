@@ -16,6 +16,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Url;
 
 class SupportChats extends Page
 {
@@ -30,20 +31,44 @@ class SupportChats extends Page
     public string $search         = '';
     public string $activeTab      = 'users';
 
+    /** Synced with query string ?user= — deep links from admin (e.g. complaints) preselect the chat. */
+    #[Url(as: 'user', except: null)]
+    public ?int $urlUser = null;
+
+    #[Url(as: 'chat', except: null)]
+    public ?int $urlChat = null;
+
     protected $listeners = ['$refresh', 'new-message-received' => '$refresh'];
 
-    public function mount(?int $chat = null, ?int $user = null): void
+    public function mount(): void
     {
-        // If ?user=X is provided, ensure a support chat exists for that user and preselect it.
-        if ($user !== null && $user > 0) {
-            $targetUser = User::find($user);
+        $this->applyUrlPreselect();
+    }
+
+    /**
+     * Resolve ?user= / ?chat= from Livewire URL props or raw request (Filament full-page links).
+     */
+    private function applyUrlPreselect(): void
+    {
+        $userId = $this->positiveIntOrNull($this->urlUser);
+        if ($userId === null && request()->filled('user')) {
+            $userId = $this->positiveIntOrNull((int) request()->query('user'));
+        }
+
+        $chatId = $this->positiveIntOrNull($this->urlChat);
+        if ($chatId === null && request()->filled('chat')) {
+            $chatId = $this->positiveIntOrNull((int) request()->query('chat'));
+        }
+
+        if ($userId !== null) {
+            $targetUser = User::find($userId);
             if ($targetUser !== null) {
                 $ensured = app(EnsureSupportChatAction::class)->execute($targetUser);
-                $chat = $ensured->id;
+                $chatId = $ensured->id;
             }
         }
 
-        $preselect = $chat ?? (int) session()->pull('support_chat_preselect', 0);
+        $preselect = $chatId ?? (int) session()->pull('support_chat_preselect', 0);
         if ($preselect <= 0) {
             return;
         }
@@ -69,6 +94,15 @@ class SupportChats extends Page
         }
 
         $this->selectChat($target->id);
+    }
+
+    private function positiveIntOrNull(?int $value): ?int
+    {
+        if ($value === null || $value <= 0) {
+            return null;
+        }
+
+        return $value;
     }
 
     public function getTitle(): string|Htmlable
