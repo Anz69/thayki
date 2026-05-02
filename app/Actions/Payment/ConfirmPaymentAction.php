@@ -10,8 +10,10 @@ use App\Enums\PaymentStatus;
 use App\Enums\WalletTransactionType;
 use App\Exceptions\DomainException;
 use App\Models\Payment;
+use App\Models\PlatformEarning;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
+use App\Services\Commission\CommissionService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 
@@ -21,6 +23,7 @@ class ConfirmPaymentAction
         private readonly WalletService $wallets,
         private readonly TransitionMeetingStatusAction $transitionMeeting,
         private readonly AuditLogger $audit,
+        private readonly CommissionService $commission,
     ) {}
 
     public function execute(Payment $payment, User $actor): Payment
@@ -57,28 +60,49 @@ class ConfirmPaymentAction
                 $meeting->refresh();
             }
 
-            $modelOwner = $meeting->modelProfile()->firstOrFail()->user()->firstOrFail();
+            $modelProfile = $meeting->modelProfile()->firstOrFail();
+            $modelOwner = $modelProfile->user()->firstOrFail();
 
-            $commission = (float) config('payments.commission', 0.15);
-            $grossMinor = (int) $payment->amount_minor;
-            $netMinor = (int) round($grossMinor * (1 - $commission));
+            $breakdown = $this->commission->calculate(
+                grossMinor: (int) $payment->amount_minor,
+                profile: $modelProfile,
+            );
 
             $this->wallets->credit(
                 user: $modelOwner,
-                amountMinor: $netMinor,
+                amountMinor: $breakdown->netMinor,
                 type: WalletTransactionType::CreditPayment,
                 referenceType: Payment::class,
                 referenceId: $payment->id,
                 meta: [
-                    'commission' => $commission,
-                    'gross_minor' => $grossMinor,
+                    'commission' => $breakdown->commissionRate,
+                    'commission_minor' => $breakdown->commissionMinor,
+                    'gross_minor' => $breakdown->grossMinor,
+                    'source' => $breakdown->source,
+                ],
+            );
+
+            // Idempotent ledger entry — unique on payment_id guards re-confirmation.
+            PlatformEarning::query()->firstOrCreate(
+                ['payment_id' => $payment->id],
+                [
+                    'meeting_id' => $meeting->id,
+                    'model_profile_id' => $modelProfile->id,
+                    'gross_minor' => $breakdown->grossMinor,
+                    'commission_rate' => $breakdown->commissionRate,
+                    'commission_minor' => $breakdown->commissionMinor,
+                    'net_minor' => $breakdown->netMinor,
+                    'source' => $breakdown->source,
+                    'confirmed_at' => $payment->confirmed_at ?? now(),
                 ],
             );
 
             $this->audit->log('payment.confirmed', $actor, $payment, [
                 'meeting_id' => $meeting->id,
-                'net_minor' => $netMinor,
-                'commission' => $commission,
+                'net_minor' => $breakdown->netMinor,
+                'commission' => $breakdown->commissionRate,
+                'commission_minor' => $breakdown->commissionMinor,
+                'commission_source' => $breakdown->source,
             ]);
 
             return $payment->refresh();

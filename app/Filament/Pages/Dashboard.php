@@ -6,6 +6,8 @@ namespace App\Filament\Pages;
 
 use App\Filament\Widgets\LatestMeetingsWidget;
 use App\Filament\Widgets\MeetingsChartWidget;
+use App\Filament\Widgets\PlatformRevenueChartWidget;
+use App\Filament\Widgets\PlatformRevenueStatsWidget;
 use App\Filament\Widgets\RevenueChartWidget;
 use App\Filament\Widgets\StatsOverviewWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -25,8 +27,10 @@ class Dashboard extends BaseDashboard
         return [
             AccountWidget::class,
             StatsOverviewWidget::class,
+            PlatformRevenueStatsWidget::class,
             MeetingsChartWidget::class,
             RevenueChartWidget::class,
+            PlatformRevenueChartWidget::class,
             LatestMeetingsWidget::class,
         ];
     }

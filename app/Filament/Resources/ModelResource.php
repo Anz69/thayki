@@ -75,6 +75,20 @@ class ModelResource extends Resource
                         ->default('any'),
                     Forms\Components\TextInput::make('hourly_rate_thb')->label('Цена за час (฿)')->numeric()
                         ->required($onlyCreate),
+                    Forms\Components\TextInput::make('commission_override')
+                        ->label('Индив. комиссия')
+                        ->helperText('Оставьте пустым для глобальной ставки. % от каждого платежа.')
+                        ->numeric()
+                        ->minValue(0)
+                        ->maxValue(50)
+                        ->step(0.1)
+                        ->suffix('%')
+                        ->formatStateUsing(fn ($state) => $state === null
+                            ? null
+                            : round(((float) $state) * 100, 2))
+                        ->dehydrateStateUsing(fn ($state) => ($state === null || $state === '')
+                            ? null
+                            : round(((float) $state) / 100, 4)),
                     Forms\Components\Toggle::make('is_published')->label('Опубликована'),
                     Forms\Components\Toggle::make('is_verified')->label('Верифицирована'),
                     Forms\Components\DateTimePicker::make('published_at')->label('Дата публикации'),
@@ -123,6 +137,14 @@ class ModelResource extends Resource
                     ->label('Цена/ч')
                     ->formatStateUsing(fn ($state) => $state ? '฿ '.number_format((int) $state) : '—')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('modelProfile.commission_override')
+                    ->label('Комиссия')
+                    ->formatStateUsing(fn ($state) => $state === null
+                        ? 'базовая'
+                        : number_format(((float) $state) * 100, 1).' %')
+                    ->badge()
+                    ->color(fn ($state) => $state === null ? 'gray' : 'warning')
+                    ->toggleable(),
                 Tables\Columns\IconColumn::make('modelProfile.is_published')->label('Опубл.')->boolean(),
                 Tables\Columns\IconColumn::make('modelProfile.is_verified')->label('Верифиц.')->boolean(),
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')

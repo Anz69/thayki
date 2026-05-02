@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $description
  * @property ModelSchedule $schedule
  * @property int $hourly_rate_thb
+ * @property string|null $commission_override
  * @property bool $is_published
  * @property bool $is_verified
  * @property Carbon|null $published_at
@@ -43,6 +44,7 @@ class ModelProfile extends Model
             'height_cm' => 'integer',
             'weight_kg' => 'integer',
             'hourly_rate_thb' => 'integer',
+            'commission_override' => 'decimal:4',
             'is_published' => 'boolean',
             'is_verified' => 'boolean',
             'schedule' => ModelSchedule::class,

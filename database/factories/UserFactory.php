@@ -28,7 +28,6 @@ class UserFactory extends Factory
             'last_name' => fake()->lastName(),
             'language_code' => 'en',
             'photo_url' => null,
-            'is_premium' => false,
             'role' => UserRole::Client,
             'status' => UserStatus::Active,
             'last_auth_at' => now(),

@@ -70,6 +70,20 @@ class ModelProfileResource extends Resource
                     ->label('Цена за час (฿)')
                     ->required()
                     ->numeric(),
+                Forms\Components\TextInput::make('commission_override')
+                    ->label('Индив. комиссия (%)')
+                    ->helperText('Оставьте пустым для использования глобальной ставки.')
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(50)
+                    ->step(0.1)
+                    ->suffix('%')
+                    ->formatStateUsing(fn ($state) => $state === null
+                        ? null
+                        : round(((float) $state) * 100, 2))
+                    ->dehydrateStateUsing(fn ($state) => ($state === null || $state === '')
+                        ? null
+                        : round(((float) $state) / 100, 4)),
                 Forms\Components\Toggle::make('is_published')->label('Опубликована'),
                 Forms\Components\Toggle::make('is_verified')->label('Верифицирована'),
                 Forms\Components\DateTimePicker::make('published_at')->label('Опубликована (дата)'),
