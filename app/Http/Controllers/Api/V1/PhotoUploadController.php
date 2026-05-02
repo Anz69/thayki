@@ -19,9 +19,14 @@ class PhotoUploadController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'photo' => ['required', 'file', 'max:10240'],
-        ]);
+        $request->validate(
+            [
+                'photo' => ['required', 'file', 'max:10240'],
+            ],
+            [
+                'photo.max' => 'Файл больше 10 МБ. Сожмите фото или выберите другое.',
+            ],
+        );
 
         /** @var User $user */
         $user = $request->user();

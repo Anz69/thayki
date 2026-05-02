@@ -31,8 +31,11 @@ export default function Step1Name({ isActive, stepNum, totalSteps, onNext }) {
       <div className="px-5 pt-8 shrink-0">
         <StepProgress current={stepNum} total={totalSteps} />
       </div>
-      <div className="flex-1 flex flex-col px-5 pt-8 min-h-0">
-        <div ref={headRef} className="flex flex-col gap-2.5">
+      <div
+        className="flex-1 flex flex-col min-h-0 overflow-y-auto px-5 pt-8"
+        style={{ paddingBottom: 'calc(1.5rem + var(--keyboard-offset, 0px))' }}
+      >
+        <div ref={headRef} className="flex flex-col gap-2.5 shrink-0">
           <h2 className="text-[24px]/[105%] font-[500] text-black tracking-[-0.025em] max-w-[290px]">
             Укажите ваше Имя
           </h2>
@@ -40,12 +43,13 @@ export default function Step1Name({ isActive, stepNum, totalSteps, onNext }) {
             Чтобы клиенты смогли лучше узнать вас. Ваше имя будет отображаться всем
           </p>
         </div>
-        <div ref={inputRef} className="flex-1 flex items-center">
+        <div ref={inputRef} className="flex-1 flex items-center min-h-[120px]">
           <GradientBorder className="w-full" radius={18} borderWidth={2.5}>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}
               placeholder="..."
               className="w-full px-5 py-5 text-black text-2xl/[100%] font-medium outline-none placeholder:text-[#C0C0C0] text-center bg-transparent"
             />

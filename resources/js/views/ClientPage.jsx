@@ -11,6 +11,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
 import { subscribeActiveMeetingsRefresh } from '@/utils/activeMeetingsBus'
 import { logError } from '@/utils/logger'
+import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 
 const STATUS_MAP = {
   pending:   { label: 'Ожидает подтверждения' },
@@ -69,9 +70,10 @@ function OrderCard({ meeting, currentUserId, onClick }) {
   const counterName = isClient
     ? (meeting.model_profile?.display_name ?? '—')
     : (meeting.client?.first_name ?? meeting.client?.username ?? 'Клиент')
-  const counterPhoto = isClient
+  const counterPhotoRaw = isClient
     ? (meeting.model_profile?.user?.photo_url ?? meeting.model_profile?.photos?.find(p => p.is_main)?.url ?? meeting.model_profile?.photos?.[0]?.url ?? null)
     : (meeting.client?.photo_url ?? null)
+  const counterPhoto = counterPhotoRaw ? resolveMediaUrl(counterPhotoRaw) : null
 
   const date     = formatMeetingDate(meeting.scheduled_at)
   const price    = meeting.price_thb ?? 0

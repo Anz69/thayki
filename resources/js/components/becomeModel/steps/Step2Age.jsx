@@ -201,7 +201,13 @@ export default function Step2Age({ isActive, stepNum, totalSteps, onNext }) {
         <StepProgress current={stepNum} total={totalSteps} />
       </div>
 
-      <div className="flex-1 flex flex-col px-5 min-h-0 overflow-hidden" style={{ paddingTop: isCompact ? 16 : 32 }}>
+      <div
+        className="flex-1 flex flex-col px-5 min-h-0 overflow-y-auto"
+        style={{
+          paddingTop: isCompact ? 16 : 32,
+          paddingBottom: 'calc(1rem + var(--keyboard-offset, 0px))',
+        }}
+      >
         <div ref={headRef} className="flex flex-col shrink-0" style={{ gap: isCompact ? 6 : 10 }}>
           <h2
             className="font-[500] text-black tracking-[-0.025em] max-w-[290px]"

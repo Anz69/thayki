@@ -1,5 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
+
+const LOAD_TIMEOUT_MS = 14000
 
 const PALETTE = ['#E2319B', '#7B5BFF', '#229ED9', '#22B573', '#FF7A3D', '#FFB01F']
 
@@ -17,10 +19,20 @@ export default function Avatar({ src, name, size = 112, className = '' }) {
   const [loaded, setLoaded] = useState(false)
   const letter = (String(name || '?').trim()[0] ?? '?').toUpperCase()
   const resolvedSrc = useMemo(() => resolveMediaUrl(src), [src])
+  const loadWatchRef = useRef(null)
 
   useEffect(() => {
     setFailed(false)
     setLoaded(false)
+    if (!resolvedSrc) return undefined
+    const t = window.setTimeout(() => {
+      setFailed(true)
+    }, LOAD_TIMEOUT_MS)
+    loadWatchRef.current = t
+    return () => {
+      window.clearTimeout(t)
+      loadWatchRef.current = null
+    }
   }, [resolvedSrc])
 
   const bg = PALETTE[paletteIndex(name)]
@@ -56,8 +68,20 @@ export default function Avatar({ src, name, size = 112, className = '' }) {
         decoding="async"
         style={{ width: size, height: size }}
         className={`absolute inset-0 object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-        onLoad={() => setLoaded(true)}
-        onError={() => setFailed(true)}
+        onLoad={() => {
+          if (loadWatchRef.current) {
+            window.clearTimeout(loadWatchRef.current)
+            loadWatchRef.current = null
+          }
+          setLoaded(true)
+        }}
+        onError={() => {
+          if (loadWatchRef.current) {
+            window.clearTimeout(loadWatchRef.current)
+            loadWatchRef.current = null
+          }
+          setFailed(true)
+        }}
       />
       <style>{`
         @keyframes avatar-shimmer {

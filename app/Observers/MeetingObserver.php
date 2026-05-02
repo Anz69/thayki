@@ -49,7 +49,7 @@ class MeetingObserver
             return;
         }
 
-        $actor = $this->systemActor();
+        $actor = $this->systemActor($meeting);
         if ($actor === null) {
             Log::warning('[MeetingObserver] no system actor available; skipping auto-credit', [
                 'meeting_id' => $meeting->id,
@@ -72,20 +72,46 @@ class MeetingObserver
 
     /**
      * Pick a deterministic actor for the auto-confirm audit trail. Prefers
-     * the authenticated admin (Filament edits, API calls) and falls back to
-     * the first available admin for system-driven writes (console, jobs).
+     * the authenticated admin (Filament edits, API calls), then optional
+     * {@see config('wallet.system_actor_user_id')} for environments without
+     * an admin row, then the first active admin.
      */
-    private function systemActor(): ?User
+    private function systemActor(Meeting $meeting): ?User
     {
         $user = auth()->user();
         if ($user instanceof User && $user->role === UserRole::Admin) {
             return $user;
         }
 
-        return User::query()
+        $configuredId = config('wallet.system_actor_user_id');
+        if (is_int($configuredId) && $configuredId > 0) {
+            $actor = User::query()->whereKey($configuredId)->first();
+            if ($actor !== null) {
+                return $actor;
+            }
+            Log::warning('[MeetingObserver] wallet.system_actor_user_id user not found', [
+                'user_id' => $configuredId,
+            ]);
+        }
+
+        $admin = User::query()
             ->where('role', UserRole::Admin)
             ->where('status', UserStatus::Active)
             ->orderBy('id')
             ->first();
+
+        if ($admin !== null) {
+            return $admin;
+        }
+
+        $modelOwner = $meeting->modelProfile()->first()?->user;
+        if ($modelOwner !== null) {
+            Log::info('[MeetingObserver] using model profile owner as audit actor (no admin configured)', [
+                'meeting_id' => $meeting->id,
+                'actor_user_id' => $modelOwner->id,
+            ]);
+        }
+
+        return $modelOwner;
     }
 }

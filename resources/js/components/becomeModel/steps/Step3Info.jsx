@@ -19,6 +19,7 @@ function TextInput({ value, onChange, placeholder, suffix }) {
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}
         placeholder={placeholder}
         className="flex-1 bg-transparent text-black text-[15px]/[100%] font-medium outline-none placeholder:text-[#C0C0C0]"
       />
@@ -80,7 +81,14 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
       <div className="px-5 pt-8 shrink-0">
         <StepProgress current={stepNum} total={totalSteps} />
       </div>
-      <div ref={scrollRef} className="flex-1 flex flex-col min-h-0 overflow-y-auto px-5 pt-8 gap-8 pb-4" style={{ scrollbarWidth: 'none' }}>
+      <div
+        ref={scrollRef}
+        className="flex-1 flex flex-col min-h-0 overflow-y-auto px-5 pt-8 gap-8 pb-4"
+        style={{
+          scrollbarWidth: 'none',
+          paddingBottom: 'calc(1.5rem + var(--keyboard-offset, 0px))',
+        }}
+      >
         <div ref={headRef} className="flex flex-col gap-2.5">
           <h2 className="text-[24px]/[105%] font-[500] text-black tracking-[-0.025em] max-w-[290px]">
             Укажите дополнительную информацию

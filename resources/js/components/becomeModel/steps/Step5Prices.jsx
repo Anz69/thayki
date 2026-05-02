@@ -27,6 +27,7 @@ function PriceRow({ value, onChange, period }) {
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
+        onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}
         placeholder="Укажите цену"
         className="flex-1 bg-transparent text-black text-[15px]/[100%] font-medium outline-none placeholder:text-[#C0C0C0] min-w-0"
       />
@@ -68,8 +69,11 @@ export default function Step5Prices({ isActive, stepNum, totalSteps, onNext, sub
       <div className="px-5 pt-8 shrink-0">
         <StepProgress current={stepNum} total={totalSteps} />
       </div>
-      <div className="flex-1 flex flex-col gap-8 px-5 pt-8 min-h-0">
-        <div ref={headRef} className="flex flex-col gap-2.5">
+      <div
+        className="flex-1 flex flex-col gap-8 px-5 pt-8 min-h-0 overflow-y-auto"
+        style={{ paddingBottom: 'calc(1.5rem + var(--keyboard-offset, 0px))' }}
+      >
+        <div ref={headRef} className="flex flex-col gap-2.5 shrink-0">
           <h2 className="text-[24px]/[105%] font-[500] text-black tracking-[-0.025em] max-w-[290px]">
             Укажите цены за ваши услуги
           </h2>

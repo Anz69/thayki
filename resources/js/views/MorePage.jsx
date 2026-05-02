@@ -12,6 +12,7 @@ import Avatar from '@/components/ui/Avatar'
 import api from '@/utils/api'
 import { subscribeActiveMeetingsRefresh } from '@/utils/activeMeetingsBus'
 import { logError } from '@/utils/logger'
+import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 
 const IconQuestion = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -87,9 +88,10 @@ function OrderCard({ meeting, currentUserId, onClick }) {
   const counterName = isClient
     ? (meeting.model_profile?.display_name ?? '—')
     : (meeting.client?.first_name ?? meeting.client?.username ?? 'Клиент')
-  const counterPhoto = isClient
+  const counterPhotoRaw = isClient
     ? (meeting.model_profile?.user?.photo_url ?? meeting.model_profile?.photos?.find(p => p.is_main)?.url ?? meeting.model_profile?.photos?.[0]?.url ?? null)
     : (meeting.client?.photo_url ?? null)
+  const counterPhoto = counterPhotoRaw ? resolveMediaUrl(counterPhotoRaw) : null
 
   const statusLabel = STATUS_MAP[meeting.status] ?? meeting.status
   const price = meeting.price_thb ?? 0
@@ -167,33 +169,40 @@ export default function MorePage() {
       .finally(() => { if (!silent) setLoadingMeetings(false) })
   }, [])
 
+  const fetchBalance = useCallback(() => {
+    api.get('/wallet')
+      .then(r => {
+        const w = r.data.data
+        setBalance(Math.floor((w?.available_minor ?? w?.balance_minor ?? 0) / 100))
+        const methods = Array.isArray(w?.withdrawal_methods) ? w.withdrawal_methods : []
+        setWithdrawMethods(methods.length ? methods : ['usdt', 'btc', 'ton'])
+      })
+      .catch(() => setBalance(0))
+  }, [])
+
   useEffect(() => {
     fetchMeetings(false)
   }, [location.key, fetchMeetings])
 
   useEffect(() => {
-    return subscribeActiveMeetingsRefresh(() => fetchMeetings(true))
-  }, [fetchMeetings])
+    return subscribeActiveMeetingsRefresh(() => {
+      fetchMeetings(true)
+      fetchBalance()
+    })
+  }, [fetchMeetings, fetchBalance])
 
   useEffect(() => {
     const onPageShow = (e) => {
-      if (e.persisted) fetchMeetings(true)
+      if (e.persisted) {
+        fetchMeetings(true)
+        fetchBalance()
+      }
     }
     window.addEventListener('pageshow', onPageShow)
     return () => window.removeEventListener('pageshow', onPageShow)
-  }, [fetchMeetings])
+  }, [fetchMeetings, fetchBalance])
 
   useEffect(() => {
-    const fetchBalance = () => {
-      api.get('/wallet')
-        .then(r => {
-          const w = r.data.data
-          setBalance(Math.floor((w?.available_minor ?? w?.balance_minor ?? 0) / 100))
-          const methods = Array.isArray(w?.withdrawal_methods) ? w.withdrawal_methods : []
-          setWithdrawMethods(methods.length ? methods : ['usdt', 'btc', 'ton'])
-        })
-        .catch(() => setBalance(0))
-    }
     fetchBalance()
 
     const onVisibility = () => {
@@ -204,7 +213,7 @@ export default function MorePage() {
     }
     document.addEventListener('visibilitychange', onVisibility)
     return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [fetchMeetings])
+  }, [fetchMeetings, fetchBalance])
 
   useLayoutEffect(() => {
     gsap.set(headerRef.current, { autoAlpha: 0, y: -44 })

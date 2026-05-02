@@ -2,6 +2,7 @@ import { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react
 import gsap from 'gsap'
 import StepProgress from '../StepProgress'
 import api from '@/utils/api'
+import { prepareImageFileForUpload, isFileProbablyTooLarge } from '@/utils/prepareImageForUpload'
 
 const MAX_PHOTOS   = 6
 const MIN_REQUIRED = 3
@@ -33,7 +34,7 @@ function EmptySlot({ onAdd }) {
   )
 }
 
-function FilledSlot({ src, onRemove }) {
+function FilledSlot({ src, onRemove, hasError }) {
   const slotRef = useRef(null)
   useEffect(() => {
     if (slotRef.current) {
@@ -45,7 +46,11 @@ function FilledSlot({ src, onRemove }) {
     }
   }, [])
   return (
-    <div ref={slotRef} className="relative rounded-2xl" style={{ aspectRatio: '2/3' }}>
+    <div
+      ref={slotRef}
+      className={`relative rounded-2xl ${hasError ? 'ring-2 ring-[#E2319B] ring-offset-2' : ''}`}
+      style={{ aspectRatio: '2/3' }}
+    >
       <img src={src} alt="" className="w-full h-full object-cover rounded-2xl" draggable={false} />
       <button
         type="button"
@@ -64,6 +69,8 @@ export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
   const [photos,    setPhotos]    = useState(Array(MAX_PHOTOS).fill(null))
   const [uploading, setUploading] = useState(false)
   const [uploadErr, setUploadErr] = useState(null)
+  const [failedSlotIndex, setFailedSlotIndex] = useState(null)
+  const [uploadProgress, setUploadProgress] = useState(null)
 
   const headRef = useRef(null)
   const gridRef = useRef(null)
@@ -71,6 +78,7 @@ export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
   const btnRef  = useRef(null)
 
   const addPhoto = useCallback((idx, file, url) => {
+    setFailedSlotIndex(null)
     setPhotos((prev) => {
       const next = [...prev]
       if (next[idx]?.url?.startsWith('blob:')) URL.revokeObjectURL(next[idx].url)
@@ -80,6 +88,7 @@ export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
   }, [])
 
   const removePhoto = useCallback((idx) => {
+    setFailedSlotIndex((f) => (f === idx ? null : f))
     setPhotos((prev) => {
       const next = [...prev]
       if (next[idx]?.url?.startsWith('blob:')) URL.revokeObjectURL(next[idx].url)
@@ -126,26 +135,64 @@ export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
     if (!canProceed) return
     setUploading(true)
     setUploadErr(null)
+    setFailedSlotIndex(null)
+    setUploadProgress(null)
+    const paths = []
+    let ordinal = 0
     try {
-      const results = []
-      for (const { file } of filledSlots) {
-        const form = new FormData()
-        form.append('photo', file)
-        const res = await api.post('/uploads/photo', form, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        })
-        results.push(res.data.data ?? res.data)
+      for (let i = 0; i < photos.length; i += 1) {
+        const slot = photos[i]
+        if (!slot) continue
+        ordinal += 1
+        setUploadProgress({ current: ordinal, total: filledCount })
+
+        let file = slot.file
+        try {
+          file = await prepareImageFileForUpload(file)
+        } catch {
+          /* keep original */
+        }
+
+        if (isFileProbablyTooLarge(file)) {
+          setUploadErr(
+            `Фото ${ordinal}: слишком большой файл (лимит ~9 МБ). Замените снимок или откройте его в редакторе и сохраните заново.`,
+          )
+          setFailedSlotIndex(i)
+          return
+        }
+
+        try {
+          const form = new FormData()
+          form.append('photo', file)
+          const res = await api.post('/uploads/photo', form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          })
+          const data = res.data.data ?? res.data
+          const path = data?.path ?? data?.url
+          if (!path) {
+            throw new Error('empty')
+          }
+          paths.push(path)
+        } catch (err) {
+          const status = err?.response?.status
+          const serverMsg =
+            err?.response?.data?.error?.message
+            ?? err?.response?.data?.message
+          let msg = serverMsg
+          if (status === 413) {
+            msg = 'Файл слишком большой для сервера. Выберите другое фото.'
+          } else if (!msg) {
+            msg = 'Ошибка загрузки. Проверьте формат (JPEG/PNG/WebP) или попробуйте другое фото.'
+          }
+          setUploadErr(`Фото ${ordinal}: ${msg}`)
+          setFailedSlotIndex(i)
+          return
+        }
       }
-      const photos = results.map(r => r?.path ?? r?.url).filter(Boolean)
-      onNext({ photos })
-    } catch (err) {
-      const msg =
-        err?.response?.data?.error?.message
-        ?? err?.response?.data?.message
-        ?? 'Ошибка загрузки фото. Попробуйте снова.'
-      setUploadErr(msg)
+      onNext({ photos: paths })
     } finally {
       setUploading(false)
+      setUploadProgress(null)
     }
   }
 
@@ -169,7 +216,12 @@ export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
         <div ref={gridRef} className="grid grid-cols-3 gap-3 pb-3 shrink-0">
           {photos.map((photo, i) =>
             photo ? (
-              <FilledSlot key={`slot-${i}`} src={photo.url} onRemove={() => removePhoto(i)} />
+              <FilledSlot
+                key={`slot-${i}`}
+                src={photo.url}
+                onRemove={() => removePhoto(i)}
+                hasError={failedSlotIndex === i}
+              />
             ) : (
               <EmptySlot key={`slot-${i}`} onAdd={(file, url) => addPhoto(i, file, url)} />
             ),
@@ -206,7 +258,11 @@ export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
           style={{ background: canProceed ? '#1C1C1E' : '#D0D0D0' }}
           className="w-full py-[18px] rounded-full text-white text-base/[100%] font-medium transition-colors duration-200 max-w-[191px] mx-auto"
         >
-          {uploading ? 'Загрузка...' : 'Далее'}
+          {uploading
+            ? (uploadProgress
+              ? `Загрузка ${uploadProgress.current}/${uploadProgress.total}…`
+              : 'Подготовка…')
+            : 'Далее'}
         </button>
       </div>
     </div>
