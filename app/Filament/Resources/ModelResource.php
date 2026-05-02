@@ -73,7 +73,10 @@ class ModelResource extends Resource
                         ])
                         ->required($onlyCreate)
                         ->default('any'),
-                    Forms\Components\TextInput::make('hourly_rate_thb')->label('Цена за час (฿)')->numeric()
+                    Forms\Components\TextInput::make('hourly_rate_thb')
+                        ->label('Базовая ставка/ч (฿)')
+                        ->helperText('Минимальная ставка за 1 час — используется при фильтрации и как запасная цена, если пакеты не заданы.')
+                        ->numeric()
                         ->required($onlyCreate),
                     Forms\Components\TextInput::make('commission_override')
                         ->label('Индив. комиссия')
@@ -89,6 +92,37 @@ class ModelResource extends Resource
                         ->dehydrateStateUsing(fn ($state) => ($state === null || $state === '')
                             ? null
                             : round(((float) $state) / 100, 4)),
+                    Forms\Components\Repeater::make('priceOptions')
+                        ->label('Ценовые пакеты')
+                        ->relationship('priceOptions')
+                        ->schema([
+                            Forms\Components\Select::make('hours')
+                                ->label('Часов')
+                                ->options(static::hoursOptions())
+                                ->required()
+                                ->native(false)
+                                ->distinct(),
+                            Forms\Components\TextInput::make('price_thb')
+                                ->label('Цена (฿)')
+                                ->numeric()
+                                ->required()
+                                ->minValue(1)
+                                ->prefix('฿'),
+                            Forms\Components\TextInput::make('label')
+                                ->label('Метка')
+                                ->placeholder('напр. «3 часа»')
+                                ->maxLength(64),
+                        ])
+                        ->columns(3)
+                        ->columnSpanFull()
+                        ->addActionLabel('+ Добавить пакет')
+                        ->defaultItems(0)
+                        ->reorderable(false)
+                        ->itemLabel(fn (array $state): ?string => isset($state['hours'], $state['price_thb'])
+                            ? (static::hoursOptions()[(int) $state['hours']] ?? "{$state['hours']} ч")
+                                .' — ฿'.number_format((int) $state['price_thb'])
+                            : null)
+                        ->collapsible(),
                     Forms\Components\Toggle::make('is_published')->label('Опубликована'),
                     Forms\Components\Toggle::make('is_verified')->label('Верифицирована'),
                     Forms\Components\DateTimePicker::make('published_at')->label('Дата публикации'),
@@ -134,9 +168,10 @@ class ModelResource extends Resource
                     ->searchable()
                     ->default('—'),
                 Tables\Columns\TextColumn::make('modelProfile.hourly_rate_thb')
-                    ->label('Цена/ч')
+                    ->label('Ставка/ч')
                     ->formatStateUsing(fn ($state) => $state ? '฿ '.number_format((int) $state) : '—')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('modelProfile.commission_override')
                     ->label('Комиссия')
                     ->formatStateUsing(fn ($state) => $state === null
@@ -272,6 +307,21 @@ class ModelResource extends Resource
                 Tables\Actions\EditAction::make()->label('Изменить'),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    /** @return array<int, string> */
+    private static function hoursOptions(): array
+    {
+        $options = [];
+        for ($h = 1; $h <= 12; $h++) {
+            $options[$h] = match (true) {
+                $h === 1    => '1 час',
+                $h <= 4     => "$h часа",
+                default     => "$h часов",
+            };
+        }
+
+        return $options;
     }
 
     public static function getRelations(): array { return []; }
