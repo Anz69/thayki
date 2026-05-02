@@ -215,11 +215,13 @@ function StrangeGuard({ children }) {
   const { user } = useAuthStore()
   const location = useLocation()
 
-  if (!user) return children
-  if (!user.is_strange) return children
+  // Только явный флаг: иначе пропускаем «обычный» доступ и не ломаем UI из‑за undefined.
+  if (!user || user.is_strange !== true) return children
 
-  const allowed = ['/welcome']
-  if (allowed.includes(location.pathname)) return children
+  // `/application-pending` нужен, иначе ModelApplicationPendingGuard кидает на заявку,
+  // StrangeGuard — обратно на /welcome, получается цикл и «пустая» страница.
+  const allowed = new Set(['/welcome', '/application-pending'])
+  if (allowed.has(location.pathname)) return children
 
   return <Navigate to="/welcome" replace />
 }
