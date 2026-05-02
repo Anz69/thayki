@@ -5,19 +5,11 @@ import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import FaqModal from '@/components/modals/FaqModal'
 import WithdrawModal from '@/components/modals/WithdrawModal'
-import InfoModal from '@/components/modals/InfoModal'
-import GradientBorder from '@/components/ui/GradientBorder'
 import useAuthStore from '@/stores/useAuthStore'
-import Avatar from '@/components/ui/Avatar'
 import api from '@/utils/api'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { subscribeActiveMeetingsRefresh } from '@/utils/activeMeetingsBus'
 import { logError } from '@/utils/logger'
-const IconQuestion = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path d="M7.36153 7.31418C7.42966 7.1205 7.53199 6.94248 7.6622 6.7878C7.78455 6.64246 7.93151 6.51773 8.09783 6.41998C8.44115 6.21821 8.8448 6.14445 9.23729 6.21178C9.62978 6.2791 9.98578 6.48315 10.2422 6.7878C10.4987 7.09245 10.6391 7.47804 10.6385 7.87626C10.6385 9.00042 8.95222 9.5625 8.95222 9.5625V9.71778M8.97404 11.8125H8.98154M16.5 9C16.5 13.1421 13.1421 16.5 9 16.5C4.85786 16.5 1.5 13.1421 1.5 9C1.5 4.85786 4.85786 1.5 9 1.5C13.1421 1.5 16.5 4.85786 16.5 9Z" stroke="#777779" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
 
 const IconUser = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="15" viewBox="0 0 14 15" fill="none">
@@ -100,17 +92,6 @@ const IconWithdraw = () => (
   </svg>
 )
 
-const IconHelp = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <g clipPath="url(#clip0_help_mm)">
-      <path d="M6.06016 5.99967C6.2169 5.55412 6.52626 5.17841 6.93347 4.9391C7.34067 4.69978 7.81943 4.6123 8.28495 4.69215C8.75047 4.772 9.17271 5.01402 9.47688 5.37536C9.78105 5.7367 9.94753 6.19402 9.94683 6.66634C9.94683 7.99968 7.94683 8.66634 7.94683 8.66634M8.00016 11.333H8.00683M14.6668 7.99967C14.6668 11.6816 11.6821 14.6663 8.00016 14.6663C4.31826 14.6663 1.3335 11.6816 1.3335 7.99967C1.3335 4.31778 4.31826 1.33301 8.00016 1.33301C11.6821 1.33301 14.6668 4.31778 14.6668 7.99967Z" stroke="#1E1E1E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </g>
-    <defs>
-      <clipPath id="clip0_help_mm"><rect width="16" height="16" fill="white" /></clipPath>
-    </defs>
-  </svg>
-)
-
 function BookingCard({ meeting, onClick }) {
   const [imgFailed, setImgFailed] = useState(false)
   const clientName   = meeting.client?.first_name ?? meeting.client?.username ?? '—'
@@ -150,7 +131,6 @@ export default function ModelMorePage() {
   const auth     = useAuthStore()
   const [faqOpen, setFaqOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
-  const [infoOpen, setInfoOpen] = useState(false)
   const [balance, setBalance]           = useState(0)
   const [meetings, setMeetings]             = useState([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
@@ -170,8 +150,6 @@ export default function ModelMorePage() {
   }, [auth])
 
   const headerRef   = useRef(null)
-  const userCardRef = useRef(null)
-  const balanceRef  = useRef(null)
   const ordersRef   = useRef(null)
   const section1Ref = useRef(null)
   const section2Ref = useRef(null)
@@ -194,7 +172,7 @@ export default function ModelMorePage() {
     fetchMeetings(false)
   }, [location.key, fetchMeetings])
 
-  const fetchBalance = useCallback(() => {
+  useEffect(() => {
     api.get('/wallet')
       .then((r) => {
         const w = r.data?.data
@@ -207,40 +185,29 @@ export default function ModelMorePage() {
   useEffect(() => {
     return subscribeActiveMeetingsRefresh(() => {
       fetchMeetings(true)
-      fetchBalance()
     })
-  }, [fetchMeetings, fetchBalance])
+  }, [fetchMeetings])
 
   useEffect(() => {
     const onPageShow = (e) => {
-      if (e.persisted) {
-        fetchMeetings(true)
-        fetchBalance()
-      }
+      if (e.persisted) fetchMeetings(true)
     }
     window.addEventListener('pageshow', onPageShow)
     return () => window.removeEventListener('pageshow', onPageShow)
-  }, [fetchMeetings, fetchBalance])
+  }, [fetchMeetings])
 
   useEffect(() => {
-    fetchBalance()
-
     const onVisibility = () => {
-      if (!document.hidden) {
-        fetchBalance()
-        fetchMeetings(true)
-      }
+      if (!document.hidden) fetchMeetings(true)
     }
     document.addEventListener('visibilitychange', onVisibility)
     return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [fetchMeetings, fetchBalance])
+  }, [fetchMeetings])
 
   const activeBookings = meetings
 
   useLayoutEffect(() => {
     gsap.set(headerRef.current,    { autoAlpha: 0, y: -44 })
-    gsap.set(userCardRef.current,  { autoAlpha: 0, y: 16  })
-    gsap.set(balanceRef.current,   { autoAlpha: 0, y: 18  })
     gsap.set(ordersRef.current,    { autoAlpha: 0, y: 20  })
     gsap.set(section1Ref.current,  { autoAlpha: 0, y: 24  })
     gsap.set(section2Ref.current,  { autoAlpha: 0, y: 24  })
@@ -249,11 +216,9 @@ export default function ModelMorePage() {
   usePageReady(() => {
     gsap.timeline()
       .to(headerRef.current,    { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
-      .to(userCardRef.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.08)
-      .to(balanceRef.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.11)
-      .to(ordersRef.current,     { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.14)
-      .to(section1Ref.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.20)
-      .to(section2Ref.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.26)
+      .to(ordersRef.current,     { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.08)
+      .to(section1Ref.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.14)
+      .to(section2Ref.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.20)
   })
 
   useEffect(() => {
@@ -280,52 +245,6 @@ export default function ModelMorePage() {
 
         <div className="flex flex-col gap-4 container pt-[76px] pb-[120px]">
 
-          <div ref={userCardRef} className="flex flex-col gap-3">
-            <div className="flex items-center gap-3 bg-[#F5F5F7] rounded-2xl p-4">
-              <Avatar src={auth.user?.photo_url} name={auth.displayName()} size={56} />
-              <div className="flex flex-col min-w-0">
-                <span className="text-black text-base font-medium truncate">{auth.displayName()}</span>
-                {auth.user?.username && (
-                  <span className="text-[#7F7F7F] text-xs">@{auth.user.username}</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div ref={balanceRef}>
-            <GradientBorder radius={20} borderWidth={4} speed={4}>
-              <div className="flex flex-col">
-                <div className="flex flex-col items-center gap-2 px-5 py-6">
-                  <span className="text-[#777779] text-[14px]/[100%] font-medium uppercase tracking-widest">
-                    Баланс
-                  </span>
-                  <span className="text-black text-2xl/[100%] font-[500] tracking-tight">
-                    {balance.toLocaleString()} ฿
-                  </span>
-                </div>
-                <div className="border-t border-[#E1E0E7] flex">
-                  <button
-                    type="button"
-                    onClick={() => setWithdrawOpen(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3.5 active:bg-[#F5F5F7] transition-colors rounded-bl-[18px]"
-                  >
-                    <IconWithdraw />
-                    <span className="text-black text-sm/[100%] font-medium">Вывести</span>
-                  </button>
-                  <div className="w-px bg-[#E1E0E7] h-7 rounded-full my-auto self-stretch" />
-                  <button
-                    type="button"
-                    onClick={() => setInfoOpen(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3.5 active:bg-[#F5F5F7] transition-colors rounded-br-[18px]"
-                  >
-                    <IconHelp />
-                    <span className="text-black text-sm/[100%] font-medium">Помощь</span>
-                  </button>
-                </div>
-              </div>
-            </GradientBorder>
-          </div>
-
           <div ref={ordersRef} className="flex flex-col gap-3">
             {loadingMeetings ? (
               <p className="text-[#7F7F7F] text-sm/[100%] font-medium">Загрузка...</p>
@@ -348,6 +267,7 @@ export default function ModelMorePage() {
           <div ref={section1Ref} className="flex flex-col gap-4">
             <SectionLabel>Важное</SectionLabel>
             <MenuItem icon={<IconUser />} label="Профиль" onClick={() => navigate('/profile')} />
+            <MenuItem icon={<IconWithdraw />} label="Вывести средства" onClick={() => setWithdrawOpen(true)} />
             <div className="w-full flex items-center justify-between bg-[#F5F5F7] rounded-2xl px-4 py-4">
               <span className="text-black text-[15px]/[100%] font-medium">Получать уведомления в ТГ</span>
               <Toggle value={notifications} onChange={handleNotificationsChange} />
@@ -370,7 +290,6 @@ export default function ModelMorePage() {
         onClose={() => setWithdrawOpen(false)}
         balance={balance}
       />
-      <InfoModal isOpen={infoOpen} onClose={() => setInfoOpen(false)} />
     </>
   )
 }

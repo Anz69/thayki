@@ -22,17 +22,11 @@ export default function ApplicationPendingPage() {
   const loopTlRef = useRef(null)
   const pollIdRef = useRef(null)
 
+  /** Сближение блока с кольцами и текста, когда внешние кольца исчезают (меньше «пустоты»). */
   function tightenStage() {
-    gsap.to(orbitWrapRef.current, {
-      marginBottom: 20,
-      duration: 0.5,
-      ease: 'power3.out',
-    })
-    gsap.to(copyBlockRef.current, {
-      y: -14,
-      duration: 0.5,
-      ease: 'power3.out',
-    })
+    gsap.timeline({ defaults: { ease: 'power3.out' } })
+      .to(orbitWrapRef.current, { marginBottom: 8, duration: 0.62 }, 0)
+      .to(copyBlockRef.current, { y: -44, duration: 0.62 }, 0)
   }
 
   useLayoutEffect(() => {
@@ -42,6 +36,7 @@ export default function ApplicationPendingPage() {
     gsap.set(crossRef.current, { scale: 0.6, opacity: 0 })
     gsap.set([headRef.current, subRef.current], { autoAlpha: 0, y: 18 })
     gsap.set(copyBlockRef.current, { y: 0 })
+    gsap.set(orbitWrapRef.current, { marginBottom: 48 })
   }, [])
 
   useEffect(() => {
@@ -173,9 +168,9 @@ export default function ApplicationPendingPage() {
             .to(
               ring1Ref.current,
               {
-                borderColor: '#FBCFE8',
-                backgroundColor: '#FDF2F8',
-                duration: 0.32,
+                borderColor: '#DC2626',
+                backgroundColor: '#FEF2F2',
+                duration: 0.34,
                 ease: 'power2.out',
               },
               0.08,
@@ -209,7 +204,7 @@ export default function ApplicationPendingPage() {
 
   return (
     <div className="min-h-dvh bg-white flex flex-col items-center justify-center px-6 select-none">
-      <div ref={orbitWrapRef} className="relative flex items-center justify-center mb-12" style={{ width: 220, height: 220 }}>
+      <div ref={orbitWrapRef} className="relative flex items-center justify-center" style={{ width: 220, height: 220, marginBottom: 48 }}>
         <div
           ref={ring3Ref}
           className="absolute rounded-full"
@@ -256,7 +251,7 @@ export default function ApplicationPendingPage() {
           </div>
           <div ref={crossRef} className="absolute z-[3]" style={{ opacity: 0 }} aria-hidden>
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <path d="M12 12L24 24M24 12L12 24" stroke="#BE185D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 12L24 24M24 12L12 24" stroke="#B91C1C" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
         </div>
