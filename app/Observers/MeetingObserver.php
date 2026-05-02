@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Observers;
 
 use App\Actions\Payment\ConfirmPaymentAction;
+use App\Actions\Payment\EnsureSyntheticPaymentForMeetingAction;
 use App\Enums\MeetingStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
@@ -38,6 +39,9 @@ class MeetingObserver
 
         $payment = $meeting->payment()->first();
         if ($payment === null) {
+            $payment = app(EnsureSyntheticPaymentForMeetingAction::class)->execute($meeting);
+        }
+        if ($payment === null) {
             return;
         }
 
@@ -51,6 +55,7 @@ class MeetingObserver
                 'meeting_id' => $meeting->id,
                 'payment_id' => $payment->id,
             ]);
+
             return;
         }
 
@@ -60,7 +65,7 @@ class MeetingObserver
             Log::error('[MeetingObserver] auto-confirm failed', [
                 'meeting_id' => $meeting->id,
                 'payment_id' => $payment->id,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
