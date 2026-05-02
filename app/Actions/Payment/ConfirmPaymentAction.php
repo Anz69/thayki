@@ -47,7 +47,12 @@ class ConfirmPaymentAction
 
             $meeting = $payment->meeting()->lockForUpdate()->firstOrFail();
 
-            $creditableStatuses = [MeetingStatus::Accepted, MeetingStatus::Paid, MeetingStatus::Confirmed];
+            $creditableStatuses = [
+                MeetingStatus::Accepted,
+                MeetingStatus::Paid,
+                MeetingStatus::Confirmed,
+                MeetingStatus::Completed,
+            ];
             if (! in_array($meeting->status, $creditableStatuses, true)) {
                 throw DomainException::conflict(
                     'MEETING_INVALID_STATE',

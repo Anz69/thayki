@@ -8,6 +8,8 @@ use App\Events\MeetingStatusChanged;
 use App\Events\MessageSent;
 use App\Listeners\SendMeetingStatusNotification;
 use App\Listeners\SendMessageNotification;
+use App\Models\Meeting;
+use App\Observers\MeetingObserver;
 use App\Services\Payments\Contracts\PaymentGateway;
 use App\Services\Payments\PaymentGatewayManager;
 use App\Services\Telegram\Notifier;
@@ -38,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiters();
         $this->registerEventListeners();
+
+        Meeting::observe(MeetingObserver::class);
     }
 
     /**
