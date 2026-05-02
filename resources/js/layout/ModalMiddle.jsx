@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 
@@ -30,9 +30,12 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
     return () => window.Telegram?.WebApp?.enableVerticalSwipes?.()
   }, [isVisible])
 
-  useEffect(() => {
+  // Run before paint so the backdrop never flashes at full opacity (CSS bg would show for one frame,
+  // then gsap.set(opacity:0) in useEffect caused appear → vanish → fade-in).
+  useLayoutEffect(() => {
     if (!isVisible || !rootRef.current || !sheetRef.current) return
     const kids = Array.from(sheetRef.current.children)
+    gsap.killTweensOf([rootRef.current, sheetRef.current, ...kids])
     gsap.set(rootRef.current,  { opacity: 0 })
     gsap.set(sheetRef.current, { y: '100%' })
     gsap.set(kids, { opacity: 0, y: 18, scale: 0.985 })
@@ -126,6 +129,7 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
       <div
         ref={rootRef}
         className="modal-middle-root"
+        style={{ opacity: 0 }}
         onPointerDown={onRootPointerDown}
         onClick={onRootClick}
       >
