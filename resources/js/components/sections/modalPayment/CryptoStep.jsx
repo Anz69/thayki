@@ -115,7 +115,7 @@ export default function CryptoStep({ price, onBack, wrapRef, onPaymentConfirmed 
                 isSelected ? 'ring-2 ring-[#E2319B] ring-offset-1' : '',
               ].join(' ')}
             >
-              <img src={c.icon} alt={c.name} className="w-full h-full rounded-full object-cover" />
+              <img src={c.icon} alt={c.name} width={40} height={40} loading="lazy" className="w-full h-full rounded-full object-cover" />
             </button>
           )
         })}

@@ -35,11 +35,11 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
     const kids = Array.from(sheetRef.current.children)
     gsap.set(rootRef.current,  { opacity: 0 })
     gsap.set(sheetRef.current, { y: '100%' })
-    gsap.set(kids, { opacity: 0, y: 18, filter: 'blur(4px)' })
+    gsap.set(kids, { opacity: 0, y: 18, scale: 0.985 })
     gsap.timeline()
       .to(rootRef.current,  { opacity: 1, duration: 0.22, ease: 'power2.out' }, 0)
       .to(sheetRef.current, { y: '0%',   duration: 0.44, ease: 'power3.out' }, 0)
-      .to(kids, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.5, stagger: 0.08, ease: 'power3.out', clearProps: 'opacity,transform,filter' }, 0.14)
+      .to(kids, { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.08, ease: 'power3.out', clearProps: 'opacity,transform' }, 0.14)
   }, [isVisible])
 
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
         .modal-middle-root {
           position: fixed; inset: 0; z-index: 100001; pointer-events: all;
           width: 100%; height: 100%; display: flex;
-          background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
+          background: rgba(0,0,0,0.55);
         }
         .modal-middle-sheet {
           position: absolute; bottom: 0; left: 0; right: 0; z-index: 9001; background: #fff;

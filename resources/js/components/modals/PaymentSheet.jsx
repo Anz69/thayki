@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useState, useLayoutEffect } from 'react'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
 import MainStep   from '@/components/sections/modalPayment/MainStep'
@@ -11,6 +11,9 @@ const CheckCircle = () => (
   </svg>
 )
 export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0 }) {
+  const [lazyCrypto, setLazyCrypto] = useState(false)
+  const [lazySbp, setLazySbp]       = useState(false)
+  const pendingSwitchRef            = useRef(null)
   const viewRefs          = useRef({})
   const contentWrapRef    = useRef(null)
   const currentViewRef    = useRef('main')
@@ -54,6 +57,9 @@ export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0 }
     if (contentWrapRef.current)    gsap.set(contentWrapRef.current,    { clearProps: 'height' })
     if (successOverlayRef.current) gsap.set(successOverlayRef.current, { autoAlpha: 0 })
     currentViewRef.current = 'main'
+    pendingSwitchRef.current = null
+    setLazyCrypto(false)
+    setLazySbp(false)
     if (paymentSuccessRef.current) {
       paymentSuccessRef.current = false
       onConfirmed?.()
@@ -119,24 +125,58 @@ export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0 }
       onComplete: () => gsap.set(innerBlocks, { clearProps: 'opacity,visibility,y' }),
     })
   }, [])
+
+  useLayoutEffect(() => {
+    const p = pendingSwitchRef.current
+    if (!p) return
+    const ready =
+      (p === 'crypto' && viewRefs.current.crypto) ||
+      (p === 'sbp' && viewRefs.current.sbp)
+    if (!ready) return
+    pendingSwitchRef.current = null
+    switchView(p)
+  }, [lazyCrypto, lazySbp, switchView])
+
+  const goCrypto = useCallback(() => {
+    if (!lazyCrypto) {
+      pendingSwitchRef.current = 'crypto'
+      setLazyCrypto(true)
+    } else {
+      switchView('crypto')
+    }
+  }, [lazyCrypto, switchView])
+
+  const goSbp = useCallback(() => {
+    if (!lazySbp) {
+      pendingSwitchRef.current = 'sbp'
+      setLazySbp(true)
+    } else {
+      switchView('sbp')
+    }
+  }, [lazySbp, switchView])
+
   return (
     <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>
       <div ref={contentWrapRef} style={{ position: 'relative', overflow: 'hidden' }}>
         <div ref={(el) => { viewRefs.current.main = el }} style={{ position: 'relative' }}>
-          <MainStep price={price} onCrypto={() => switchView('crypto')} onSBP={() => switchView('sbp')} />
+          <MainStep price={price} onCrypto={goCrypto} onSBP={goSbp} />
         </div>
-        <div
-          ref={(el) => { viewRefs.current.crypto = el }}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, visibility: 'hidden', opacity: 0, pointerEvents: 'none' }}
-        >
-          <CryptoStep price={price} onBack={() => switchView('main')} wrapRef={contentWrapRef} onPaymentConfirmed={showPaymentSuccess} />
-        </div>
-        <div
-          ref={(el) => { viewRefs.current.sbp = el }}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, visibility: 'hidden', opacity: 0, pointerEvents: 'none' }}
-        >
-          <SBPStep onBack={() => switchView('main')} />
-        </div>
+        {lazyCrypto && (
+          <div
+            ref={(el) => { viewRefs.current.crypto = el }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, visibility: 'hidden', opacity: 0, pointerEvents: 'none' }}
+          >
+            <CryptoStep price={price} onBack={() => switchView('main')} wrapRef={contentWrapRef} onPaymentConfirmed={showPaymentSuccess} />
+          </div>
+        )}
+        {lazySbp && (
+          <div
+            ref={(el) => { viewRefs.current.sbp = el }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, visibility: 'hidden', opacity: 0, pointerEvents: 'none' }}
+          >
+            <SBPStep onBack={() => switchView('main')} />
+          </div>
+        )}
         <div
           ref={successOverlayRef}
           className="absolute inset-0 z-[100] bg-white flex flex-col items-center justify-center gap-4 px-6 py-14"
