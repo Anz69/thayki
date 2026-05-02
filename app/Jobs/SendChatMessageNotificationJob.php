@@ -15,10 +15,14 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Sleep;
 
 class SendChatMessageNotificationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /** Short pause so a fast read receipt can update the message before we notify. */
+    private const READ_DEBOUNCE_SECONDS = 1;
 
     public function __construct(public readonly int $messageId) {}
 
@@ -27,16 +31,27 @@ class SendChatMessageNotificationJob implements ShouldQueue
         try {
             /** @var Message|null $message */
             $message = Message::query()->with('sender')->find($this->messageId);
-            if ($message === null) return;
+            if ($message === null) {
+                return;
+            }
 
-            if ($message->read_at !== null) return;
+            Sleep::for(self::READ_DEBOUNCE_SECONDS)->seconds();
+
+            $message->refresh();
+            if ($message->read_at !== null) {
+                return;
+            }
+
+            $dedupToken = 'msg:'.$message->id;
 
             $chat = Chat::with(['participants.user', 'meeting'])->find($message->chat_id);
-            if ($chat === null) return;
+            if ($chat === null) {
+                return;
+            }
 
-            $sender    = $message->sender;
+            $sender = $message->sender;
             $isSupport = $chat->type === ChatType::Support;
-            $notifier  = Notifier::default();
+            $notifier = Notifier::default();
 
             // Support bot is identified by telegram_id = 0 (see SupportChats::getSupportUser).
             $senderIsSupport = $isSupport
@@ -49,17 +64,24 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 // Ping all Filament admins directly.
                 $notifier->notifyAdmins(
                     '💬 Новое сообщение в поддержке от <b>'.$this->senderDisplayName($sender).'</b>',
+                    null,
+                    null,
+                    $dedupToken,
                 );
             }
 
-            $title    = $senderIsSupport ? 'Поддержка' : $this->senderDisplayName($sender);
-            $text     = "✉️ У вас новое сообщение от <b>{$title}</b>";
+            $title = $senderIsSupport ? 'Поддержка' : $this->senderDisplayName($sender);
+            $text = "✉️ У вас новое сообщение от <b>{$title}</b>";
             $openPath = $isSupport ? '/support' : "/chat?id={$chat->id}";
 
             foreach ($chat->participants as $participant) {
                 $recipient = $participant->user;
-                if ($recipient === null) continue;
-                if ($this->isSameUser($sender, $recipient)) continue;
+                if ($recipient === null) {
+                    continue;
+                }
+                if ($this->isSameUser($sender, $recipient)) {
+                    continue;
+                }
 
                 if ($participant->last_read_at !== null
                     && $message->created_at !== null
@@ -67,29 +89,41 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     continue;
                 }
 
-                $notifier->notifyUser($recipient, $text, $openPath, 'Открыть чат');
+                $notifier->notifyUser($recipient, $text, $openPath, 'Открыть чат', $dedupToken);
             }
         } catch (\Throwable $e) {
             Log::warning('[SendChatMessageNotificationJob] failed', [
                 'message_id' => $this->messageId,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
 
     private function isSameUser(?User $a, ?User $b): bool
     {
-        if ($a === null || $b === null) return false;
-        if ($a->id === $b->id) return true;
-        if ($a->telegram_id !== null && $a->telegram_id === $b->telegram_id) return true;
-        if ($a->tg_chat_id !== null && $a->tg_chat_id === $b->tg_chat_id) return true;
+        if ($a === null || $b === null) {
+            return false;
+        }
+        if ($a->id === $b->id) {
+            return true;
+        }
+        if ($a->telegram_id !== null && $a->telegram_id === $b->telegram_id) {
+            return true;
+        }
+        if ($a->tg_chat_id !== null && $a->tg_chat_id === $b->tg_chat_id) {
+            return true;
+        }
+
         return false;
     }
 
     private function senderDisplayName(?User $user): string
     {
-        if ($user === null) return 'Пользователь';
+        if ($user === null) {
+            return 'Пользователь';
+        }
         $name = trim(($user->first_name ?? '').' '.($user->last_name ?? ''));
+
         return $name !== '' ? $name : ($user->username ?? 'Пользователь');
     }
 }

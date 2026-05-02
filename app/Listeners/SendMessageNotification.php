@@ -10,20 +10,19 @@ use Illuminate\Support\Facades\Log;
 
 class SendMessageNotification
 {
-    private const DELAY_SECONDS = 5;
-
     public function handle(MessageSent $event): void
     {
         try {
             $message = $event->message;
-            if ($message === null || $message->id === null) return;
+            if ($message === null || $message->id === null) {
+                return;
+            }
 
-            SendChatMessageNotificationJob::dispatch($message->id)
-                ->delay(now()->addSeconds(self::DELAY_SECONDS));
+            SendChatMessageNotificationJob::dispatch($message->id)->afterResponse();
         } catch (\Throwable $e) {
             Log::warning('[SendMessageNotification] failed to dispatch', [
                 'message_id' => $event->message->id ?? null,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
