@@ -5,31 +5,43 @@ import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api from '@/utils/api'
 
 export default function ApplicationPendingPage() {
-  const navigate    = useTransitionNavigate()
-  const { user, refreshUser } = useAuthStore()
+  const navigate = useTransitionNavigate()
+  const { refreshUser } = useAuthStore()
 
-  const ring3Ref   = useRef(null)
-  const ring2Ref   = useRef(null)
-  const ring1Ref   = useRef(null)
-  const iconRef    = useRef(null)
-  const checkRef   = useRef(null)
-  const crossRef   = useRef(null)
-  const headRef    = useRef(null)
-  const subRef     = useRef(null)
+  const orbitWrapRef = useRef(null)
+  const ring3Ref = useRef(null)
+  const ring2Ref = useRef(null)
+  const ring1Ref = useRef(null)
+  const iconRef = useRef(null)
+  const checkRef = useRef(null)
+  const crossRef = useRef(null)
+  const headRef = useRef(null)
+  const subRef = useRef(null)
+  const copyBlockRef = useRef(null)
   const finalStateRef = useRef(null)
-  const loopTlRef   = useRef(null)
-  const pollIdRef   = useRef(null)
+  const loopTlRef = useRef(null)
+  const pollIdRef = useRef(null)
 
-  useEffect(() => {
-    if (user?.role === 'model') navigate('/home', { replace: true })
-  }, [user?.role])
+  function tightenStage() {
+    gsap.to(orbitWrapRef.current, {
+      marginBottom: 20,
+      duration: 0.5,
+      ease: 'power3.out',
+    })
+    gsap.to(copyBlockRef.current, {
+      y: -14,
+      duration: 0.5,
+      ease: 'power3.out',
+    })
+  }
 
   useLayoutEffect(() => {
     gsap.set([ring3Ref.current, ring2Ref.current, ring1Ref.current], { scale: 0, opacity: 0 })
-    gsap.set(iconRef.current,  { scale: 0, opacity: 0, rotation: -20 })
+    gsap.set(iconRef.current, { scale: 0, opacity: 0, rotation: -20 })
     gsap.set(checkRef.current, { scale: 0, opacity: 0 })
     gsap.set(crossRef.current, { scale: 0.6, opacity: 0 })
     gsap.set([headRef.current, subRef.current], { autoAlpha: 0, y: 18 })
+    gsap.set(copyBlockRef.current, { y: 0 })
   }, [])
 
   useEffect(() => {
@@ -37,22 +49,38 @@ export default function ApplicationPendingPage() {
     tl.to(ring3Ref.current, { scale: 1, opacity: 1, duration: 0.65, ease: 'back.out(1.3)' })
       .to(ring2Ref.current, { scale: 1, opacity: 1, duration: 0.55, ease: 'back.out(1.4)' }, 0.1)
       .to(ring1Ref.current, { scale: 1, opacity: 1, duration: 0.48, ease: 'back.out(1.7)' }, 0.2)
-      .to(iconRef.current,  { scale: 1, opacity: 1, rotation: 0, duration: 0.5, ease: 'back.out(1.9)' }, 0.32)
-      .to(headRef.current,  { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power3.out' }, 0.5)
-      .to(subRef.current,   { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power3.out' }, 0.6)
+      .to(iconRef.current, { scale: 1, opacity: 1, rotation: 0, duration: 0.5, ease: 'back.out(1.9)' }, 0.32)
+      .to(headRef.current, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power3.out' }, 0.5)
+      .to(subRef.current, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power3.out' }, 0.6)
 
     const loopTl = gsap.timeline({ repeat: -1, yoyo: false, delay: 0.9 })
-    loopTl
     loopTlRef.current = loopTl
 
     gsap.to(ring2Ref.current, { rotation: 360, duration: 5, repeat: -1, ease: 'none', delay: 0.9 })
     gsap.to(ring3Ref.current, {
-      scale: 1.1, opacity: 0.35, duration: 2.2, repeat: -1, yoyo: true, ease: 'power1.inOut', delay: 0.9,
+      scale: 1.1,
+      opacity: 0.35,
+      duration: 2.2,
+      repeat: -1,
+      yoyo: true,
+      ease: 'power1.inOut',
+      delay: 0.9,
     })
 
     return () => {
       loopTl.kill()
-      gsap.killTweensOf([ring1Ref.current, ring2Ref.current, ring3Ref.current, iconRef.current, checkRef.current, crossRef.current, headRef.current, subRef.current])
+      gsap.killTweensOf([
+        ring1Ref.current,
+        ring2Ref.current,
+        ring3Ref.current,
+        iconRef.current,
+        checkRef.current,
+        crossRef.current,
+        headRef.current,
+        subRef.current,
+        orbitWrapRef.current,
+        copyBlockRef.current,
+      ])
     }
   }, [])
 
@@ -67,13 +95,16 @@ export default function ApplicationPendingPage() {
     const checkStatus = async () => {
       if (finalStateRef.current) return
       try {
-        const res    = await api.get('/model-application')
+        const res = await api.get('/model-application')
         const status = res.data?.data?.status
+
         if (status === 'approved') {
           finalStateRef.current = 'approved'
           stopPolling()
           loopTlRef.current?.pause()
           gsap.killTweensOf([ring2Ref.current, ring3Ref.current])
+
+          tightenStage()
 
           const tl = gsap.timeline({
             onComplete: async () => {
@@ -81,26 +112,38 @@ export default function ApplicationPendingPage() {
               navigate('/home', { replace: true })
             },
           })
+          gsap.set(iconRef.current, { pointerEvents: 'none' })
           tl.to([ring3Ref.current, ring2Ref.current], {
             scale: 0.35,
             opacity: 0,
-            duration: 0.32,
+            duration: 0.36,
             ease: 'power2.inOut',
           })
-            .to(ring1Ref.current, { scale: 1.18, duration: 0.2, ease: 'power2.out' }, 0.16)
+            .to(
+              iconRef.current,
+              { scale: 0.35, opacity: 0, duration: 0.16, ease: 'power2.in', visibility: 'hidden' },
+              0.12,
+            )
+            .to(ring1Ref.current, { scale: 1.18, duration: 0.22, ease: 'power2.out' }, 0.14)
             .to(ring1Ref.current, { scale: 1, duration: 0.18, ease: 'power2.inOut' }, 0.36)
-            .to(ring1Ref.current, { backgroundColor: '#E2319B', duration: 0.26, ease: 'power2.out' }, 0.22)
-            .to(iconRef.current,  { scale: 0.4, opacity: 0, duration: 0.18, ease: 'power2.in' }, 0.16)
-            .fromTo(checkRef.current, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.46, ease: 'back.out(2)' }, 0.32)
-            .to(headRef.current,  { opacity: 0, duration: 0.18 }, 0.28)
+            .to(ring1Ref.current, { backgroundColor: '#E2319B', duration: 0.28, ease: 'power2.out' }, 0.18)
+            .to(ring1Ref.current, { borderColor: '#E2319B', duration: 0.28, ease: 'power2.out' }, 0.18)
+            .fromTo(
+              checkRef.current,
+              { scale: 0.55, opacity: 0 },
+              { scale: 1, opacity: 1, duration: 0.48, ease: 'back.out(2)' },
+              0.34,
+            )
+            .to(headRef.current, { opacity: 0, duration: 0.18 }, 0.26)
             .call(() => {
               if (headRef.current) headRef.current.textContent = 'Заявка одобрена!'
-              if (subRef.current) subRef.current.textContent = 'Переходим в профиль модели...'
-            }, [], 0.5)
-            .to(headRef.current,  { opacity: 1, duration: 0.28 }, 0.52)
-            .to(subRef.current,   { opacity: 0, duration: 0.18 }, 0.3)
-            .to(subRef.current,   { opacity: 1, duration: 0.28 }, 0.56)
-            .to(ring1Ref.current, { scale: 1.06, duration: 0.16, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 0.64)
+              if (subRef.current) subRef.current.textContent = 'Переходим в профиль модели…'
+            }, [], 0.48)
+            .to(headRef.current, { opacity: 1, duration: 0.28 }, 0.52)
+            .to(subRef.current, { opacity: 0, duration: 0.14 }, 0.28)
+            .to(subRef.current, { opacity: 1, duration: 0.28 }, 0.56)
+            .to(ring1Ref.current, { scale: 1.06, duration: 0.15, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 0.68)
+            .to({}, { duration: 0.55 })
           return
         }
 
@@ -110,100 +153,116 @@ export default function ApplicationPendingPage() {
           loopTlRef.current?.pause()
           gsap.killTweensOf([ring2Ref.current, ring3Ref.current])
 
+          tightenStage()
+
+          gsap.set(iconRef.current, { pointerEvents: 'none', visibility: 'hidden', opacity: 0 })
+
           const tl = gsap.timeline({
-            onComplete: () => {
+            onComplete: async () => {
+              await refreshUser()
               navigate('/home', { replace: true })
             },
           })
 
           tl.to([ring3Ref.current, ring2Ref.current], {
-            scale: 0.45,
+            scale: 0.35,
             opacity: 0,
-            duration: 0.28,
+            duration: 0.34,
             ease: 'power2.inOut',
           })
-            .to(ring1Ref.current, {
-              borderColor: '#B4235E',
-              backgroundColor: '#FFF0F6',
-              duration: 0.28,
-              ease: 'power2.out',
-            }, 0.1)
-            .to(iconRef.current, { scale: 0.45, opacity: 0, duration: 0.18, ease: 'power2.in' }, 0.08)
-            .fromTo(crossRef.current, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' }, 0.2)
-            .to(headRef.current, { opacity: 0, duration: 0.18 }, 0.18)
-            .to(subRef.current,  { opacity: 0, duration: 0.18 }, 0.22)
+            .to(
+              ring1Ref.current,
+              {
+                borderColor: '#FBCFE8',
+                backgroundColor: '#FDF2F8',
+                duration: 0.32,
+                ease: 'power2.out',
+              },
+              0.08,
+            )
+            .fromTo(
+              crossRef.current,
+              { scale: 0.55, opacity: 0 },
+              { scale: 1, opacity: 1, duration: 0.42, ease: 'back.out(2)' },
+              0.22,
+            )
+            .to(headRef.current, { opacity: 0, duration: 0.16 }, 0.18)
+            .to(subRef.current, { opacity: 0, duration: 0.16 }, 0.22)
             .call(() => {
               if (headRef.current) headRef.current.textContent = 'Заявка отклонена'
-              if (subRef.current) subRef.current.textContent = 'Вернемся на главную страницу...'
+              if (subRef.current) subRef.current.textContent = 'Возвращаемся на главную…'
             }, [], 0.42)
-            .to(headRef.current, { opacity: 1, duration: 0.26, ease: 'power2.out' }, 0.44)
-            .to(subRef.current,  { opacity: 1, duration: 0.26, ease: 'power2.out' }, 0.5)
-            .to(ring1Ref.current, { scale: 1.05, duration: 0.14, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 0.62)
+            .to(headRef.current, { opacity: 1, duration: 0.28, ease: 'power2.out' }, 0.46)
+            .to(subRef.current, { opacity: 1, duration: 0.28, ease: 'power2.out' }, 0.52)
+            .to(ring1Ref.current, { scale: 1.04, duration: 0.14, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 0.65)
+            .to({}, { duration: 0.75 })
         }
       } catch {
+        /* keep polling */
       }
     }
 
     checkStatus()
-    pollIdRef.current = setInterval(checkStatus, 3000)
+    pollIdRef.current = setInterval(checkStatus, 2500)
     return () => stopPolling()
-  }, [])
+  }, [navigate, refreshUser])
 
   return (
     <div className="min-h-dvh bg-white flex flex-col items-center justify-center px-6 select-none">
-      {/* Rings + icon */}
-      <div className="relative flex items-center justify-center mb-12" style={{ width: 220, height: 220 }}>
-        {/* Outer pulse ring */}
+      <div ref={orbitWrapRef} className="relative flex items-center justify-center mb-12" style={{ width: 220, height: 220 }}>
         <div
           ref={ring3Ref}
           className="absolute rounded-full"
           style={{
-            width: 220, height: 220,
+            width: 220,
+            height: 220,
             border: '2px solid rgba(226,49,155,0.18)',
           }}
         />
-        {/* Dashed rotating ring */}
         <div
           ref={ring2Ref}
           className="absolute rounded-full"
           style={{
-            width: 160, height: 160,
+            width: 160,
+            height: 160,
             border: '2px dashed rgba(226,49,155,0.45)',
           }}
         />
-        {/* Inner solid ring with icon */}
         <div
           ref={ring1Ref}
-          className="absolute rounded-full flex items-center justify-center"
+          className="absolute rounded-full flex items-center justify-center overflow-visible"
           style={{
-            width: 96, height: 96,
+            width: 96,
+            height: 96,
             border: '2.5px solid #E2319B',
             backgroundColor: '#fff',
           }}
         >
-          {/* Application / star icon */}
-          <div ref={iconRef} className="absolute">
+          <div ref={iconRef} className="absolute z-[1]" aria-hidden>
             <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-              <path d="M19 4L23.12 13.26L33 14.6L26 21.4L27.75 31.25L19 26.5L10.25 31.25L12 21.4L5 14.6L14.88 13.26L19 4Z"
-                stroke="#E2319B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M19 4L23.12 13.26L33 14.6L26 21.4L27.75 31.25L19 26.5L10.25 31.25L12 21.4L5 14.6L14.88 13.26L19 4Z"
+                stroke="#E2319B"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
-          {/* Checkmark (shown on approval) */}
-          <div ref={checkRef} className="absolute" style={{ opacity: 0 }}>
+          <div ref={checkRef} className="absolute z-[3]" style={{ opacity: 0 }} aria-hidden>
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
               <path d="M7 18L14.5 25.5L29 11" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <div ref={crossRef} className="absolute" style={{ opacity: 0 }}>
+          <div ref={crossRef} className="absolute z-[3]" style={{ opacity: 0 }} aria-hidden>
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <path d="M12 12L24 24M24 12L12 24" stroke="#B4235E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 12L24 24M24 12L12 24" stroke="#BE185D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
         </div>
       </div>
 
-      {/* Text */}
-      <div className="flex flex-col items-center gap-3 text-center">
+      <div ref={copyBlockRef} className="flex flex-col items-center gap-3 text-center will-change-transform">
         <h1
           ref={headRef}
           className="text-[22px]/[110%] font-[500] text-black tracking-[-0.02em]"
@@ -219,7 +278,6 @@ export default function ApplicationPendingPage() {
           Мы проверяем вашу анкету. Обычно это занимает несколько минут.
         </p>
       </div>
-
     </div>
   )
 }

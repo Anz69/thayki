@@ -30,6 +30,7 @@ class UserFactory extends Factory
             'photo_url' => null,
             'role' => UserRole::Client,
             'status' => UserStatus::Active,
+            'is_strange' => false,
             'last_auth_at' => now(),
         ];
     }

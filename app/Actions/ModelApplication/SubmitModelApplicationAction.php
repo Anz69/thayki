@@ -21,6 +21,7 @@ class SubmitModelApplicationAction
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly Notifier $notifier,
+        private readonly ApproveModelApplicationAction $approveModelApplicationAction,
     ) {}
 
     /**
@@ -85,6 +86,12 @@ class SubmitModelApplicationAction
 
             return $application;
         });
+
+        $user->refresh();
+
+        if ($user->role === UserRole::Model) {
+            return $this->approveModelApplicationAction->execute($application);
+        }
 
         $this->notifier->notifyUser(
             $user,

@@ -50,11 +50,9 @@ it('keeps application submitted when auto-approve is disabled', function (): voi
     expect($user->refresh()->role)->toBe(UserRole::Client);
 });
 
-it('auto-approves application when flag is enabled', function (): void {
-    AppSetting::set('auto_approve_applications', 'true');
-
-    $user = User::factory()->create();
-    Sanctum::actingAs($user, ['role:client']);
+it('auto-approves application when user has model role from invite', function (): void {
+    $user = User::factory()->model()->create();
+    Sanctum::actingAs($user, ['role:model']);
 
     $response = $this->postJson('/api/v1/model-application', submitPayload());
     $response->assertCreated();

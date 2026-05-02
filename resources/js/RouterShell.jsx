@@ -61,7 +61,14 @@ function PageFallback() {
 
 let authRetried = false
 const MODEL_APP_GUARD_TTL_MS = 10000
-/** @type {{ userId: number|null, outcome: 'none'|'submitted'|'error'|null, checkedAt: number }} */
+/**
+ * pending_review = заявка на модерации
+ * finished = approved/rejected — остаёмся на /application-pending до анимации
+ * absent = 404
+ * draft_or_unknown = черновик и т.п.
+ * error = сеть/API
+ * @type {{ userId: number|null, outcome: 'pending_review'|'finished'|'absent'|'draft_or_unknown'|'error'|null, checkedAt: number }}
+ */
 let modelAppGuardCache = { userId: null, outcome: null, checkedAt: 0 }
 
 export function resetModelAppGuardCache() {
@@ -221,16 +228,15 @@ function ModelApplicationPendingGuard({ children }) {
   const { user } = useAuthStore()
   const location = useLocation()
   const [gateReady, setGateReady] = useState(false)
-  /** none = нет заявки; submitted = на модерации; error = не удалось проверить (не кикаем с /application-pending) */
   const [applicationOutcome, setApplicationOutcome] = useState(
-    /** @type {'none'|'submitted'|'error'|null} */ (null),
+    /** @type {'pending_review'|'finished'|'absent'|'draft_or_unknown'|'error'|null} */ (null),
   )
 
   useEffect(() => {
     let cancelled = false
 
     if (!user) {
-      setApplicationOutcome('none')
+      setApplicationOutcome('absent')
       setGateReady(true)
       return () => { cancelled = true }
     }
@@ -251,7 +257,14 @@ function ModelApplicationPendingGuard({ children }) {
       .then((res) => {
         if (cancelled) return
         const status = res?.data?.data?.status
-        const outcome = status === 'submitted' ? 'submitted' : 'none'
+        let outcome
+        if (status === 'submitted') {
+          outcome = 'pending_review'
+        } else if (status === 'approved' || status === 'rejected') {
+          outcome = 'finished'
+        } else {
+          outcome = 'draft_or_unknown'
+        }
         setApplicationOutcome(outcome)
         modelAppGuardCache = { userId: user.id, outcome, checkedAt: Date.now() }
         setGateReady(true)
@@ -260,7 +273,7 @@ function ModelApplicationPendingGuard({ children }) {
         if (cancelled) return
         const httpStatus = err?.response?.status
         if (httpStatus === 404) {
-          const outcome = 'none'
+          const outcome = 'absent'
           setApplicationOutcome(outcome)
           modelAppGuardCache = { userId: user.id, outcome, checkedAt: Date.now() }
         } else {
@@ -278,12 +291,12 @@ function ModelApplicationPendingGuard({ children }) {
     return children
   }
 
-  if (applicationOutcome === 'submitted' && location.pathname !== '/application-pending') {
+  if (applicationOutcome === 'pending_review' && location.pathname !== '/application-pending') {
     return <Navigate to="/application-pending" replace />
   }
 
   if (
-    applicationOutcome === 'none'
+    applicationOutcome === 'absent'
     && location.pathname === '/application-pending'
   ) {
     return <Navigate to="/home" replace />
