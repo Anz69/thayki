@@ -14,11 +14,17 @@ class PaymentResource extends Resource
 {
     protected static ?string $model = Payment::class;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-credit-card';
+    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+
+    protected static ?string $navigationGroup = 'Финансы';
+
     protected static ?string $navigationLabel = 'Платежи';
-    protected static ?string $modelLabel      = 'Платёж';
+
+    protected static ?string $modelLabel = 'Платёж';
+
     protected static ?string $pluralModelLabel = 'Платежи';
-    protected static ?int    $navigationSort  = 3;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -93,7 +99,7 @@ class PaymentResource extends Resource
                         'warning' => 'pending',
                         'success' => 'confirmed',
                         'success' => 'paid',
-                        'danger'  => 'failed',
+                        'danger' => 'failed',
                     ]),
                 Tables\Columns\TextColumn::make('confirmed_at')->label('Подтверждён')
                     ->dateTime('d.m.Y H:i')->sortable(),
@@ -103,10 +109,10 @@ class PaymentResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Статус')
                     ->options([
-                        'pending'   => 'В ожидании',
+                        'pending' => 'В ожидании',
                         'confirmed' => 'Подтверждён',
-                        'paid'      => 'Оплачен',
-                        'failed'    => 'Ошибка',
+                        'paid' => 'Оплачен',
+                        'failed' => 'Ошибка',
                     ]),
             ])
             ->actions([
@@ -128,9 +134,9 @@ class PaymentResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListPayments::route('/'),
+            'index' => Pages\ListPayments::route('/'),
             'create' => Pages\CreatePayment::route('/create'),
-            'edit'   => Pages\EditPayment::route('/{record}/edit'),
+            'edit' => Pages\EditPayment::route('/{record}/edit'),
         ];
     }
 }

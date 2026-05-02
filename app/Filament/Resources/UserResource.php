@@ -17,10 +17,17 @@ use Filament\Tables\Table;
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-users';
+
     protected static ?string $navigationLabel = 'Клиенты';
+
+    protected static ?string $navigationGroup = 'Пользователи и модели';
+
     protected static ?string $modelLabel = 'Клиент';
+
     protected static ?string $pluralModelLabel = 'Клиенты';
+
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -34,7 +41,7 @@ class UserResource extends Resource
             Forms\Components\Select::make('role')->label('Роль')
                 ->options([
                     UserRole::Client->value => 'Клиент',
-                    UserRole::Admin->value  => 'Администратор',
+                    UserRole::Admin->value => 'Администратор',
                 ])
                 ->required(fn (string $operation): bool => $operation === 'create'),
             Forms\Components\Select::make('status')->label('Статус')
@@ -84,12 +91,12 @@ class UserResource extends Resource
                     ->colors([
                         'warning' => UserRole::Client->value,
                         'success' => UserRole::Model->value,
-                        'danger'  => UserRole::Admin->value,
+                        'danger' => UserRole::Admin->value,
                     ]),
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')
                     ->colors([
                         'success' => UserStatus::Active->value,
-                        'danger'  => UserStatus::Banned->value,
+                        'danger' => UserStatus::Banned->value,
                     ]),
                 Tables\Columns\IconColumn::make('is_strange')->label('Strange')->boolean(),
                 Tables\Columns\IconColumn::make('notifications_enabled')->label('TG-уведомления')->boolean()
@@ -103,7 +110,7 @@ class UserResource extends Resource
                 Tables\Filters\SelectFilter::make('role')->label('Роль')
                     ->options([
                         UserRole::Client->value => 'Клиент',
-                        UserRole::Admin->value  => 'Администратор',
+                        UserRole::Admin->value => 'Администратор',
                     ]),
                 Tables\Filters\SelectFilter::make('status')->label('Статус')
                     ->options([
@@ -127,13 +134,13 @@ class UserResource extends Resource
                         $token = rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
                         StartInvite::query()->create([
                             'token' => $token,
-                            'kind'  => StartInvite::KIND_VERIFY,
+                            'kind' => StartInvite::KIND_VERIFY,
                             'label' => "Для пользователя #{$r->id}",
                             'created_by_admin_id' => auth()->id(),
                             'max_uses' => 1,
                         ]);
                         $miniAppUrl = (string) config('telegram.miniapp_url', '');
-                        $bot        = (string) config('telegram.bot_username', '');
+                        $bot = (string) config('telegram.bot_username', '');
                         if ($miniAppUrl !== '' && str_starts_with($miniAppUrl, 'https://t.me/')) {
                             $sep = str_contains($miniAppUrl, '?') ? '&' : '?';
                             $url = rtrim($miniAppUrl, '/').$sep.'startapp='.$token;
@@ -204,14 +211,17 @@ class UserResource extends Resource
             ->defaultSort('created_at', 'desc');
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListUsers::route('/'),
+            'index' => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
-            'edit'   => Pages\EditUser::route('/{record}/edit'),
+            'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
 }

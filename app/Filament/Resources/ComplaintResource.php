@@ -2,26 +2,32 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Pages\SupportChats;
 use App\Filament\Resources\ComplaintResource\Pages;
-use App\Filament\Resources\MeetingResource;
-use App\Filament\Resources\UserResource;
 use App\Models\Complaint;
 use Filament\Forms;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ComplaintResource extends Resource
 {
     protected static ?string $model = Complaint::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';
+
+    protected static ?string $navigationGroup = 'Обратная связь';
+
     protected static ?string $navigationLabel = 'Жалобы';
+
     protected static ?string $modelLabel = 'Жалоба';
+
     protected static ?string $pluralModelLabel = 'Жалобы';
-    protected static ?int $navigationSort = 9;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -30,8 +36,8 @@ class ComplaintResource extends Resource
             Forms\Components\Textarea::make('body')->label('Текст жалобы')->disabled()->rows(6),
             Forms\Components\Select::make('status')->label('Статус')->required()
                 ->options([
-                    Complaint::STATUS_PENDING   => 'В ожидании',
-                    Complaint::STATUS_RESOLVED  => 'Решено',
+                    Complaint::STATUS_PENDING => 'В ожидании',
+                    Complaint::STATUS_RESOLVED => 'Решено',
                     Complaint::STATUS_DISMISSED => 'Отклонено',
                 ]),
             Forms\Components\Textarea::make('admin_note')->label('Заметка'),
@@ -60,15 +66,15 @@ class ComplaintResource extends Resource
                     ->colors([
                         'warning' => Complaint::STATUS_PENDING,
                         'success' => Complaint::STATUS_RESOLVED,
-                        'gray'    => Complaint::STATUS_DISMISSED,
+                        'gray' => Complaint::STATUS_DISMISSED,
                     ]),
                 Tables\Columns\TextColumn::make('created_at')->label('Создана')->dateTime('d.m.Y H:i')->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Статус')
                     ->options([
-                        Complaint::STATUS_PENDING   => 'В ожидании',
-                        Complaint::STATUS_RESOLVED  => 'Решено',
+                        Complaint::STATUS_PENDING => 'В ожидании',
+                        Complaint::STATUS_RESOLVED => 'Решено',
                         Complaint::STATUS_DISMISSED => 'Отклонено',
                     ]),
             ])
@@ -78,7 +84,7 @@ class ComplaintResource extends Resource
                     ->visible(fn (Complaint $r) => $r->status === Complaint::STATUS_PENDING)
                     ->action(function (Complaint $r): void {
                         $r->update([
-                            'status'      => Complaint::STATUS_RESOLVED,
+                            'status' => Complaint::STATUS_RESOLVED,
                             'resolved_at' => now(),
                             'resolved_by_admin_id' => auth()->id(),
                         ]);
@@ -89,7 +95,7 @@ class ComplaintResource extends Resource
                     ->visible(fn (Complaint $r) => $r->status === Complaint::STATUS_PENDING)
                     ->action(function (Complaint $r): void {
                         $r->update([
-                            'status'      => Complaint::STATUS_DISMISSED,
+                            'status' => Complaint::STATUS_DISMISSED,
                             'resolved_at' => now(),
                             'resolved_by_admin_id' => auth()->id(),
                         ]);
@@ -101,8 +107,7 @@ class ComplaintResource extends Resource
                     ->icon('heroicon-o-chat-bubble-left-right')
                     ->color('info')
                     ->visible(fn (Complaint $record): bool => $record->user_id !== null)
-                    ->url(fn (Complaint $record): string =>
-                        \App\Filament\Pages\SupportChats::getUrl().'?user='.$record->user_id
+                    ->url(fn (Complaint $record): string => SupportChats::getUrl().'?user='.$record->user_id
                     ),
                 Tables\Actions\Action::make('open_meeting')
                     ->label('Открыть бронь')
@@ -120,13 +125,16 @@ class ComplaintResource extends Resource
         return parent::getEloquentQuery()->where('subject', '!=', 'Отзыв');
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListComplaints::route('/'),
-            'edit'  => Pages\EditComplaint::route('/{record}/edit'),
+            'edit' => Pages\EditComplaint::route('/{record}/edit'),
         ];
     }
 }

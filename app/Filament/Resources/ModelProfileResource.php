@@ -14,12 +14,19 @@ class ModelProfileResource extends Resource
 {
     protected static ?string $model = ModelProfile::class;
 
-    protected static bool    $shouldRegisterNavigation = false;
-    protected static ?string $navigationIcon  = 'heroicon-o-rectangle-stack';
+    protected static bool $shouldRegisterNavigation = false;
+
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $navigationGroup = 'Пользователи и модели';
+
     protected static ?string $navigationLabel = 'Профили моделей';
-    protected static ?string $modelLabel      = 'Профиль модели';
+
+    protected static ?string $modelLabel = 'Профиль модели';
+
     protected static ?string $pluralModelLabel = 'Профили моделей';
-    protected static ?int    $navigationSort  = 6;
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
@@ -60,8 +67,8 @@ class ModelProfileResource extends Resource
                 Forms\Components\Select::make('schedule')
                     ->label('Расписание')
                     ->options([
-                        'any'   => 'Любое время',
-                        'day'   => 'День (07:00–20:00)',
+                        'any' => 'Любое время',
+                        'day' => 'День (07:00–20:00)',
                         'night' => 'Ночь (20:00–07:00)',
                     ])
                     ->required()
@@ -106,7 +113,7 @@ class ModelProfileResource extends Resource
                 Tables\Columns\TextColumn::make('schedule')
                     ->label('Расписание')
                     ->formatStateUsing(fn ($state) => match ($state) {
-                        'day'   => 'День',
+                        'day' => 'День',
                         'night' => 'Ночь',
                         default => 'Любое',
                     }),
@@ -144,9 +151,9 @@ class ModelProfileResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListModelProfiles::route('/'),
+            'index' => Pages\ListModelProfiles::route('/'),
             'create' => Pages\CreateModelProfile::route('/create'),
-            'edit'   => Pages\EditModelProfile::route('/{record}/edit'),
+            'edit' => Pages\EditModelProfile::route('/{record}/edit'),
         ];
     }
 }

@@ -13,11 +13,18 @@ use Filament\Tables\Table;
 class FaqResource extends Resource
 {
     protected static ?string $model = FaqItem::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-question-mark-circle';
+
+    protected static ?string $navigationGroup = 'Обратная связь';
+
     protected static ?string $navigationLabel = 'FAQ';
+
     protected static ?string $modelLabel = 'Вопрос';
+
     protected static ?string $pluralModelLabel = 'FAQ';
-    protected static ?int $navigationSort = 10;
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
@@ -70,14 +77,17 @@ class FaqResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListFaqItems::route('/'),
+            'index' => Pages\ListFaqItems::route('/'),
             'create' => Pages\CreateFaqItem::route('/create'),
-            'edit'   => Pages\EditFaqItem::route('/{record}/edit'),
+            'edit' => Pages\EditFaqItem::route('/{record}/edit'),
         ];
     }
 }

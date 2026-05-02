@@ -23,11 +23,18 @@ use Filament\Tables\Table;
 class ModelApplicationResource extends Resource
 {
     protected static ?string $model = ModelApplication::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-star';
+
+    protected static ?string $navigationGroup = 'Пользователи и модели';
+
     protected static ?string $navigationLabel = 'Заявки моделей';
+
     protected static ?string $modelLabel = 'Заявка';
+
     protected static ?string $pluralModelLabel = 'Заявки моделей';
-    protected static ?int $navigationSort = 5;
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
@@ -55,9 +62,9 @@ class ModelApplicationResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')
                     ->colors([
                         'warning' => ModelApplicationStatus::Submitted->value,
-                        'gray'    => ModelApplicationStatus::Draft->value,
+                        'gray' => ModelApplicationStatus::Draft->value,
                         'success' => ModelApplicationStatus::Approved->value,
-                        'danger'  => ModelApplicationStatus::Rejected->value,
+                        'danger' => ModelApplicationStatus::Rejected->value,
                     ]),
                 Tables\Columns\TextColumn::make('created_at')->label('Подана')
                     ->dateTime('d.m.Y H:i')->sortable(),
@@ -87,12 +94,14 @@ class ModelApplicationResource extends Resource
                     ->color('gray')
                     ->modalHeading(function (ModelApplication $r): string {
                         $name = trim("{$r->user?->first_name} {$r->user?->last_name}") ?: ($r->user?->username ?? 'Пользователь');
+
                         return "Заявка #{$r->id} — {$name}";
                     })
                     ->modalDescription(function (ModelApplication $r): string {
                         $username = $r->user?->username ? '@'.$r->user->username : '—';
                         $status = $r->status instanceof ModelApplicationStatus ? $r->status->value : (string) $r->status;
                         $createdAt = $r->created_at?->format('d.m.Y H:i') ?? '—';
+
                         return "Статус: {$status} · Username: {$username} · Подана: {$createdAt}";
                     })
                     ->modalSubmitAction(false)
@@ -122,14 +131,17 @@ class ModelApplicationResource extends Resource
         ]);
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListModelApplications::route('/'),
+            'index' => Pages\ListModelApplications::route('/'),
             'create' => Pages\CreateModelApplication::route('/create'),
-            'edit'   => Pages\EditModelApplication::route('/{record}/edit'),
+            'edit' => Pages\EditModelApplication::route('/{record}/edit'),
         ];
     }
 }

@@ -3,8 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReviewResource\Pages;
-use App\Filament\Resources\MeetingResource;
-use App\Filament\Resources\UserResource;
 use App\Models\Complaint;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -14,11 +12,18 @@ use Illuminate\Database\Eloquent\Builder;
 class ReviewResource extends Resource
 {
     protected static ?string $model = Complaint::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-star';
+
+    protected static ?string $navigationGroup = 'Обратная связь';
+
     protected static ?string $navigationLabel = 'Отзывы';
+
     protected static ?string $modelLabel = 'Отзыв';
+
     protected static ?string $pluralModelLabel = 'Отзывы';
-    protected static ?int $navigationSort = 10;
+
+    protected static ?int $navigationSort = 2;
 
     public static function getEloquentQuery(): Builder
     {
@@ -56,7 +61,10 @@ class ReviewResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {

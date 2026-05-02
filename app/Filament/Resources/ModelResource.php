@@ -17,11 +17,19 @@ use Filament\Tables\Table;
 class ModelResource extends Resource
 {
     protected static ?string $model = User::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
+    protected static ?string $navigationGroup = 'Пользователи и модели';
+
     protected static ?string $navigationLabel = 'Модели';
+
     protected static ?string $modelLabel = 'Модель';
+
     protected static ?string $pluralModelLabel = 'Модели';
+
     protected static ?int $navigationSort = 2;
+
     protected static ?string $slug = 'models';
 
     public static function form(Form $form): Form
@@ -67,8 +75,8 @@ class ModelResource extends Resource
                     Forms\Components\Select::make('schedule')
                         ->label('Расписание')
                         ->options([
-                            'any'   => 'Любое время',
-                            'day'   => 'День (07:00–20:00)',
+                            'any' => 'Любое время',
+                            'day' => 'День (07:00–20:00)',
                             'night' => 'Ночь (20:00–07:00)',
                         ])
                         ->required($onlyCreate)
@@ -185,7 +193,7 @@ class ModelResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')->label('Статус')
                     ->colors([
                         'success' => UserStatus::Active->value,
-                        'danger'  => UserStatus::Banned->value,
+                        'danger' => UserStatus::Banned->value,
                     ]),
                 Tables\Columns\IconColumn::make('is_strange')->label('Strange')->boolean(),
                 Tables\Columns\TextColumn::make('last_auth_at')->label('Последний вход')
@@ -216,13 +224,13 @@ class ModelResource extends Resource
                         $token = rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
                         StartInvite::query()->create([
                             'token' => $token,
-                            'kind'  => StartInvite::KIND_VERIFY,
+                            'kind' => StartInvite::KIND_VERIFY,
                             'label' => "Для модели #{$r->id}",
                             'created_by_admin_id' => auth()->id(),
                             'max_uses' => 1,
                         ]);
                         $miniAppUrl = (string) config('telegram.miniapp_url', '');
-                        $bot        = (string) config('telegram.bot_username', '');
+                        $bot = (string) config('telegram.bot_username', '');
                         if ($miniAppUrl !== '' && str_starts_with($miniAppUrl, 'https://t.me/')) {
                             $sep = str_contains($miniAppUrl, '?') ? '&' : '?';
                             $url = rtrim($miniAppUrl, '/').$sep.'startapp='.$token;
@@ -288,7 +296,10 @@ class ModelResource extends Resource
                         try {
                             $r->status = UserStatus::Banned;
                             $r->save();
-                            try { $r->tokens()->delete(); } catch (\Throwable) {}
+                            try {
+                                $r->tokens()->delete();
+                            } catch (\Throwable) {
+                            }
                             Notification::make()->title('Модель заблокирована')->body('Сессии прекращены, токены отозваны.')->success()->send();
                         } catch (\Throwable $e) {
                             Notification::make()->title('Не удалось заблокировать')->body($e->getMessage())->danger()->send();
@@ -315,23 +326,26 @@ class ModelResource extends Resource
         $options = [];
         for ($h = 1; $h <= 12; $h++) {
             $options[$h] = match (true) {
-                $h === 1    => '1 час',
-                $h <= 4     => "$h часа",
-                default     => "$h часов",
+                $h === 1 => '1 час',
+                $h <= 4 => "$h часа",
+                default => "$h часов",
             };
         }
 
         return $options;
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListModels::route('/'),
+            'index' => Pages\ListModels::route('/'),
             'create' => Pages\CreateModel::route('/create'),
-            'edit'   => Pages\EditModel::route('/{record}/edit'),
+            'edit' => Pages\EditModel::route('/{record}/edit'),
         ];
     }
 }

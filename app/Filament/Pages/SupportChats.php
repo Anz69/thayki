@@ -15,21 +15,30 @@ use App\Models\User;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Url;
 
 class SupportChats extends Page
 {
-    protected static ?string $navigationIcon  = 'heroicon-o-chat-bubble-left-right';
+    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
+
+    protected static ?string $navigationGroup = 'Поддержка';
+
     protected static ?string $navigationLabel = 'Чат поддержки';
-    protected static ?int    $navigationSort  = 10;
+
+    protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.support-chats';
 
-    public ?int   $selectedChatId = null;
-    public string $newMessage     = '';
-    public string $search         = '';
-    public string $activeTab      = 'users';
+    public ?int $selectedChatId = null;
+
+    public string $newMessage = '';
+
+    public string $search = '';
+
+    public string $activeTab = 'users';
 
     /** Synced with query string ?user= — deep links from admin (e.g. complaints) preselect the chat. */
     #[Url(as: 'user', except: null)]
@@ -112,14 +121,14 @@ class SupportChats extends Page
 
     public function setTab(string $tab): void
     {
-        $this->activeTab      = $tab;
+        $this->activeTab = $tab;
         $this->selectedChatId = null;
-        $this->newMessage     = '';
+        $this->newMessage = '';
     }
 
-    public function getChats(): \Illuminate\Support\Collection
+    public function getChats(): Collection
     {
-        $role          = $this->activeTab === 'models' ? UserRole::Model : UserRole::Client;
+        $role = $this->activeTab === 'models' ? UserRole::Model : UserRole::Client;
         $supportUserId = $this->getSupportUser()->id;
 
         return Chat::query()
@@ -154,8 +163,8 @@ class SupportChats extends Page
             ->when($this->search !== '', fn ($q) => $q->whereHas(
                 'participants.user',
                 fn ($u) => $u->where('first_name', 'like', "%{$this->search}%")
-                             ->orWhere('last_name',  'like', "%{$this->search}%")
-                             ->orWhere('username',   'like', "%{$this->search}%")
+                    ->orWhere('last_name', 'like', "%{$this->search}%")
+                    ->orWhere('username', 'like', "%{$this->search}%")
             ))
             ->orderByDesc('last_message_at')
             ->get();
@@ -197,7 +206,7 @@ class SupportChats extends Page
         };
 
         return [
-            'users'  => $countForRole(UserRole::Client),
+            'users' => $countForRole(UserRole::Client),
             'models' => $countForRole(UserRole::Model),
         ];
     }
@@ -205,7 +214,7 @@ class SupportChats extends Page
     public function selectChat(int $id): void
     {
         $this->selectedChatId = $id;
-        $this->newMessage     = '';
+        $this->newMessage = '';
         $this->markSelectedChatAsRead($id);
     }
 
@@ -218,7 +227,7 @@ class SupportChats extends Page
         return Chat::with(['participants.user'])->find($this->selectedChatId);
     }
 
-    public function getMessages(): \Illuminate\Support\Collection
+    public function getMessages(): Collection
     {
         if (! $this->selectedChatId) {
             return collect();
@@ -261,9 +270,9 @@ class SupportChats extends Page
             ['telegram_id' => 0],
             [
                 'first_name' => 'Поддержка',
-                'username'   => 'support',
-                'role'       => UserRole::Admin,
-                'status'     => UserStatus::Active,
+                'username' => 'support',
+                'role' => UserRole::Admin,
+                'status' => UserStatus::Active,
                 'is_strange' => false,
                 'notifications_enabled' => false,
             ],
@@ -281,14 +290,14 @@ class SupportChats extends Page
             $decoded = base64_decode(preg_replace('/^data:[^;]+;base64,/', '', $fileData['data']));
             file_put_contents($tmpPath, $decoded);
 
-            $mime      = $fileData['mime'] ?? 'image/jpeg';
+            $mime = $fileData['mime'] ?? 'image/jpeg';
             $extension = match (true) {
-                str_contains($mime, 'png')  => 'png',
+                str_contains($mime, 'png') => 'png',
                 str_contains($mime, 'webp') => 'webp',
-                default                     => 'jpg',
+                default => 'jpg',
             };
 
-            $uploaded = new \Illuminate\Http\UploadedFile(
+            $uploaded = new UploadedFile(
                 $tmpPath,
                 'attachment.'.$extension,
                 $mime,
@@ -297,17 +306,18 @@ class SupportChats extends Page
             );
 
             $supportUser = $this->getSupportUser();
-            $chat        = Chat::with('participants')->find($this->selectedChatId);
+            $chat = Chat::with('participants')->find($this->selectedChatId);
 
             if ($chat === null) {
                 Notification::make()->title('Чат не найден.')->danger()->send();
+
                 return;
             }
 
             if (! $chat->participants()->where('user_id', $supportUser->id)->exists()) {
                 $chat->participants()->create([
                     'user_id' => $supportUser->id,
-                    'role'    => ChatParticipantRole::Support,
+                    'role' => ChatParticipantRole::Support,
                 ]);
                 $chat->load('participants');
             }
@@ -318,7 +328,7 @@ class SupportChats extends Page
         } catch (\Throwable $e) {
             Log::error('[SupportChats] uploadAttachment failed', [
                 'chat_id' => $this->selectedChatId,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             Notification::make()
                 ->title('Не удалось отправить файл.')
@@ -340,23 +350,25 @@ class SupportChats extends Page
                 ->title('Сообщение слишком длинное (макс. 4096 символов).')
                 ->danger()
                 ->send();
+
             return;
         }
 
         try {
             $supportUser = $this->getSupportUser();
-            $chat        = Chat::with('participants')->find($this->selectedChatId);
+            $chat = Chat::with('participants')->find($this->selectedChatId);
 
             if ($chat === null) {
                 Notification::make()->title('Чат не найден.')->danger()->send();
                 $this->selectedChatId = null;
+
                 return;
             }
 
             if (! $chat->participants()->where('user_id', $supportUser->id)->exists()) {
                 $chat->participants()->create([
                     'user_id' => $supportUser->id,
-                    'role'    => ChatParticipantRole::Support,
+                    'role' => ChatParticipantRole::Support,
                 ]);
                 $chat->load('participants');
             }
@@ -367,7 +379,7 @@ class SupportChats extends Page
         } catch (\Throwable $e) {
             Log::error('[SupportChats] sendReply failed', [
                 'chat_id' => $this->selectedChatId,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             Notification::make()
                 ->title('Не удалось отправить сообщение.')

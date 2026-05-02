@@ -10,16 +10,22 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Str;
 
 class StartInviteResource extends Resource
 {
     protected static ?string $model = StartInvite::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-link';
+
+    protected static ?string $navigationGroup = 'Система';
+
     protected static ?string $navigationLabel = 'Invite-ссылки';
+
     protected static ?string $modelLabel = 'Invite';
+
     protected static ?string $pluralModelLabel = 'Invite-ссылки';
-    protected static ?int $navigationSort = 11;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -27,7 +33,7 @@ class StartInviteResource extends Resource
             Forms\Components\Select::make('kind')->label('Тип')->required()
                 ->options([
                     StartInvite::KIND_VERIFY => 'Verify (обычный пользователь)',
-                    StartInvite::KIND_MODEL  => 'Model (заявка на модель)',
+                    StartInvite::KIND_MODEL => 'Model (заявка на модель)',
                 ])
                 ->default(StartInvite::KIND_VERIFY),
             Forms\Components\TextInput::make('label')->label('Название (для админа)')
@@ -55,7 +61,10 @@ class StartInviteResource extends Resource
                 Tables\Columns\TextColumn::make('link')->label('Ссылка')
                     ->state(function (StartInvite $record): string {
                         $bot = (string) config('telegram.bot_username', '');
-                        if ($bot === '') return '— укажите TELEGRAM_BOT_USERNAME —';
+                        if ($bot === '') {
+                            return '— укажите TELEGRAM_BOT_USERNAME —';
+                        }
+
                         return "https://t.me/{$bot}?start={$record->token}";
                     })
                     ->copyable()
@@ -73,7 +82,7 @@ class StartInviteResource extends Resource
                 Tables\Filters\SelectFilter::make('kind')->label('Тип')
                     ->options([
                         StartInvite::KIND_VERIFY => 'Verify',
-                        StartInvite::KIND_MODEL  => 'Model',
+                        StartInvite::KIND_MODEL => 'Model',
                     ]),
             ])
             ->actions([
@@ -94,14 +103,17 @@ class StartInviteResource extends Resource
             ->defaultSort('id', 'desc');
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListStartInvites::route('/'),
+            'index' => Pages\ListStartInvites::route('/'),
             'create' => Pages\CreateStartInvite::route('/create'),
-            'edit'   => Pages\EditStartInvite::route('/{record}/edit'),
+            'edit' => Pages\EditStartInvite::route('/{record}/edit'),
         ];
     }
 }

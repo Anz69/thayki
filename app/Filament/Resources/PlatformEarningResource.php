@@ -7,25 +7,30 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PlatformEarningResource\Pages;
 use App\Models\ModelProfile;
 use App\Models\PlatformEarning;
+use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Filament\Forms;
 use Illuminate\Database\Eloquent\Builder;
 
 class PlatformEarningResource extends Resource
 {
     protected static ?string $model = PlatformEarning::class;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-banknotes';
+    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+
     protected static ?string $navigationLabel = 'Доходы платформы';
+
     protected static ?string $navigationGroup = 'Финансы';
-    protected static ?string $modelLabel      = 'Доход';
+
+    protected static ?string $modelLabel = 'Доход';
+
     protected static ?string $pluralModelLabel = 'Доходы платформы';
-    protected static ?int    $navigationSort  = 4;
+
+    protected static ?int $navigationSort = 3;
 
     public static function table(Table $table): Table
     {
@@ -87,7 +92,7 @@ class PlatformEarningResource extends Resource
                 Tables\Columns\BadgeColumn::make('source')
                     ->label('Источник')
                     ->colors([
-                        'gray'    => PlatformEarning::SOURCE_DEFAULT,
+                        'gray' => PlatformEarning::SOURCE_DEFAULT,
                         'warning' => PlatformEarning::SOURCE_MODEL_OVERRIDE,
                     ])
                     ->formatStateUsing(fn ($state) => match ($state) {
@@ -114,6 +119,7 @@ class PlatformEarningResource extends Resource
                         if (! empty($data['to'])) {
                             $out[] = 'По '.$data['to'];
                         }
+
                         return $out;
                     }),
 

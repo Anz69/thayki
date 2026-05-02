@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Actions\Chat\EnsureSupportChatAction;
 use App\Actions\Wallet\ProcessWithdrawalAction;
 use App\Enums\WithdrawalStatus;
+use App\Filament\Pages\SupportChats;
 use App\Filament\Resources\WithdrawalResource\Pages;
 use App\Models\Wallet;
 use App\Models\Withdrawal;
@@ -18,11 +19,18 @@ use Filament\Tables\Table;
 class WithdrawalResource extends Resource
 {
     protected static ?string $model = Withdrawal::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+
+    protected static ?string $navigationGroup = 'Финансы';
+
     protected static ?string $navigationLabel = 'Выводы';
+
     protected static ?string $modelLabel = 'Вывод';
+
     protected static ?string $pluralModelLabel = 'Выводы';
-    protected static ?int $navigationSort = 4;
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -60,6 +68,7 @@ class WithdrawalResource extends Resource
                             ? Wallet::query()->where('user_id', $record->user->id)->first()
                             : null;
                         $balanceMinor = (int) ($wallet?->balance_minor ?? 0);
+
                         return number_format($balanceMinor / 100, 2).' '.($wallet?->currency ?? 'THB');
                     }),
                 Tables\Columns\TextColumn::make('amount_minor')->label('К выводу')
@@ -70,7 +79,7 @@ class WithdrawalResource extends Resource
                         'warning' => WithdrawalStatus::Pending->value,
                         'success' => WithdrawalStatus::Paid->value,
                         'primary' => WithdrawalStatus::Approved->value,
-                        'danger'  => WithdrawalStatus::Rejected->value,
+                        'danger' => WithdrawalStatus::Rejected->value,
                     ]),
                 Tables\Columns\TextColumn::make('created_at')->label('Создан')->dateTime('d.m.Y H:i')->sortable(),
             ])
@@ -86,12 +95,13 @@ class WithdrawalResource extends Resource
                     ->action(function (Withdrawal $record): void {
                         if ($record->user === null) {
                             Notification::make()->title('У заявки нет пользователя.')->danger()->send();
+
                             return;
                         }
                         try {
                             $chat = app(EnsureSupportChatAction::class)->execute($record->user);
                             session()->put('support_chat_preselect', $chat->id);
-                            redirect(\App\Filament\Pages\SupportChats::getUrl(['chat' => $chat->id]));
+                            redirect(SupportChats::getUrl(['chat' => $chat->id]));
                         } catch (\Throwable $e) {
                             Notification::make()->title('Ошибка: '.$e->getMessage())->danger()->send();
                         }
@@ -150,14 +160,17 @@ class WithdrawalResource extends Resource
             ->defaultSort('created_at', 'desc');
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListWithdrawals::route('/'),
+            'index' => Pages\ListWithdrawals::route('/'),
             'create' => Pages\CreateWithdrawal::route('/create'),
-            'edit'   => Pages\EditWithdrawal::route('/{record}/edit'),
+            'edit' => Pages\EditWithdrawal::route('/{record}/edit'),
         ];
     }
 }

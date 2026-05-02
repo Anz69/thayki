@@ -14,11 +14,18 @@ use Filament\Tables\Table;
 class MeetingResource extends Resource
 {
     protected static ?string $model = Meeting::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
+
+    protected static ?string $navigationGroup = 'Бронирования';
+
     protected static ?string $navigationLabel = 'Встречи';
+
     protected static ?string $modelLabel = 'Встреча';
+
     protected static ?string $pluralModelLabel = 'Встречи';
-    protected static ?int $navigationSort = 2;
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -64,7 +71,7 @@ class MeetingResource extends Resource
                             MeetingStatus::Paid->value,
                             MeetingStatus::Confirmed->value,
                         ], true),
-                        'danger'  => fn ($state) => in_array($statusValue($state), [
+                        'danger' => fn ($state) => in_array($statusValue($state), [
                             MeetingStatus::Cancelled->value,
                             MeetingStatus::Rejected->value,
                             MeetingStatus::Expired->value,
@@ -73,7 +80,7 @@ class MeetingResource extends Resource
                 Tables\Columns\TextColumn::make('scheduled_at')->label('Дата')->dateTime('d.m.Y H:i')->sortable(),
                 Tables\Columns\TextColumn::make('duration_hours')->label('Ч'),
                 Tables\Columns\TextColumn::make('price_thb')->label('Цена')
-                    ->formatStateUsing(fn ($state) => '฿ ' . number_format((float) ($state ?? 0))),
+                    ->formatStateUsing(fn ($state) => '฿ '.number_format((float) ($state ?? 0))),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Статус')
@@ -83,14 +90,17 @@ class MeetingResource extends Resource
             ->defaultSort('created_at', 'desc');
     }
 
-    public static function getRelations(): array { return []; }
+    public static function getRelations(): array
+    {
+        return [];
+    }
 
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListMeetings::route('/'),
+            'index' => Pages\ListMeetings::route('/'),
             'create' => Pages\CreateMeeting::route('/create'),
-            'edit'   => Pages\EditMeeting::route('/{record}/edit'),
+            'edit' => Pages\EditMeeting::route('/{record}/edit'),
         ];
     }
 }

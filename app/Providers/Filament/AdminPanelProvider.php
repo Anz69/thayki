@@ -2,12 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Dashboard;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use App\Filament\Pages\Dashboard;
-use Filament\Pages;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -32,6 +32,26 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('Админка')
             ->colors([
                 'primary' => Color::Rose,
+            ])
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label('Пользователи и модели')
+                    ->icon('heroicon-o-users'),
+                NavigationGroup::make()
+                    ->label('Бронирования')
+                    ->icon('heroicon-o-calendar-days'),
+                NavigationGroup::make()
+                    ->label('Финансы')
+                    ->icon('heroicon-o-banknotes'),
+                NavigationGroup::make()
+                    ->label('Обратная связь')
+                    ->icon('heroicon-o-chat-bubble-left-right'),
+                NavigationGroup::make()
+                    ->label('Поддержка')
+                    ->icon('heroicon-o-lifebuoy'),
+                NavigationGroup::make()
+                    ->label('Система')
+                    ->icon('heroicon-o-cog-6-tooth'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

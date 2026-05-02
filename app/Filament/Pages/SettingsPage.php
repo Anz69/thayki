@@ -19,10 +19,15 @@ class SettingsPage extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-cog-6-tooth';
+    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+
+    protected static ?string $navigationGroup = 'Система';
+
     protected static ?string $navigationLabel = 'Настройки';
-    protected static string  $view            = 'filament.pages.settings-page';
-    protected static ?int    $navigationSort  = 99;
+
+    protected static string $view = 'filament.pages.settings-page';
+
+    protected static ?int $navigationSort = 2;
 
     /** @var array<string, mixed> */
     public ?array $data = [];
@@ -42,7 +47,7 @@ class SettingsPage extends Page implements HasForms
 
         $this->form->fill([
             'auto_approve_applications' => AppSetting::bool('auto_approve_applications'),
-            'meeting_pending_ttl_min'   => (int) round($pendingTtl / 60),
+            'meeting_pending_ttl_min' => (int) round($pendingTtl / 60),
             'commission_default_percent' => round($defaultRate * 100, 2),
             'withdrawal_min_thb' => $withdrawalMin,
         ]);
