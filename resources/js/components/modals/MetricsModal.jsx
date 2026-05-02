@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react'
 import ModalSheet from '@/layout/ModalSheet'
 import CustomSelect from '@/components/ui/CustomSelect'
 const SIZES = ['Маленькая', 'Средняя', 'Большая', 'Очень большая']
-function Field({ label, children }) {
+function Field({ label, children, boxClassName = '' }) {
   return (
     <div className="flex flex-col gap-1">
       <p className="text-[#ABABAB] text-[10px]/[100%] font-semibold uppercase tracking-widest px-1">
         {label}
       </p>
-      <div className="bg-[#F5F5F7] rounded-2xl px-4 ">
+      <div className={`bg-[#F5F5F7] rounded-2xl px-4 ${boxClassName}`}>
         {children}
       </div>
     </div>
@@ -86,13 +86,13 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
       </div>
       <div className="flex flex-col gap-3 px-5 pb-10">
         <div className="flex flex-col gap-1">
-          <Field label="Рост">
+          <Field label="Рост" boxClassName="py-2.5">
             <NumberInput value={height} onChange={setHeight} placeholder="165" unit="см" />
           </Field>
           {heightErr && <p className="text-[#E2319B] text-xs/[100%] font-medium px-1">{heightErr}</p>}
         </div>
         <div className="flex flex-col gap-1">
-          <Field label="Вес">
+          <Field label="Вес" boxClassName="py-2.5">
             <NumberInput value={weight} onChange={setWeight} placeholder="45" unit="кг" />
           </Field>
           {weightErr && <p className="text-[#E2319B] text-xs/[100%] font-medium px-1">{weightErr}</p>}
