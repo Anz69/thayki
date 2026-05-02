@@ -34,24 +34,12 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Rose,
             ])
             ->navigationGroups([
-                NavigationGroup::make()
-                    ->label('Пользователи и модели')
-                    ->icon('heroicon-o-users'),
-                NavigationGroup::make()
-                    ->label('Бронирования')
-                    ->icon('heroicon-o-calendar-days'),
-                NavigationGroup::make()
-                    ->label('Финансы')
-                    ->icon('heroicon-o-banknotes'),
-                NavigationGroup::make()
-                    ->label('Обратная связь')
-                    ->icon('heroicon-o-chat-bubble-left-right'),
-                NavigationGroup::make()
-                    ->label('Поддержка')
-                    ->icon('heroicon-o-lifebuoy'),
-                NavigationGroup::make()
-                    ->label('Система')
-                    ->icon('heroicon-o-cog-6-tooth'),
+                NavigationGroup::make()->label('Пользователи и модели'),
+                NavigationGroup::make()->label('Бронирования'),
+                NavigationGroup::make()->label('Финансы'),
+                NavigationGroup::make()->label('Обратная связь'),
+                NavigationGroup::make()->label('Поддержка'),
+                NavigationGroup::make()->label('Система'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
