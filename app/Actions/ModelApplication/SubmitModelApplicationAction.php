@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\ModelApplication;
 
+use App\Enums\MeetingStatus;
 use App\Enums\ModelApplicationStatus;
 use App\Enums\UserRole;
 use App\Exceptions\DomainException;
+use App\Models\Meeting;
 use App\Models\ModelApplication;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
@@ -28,6 +30,22 @@ class SubmitModelApplicationAction
     {
         if ($user->role === UserRole::Admin) {
             throw DomainException::forbidden('APPLICATION_NOT_ALLOWED', 'Admins cannot submit model applications.');
+        }
+
+        $blockingStatuses = [
+            MeetingStatus::Pending,
+            MeetingStatus::Accepted,
+            MeetingStatus::Paid,
+            MeetingStatus::Confirmed,
+        ];
+        if (Meeting::query()
+            ->where('client_id', $user->id)
+            ->whereIn('status', $blockingStatuses)
+            ->exists()) {
+            throw DomainException::conflict(
+                'ACTIVE_MEETINGS_AS_CLIENT',
+                'У вас есть активные бронирования как клиент. Завершите или отмените их, затем подайте заявку на модель.',
+            );
         }
 
         $existing = ModelApplication::query()

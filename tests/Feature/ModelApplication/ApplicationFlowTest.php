@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\MeetingStatus;
 use App\Enums\ModelApplicationStatus;
 use App\Enums\UserRole;
 use App\Models\AppSetting;
+use App\Models\Meeting;
 use App\Models\ModelApplication;
 use App\Models\ModelProfile;
 use App\Models\User;
@@ -60,6 +62,27 @@ it('auto-approves application when flag is enabled', function (): void {
 
     expect(ModelProfile::query()->where('user_id', $user->id)->exists())->toBeTrue();
     expect($user->refresh()->role)->toBe(UserRole::Model);
+});
+
+it('forbids model application while client has active meetings', function (): void {
+    AppSetting::set('auto_approve_applications', 'false');
+
+    $client = User::factory()->create();
+    $profile = ModelProfile::factory()->create();
+
+    Meeting::factory()->create([
+        'client_id' => $client->id,
+        'model_profile_id' => $profile->id,
+        'status' => MeetingStatus::Pending,
+    ]);
+
+    Sanctum::actingAs($client, ['role:client']);
+
+    $response = $this->postJson('/api/v1/model-application', submitPayload());
+    $response->assertStatus(409);
+    $response->assertJsonPath('error.code', 'ACTIVE_MEETINGS_AS_CLIENT');
+
+    expect(ModelApplication::query()->where('user_id', $client->id)->count())->toBe(0);
 });
 
 it('forbids submitting model application more than once', function (): void {

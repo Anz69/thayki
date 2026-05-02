@@ -61,10 +61,11 @@ function PageFallback() {
 
 let authRetried = false
 const MODEL_APP_GUARD_TTL_MS = 10000
-let modelAppGuardCache = { userId: null, hasActive: false, checkedAt: 0 }
+/** @type {{ userId: number|null, outcome: 'none'|'submitted'|'error'|null, checkedAt: number }} */
+let modelAppGuardCache = { userId: null, outcome: null, checkedAt: 0 }
 
 export function resetModelAppGuardCache() {
-  modelAppGuardCache = { userId: null, hasActive: false, checkedAt: 0 }
+  modelAppGuardCache = { userId: null, outcome: null, checkedAt: 0 }
 }
 
 function AuthErrorScreen() {
@@ -220,13 +221,16 @@ function ModelApplicationPendingGuard({ children }) {
   const { user } = useAuthStore()
   const location = useLocation()
   const [gateReady, setGateReady] = useState(false)
-  const [hasActiveApplication, setHasActiveApplication] = useState(false)
+  /** none = нет заявки; submitted = на модерации; error = не удалось проверить (не кикаем с /application-pending) */
+  const [applicationOutcome, setApplicationOutcome] = useState(
+    /** @type {'none'|'submitted'|'error'|null} */ (null),
+  )
 
   useEffect(() => {
     let cancelled = false
 
     if (!user) {
-      setHasActiveApplication(false)
+      setApplicationOutcome('none')
       setGateReady(true)
       return () => { cancelled = true }
     }
@@ -234,9 +238,10 @@ function ModelApplicationPendingGuard({ children }) {
     const now = Date.now()
     if (
       modelAppGuardCache.userId === user.id
+      && modelAppGuardCache.outcome !== null
       && now - modelAppGuardCache.checkedAt < MODEL_APP_GUARD_TTL_MS
     ) {
-      setHasActiveApplication(modelAppGuardCache.hasActive)
+      setApplicationOutcome(modelAppGuardCache.outcome)
       setGateReady(true)
       return () => { cancelled = true }
     }
@@ -246,16 +251,23 @@ function ModelApplicationPendingGuard({ children }) {
       .then((res) => {
         if (cancelled) return
         const status = res?.data?.data?.status
-        const hasActive = status === 'submitted'
-        setHasActiveApplication(hasActive)
-        modelAppGuardCache = { userId: user.id, hasActive, checkedAt: Date.now() }
+        const outcome = status === 'submitted' ? 'submitted' : 'none'
+        setApplicationOutcome(outcome)
+        modelAppGuardCache = { userId: user.id, outcome, checkedAt: Date.now() }
         setGateReady(true)
       })
       .catch((err) => {
         if (cancelled) return
-        const hasActive = false
-        setHasActiveApplication(hasActive)
-        modelAppGuardCache = { userId: user.id, hasActive, checkedAt: Date.now() }
+        const httpStatus = err?.response?.status
+        if (httpStatus === 404) {
+          const outcome = 'none'
+          setApplicationOutcome(outcome)
+          modelAppGuardCache = { userId: user.id, outcome, checkedAt: Date.now() }
+        } else {
+          const outcome = 'error'
+          setApplicationOutcome(outcome)
+          modelAppGuardCache = { userId: user.id, outcome, checkedAt: Date.now() }
+        }
         setGateReady(true)
       })
 
@@ -266,11 +278,14 @@ function ModelApplicationPendingGuard({ children }) {
     return children
   }
 
-  if (hasActiveApplication && location.pathname !== '/application-pending') {
+  if (applicationOutcome === 'submitted' && location.pathname !== '/application-pending') {
     return <Navigate to="/application-pending" replace />
   }
 
-  if (!hasActiveApplication && location.pathname === '/application-pending') {
+  if (
+    applicationOutcome === 'none'
+    && location.pathname === '/application-pending'
+  ) {
     return <Navigate to="/home" replace />
   }
 

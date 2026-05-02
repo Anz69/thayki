@@ -53,11 +53,53 @@ const SCREENS = [
 const DUR_OUT = 0.28
 const DUR_IN  = 0.48
 
+/** loading → wizard hidden; ready → show wizard; blocked → active client meetings */
+function BecomeModelPrecheckBlocking({ onToMeetings, onToHome }) {
+  return (
+    <section className="min-h-dvh bg-white flex flex-col px-5 pt-14 pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full gap-6">
+        <div className="rounded-2xl bg-[#F5F5F7] p-6 flex flex-col gap-5 shadow-sm">
+          <div className="size-16 rounded-full bg-[#FDE8F5] flex items-center justify-center mx-auto ring-4 ring-white">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M8 7V5a4 4 0 118 0v2M6 7h12v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7z" stroke="#E2319B" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div className="flex flex-col gap-2 text-center">
+            <h1 className="text-[22px] font-semibold text-black tracking-tight leading-tight">
+              Сначала заказы как клиент
+            </h1>
+            <p className="text-[15px] text-[#7F7F7F] leading-relaxed font-medium">
+              У вас есть активные бронирования. Завершите или отмените их — после этого можно подать заявку на модель.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onToMeetings}
+              className="w-full py-4 rounded-full bg-[#1C1C1E] text-white text-base font-semibold active:opacity-85 transition-opacity"
+            >
+              К моим заказам
+            </button>
+            <button
+              type="button"
+              onClick={onToHome}
+              className="w-full py-4 rounded-full bg-white border border-[#E1E0E7] text-black text-base font-medium active:bg-[#F5F5F7] transition-colors"
+            >
+              На главную
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function BecomeModelPage() {
   const navigate = useTransitionNavigate()
   const authStore = useAuthStore()
   const initialStep = 0
 
+  const [precheck, setPrecheck] = useState(/** @type {'loading'|'ready'|'blocked'} */ ('loading'))
   const [stepIdx, setStepIdx]     = useState(initialStep)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
@@ -69,23 +111,53 @@ export default function BecomeModelPage() {
   useEffect(() => {
     let cancelled = false
 
-    api.get('/model-application')
-      .then((res) => {
+    async function runPrecheck() {
+      try {
+        let appData = null
+        try {
+          const appRes = await api.get('/model-application')
+          appData = appRes?.data?.data ?? null
+        } catch (err) {
+          if (err?.response?.status !== 404) {
+            if (!cancelled) setPrecheck('ready')
+            return
+          }
+        }
+
         if (cancelled) return
-        const status = res?.data?.data?.status
-        if (status === 'submitted') {
+
+        if (appData?.status === 'submitted') {
           navigate('/application-pending', { replace: true })
           return
         }
-        if (status === 'approved') {
+        if (appData?.status === 'approved') {
           navigate('/home', { replace: true })
+          return
         }
-      })
-      .catch((err) => {
+
+        const meetingsRes = await api.get('/meetings', {
+          params: {
+            per_page: 1,
+            role: 'client',
+            statuses: 'pending,accepted,paid,confirmed',
+          },
+        })
+
         if (cancelled) return
-        const status = err?.response?.status
-        if (status === 404) return
-      })
+
+        const meetings = meetingsRes?.data?.data ?? []
+        if (Array.isArray(meetings) && meetings.length > 0) {
+          setPrecheck('blocked')
+          return
+        }
+
+        setPrecheck('ready')
+      } catch {
+        if (!cancelled) setPrecheck('ready')
+      }
+    }
+
+    runPrecheck()
 
     return () => {
       cancelled = true
@@ -168,6 +240,11 @@ export default function BecomeModelPage() {
           navigate('/application-pending', { replace: true })
           return
         }
+        if (errData?.code === 'ACTIVE_MEETINGS_AS_CLIENT') {
+          setPrecheck('blocked')
+          setSubmitting(false)
+          return
+        }
         const msg = errData?.message ?? err?.response?.data?.message ?? err?.message ?? 'Ошибка. Попробуйте ещё раз'
         setSubmitError(msg)
         setSubmitting(false)
@@ -177,6 +254,9 @@ export default function BecomeModelPage() {
     }
   }, [goTo, navigate, authStore])
 
+  const goMeetings = useCallback(() => navigate('/meeting'), [navigate])
+  const goHome = useCallback(() => navigate('/home'), [navigate])
+
   const handleBack = useCallback(() => {
     if (stepRef.current === 0) {
       navigate(-1)
@@ -184,6 +264,24 @@ export default function BecomeModelPage() {
       goTo(stepRef.current - 1)
     }
   }, [goTo, navigate])
+
+  if (precheck === 'loading') {
+    return (
+      <section className="min-h-dvh bg-white flex flex-col items-center justify-center px-6 gap-4">
+        <div
+          className="size-11 rounded-full border-[3px] border-[#FDE8F5] border-t-[#E2319B] animate-spin"
+          aria-hidden
+        />
+        <p className="text-sm font-medium text-[#7F7F7F]">Проверяем данные…</p>
+      </section>
+    )
+  }
+
+  if (precheck === 'blocked') {
+    return (
+      <BecomeModelPrecheckBlocking onToMeetings={goMeetings} onToHome={goHome} />
+    )
+  }
 
   return (
     <section
