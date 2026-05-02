@@ -10,8 +10,16 @@ function isHeicLikeFile(file) {
   return /\.(heic|heif)$/i.test(file.name || '')
 }
 
+/** Loaded at runtime so production builds do not require `heic2any` in node_modules (CDN). */
+const HEIC2ANY_ESM = 'https://esm.sh/heic2any@0.0.4'
+
+async function loadHeic2any() {
+  const mod = await import(/* @vite-ignore */ HEIC2ANY_ESM)
+  return mod.default ?? mod
+}
+
 async function heicToJpegFile(file) {
-  const { default: heic2any } = await import('heic2any')
+  const heic2any = await loadHeic2any()
   const result = await heic2any({
     blob: file,
     toType: 'image/jpeg',
