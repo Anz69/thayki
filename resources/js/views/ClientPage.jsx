@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -8,6 +9,7 @@ import InfoModal from '@/components/modals/InfoModal'
 import HowItWorksModal from '@/components/modals/HowItWorksModal'
 import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
+import { subscribeActiveMeetingsRefresh } from '@/utils/activeMeetingsBus'
 import { logError } from '@/utils/logger'
 
 const STATUS_MAP = {
@@ -102,6 +104,7 @@ function OrderCard({ meeting, currentUserId, onClick }) {
 
 export default function ClientPage() {
   const navigate = useTransitionNavigate()
+  const location = useLocation()
   const auth = useAuthStore()
 
   const [withdrawOpen, setWithdrawOpen]     = useState(false)
@@ -117,7 +120,8 @@ export default function ClientPage() {
   const questionRef = useRef(null)
   const ordersRef   = useRef(null)
 
-  useEffect(() => {
+  const fetchMeetings = useCallback((silent = false) => {
+    if (!silent) setLoadingMeetings(true)
     api.get('/meetings', {
       params: {
         per_page: 20,
@@ -126,8 +130,26 @@ export default function ClientPage() {
     })
       .then(r => setMeetings(r.data.data ?? []))
       .catch(logError)
-      .finally(() => setLoadingMeetings(false))
+      .finally(() => { if (!silent) setLoadingMeetings(false) })
+  }, [])
 
+  useEffect(() => {
+    fetchMeetings(false)
+  }, [location.key, fetchMeetings])
+
+  useEffect(() => {
+    return subscribeActiveMeetingsRefresh(() => fetchMeetings(true))
+  }, [fetchMeetings])
+
+  useEffect(() => {
+    const onPageShow = (e) => {
+      if (e.persisted) fetchMeetings(true)
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [fetchMeetings])
+
+  useEffect(() => {
     api.get('/wallet')
       .then(r => {
         const w = r.data.data

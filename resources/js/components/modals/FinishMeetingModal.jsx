@@ -10,7 +10,10 @@ export default function FinishMeetingModal({ isOpen, onClose, onConfirm }) {
           </p>
         </div>
         <button
-          onClick={() => { onConfirm?.(); onClose() }}
+          onClick={async () => {
+            await onConfirm?.()
+            onClose()
+          }}
           className="w-full py-4 rounded-full bg-[#E2319B] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity"
         >
           Да

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -7,6 +8,7 @@ import WithdrawModal from '@/components/modals/WithdrawModal'
 import useAuthStore from '@/stores/useAuthStore'
 import Avatar from '@/components/ui/Avatar'
 import api from '@/utils/api'
+import { subscribeActiveMeetingsRefresh } from '@/utils/activeMeetingsBus'
 import { logError } from '@/utils/logger'
 const IconQuestion = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -124,6 +126,7 @@ function BookingCard({ meeting, onClick }) {
 
 export default function ModelMorePage() {
   const navigate = useTransitionNavigate()
+  const location = useLocation()
   const auth     = useAuthStore()
   const [faqOpen, setFaqOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
@@ -151,7 +154,8 @@ export default function ModelMorePage() {
   const section1Ref = useRef(null)
   const section2Ref = useRef(null)
 
-  useEffect(() => {
+  const fetchMeetings = useCallback((silent = false) => {
+    if (!silent) setLoadingMeetings(true)
     api.get('/meetings', {
       params: {
         per_page: 20,
@@ -161,8 +165,26 @@ export default function ModelMorePage() {
     })
       .then(r => setMeetings(r.data.data ?? []))
       .catch(logError)
-      .finally(() => setLoadingMeetings(false))
+      .finally(() => { if (!silent) setLoadingMeetings(false) })
+  }, [])
 
+  useEffect(() => {
+    fetchMeetings(false)
+  }, [location.key, fetchMeetings])
+
+  useEffect(() => {
+    return subscribeActiveMeetingsRefresh(() => fetchMeetings(true))
+  }, [fetchMeetings])
+
+  useEffect(() => {
+    const onPageShow = (e) => {
+      if (e.persisted) fetchMeetings(true)
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [fetchMeetings])
+
+  useEffect(() => {
     const fetchBalance = () => {
       api.get('/wallet')
         .then((r) => {
@@ -174,27 +196,15 @@ export default function ModelMorePage() {
     }
     fetchBalance()
 
-    const fetchMeetings = () => {
-      api.get('/meetings', {
-        params: {
-          per_page: 20,
-          role: 'model',
-          statuses: 'pending,accepted,paid,confirmed',
-        },
-      })
-        .then(r => setMeetings(r.data.data ?? []))
-        .catch(logError)
-    }
-
     const onVisibility = () => {
       if (!document.hidden) {
         fetchBalance()
-        fetchMeetings()
+        fetchMeetings(true)
       }
     }
     document.addEventListener('visibilitychange', onVisibility)
     return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [])
+  }, [fetchMeetings])
 
   useLayoutEffect(() => {
     gsap.set(headerRef.current,   { autoAlpha: 0, y: -44 })

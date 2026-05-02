@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import api from '@/utils/api'
+import { emitActiveMeetingsRefresh } from '@/utils/activeMeetingsBus'
 import { logError } from '@/utils/logger'
 
 const STAGE_RANK = {
@@ -103,6 +104,7 @@ const useMeetingStore = create((set, get) => ({
       const { data } = await api.post(`/meetings/${id}/cancel`, { reason })
       const m = data.data
       set({ meeting: m, status: m?.status ?? 'cancelled' })
+      emitActiveMeetingsRefresh()
     } catch (e) {
       logError('Meeting cancel failed:', e)
     }
