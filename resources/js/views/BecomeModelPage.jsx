@@ -1,5 +1,6 @@
 import { useState, useRef, useLayoutEffect, useCallback, useEffect } from 'react'
 import gsap from 'gsap'
+import { useNavigate } from 'react-router-dom'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import { resetModelAppGuardCache } from '@/RouterShell'
 import BecomeModelLanding from '@/components/becomeModel/Landing'
@@ -106,6 +107,7 @@ function BecomeModelPrecheckBlocking({ onToMeetings, onToHome }) {
 
 export default function BecomeModelPage() {
   const navigate = useTransitionNavigate()
+  const navigateImmediate = useNavigate()
   const authStore = useAuthStore()
   const initialStep = 0
 
@@ -137,11 +139,18 @@ export default function BecomeModelPage() {
         if (cancelled) return
 
         if (appData?.status === 'submitted') {
-          navigate('/application-pending', { replace: true })
+          resetModelAppGuardCache()
+          navigateImmediate('/application-pending', { replace: true })
           return
         }
         if (appData?.status === 'approved') {
-          navigate('/home', { replace: true })
+          resetModelAppGuardCache()
+          try {
+            await useAuthStore.getState().refreshUser()
+          } catch {
+            /* переход всё равно выполняем */
+          }
+          navigateImmediate('/home', { replace: true })
           return
         }
 
@@ -172,7 +181,7 @@ export default function BecomeModelPage() {
     return () => {
       cancelled = true
     }
-  }, [navigate])
+  }, [navigateImmediate])
 
   useEffect(() => {
     const vv = window.visualViewport
