@@ -5,14 +5,14 @@ const ChevronIcon = () => (
     <path d="M6 9l6 6 6-6" stroke="#7F7F7F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 )
-export default function CustomSelect({ value, onChange, options = [], onOpen }) {
+export default function CustomSelect({ value, onChange, options = [], onOpen, placeholder }) {
   const [open, setOpen]   = useState(false)
   const listRef           = useRef(null)
   const chevronRef        = useRef(null)
   const items = options.map((o) =>
     typeof o === 'object' ? o : { value: o, label: o }
   )
-  const current = items.find((o) => o.value === value) ?? items[0]
+  const current = value != null ? (items.find((o) => o.value === value) ?? null) : null
   const getItems = () => listRef.current?.querySelectorAll('button') ?? []
   const toggle = useCallback(() => {
     const el = listRef.current
@@ -79,7 +79,9 @@ export default function CustomSelect({ value, onChange, options = [], onOpen }) 
         onClick={toggle}
         className="w-full min-h-10 py-1 flex items-center justify-between active:opacity-70 transition-opacity"
       >
-        <span className="text-black text-sm/[100%] font-medium">{current?.label}</span>
+        <span className={`text-sm/[100%] font-medium ${current ? 'text-black' : 'text-[#C0C0C0]'}`}>
+          {current?.label ?? placeholder ?? 'Выберите'}
+        </span>
         <div ref={chevronRef} style={{ display: 'flex', transformOrigin: 'center' }}>
           <ChevronIcon />
         </div>

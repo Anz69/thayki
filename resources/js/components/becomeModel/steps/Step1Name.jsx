@@ -56,7 +56,8 @@ export default function Step1Name({ isActive, stepNum, totalSteps, onNext }) {
           </GradientBorder>
         </div>
       </div>
-      <div ref={btnRef} className="shrink-0 px-5 pt-4 pb-8 flex flex-col justify-center">
+      <div ref={btnRef} className="shrink-0 px-5 pt-4 flex flex-col justify-center"
+        style={{ paddingBottom: 'calc(2rem + var(--keyboard-offset, 0px))' }}>
         <button
           onClick={() => name.trim() && onNext({ name: name.trim() })}
           style={{ background: name.trim() ? '#1C1C1E' : '#D0D0D0' }}

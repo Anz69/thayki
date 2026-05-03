@@ -53,7 +53,12 @@ class ModelApplicationResource extends Resource
                 Tables\Columns\TextColumn::make('id')->sortable()->label('ID'),
                 Tables\Columns\TextColumn::make('user.first_name')->label('Пользователь')
                     ->formatStateUsing(fn ($record) => trim("{$record->user?->first_name} {$record->user?->last_name}")
-                        ?: ($record->user?->username ?? '—')),
+                        ?: ($record->user?->username ?? '—'))
+                    ->url(fn (ModelApplication $record): ?string => $record->user_id
+                        ? ($record->user?->role?->value === 'model'
+                            ? ModelResource::getUrl('edit', ['record' => $record->user_id])
+                            : UserResource::getUrl('edit', ['record' => $record->user_id]))
+                        : null),
                 Tables\Columns\TextColumn::make('user.username')->label('@username')
                     ->formatStateUsing(fn ($state) => $state ? "@{$state}" : '—')
                     ->url(fn ($record): ?string => $record->user?->username

@@ -10,9 +10,13 @@ function ModelCard({ model }) {
   const photos = Array.isArray(model?.photos) ? model.photos.filter(Boolean) : []
   const prices = Array.isArray(model?.price_options) ? model.price_options.filter(Boolean) : []
   const mainPhoto = photos.find((p) => p?.is_main) ?? photos[0]
-  const minPrice  = prices.length
-    ? Math.min(...prices.map((p) => Number(p?.price_thb)).filter((v) => Number.isFinite(v)))
-    : model.hourly_rate_thb
+  const cheapestOption = prices.length
+    ? prices.reduce((best, p) => (Number(p?.price_thb) < Number(best?.price_thb) ? p : best), prices[0])
+    : null
+  const minPrice = cheapestOption ? Number(cheapestOption.price_thb) : model.hourly_rate_thb
+  const priceLabel = cheapestOption
+    ? (cheapestOption.hours === 1 ? '/ч' : `/ ${cheapestOption.hours} ч`)
+    : '/ч'
 
   return (
     <TransitionLink
@@ -32,9 +36,7 @@ function ModelCard({ model }) {
       <div className="absolute bottom-0 left-0 w-full h-28 bg-gradient-to-t from-black/75 to-transparent" />
       <div className="flex flex-col gap-3 relative z-30 px-3.5 py-5">
         <div className="p-2 bg-[#EFEEF3] rounded-2xl text-[#1B1B1B] font-medium text-xs/[100%] w-max">
-          {prices.length > 0
-            ? `от ฿ ${minPrice?.toLocaleString()}`
-            : `฿ ${minPrice?.toLocaleString()} /ч`}
+          {`฿ ${minPrice?.toLocaleString()} ${priceLabel}`}
         </div>
         <h1 className="text-white text-base/[100%] font-medium">
           {model.display_name}, {model.age}

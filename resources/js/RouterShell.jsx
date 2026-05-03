@@ -220,7 +220,7 @@ function StrangeGuard({ children }) {
 
   // `/application-pending` нужен, иначе ModelApplicationPendingGuard кидает на заявку,
   // StrangeGuard — обратно на /welcome, получается цикл и «пустая» страница.
-  const allowed = new Set(['/welcome', '/application-pending'])
+  const allowed = new Set(['/welcome', '/application-pending', '/become-model'])
   if (allowed.has(location.pathname)) return children
 
   return <Navigate to="/welcome" replace />
@@ -295,6 +295,14 @@ function ModelApplicationPendingGuard({ children }) {
 
   if (applicationOutcome === 'pending_review' && location.pathname !== '/application-pending') {
     return <Navigate to="/application-pending" replace />
+  }
+
+  if (
+    user?.role === 'model'
+    && applicationOutcome === 'absent'
+    && location.pathname !== '/become-model'
+  ) {
+    return <Navigate to="/become-model" replace />
   }
 
   if (

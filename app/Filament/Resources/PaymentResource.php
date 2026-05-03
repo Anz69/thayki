@@ -78,6 +78,9 @@ class PaymentResource extends Resource
                 Tables\Columns\TextColumn::make('id')->label('ID')->sortable(),
                 Tables\Columns\TextColumn::make('meeting.id')->label('Бронь')
                     ->formatStateUsing(fn ($state) => $state ? "#{$state}" : '—')
+                    ->url(fn (Payment $record): ?string => $record->meeting_id
+                        ? MeetingResource::getUrl('edit', ['record' => $record->meeting_id])
+                        : null)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.first_name')->label('Пользователь')
                     ->formatStateUsing(fn ($record) => trim("{$record->user?->first_name} {$record->user?->last_name}")
