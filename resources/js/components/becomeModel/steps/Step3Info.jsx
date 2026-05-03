@@ -56,7 +56,6 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
   const buttWrapRef    = useRef(null)
 
   function handleSelectOpen(wrapRef) {
-    if (!isTouchUi()) return
     setTimeout(() => {
       wrapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }, 320)
