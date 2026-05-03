@@ -103,7 +103,11 @@ export default function ApplicationPendingPage() {
 
           const tl = gsap.timeline({
             onComplete: async () => {
-              await refreshUser()
+              try {
+                await refreshUser()
+              } catch {
+                /* переходим на главную даже если /auth/me не ответил */
+              }
               navigate('/home', { replace: true })
             },
           })
@@ -154,7 +158,11 @@ export default function ApplicationPendingPage() {
 
           const tl = gsap.timeline({
             onComplete: async () => {
-              await refreshUser()
+              try {
+                await refreshUser()
+              } catch {
+                /* см. сценарий одобрения */
+              }
               navigate('/home', { replace: true })
             },
           })

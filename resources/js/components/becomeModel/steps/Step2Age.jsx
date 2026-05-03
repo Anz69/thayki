@@ -3,7 +3,7 @@ import gsap from 'gsap'
 import StepProgress from '../StepProgress'
 import { useCompactMode } from '@/composables/useCompactMode'
 
-const MIN_AGE = 16
+const MIN_AGE = 18
 const MAX_AGE = 65
 const AGES    = Array.from({ length: MAX_AGE - MIN_AGE + 1 }, (_, i) => MIN_AGE + i)
 

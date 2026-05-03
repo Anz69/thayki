@@ -12,10 +12,10 @@ export default function StrangeWelcomePage() {
   const subRef   = useRef(null)
   const btnsRef  = useRef(null)
 
-  const authStore = useAuthStore()
   const navigate  = useNavigate()
   const [checking, setChecking] = useState(false)
   const [checkDone, setCheckDone] = useState(false)
+  const [checkError, setCheckError] = useState(null)
 
   useLayoutEffect(() => {
     gsap.set(cardRef.current,  { autoAlpha: 0, y: 24 })
@@ -51,17 +51,24 @@ export default function StrangeWelcomePage() {
   const checkAccess = useCallback(async () => {
     if (checking) return
     setChecking(true)
+    setCheckError(null)
     try {
-      await authStore.refreshUser()
-      const user = authStore.user
-      if (user && !user.is_strange) {
+      const user = await useAuthStore.getState().refreshUser()
+      if (user && (!user.is_strange || user.role === 'model')) {
         navigate('/home', { replace: true })
         return
       }
       setCheckDone(true)
-    } catch {}
-    setChecking(false)
-  }, [checking, authStore, navigate])
+    } catch (err) {
+      setCheckError(
+        err?.userMessage
+        ?? err?.response?.data?.error?.message
+        ?? 'Не удалось проверить доступ. Попробуйте снова.',
+      )
+    } finally {
+      setChecking(false)
+    }
+  }, [checking, navigate])
 
   return (
     <section className="flex flex-col items-center justify-center min-h-screen bg-white px-6">
@@ -82,6 +89,9 @@ export default function StrangeWelcomePage() {
         </p>
 
         <div ref={btnsRef} className="w-full flex flex-col gap-3">
+          {checkError && (
+            <p className="text-[#E2319B] text-sm/[140%] font-medium text-center -mt-1">{checkError}</p>
+          )}
           <button
             type="button"
             onClick={openChat}

@@ -11,6 +11,16 @@ import Step5Prices from '@/components/becomeModel/steps/Step5Prices'
 import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
 
+/** First Laravel validation message from API `error.details` (field => string[]). */
+function firstValidationDetailMessage(details) {
+  if (details == null || typeof details !== 'object') return null
+  for (const msgs of Object.values(details)) {
+    if (Array.isArray(msgs) && msgs.length > 0 && typeof msgs[0] === 'string') return msgs[0]
+    if (typeof msgs === 'string' && msgs) return msgs
+  }
+  return null
+}
+
 /** Map collected form data to the POST /model-application payload */
 function buildApplicationPayload(data) {
   const prices       = data.prices ?? {}
@@ -230,13 +240,21 @@ export default function BecomeModelPage() {
           headers: { 'Idempotency-Key': `model-app-${Date.now()}` },
         })
         resetModelAppGuardCache()
-        await authStore.refreshUser()
+        try {
+          await authStore.refreshUser()
+        } catch {
+          /* POST уже принят — всё равно ведём на экран ожидания */
+        }
         navigate('/application-pending', { replace: true })
       } catch (err) {
         const errData = err?.response?.data?.error
         if (errData?.code === 'APPLICATION_ALREADY_SUBMITTED') {
           resetModelAppGuardCache()
-          await authStore.refreshUser()
+          try {
+            await authStore.refreshUser()
+          } catch {
+            /* см. выше */
+          }
           navigate('/application-pending', { replace: true })
           return
         }
@@ -245,7 +263,16 @@ export default function BecomeModelPage() {
           setSubmitting(false)
           return
         }
-        const msg = errData?.message ?? err?.response?.data?.message ?? err?.message ?? 'Ошибка. Попробуйте ещё раз'
+        const validationMsg =
+          errData?.code === 'VALIDATION_FAILED'
+            ? firstValidationDetailMessage(errData?.details)
+            : null
+        const msg =
+          validationMsg
+          ?? errData?.message
+          ?? err?.response?.data?.message
+          ?? err?.message
+          ?? 'Ошибка. Попробуйте ещё раз'
         setSubmitError(msg)
         setSubmitting(false)
       }

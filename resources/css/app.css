@@ -94,6 +94,10 @@ button, a {
   user-select: none;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 @layer utilities {
   .container {
     max-width: 700px;

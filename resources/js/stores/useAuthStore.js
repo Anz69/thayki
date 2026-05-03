@@ -54,11 +54,10 @@ const useAuthStore = create((set, get) => ({
   },
 
   refreshUser: async () => {
-    try {
-      const res = await api.get('/auth/me')
-      const user = res.data?.data
-      if (user) set({ user })
-    } catch {}
+    const res = await api.get('/auth/me')
+    const user = res.data?.data ?? null
+    if (user) set({ user })
+    return user
   },
 
   isAuthenticated: () => get().user !== null,
