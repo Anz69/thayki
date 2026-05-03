@@ -2,6 +2,7 @@ import { useState, useRef, useLayoutEffect, useEffect } from 'react'
 import gsap from 'gsap'
 import StepProgress from '../StepProgress'
 import CustomSelect from '@/components/ui/CustomSelect'
+import { isTouchUi } from '@/utils/isTouchUi'
 const BUST_OPTIONS = ['Маленькая', 'Средняя', 'Большая', 'Очень большая']
 const BUTT_OPTIONS = ['Маленькая', 'Средняя', 'Большая', 'Очень большая']
 function FieldLabel({ children }) {
@@ -19,7 +20,9 @@ function TextInput({ value, onChange, placeholder, suffix }) {
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}
+        onFocus={(e) => {
+          if (isTouchUi()) e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }}
         placeholder={placeholder}
         className="flex-1 bg-transparent text-black text-[15px]/[100%] font-medium outline-none placeholder:text-[#C0C0C0]"
       />
@@ -53,6 +56,7 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
   const buttWrapRef    = useRef(null)
 
   function handleSelectOpen(wrapRef) {
+    if (!isTouchUi()) return
     setTimeout(() => {
       wrapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }, 320)

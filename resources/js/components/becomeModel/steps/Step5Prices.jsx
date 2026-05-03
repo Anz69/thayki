@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect, useEffect } from 'react'
 import gsap from 'gsap'
 import StepProgress from '../StepProgress'
+import { isTouchUi } from '@/utils/isTouchUi'
 const PERIODS = [
   { key: 'hour', label: 'за час' },
   { key: 'threeHours', label: 'за 3 часа' },
@@ -27,7 +28,9 @@ function PriceRow({ value, onChange, period }) {
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
-        onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}
+        onFocus={(e) => {
+          if (isTouchUi()) e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }}
         placeholder="Укажите цену"
         className="flex-1 bg-transparent text-black text-[15px]/[100%] font-medium outline-none placeholder:text-[#C0C0C0] min-w-0"
       />
