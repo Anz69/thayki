@@ -145,12 +145,8 @@ export default function BecomeModelPage() {
         }
         if (appData?.status === 'approved') {
           resetModelAppGuardCache()
-          try {
-            await useAuthStore.getState().refreshUser()
-          } catch {
-            /* переход всё равно выполняем */
-          }
           navigateImmediate('/home', { replace: true })
+          void useAuthStore.getState().refreshUser().catch(() => {})
           return
         }
 

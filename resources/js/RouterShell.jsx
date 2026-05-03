@@ -61,6 +61,7 @@ function PageFallback() {
 
 let authRetried = false
 const MODEL_APP_GUARD_TTL_MS = 10000
+const MODEL_APP_GATE_PATHS = new Set(['/become-model', '/application-pending', '/home'])
 /**
  * pending_review = заявка на модерации
  * finished = approved/rejected — остаёмся на /application-pending до анимации
@@ -234,6 +235,10 @@ function ModelApplicationPendingGuard({ children }) {
     /** @type {'pending_review'|'finished'|'absent'|'draft_or_unknown'|'error'|null} */ (null),
   )
 
+  const modelAppGateRefetchKey = MODEL_APP_GATE_PATHS.has(location.pathname)
+    ? location.pathname
+    : '_'
+
   useEffect(() => {
     let cancelled = false
 
@@ -243,9 +248,11 @@ function ModelApplicationPendingGuard({ children }) {
       return () => { cancelled = true }
     }
 
+    const skipTtl = MODEL_APP_GATE_PATHS.has(location.pathname)
     const now = Date.now()
     if (
-      modelAppGuardCache.userId === user.id
+      !skipTtl
+      && modelAppGuardCache.userId === user.id
       && modelAppGuardCache.outcome !== null
       && now - modelAppGuardCache.checkedAt < MODEL_APP_GUARD_TTL_MS
     ) {
@@ -287,7 +294,7 @@ function ModelApplicationPendingGuard({ children }) {
       })
 
     return () => { cancelled = true }
-  }, [user?.id])
+  }, [user?.id, modelAppGateRefetchKey])
 
   if (!gateReady) {
     return children
