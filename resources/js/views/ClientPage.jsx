@@ -315,6 +315,7 @@ export default function ClientPage() {
         onClose={() => setWithdrawOpen(false)}
         balance={balance}
         methods={withdrawMethods}
+        onSuccess={fetchBalance}
       />
       <InfoModal
         isOpen={infoOpen}

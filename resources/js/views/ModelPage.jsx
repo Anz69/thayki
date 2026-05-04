@@ -12,6 +12,8 @@ import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api, { extractErrorMessage } from '@/utils/api'
 import ShareModelsModal from '@/components/modals/ShareModelsModal'
 import LazyImg from '@/components/ui/LazyImg'
+import { declAge } from '@/utils/datetime'
+import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'paid', 'confirmed']
 
@@ -288,17 +290,17 @@ export default function ModelPage() {
           <div className="relative w-[160px] h-[210px] container">
             <div ref={mainPhotoRef} className="w-full h-full relative z-10 rounded-2xl overflow-hidden" style={{ visibility: 'hidden' }}>
               {mainPhoto?.url && (
-                <LazyImg src={mainPhoto.url} alt={model?.display_name ?? 'girl'} className="w-full h-full" />
+                <LazyImg src={resolveMediaUrl(mainPhoto.url)} alt={model?.display_name ?? 'girl'} className="w-full h-full" />
               )}
             </div>
             <div ref={leftPhotoRef} className="w-[110px] h-[148px] absolute -top-4 -left-16 rounded-xl overflow-hidden" style={{ visibility: 'hidden' }}>
               {leftPhoto?.url && (
-                <LazyImg src={leftPhoto.url} alt="" className="w-full h-full" />
+                <LazyImg src={resolveMediaUrl(leftPhoto.url)} alt="" className="w-full h-full" />
               )}
             </div>
             <div ref={rightPhotoRef} className="w-[124px] h-[150px] absolute -top-4 -right-16 rounded-xl overflow-hidden" style={{ visibility: 'hidden' }}>
               {rightPhoto?.url && (
-                <LazyImg src={rightPhoto.url} alt="" className="w-full h-full" />
+                <LazyImg src={resolveMediaUrl(rightPhoto.url)} alt="" className="w-full h-full" />
               )}
             </div>
           </div>
@@ -306,7 +308,7 @@ export default function ModelPage() {
           <div className="flex flex-col gap-4 text-center container">
             <div className="overflow-hidden">
               <h2 ref={ageRef} className="text-[#7F7F7F] text-base/[100%] font-medium">
-                {model ? `${model.age} лет` : '—'}
+                {declAge(model?.age)}
               </h2>
             </div>
             <div className="overflow-hidden">

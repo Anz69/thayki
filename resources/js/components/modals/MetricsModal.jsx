@@ -175,8 +175,7 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
                   className={`flex items-center justify-between px-4 py-3.5 ${idx < PRICE_DURATIONS.length - 1 ? 'border-b border-[#EBEBEB]' : ''}`}
                 >
                   <span className="text-[#7F7F7F] text-sm/[100%] font-medium shrink-0 w-28">{label}</span>
-                  <div className="flex items-center shrink-0 gap-0.5">
-
+                  <div className="flex items-center shrink-0 gap-1">
                     <input
                       type="text"
                       inputMode="numeric"
@@ -187,12 +186,9 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
                       }
                       onFocus={(e) => scrollInputWithNext(e.target)}
                       className="bg-transparent text-black text-sm/[100%] font-medium outline-none text-right placeholder:text-[#C0C0C0]"
-                      style={{ width: hasVal ? `${val.length}ch` : '3ch' }}
+                      style={{ width: hasVal ? `${val.length + 0.5}ch` : '2ch' }}
                     />
-                    <span
-                      className="text-[#ABABAB] text-sm font-medium whitespace-nowrap overflow-hidden -translate-x-1.5"
-
-                    >฿</span>
+                    <span className="text-[#ABABAB] text-sm font-medium">฿</span>
                   </div>
                 </div>
               )

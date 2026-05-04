@@ -110,6 +110,15 @@ export function formatRussianDaySeparator(iso) {
     : `${day} ${month} ${year}, ${time}`
 }
 
+/**
+ * Russian age declension: 21 → "21 год", 22 → "22 года", 18 → "18 лет".
+ * Returns "—" when n is falsy.
+ */
+export function declAge(n) {
+  if (!n) return '—'
+  return `${n} ${pluralRu(n, ['год', 'года', 'лет'])}`
+}
+
 export function isOnlineNow(isoDate, thresholdMs = 5 * 60 * 1000) {
   if (!isoDate) return false
   return Date.now() - new Date(isoDate).getTime() < thresholdMs

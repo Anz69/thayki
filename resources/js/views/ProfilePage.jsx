@@ -11,6 +11,7 @@ import ChangeMediaModal from '@/components/modals/ChangeMediaModal'
 import ScheduleSelector from '@/components/profile/ScheduleSelector'
 import Media from '@/components/sections/modelSelectInfo/Media'
 import { logError } from '@/utils/logger'
+import { declAge } from '@/utils/datetime'
 
 const CameraIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 19 19" fill="none">
@@ -117,15 +118,22 @@ export default function ProfilePage() {
 
   useLayoutEffect(() => {
     gsap.set(cameraWrapRef.current,  { autoAlpha: 0, scale: 0, rotation: -25, transformOrigin: 'center center' })
-    gsap.set(metricsEditRef.current, { height: 0, autoAlpha: 0, overflow: 'hidden' })
     gsap.set(mediaBtnRef.current,    { autoAlpha: 0, y: 24 })
     gsap.set(nameBorderRef.current,  { autoAlpha: 0 })
     gsap.set(ageBorderRef.current,   { autoAlpha: 0 })
-    gsap.set(nameHintRef.current,    { height: 0, autoAlpha: 0, overflow: 'hidden' })
-    gsap.set(metricsHintRef.current, { height: 0, autoAlpha: 0, overflow: 'hidden' })
     gsap.set(doneLabelRef.current,   { autoAlpha: 0, y: 6, position: 'absolute' })
     gsap.set(backLabelRef.current,   { autoAlpha: 0, y: 6, position: 'absolute' })
   }, [])
+
+  // nameHintRef / metricsHintRef / metricsEditRef live inside the
+  // {profile.loaded && ...} block, so their DOM nodes don't exist until
+  // profile loads. We must hide them right after React mounts them.
+  useLayoutEffect(() => {
+    if (!profile.loaded) return
+    if (nameHintRef.current)    gsap.set(nameHintRef.current,    { height: 0, autoAlpha: 0, overflow: 'hidden' })
+    if (metricsHintRef.current) gsap.set(metricsHintRef.current, { height: 0, autoAlpha: 0, overflow: 'hidden' })
+    if (metricsEditRef.current) gsap.set(metricsEditRef.current, { height: 0, autoAlpha: 0, overflow: 'hidden' })
+  }, [profile.loaded])
 
   usePageReady(() => {
     gsap.timeline()
@@ -376,7 +384,7 @@ export default function ProfilePage() {
                     <div className={`relative bg-[#F5F5F7] rounded-[14px] overflow-hidden ${!isEditing ? 'pointer-events-none' : ''}`}>
                       <SettingRowClickable
                         label="Возраст"
-                        value={profile.age ? `${profile.age} года` : '—'}
+                        value={declAge(profile.age)}
                         onClick={() => setAgeOpen(true)}
                         isLast
                       />

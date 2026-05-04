@@ -1,3 +1,5 @@
+import { declAge } from '@/utils/datetime'
+
 const scheduleLabels = {
   day: 'День',
   night: 'Ночь',
@@ -24,7 +26,7 @@ export default function Info({ model }) {
       <div className="flex flex-col gap-2.5 py-1 bg-[#EFEEF3] w-full rounded-2xl">
       <div className="flex items-center justify-between px-5 py-4 w-full">
         <h1 className="text-black text-base/[100%] font-medium">Возраст</h1>
-        <h2 className="text-[#7F7F7F] text-base/[100%] font-medium">{model.age ? `${model.age} лет` : '—'}</h2>
+        <h2 className="text-[#7F7F7F] text-base/[100%] font-medium">{declAge(model.age)}</h2>
       </div>
       </div>
 

@@ -1,5 +1,6 @@
 import usePhotoViewerStore from '@/stores/usePhotoViewerStore'
 import LazyImg from '@/components/ui/LazyImg'
+import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 
 export default function Media({ photos = [] }) {
   const viewer = usePhotoViewerStore()
@@ -12,7 +13,7 @@ export default function Media({ photos = [] }) {
     )
   }
 
-  const viewerPhotos = photos.map(p => ({ id: p.id, src: p.url, alt: '' }))
+  const viewerPhotos = photos.map(p => ({ id: p.id, src: resolveMediaUrl(p.url), alt: '' }))
 
   return (
     <div className="flex flex-col gap-4 w-full items-center">

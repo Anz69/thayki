@@ -11,7 +11,7 @@ import api from '@/utils/api'
  * When precheck resolves, GSAP animates the container height from spinner to
  * the actual content height before rendering the new view.
  */
-export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
+export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess }) {
   const [amount, setAmount]       = useState('')
   const [error, setError]         = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -189,6 +189,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
         headers: { 'Idempotency-Key': `withdraw-${Date.now()}-${amountMinor}` },
       })
       switchView('done')
+      onSuccess?.()
     } catch (err) {
       const code = err?.response?.data?.error?.code
       const raw  = err?.response?.data?.error?.message
