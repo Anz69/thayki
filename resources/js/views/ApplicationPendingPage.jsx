@@ -93,6 +93,10 @@ export default function ApplicationPendingPage() {
         const res = await api.get('/model-application')
         const status = res.data?.data?.status
 
+        // Re-check after the async gap: guards against React StrictMode double-mount
+        // where two simultaneous calls both read null before either sets the ref.
+        if (finalStateRef.current) return
+
         if (status === 'approved') {
           finalStateRef.current = 'approved'
           stopPolling()
@@ -113,36 +117,36 @@ export default function ApplicationPendingPage() {
           })
           gsap.set(iconRef.current, { pointerEvents: 'none' })
           tl.to([ring3Ref.current, ring2Ref.current], {
-            scale: 0.35,
+            scale: 0.4,
             opacity: 0,
-            duration: 0.36,
-            ease: 'power2.inOut',
+            duration: 0.42,
+            ease: 'power3.inOut',
           })
             .to(
               iconRef.current,
-              { scale: 0.35, opacity: 0, duration: 0.16, ease: 'power2.in', visibility: 'hidden' },
-              0.12,
+              { scale: 0.3, opacity: 0, duration: 0.22, ease: 'power2.in', visibility: 'hidden' },
+              0.1,
             )
-            .to(ring1Ref.current, { scale: 1.18, duration: 0.22, ease: 'power2.out' }, 0.14)
-            .to(ring1Ref.current, { scale: 1, duration: 0.18, ease: 'power2.inOut' }, 0.36)
-            .to(ring1Ref.current, { backgroundColor: '#E2319B', duration: 0.28, ease: 'power2.out' }, 0.18)
-            .to(ring1Ref.current, { borderColor: '#E2319B', duration: 0.28, ease: 'power2.out' }, 0.18)
+            .to(ring1Ref.current, { scale: 1.14, duration: 0.26, ease: 'power2.out' }, 0.18)
+            .to(ring1Ref.current, { scale: 1, duration: 0.22, ease: 'power2.inOut' }, 0.44)
+            .to(ring1Ref.current, { backgroundColor: '#E2319B', duration: 0.34, ease: 'power3.out' }, 0.2)
+            .to(ring1Ref.current, { borderColor: '#E2319B', duration: 0.34, ease: 'power3.out' }, 0.2)
             .fromTo(
               checkRef.current,
-              { scale: 0.55, opacity: 0 },
-              { scale: 1, opacity: 1, duration: 0.48, ease: 'back.out(2)' },
-              0.34,
+              { scale: 0.5, opacity: 0 },
+              { scale: 1, opacity: 1, duration: 0.52, ease: 'back.out(1.6)' },
+              0.36,
             )
-            .to(headRef.current, { opacity: 0, duration: 0.18 }, 0.26)
+            .to(headRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' }, 0.28)
             .call(() => {
               if (headRef.current) headRef.current.textContent = 'Заявка одобрена!'
               if (subRef.current) subRef.current.textContent = 'Переходим в профиль модели…'
-            }, [], 0.48)
-            .to(headRef.current, { opacity: 1, duration: 0.28 }, 0.52)
-            .to(subRef.current, { opacity: 0, duration: 0.14 }, 0.28)
-            .to(subRef.current, { opacity: 1, duration: 0.28 }, 0.56)
-            .to(ring1Ref.current, { scale: 1.06, duration: 0.15, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 0.68)
-            .to({}, { duration: 0.55 })
+            }, [], 0.52)
+            .to(headRef.current, { opacity: 1, duration: 0.32, ease: 'power2.out' }, 0.56)
+            .to(subRef.current, { opacity: 0, duration: 0.18, ease: 'power2.in' }, 0.3)
+            .to(subRef.current, { opacity: 1, duration: 0.32, ease: 'power2.out' }, 0.58)
+            .to(ring1Ref.current, { scale: 1.07, duration: 0.18, yoyo: true, repeat: 1, ease: 'sine.inOut' }, 0.72)
+            .to({}, { duration: 0.6 })
           return
         }
 
@@ -168,37 +172,37 @@ export default function ApplicationPendingPage() {
           })
 
           tl.to([ring3Ref.current, ring2Ref.current], {
-            scale: 0.35,
+            scale: 0.4,
             opacity: 0,
-            duration: 0.34,
-            ease: 'power2.inOut',
+            duration: 0.42,
+            ease: 'power3.inOut',
           })
             .to(
               ring1Ref.current,
               {
                 borderColor: '#DC2626',
                 backgroundColor: '#FEF2F2',
-                duration: 0.34,
-                ease: 'power2.out',
+                duration: 0.38,
+                ease: 'power3.out',
               },
-              0.08,
+              0.1,
             )
             .fromTo(
               crossRef.current,
-              { scale: 0.55, opacity: 0 },
-              { scale: 1, opacity: 1, duration: 0.42, ease: 'back.out(2)' },
-              0.22,
+              { scale: 0.5, opacity: 0 },
+              { scale: 1, opacity: 1, duration: 0.48, ease: 'back.out(1.6)' },
+              0.24,
             )
-            .to(headRef.current, { opacity: 0, duration: 0.16 }, 0.18)
-            .to(subRef.current, { opacity: 0, duration: 0.16 }, 0.22)
+            .to(headRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' }, 0.2)
+            .to(subRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' }, 0.24)
             .call(() => {
               if (headRef.current) headRef.current.textContent = 'Заявка отклонена'
               if (subRef.current) subRef.current.textContent = 'Возвращаемся на главную…'
-            }, [], 0.42)
-            .to(headRef.current, { opacity: 1, duration: 0.28, ease: 'power2.out' }, 0.46)
-            .to(subRef.current, { opacity: 1, duration: 0.28, ease: 'power2.out' }, 0.52)
-            .to(ring1Ref.current, { scale: 1.04, duration: 0.14, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 0.65)
-            .to({}, { duration: 0.75 })
+            }, [], 0.46)
+            .to(headRef.current, { opacity: 1, duration: 0.32, ease: 'power2.out' }, 0.5)
+            .to(subRef.current, { opacity: 1, duration: 0.32, ease: 'power2.out' }, 0.56)
+            .to(ring1Ref.current, { scale: 1.06, duration: 0.18, yoyo: true, repeat: 1, ease: 'sine.inOut' }, 0.68)
+            .to({}, { duration: 0.8 })
         }
       } catch {
         /* keep polling */

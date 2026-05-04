@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import ModalSheet from '@/layout/ModalSheet'
 import CustomSelect from '@/components/ui/CustomSelect'
+import { isTouchUi } from '@/utils/isTouchUi'
 
 const SIZES = ['Маленькая', 'Средняя', 'Большая', 'Очень большая']
 
@@ -24,7 +25,7 @@ function Field({ label, children, boxClassName = '' }) {
   )
 }
 
-function NumberInput({ value, onChange, placeholder }) {
+function NumberInput({ value, onChange, placeholder, onFocus }) {
   return (
     <div className="flex items-center justify-between">
       <input
@@ -32,6 +33,7 @@ function NumberInput({ value, onChange, placeholder }) {
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={onFocus}
         placeholder={placeholder}
         className="bg-transparent text-black text-sm/[100%] font-medium outline-none w-full"
       />
@@ -90,6 +92,16 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
   const hasPriceErr  = Boolean(priceErrMessage)
   const canSave      = !heightErr && !weightErr && !hasPriceErr
 
+  const scrollToFocusedInput = useCallback((event) => {
+    if (!isTouchUi()) return
+    const target = event?.target
+    if (!target || typeof target.scrollIntoView !== 'function') return
+    // Small delay lets mobile keyboard open before measuring viewport.
+    setTimeout(() => {
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }, 220)
+  }, [])
+
   const handleSave = () => {
     if (!canSave) return
     const priceOptions = PRICE_DURATIONS
@@ -131,13 +143,23 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
       <div className="flex flex-col gap-3 px-5 pb-10 overflow-y-auto">
         <div className="flex flex-col gap-1">
           <Field label="Рост" boxClassName="py-2.5">
-            <NumberInput value={height} onChange={setHeight} placeholder="165" />
+            <NumberInput
+              value={height}
+              onChange={setHeight}
+              onFocus={scrollToFocusedInput}
+              placeholder="165"
+            />
           </Field>
           {heightErr && <p className="text-[#E2319B] text-xs/[100%] font-medium px-1">{heightErr}</p>}
         </div>
         <div className="flex flex-col gap-1">
           <Field label="Вес" boxClassName="py-2.5">
-            <NumberInput value={weight} onChange={setWeight} placeholder="45" />
+            <NumberInput
+              value={weight}
+              onChange={setWeight}
+              onFocus={scrollToFocusedInput}
+              placeholder="45"
+            />
           </Field>
           {weightErr && <p className="text-[#E2319B] text-xs/[100%] font-medium px-1">{weightErr}</p>}
         </div>
@@ -163,7 +185,9 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
               >
                 <span className="text-[#7F7F7F] text-sm/[100%] font-medium shrink-0 w-28">{label}</span>
                 <div className="flex items-center gap-1 flex-1 justify-end">
-                  <span className="text-[#ABABAB] text-sm font-medium">฿</span>
+                  {(prices[hours] ?? '').length > 0 && (
+                    <span className="text-[#ABABAB] text-sm font-medium">฿</span>
+                  )}
                   <input
                     type="text"
                     inputMode="numeric"
@@ -172,6 +196,7 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
                     onChange={(e) =>
                       setPrices((p) => ({ ...p, [hours]: e.target.value.replace(/[^0-9]/g, '') }))
                     }
+                    onFocus={scrollToFocusedInput}
                     className="bg-transparent text-black text-sm/[100%] font-medium outline-none text-right w-24 placeholder:text-[#C0C0C0]"
                   />
                 </div>

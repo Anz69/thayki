@@ -2,6 +2,7 @@ import { useState, useRef, useLayoutEffect, useEffect } from 'react'
 import gsap from 'gsap'
 import GradientBorder from '@/components/ui/GradientBorder'
 import StepProgress from '../StepProgress'
+import { scrollInputWithNext } from '@/utils/isTouchUi'
 export default function Step1Name({ isActive, stepNum, totalSteps, onNext }) {
   const [name, setName] = useState('')
   const headRef  = useRef(null)
@@ -49,6 +50,7 @@ export default function Step1Name({ isActive, stepNum, totalSteps, onNext }) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onFocus={(e) => scrollInputWithNext(e.target)}
               placeholder="..."
               className="w-full px-5 py-5 text-black text-2xl/[100%] font-medium outline-none placeholder:text-[#C0C0C0] text-center bg-transparent"
             />
