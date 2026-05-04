@@ -177,7 +177,7 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
                   <span className="text-[#7F7F7F] text-sm/[100%] font-medium shrink-0 w-28">{label}</span>
                   <div className="flex items-center shrink-0">
                     <span
-                      className="text-[#ABABAB] text-sm font-medium whitespace-nowrap overflow-hidden -translatex-x-1.5"
+                      className="text-[#ABABAB] text-sm font-medium whitespace-nowrap overflow-hidden -translate-x-1.5"
                       style={{
                         maxWidth: hasVal ? '1.2em' : 0,
                         opacity: hasVal ? 1 : 0,
