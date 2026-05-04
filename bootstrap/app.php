@@ -72,8 +72,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // bounces with HTTP 419 and Telegram retries forever (then disables
         // the webhook). The URL is already protected by the secret-in-path
         // pattern (see TelegramBotWebhookController + telegram.webhook_secret).
+        //
+        // Telegram Mini App API login is also public and validated by init_data,
+        // so requiring CSRF here causes sporadic false 419s when session/meta
+        // token drift happens on first app open.
         $middleware->validateCsrfTokens(except: [
             'telegram/webhook/*',
+            'api/v1/auth/telegram',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

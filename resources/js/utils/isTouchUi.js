@@ -25,9 +25,8 @@ function getScrollParent(el) {
 
 /**
  * On focus of a form input, scroll the nearest scrollable ancestor so that the
- * focused input lands at ~30% from the top of the visible area (above center).
- * This keeps the active field clearly visible above the keyboard and leaves
- * ~70% of visible space below it — enough to show the next input.
+ * NEXT input after the focused one is centered in the visible area above the
+ * keyboard. If there is no next input, centers the focused input itself.
  *
  * Fires on visualViewport.resize (keyboard open event) for accuracy, with a
  * 320 ms fallback in case the event doesn't fire (e.g. keyboard already open).
@@ -47,16 +46,25 @@ export function scrollInputWithNext(inputEl, { fallbackDelay = 320 } = {}) {
 
     const scrollEl = getScrollParent(inputEl)
     const containerRect = scrollEl.getBoundingClientRect()
-    const inputRect = inputEl.getBoundingClientRect()
 
     // Visible height of the container above the keyboard
     const visibleH = vv.offsetTop + vv.height - containerRect.top
     if (visibleH <= 0) return
 
-    // Place the focused input at 30% from the top of the visible area
-    const desiredTop = visibleH * 0.3
-    const currentTop = inputRect.top - containerRect.top
-    const delta = currentTop - desiredTop
+    // Find the next input inside the same scroll container
+    const inputs = Array.from(
+      scrollEl.querySelectorAll(
+        'input[type="text"], input:not([type]), input[inputmode], textarea',
+      ),
+    )
+    const idx = inputs.findIndex((el) => el === inputEl)
+    const targetEl = idx >= 0 && idx + 1 < inputs.length ? inputs[idx + 1] : inputEl
+
+    const targetRect = targetEl.getBoundingClientRect()
+
+    // Center the target element in the visible area
+    const targetMid = targetRect.top + targetRect.height / 2 - containerRect.top
+    const delta = targetMid - visibleH * 0.5
 
     if (Math.abs(delta) > 8) {
       scrollEl.scrollBy({ top: delta, behavior: 'smooth' })

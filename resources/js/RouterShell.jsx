@@ -110,18 +110,34 @@ function AuthErrorScreen() {
       if (initData) {
         const startParam = tg?.initDataUnsafe?.start_param ?? ''
         const { browserToken, inviteToken } = parseTelegramStartParam(startParam)
+        const loginPayload = {
+          init_data: initData,
+          ...(browserToken ? { browser_token: browserToken } : {}),
+          ...(inviteToken ? { invite_token: inviteToken } : {}),
+        }
+
         try {
-          const { data } = await api.post('/auth/telegram', {
-            init_data: initData,
-            ...(browserToken ? { browser_token: browserToken } : {}),
-            ...(inviteToken ? { invite_token: inviteToken } : {}),
-          })
+          const { data } = await api.post('/auth/telegram', loginPayload)
           if (data.ok && data.data?.token && data.data?.user) {
             authStore.setUser(data.data.user, data.data.token)
             meetingStore.loadLatest()
             return
           }
         } catch (err) {
+          if (err?.response?.status === 419) {
+            try {
+              const second = await api.post('/auth/telegram', loginPayload)
+              const data = second?.data
+              if (data?.ok && data?.data?.token && data?.data?.user) {
+                authStore.setUser(data.data.user, data.data.token)
+                meetingStore.loadLatest()
+                return
+              }
+            } catch {
+              // Fall through to existing error handling below.
+            }
+          }
+
           logWarn('[AuthErrorScreen] /auth/telegram retry failed', {
             hasBrowserToken: !!browserToken,
             hasInviteToken: !!inviteToken,
