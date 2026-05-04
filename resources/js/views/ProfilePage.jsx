@@ -63,6 +63,7 @@ export default function ProfilePage() {
   const [localName, setLocalName] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState('info')
+  const [mediaEverMounted, setMediaEverMounted] = useState(false)
   const [ageOpen, setAgeOpen]           = useState(false)
   const [metricsOpen, setMetricsOpen]   = useState(false)
   const [mediaEditOpen, setMediaEditOpen] = useState(false)
@@ -181,6 +182,7 @@ export default function ProfilePage() {
       autoAlpha: 0, y: toMedia ? -12 : 12, duration: 0.20, ease: 'power2.in',
       onComplete() {
         setActiveTab(id)
+        if (toMedia) setMediaEverMounted(true)
         gsap.fromTo(contentRef.current,
           { autoAlpha: 0, y: toMedia ? 14 : -14 },
           { autoAlpha: 1, y: 0, duration: 0.34, ease: 'power3.out', clearProps: 'transform,opacity,visibility', onComplete() { animatingTab.current = false } }
@@ -435,7 +437,7 @@ export default function ProfilePage() {
           </div>
 
           <div style={{ display: activeTab === 'media' ? '' : 'none' }} className="flex flex-col">
-            <Media photos={profile.photos} />
+            {mediaEverMounted && <Media photos={profile.photos} />}
           </div>
         </div>
       </div>

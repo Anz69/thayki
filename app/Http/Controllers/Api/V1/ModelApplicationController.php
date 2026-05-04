@@ -25,7 +25,7 @@ class ModelApplicationController extends Controller
         /** @var ModelApplication|null $application */
         $application = ModelApplication::query()->where('user_id', $user->id)->first();
         if ($application === null) {
-            throw new NotFoundHttpException;
+            return ApiResponse::ok(null);
         }
 
         return ApiResponse::ok(new ModelApplicationResource($application));

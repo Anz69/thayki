@@ -12,8 +12,18 @@ export default function LazyImg({
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
+    if (!src) return
     setLoaded(false)
     setFailed(false)
+
+    const img = new window.Image()
+    img.onload  = () => setLoaded(true)
+    img.onerror = () => setFailed(true)
+    img.src = src
+    // Synchronous cache hit: browser may have already completed the load
+    // before onload could fire (memory cache), so check img.complete as well.
+    if (img.complete && !img.naturalWidth) setFailed(true)
+    else if (img.complete) setLoaded(true)
   }, [src])
 
   return (
@@ -28,7 +38,7 @@ export default function LazyImg({
           style={{
             background: 'linear-gradient(110deg, #F0F0F0 30%, #E5E5EA 50%, #F0F0F0 70%)',
             backgroundSize: '200% 100%',
-            animation: 'avatar-shimmer 1.4s linear infinite',
+            animation: loaded ? 'none' : 'avatar-shimmer 1.4s linear infinite',
           }}
         />
       )}
@@ -36,7 +46,6 @@ export default function LazyImg({
         <img
           src={src}
           alt={alt}
-          loading="lazy"
           decoding="async"
           className={`absolute inset-0 w-full h-full transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
           style={{ objectFit }}

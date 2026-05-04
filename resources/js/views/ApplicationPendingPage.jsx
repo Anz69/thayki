@@ -92,11 +92,21 @@ export default function ApplicationPendingPage() {
       if (finalStateRef.current) return
       try {
         const res = await api.get('/model-application')
-        const status = res.data?.data?.status
+        const data = res.data?.data
 
         // Re-check after the async gap: guards against React StrictMode double-mount
         // where two simultaneous calls both read null before either sets the ref.
         if (finalStateRef.current) return
+
+        // No application record — user shouldn't be on this page
+        if (data === null || data === undefined) {
+          stopPolling()
+          resetModelAppGuardCache()
+          navigate('/home', { replace: true })
+          return
+        }
+
+        const status = data.status
 
         if (status === 'approved') {
           finalStateRef.current = 'approved'
@@ -207,14 +217,7 @@ export default function ApplicationPendingPage() {
             .to(ring1Ref.current, { scale: 1.06, duration: 0.18, yoyo: true, repeat: 1, ease: 'sine.inOut' }, 0.68)
             .to({}, { duration: 0.8 })
         }
-      } catch (err) {
-        // If the application record doesn't exist, the user shouldn't be here
-        if (err?.response?.status === 404) {
-          stopPolling()
-          resetModelAppGuardCache()
-          navigate('/home', { replace: true })
-          return
-        }
+      } catch {
         /* network/server error — keep polling */
       }
     }

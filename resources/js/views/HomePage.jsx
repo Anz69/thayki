@@ -4,8 +4,10 @@ import { usePageReady } from '@/composables/usePageReady'
 import TransitionLink from '@/components/TransitionLink'
 import ShareModelsModal from '@/components/modals/ShareModelsModal'
 import api, { extractErrorMessage } from '@/utils/api'
+import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 
-const RETRY_DELAYS = [800, 2000, 4000] // ms between retries
+const PER_PAGE = 20
+const RETRY_DELAYS = [800, 2000, 4000]
 
 function ModelCard({ model }) {
   const [imgLoaded, setImgLoaded]   = useState(false)
@@ -19,7 +21,6 @@ function ModelCard({ model }) {
         RETRY_DELAYS[retryCount],
       )
     }
-    // beyond max retries: image stays invisible, shimmer remains visible
   }, [retryCount])
 
   useEffect(() => () => clearTimeout(retryTimer.current), [])
@@ -35,13 +36,13 @@ function ModelCard({ model }) {
   const priceLabel = cheapestOption
     ? (cheapestOption.hours === 1 ? '/ч' : `/ ${cheapestOption.hours} ч`)
     : '/ч'
+  const photoSrc = mainPhoto ? resolveMediaUrl(mainPhoto.url) : null
 
   return (
     <TransitionLink
       to={`/model/${model.id}`}
       className="relative overflow-hidden border-2 border-black/15 rounded-2xl flex flex-col justify-end min-h-[300px] active:scale-[0.97] transition-transform duration-150"
     >
-      {/* Shimmer always present as background — visible while loading or on failure */}
       <div
         className="absolute inset-0"
         style={{
@@ -50,10 +51,10 @@ function ModelCard({ model }) {
           animation: imgLoaded ? 'none' : 'card-shimmer 1.6s linear infinite',
         }}
       />
-      {mainPhoto && (
+      {photoSrc && (
         <img
-          key={`${mainPhoto.url}__${retryCount}`}
-          src={mainPhoto.url}
+          key={`${photoSrc}__${retryCount}`}
+          src={photoSrc}
           alt={model.display_name}
           className="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500"
           style={{ opacity: imgLoaded ? 1 : 0 }}
@@ -75,75 +76,150 @@ function ModelCard({ model }) {
 }
 
 export default function HomePage() {
-  const headerRef   = useRef(null)
-  const titleRef    = useRef(null)
-  const shareBtnRef = useRef(null)
-  const gridRef     = useRef(null)
+  const headerRef     = useRef(null)
+  const titleRef      = useRef(null)
+  const shareBtnRef   = useRef(null)
+  const gridRef       = useRef(null)
+  const sentinelRef   = useRef(null)
+  const isFetchingRef = useRef(false)
+  const prevCountRef  = useRef(0)
 
-  const [models,  setModels]  = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(null)
-  const [reloadKey, setReloadKey] = useState(0)
+  const [models,      setModels]      = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [error,       setError]       = useState(null)
+  const [reloadKey,   setReloadKey]   = useState(0)
+  const [page,        setPage]        = useState(1)
+  const [hasMore,     setHasMore]     = useState(false)
   const [isShareOpen, setIsShareOpen] = useState(false)
+
   const safeModels = useMemo(() => (
     Array.isArray(models)
-      ? models.filter((model) => model && typeof model === 'object' && model.id != null)
+      ? models.filter((m) => m && typeof m === 'object' && m.id != null)
       : []
   ), [models])
 
+  // ── Initial load ──────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
-    api.get('/catalog/models', { params: { per_page: 20 } })
+    setModels([])
+    setPage(1)
+    setHasMore(false)
+    prevCountRef.current  = 0
+    isFetchingRef.current = false
+
+    api.get('/catalog/models', { params: { per_page: PER_PAGE, page: 1 } })
       .then((r) => {
         if (cancelled) return
-        const list = Array.isArray(r?.data?.data) ? r.data.data : []
+        const list       = Array.isArray(r?.data?.data) ? r.data.data : []
+        const pagination = r?.data?.meta?.pagination
         setModels(list)
+        setHasMore(pagination ? pagination.page < pagination.last_page : false)
       })
       .catch((err) => {
         if (cancelled) return
         setError(extractErrorMessage(err, 'Не удалось загрузить моделей'))
       })
       .finally(() => { if (!cancelled) setLoading(false) })
+
     return () => { cancelled = true }
   }, [reloadKey])
 
-  const startAnimations = () => {
-    const cards = Array.from(gridRef.current?.children ?? [])
-    const tl = gsap.timeline({ defaults: { force3D: true } })
+  // ── Load next page ────────────────────────────────────────────────────────
+  const fetchMore = useCallback(() => {
+    if (isFetchingRef.current || !hasMore) return
+    isFetchingRef.current = true
+    setLoadingMore(true)
 
-    tl.to(headerRef.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' })
+    const nextPage = page + 1
+    api.get('/catalog/models', { params: { per_page: PER_PAGE, page: nextPage } })
+      .then((r) => {
+        const newItems   = Array.isArray(r?.data?.data) ? r.data.data : []
+        const pagination = r?.data?.meta?.pagination
+        setModels((prev) => [...prev, ...newItems])
+        setPage(nextPage)
+        setHasMore(pagination ? nextPage < pagination.last_page : false)
+      })
+      .catch(() => { /* silent — stay on current page */ })
+      .finally(() => {
+        setLoadingMore(false)
+        isFetchingRef.current = false
+      })
+  }, [hasMore, page])
+
+  // ── IntersectionObserver on sentinel ─────────────────────────────────────
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || loading) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) fetchMore() },
+      { rootMargin: '400px' }, // start loading 400px before reaching the bottom
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [fetchMore, loading])
+
+  // ── GSAP: animate cards (initial + load-more batches) ────────────────────
+  useEffect(() => {
+    if (loading || !gridRef.current) return
+    const allCards  = Array.from(gridRef.current.children)
+    const prevCount = prevCountRef.current
+    const newCount  = safeModels.length
+
+    if (newCount === 0) {
+      prevCountRef.current = 0
+      return
+    }
+
+    if (prevCount === 0) {
+      // First batch — set all invisible then stagger in
+      gsap.set(allCards, { autoAlpha: 0, y: 48, scale: 0.93, willChange: 'transform,opacity' })
+      gsap.to(allCards, {
+        autoAlpha: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.55,
+        stagger: { each: 0.07, from: 'start' },
+        ease: 'power4.out',
+        clearProps: 'transform,will-change',
+      })
+    } else if (newCount > prevCount) {
+      // Extra pages — animate only the newly appended cards
+      const newCards = allCards.slice(prevCount)
+      gsap.fromTo(
+        newCards,
+        { autoAlpha: 0, y: 36, scale: 0.95 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.46,
+          stagger: { each: 0.06, from: 'start' },
+          ease: 'power3.out',
+          clearProps: 'transform,will-change',
+        },
+      )
+    }
+
+    prevCountRef.current = newCount
+  }, [loading, safeModels.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── GSAP: header / title / share entry ───────────────────────────────────
+  const startAnimations = useCallback(() => {
+    gsap.timeline({ defaults: { force3D: true } })
+      .to(headerRef.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' })
       .to(titleRef.current,    { autoAlpha: 1, y: 0, duration: 0.28, ease: 'power3.out' }, 0.04)
       .to(shareBtnRef.current, { autoAlpha: 1, y: 0, duration: 0.28, ease: 'power3.out' }, 0.07)
-
-    tl.to(cards, {
-      autoAlpha: 1,
-      y: 0,
-      scale: 1,
-      duration: 0.58,
-      stagger: { each: 0.07, from: 'start' },
-      ease: 'power4.out',
-      clearProps: 'transform,will-change',
-    }, 0.1)
-  }
+  }, [])
 
   useLayoutEffect(() => {
     gsap.set(headerRef.current,   { autoAlpha: 0, y: -28 })
     gsap.set(titleRef.current,    { autoAlpha: 0, y: -12 })
     gsap.set(shareBtnRef.current, { autoAlpha: 0, y: -12 })
   }, [])
-
-  useEffect(() => {
-    if (loading || !safeModels.length || !gridRef.current) return
-    const cards = Array.from(gridRef.current.children)
-    gsap.set(cards, { autoAlpha: 0, y: 52, scale: 0.93, willChange: 'transform, opacity' })
-    gsap.to(cards, {
-      autoAlpha: 1, y: 0, scale: 1,
-      duration: 0.55, stagger: { each: 0.07, from: 'start' },
-      ease: 'power4.out', clearProps: 'transform,will-change',
-    })
-  }, [loading, safeModels.length])
 
   useEffect(() => {
     return () => {
@@ -168,7 +244,6 @@ export default function HomePage() {
             ref={shareBtnRef}
             onClick={() => setIsShareOpen(true)}
             disabled={loading || safeModels.length === 0}
-            title={safeModels.length === 0 ? 'Сначала загрузите модели' : 'Поделиться подборкой'}
             className="invisible px-2.5 py-3 bg-[#EFEEF3] text-black text-base/[80%] font-medium active:bg-[#E0DEDF] transition-colors duration-200 cursor-pointer rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Поделиться
@@ -180,6 +255,10 @@ export default function HomePage() {
         @keyframes shimmer {
           0%   { background-position: -200% 0 }
           100% { background-position:  200% 0 }
+        }
+        @keyframes card-shimmer {
+          0%   { background-position: 200% 0 }
+          100% { background-position: -200% 0 }
         }
         .skeleton-shimmer {
           background: linear-gradient(90deg, #F0EFF4 25%, #E4E3EA 50%, #F0EFF4 75%);
@@ -194,17 +273,15 @@ export default function HomePage() {
             <div key={i} className="rounded-2xl overflow-hidden" style={{ aspectRatio: '2/3' }}>
               <div className="skeleton-shimmer w-full h-full rounded-2xl relative">
                 <div className="absolute bottom-0 left-0 right-0 p-3 flex flex-col gap-2">
-                  <div className="skeleton-shimmer h-5 w-20 rounded-xl" style={{ background: 'rgba(255,255,255,0.35)', animation: 'none' }} />
-                  <div className="skeleton-shimmer h-4 w-28 rounded-lg"  style={{ background: 'rgba(255,255,255,0.25)', animation: 'none' }} />
+                  <div className="h-5 w-20 rounded-xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
+                  <div className="h-4 w-28 rounded-lg"  style={{ background: 'rgba(255,255,255,0.25)' }} />
                 </div>
               </div>
             </div>
           ))
         ) : error ? (
           <div className="col-span-2 flex flex-col items-center gap-3 py-20">
-            <div className="text-[#7F7F7F] text-sm text-center max-w-[260px]">
-              {error}
-            </div>
+            <div className="text-[#7F7F7F] text-sm text-center max-w-[260px]">{error}</div>
             <button
               onClick={() => setReloadKey((k) => k + 1)}
               className="px-4 py-2.5 bg-[#EFEEF3] text-black text-sm font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
@@ -224,6 +301,15 @@ export default function HomePage() {
           ))
         )}
       </section>
+
+      {/* Sentinel — invisible trigger for IntersectionObserver */}
+      {!loading && !error && safeModels.length > 0 && (
+        <div ref={sentinelRef} className="flex justify-center py-6 container">
+          {loadingMore && (
+            <div className="w-6 h-6 rounded-full border-2 border-[#E2319B]/25 border-t-[#E2319B] animate-spin" />
+          )}
+        </div>
+      )}
 
       <ShareModelsModal
         isOpen={isShareOpen}
