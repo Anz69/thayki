@@ -274,7 +274,7 @@ export default function MorePage() {
             </div>
           </div>
 
-          {balance >= 0 && (
+          {balance >= 0.01 && (
             <div ref={balanceRef} >
               <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex items-center justify-between gap-3">
                 <div className="flex flex-col gap-1 min-w-0">
