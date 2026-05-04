@@ -228,7 +228,7 @@ export default function ClientPage() {
                   <span ref={balanceValueRef} className="text-black text-2xl/[100%] font-[500] tracking-tight min-h-[1.5em] flex items-center justify-center">
                     {loadingBalance ? (
                       <span className="flex flex-col items-center gap-2">
-                        <span className="relative block h-6 w-28 overflow-hidden rounded-full bg-[#F1F1F4]">
+                        <span className="relative block h-6 w-28 overflow-hidden rounded-full ">
                           <span className="absolute inset-y-0 -left-1/2 w-1/2 bg-linear-to-r from-transparent via-white/80 to-transparent balance-shimmer" />
                         </span>
                       </span>
