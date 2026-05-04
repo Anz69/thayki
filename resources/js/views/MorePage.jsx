@@ -274,7 +274,7 @@ export default function MorePage() {
             </div>
           </div>
 
-          <div ref={balanceRef}>
+          <div ref={balanceRef} :v-if="balance > 0">
             <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex items-center justify-between gap-3">
               <div className="flex flex-col gap-1 min-w-0">
                 <span className="text-[#ABABAB] text-[11px]/[100%] font-medium">Доступный баланс</span>
