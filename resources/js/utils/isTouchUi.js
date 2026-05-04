@@ -24,39 +24,56 @@ function getScrollParent(el) {
 }
 
 /**
- * On focus of a form input, scroll the nearest scrollable ancestor so that:
- *   - the focused input is visible, AND
- *   - the next input in the container is also visible above the keyboard.
+ * On focus of a form input, scroll the nearest scrollable ancestor so that the
+ * focused input lands at ~30% from the top of the visible area (above center).
+ * This keeps the active field clearly visible above the keyboard and leaves
+ * ~70% of visible space below it — enough to show the next input.
  *
- * Uses visualViewport to account for the on-screen keyboard height.
- * Only runs on touch devices (no-op on desktop).
+ * Fires on visualViewport.resize (keyboard open event) for accuracy, with a
+ * 320 ms fallback in case the event doesn't fire (e.g. keyboard already open).
+ * No-op on desktop.
  */
-export function scrollInputWithNext(inputEl, { delay = 220 } = {}) {
+export function scrollInputWithNext(inputEl, { fallbackDelay = 320 } = {}) {
   if (!inputEl || !isTouchUi()) return
-  setTimeout(() => {
-    const vv = window.visualViewport
-    if (!vv) return
+
+  const vv = window.visualViewport
+  if (!vv) return
+
+  let fired = false
+
+  const doScroll = () => {
+    if (fired) return
+    fired = true
 
     const scrollEl = getScrollParent(inputEl)
+    const containerRect = scrollEl.getBoundingClientRect()
+    const inputRect = inputEl.getBoundingClientRect()
 
-    // All text-style inputs inside this container
-    const inputs = Array.from(
-      scrollEl.querySelectorAll(
-        'input[type="text"], input:not([type]), input[inputmode], textarea',
-      ),
-    )
-    const idx = inputs.findIndex((el) => el === inputEl)
-    // Scroll enough to show the NEXT input; fall back to current if no next
-    const targetEl = idx >= 0 && idx + 1 < inputs.length ? inputs[idx + 1] : inputEl
+    // Visible height of the container above the keyboard
+    const visibleH = vv.offsetTop + vv.height - containerRect.top
+    if (visibleH <= 0) return
 
-    const targetRect = targetEl.getBoundingClientRect()
-    // Bottom of the visible area in layout-viewport coordinates
-    const visibleBottom = vv.offsetTop + vv.height
-    const gap = 20
+    // Place the focused input at 30% from the top of the visible area
+    const desiredTop = visibleH * 0.3
+    const currentTop = inputRect.top - containerRect.top
+    const delta = currentTop - desiredTop
 
-    const overflow = targetRect.bottom - (visibleBottom - gap)
-    if (overflow > 0) {
-      scrollEl.scrollBy({ top: overflow, behavior: 'smooth' })
+    if (Math.abs(delta) > 8) {
+      scrollEl.scrollBy({ top: delta, behavior: 'smooth' })
     }
-  }, delay)
+  }
+
+  // Primary trigger: fires as soon as the keyboard finishes opening
+  const onResize = () => {
+    vv.removeEventListener('resize', onResize)
+    clearTimeout(timer)
+    doScroll()
+  }
+  vv.addEventListener('resize', onResize)
+
+  // Fallback: keyboard may already be open (switching between inputs)
+  const timer = setTimeout(() => {
+    vv.removeEventListener('resize', onResize)
+    doScroll()
+  }, fallbackDelay)
 }
