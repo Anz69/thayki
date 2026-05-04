@@ -90,4 +90,23 @@ class WalletController extends Controller
 
         return ApiResponse::created(new WithdrawalResource($withdrawal));
     }
+
+    /**
+     * Returns the latest non-terminal withdrawal for the authenticated user.
+     * Used by the frontend to pre-check whether a pending withdrawal exists
+     * before showing the withdrawal form.
+     */
+    public function withdrawalStatus(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $latest = Withdrawal::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->orderByDesc('id')
+            ->first();
+
+        return ApiResponse::ok($latest ? new WithdrawalResource($latest) : null);
+    }
 }

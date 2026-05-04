@@ -20,6 +20,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [precheck, setPrecheck] = useState(/** @type {'idle'|'loading'|'ok'|'pending'} */('idle'))
 
   const viewRefs = useRef({})
   const contentWrapRef = useRef(null)
@@ -38,6 +39,19 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
       return
     }
     isClosingRef.current = false
+
+    // Pre-check for existing pending withdrawal
+    setPrecheck('loading')
+    api.get('/withdrawals/status').then((res) => {
+      const status = res?.data?.data?.status
+      if (status === 'pending' || status === 'approved') {
+        setPrecheck('pending')
+      } else {
+        setPrecheck('ok')
+      }
+    }).catch(() => {
+      setPrecheck('ok') // on error just show normal form
+    })
   }, [isOpen])
 
   useEffect(() => {
@@ -191,6 +205,10 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
     } catch (err) {
       const code = err?.response?.data?.error?.code
       const raw = err?.response?.data?.error?.message
+      if (code === 'PENDING_WITHDRAWAL_EXISTS') {
+        setPrecheck('pending')
+        return
+      }
       const friendly = code === 'INSUFFICIENT_FUNDS'
         ? 'Недостаточно средств на балансе'
         : code === 'WITHDRAWAL_MIN_AMOUNT'
@@ -251,10 +269,44 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
     setAmount('')
     setError('')
     setSubmitting(false)
+    setPrecheck('idle')
     isClosingRef.current = false
   }, [])
 
   const displayAmount = amount ? `฿ ${amount}` : ''
+
+  // Pending withdrawal state — shown instead of the normal form
+  if (precheck === 'loading') {
+    return (
+      <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>
+        <div className="flex flex-col items-center gap-4 px-5 py-8 bg-white">
+          <div className="w-9 h-9 rounded-full border-[3px] border-[#FDE8F5] border-t-[#E2319B] animate-spin" />
+        </div>
+      </ModalMiddle>
+    )
+  }
+
+  if (precheck === 'pending') {
+    return (
+      <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>
+        <div className="flex flex-col items-center gap-5 px-5 py-6 text-center bg-white">
+          <span className="text-4xl select-none">⏳</span>
+          <div className="flex flex-col gap-1.5">
+            <h2 className="text-black text-xl/[100%] font-semibold">Заявка уже подана</h2>
+            <p className="text-[#7F7F7F] text-sm/[150%] font-medium">
+              Ваша заявка на вывод уже находится в обработке. Пожалуйста, дождитесь её завершения — мы свяжемся с вами в чате поддержки.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-full py-4 rounded-full bg-[#1C1C1E] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity"
+          >
+            Понятно
+          </button>
+        </div>
+      </ModalMiddle>
+    )
+  }
 
   return (
     <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>

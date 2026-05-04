@@ -64,10 +64,23 @@ class MeController extends Controller
             throw DomainException::invalid('MODEL_PROFILE_MISSING', 'Model profile is not initialized. Submit an application first.');
         }
 
-        $profile->fill($request->validated())->save();
+        $validated = $request->validated();
+        $profile->fill(\Illuminate\Support\Arr::except($validated, ['price_options']))->save();
 
         if ($request->has('display_name')) {
             $user->update(['first_name' => $request->input('display_name')]);
+        }
+
+        // Sync price options when provided
+        if ($request->has('price_options')) {
+            $profile->priceOptions()->delete();
+            foreach ($validated['price_options'] as $opt) {
+                $profile->priceOptions()->create([
+                    'hours'     => (int) $opt['hours'],
+                    'price_thb' => (int) $opt['price_thb'],
+                    'label'     => $opt['label'] ?? null,
+                ]);
+            }
         }
 
         return ApiResponse::ok(new ModelProfileResource($profile->fresh(['photos', 'priceOptions'])));

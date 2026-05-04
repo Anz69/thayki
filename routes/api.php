@@ -127,6 +127,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/wallet', [WalletController::class, 'show'])->name('wallet.show');
         Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('wallet.transactions');
         Route::get('/withdrawals', [WalletController::class, 'withdrawals'])->name('withdrawals.index');
+        Route::get('/withdrawals/status', [WalletController::class, 'withdrawalStatus'])->name('withdrawals.status');
         Route::middleware('throttle:withdrawals')->group(function (): void {
             Route::post('/withdrawals', [WalletController::class, 'requestWithdrawal'])
                 ->middleware('idempotency')

@@ -29,7 +29,11 @@ class UpdateModelProfileRequest extends FormRequest
             'butt_size' => ['sometimes', 'string', 'max:16'],
             'description' => ['sometimes', 'nullable', 'string', 'max:4096'],
             'schedule' => ['sometimes', 'string', Rule::in(array_map(fn (ModelSchedule $s) => $s->value, ModelSchedule::cases()))],
-            'hourly_rate_thb' => ['sometimes', 'integer', 'min:100', 'max:1000000'],
+            'hourly_rate_thb'           => ['sometimes', 'integer', 'min:100', 'max:1000000'],
+            'price_options'             => ['sometimes', 'array', 'max:12'],
+            'price_options.*.hours'     => ['required_with:price_options', 'integer', 'min:1', 'max:24'],
+            'price_options.*.price_thb' => ['required_with:price_options', 'integer', 'min:100', 'max:10000000'],
+            'price_options.*.label'     => ['sometimes', 'nullable', 'string', 'max:64'],
         ];
     }
 }

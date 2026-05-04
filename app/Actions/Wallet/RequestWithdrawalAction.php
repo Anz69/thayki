@@ -43,6 +43,18 @@ class RequestWithdrawalAction
             throw DomainException::invalid('WITHDRAWAL_MIN_AMOUNT', "Minimum withdrawal amount is {$minMinor} minor units.");
         }
 
+        $hasPending = Withdrawal::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', [WithdrawalStatus::Pending->value, WithdrawalStatus::Approved->value])
+            ->exists();
+
+        if ($hasPending) {
+            throw DomainException::conflict(
+                'PENDING_WITHDRAWAL_EXISTS',
+                'У вас уже есть заявка на вывод в обработке. Пожалуйста, дождитесь её завершения.',
+            );
+        }
+
         return DB::transaction(function () use ($user, $amountMinor): Withdrawal {
             /** @var Wallet $wallet */
             $wallet = Wallet::query()->where('user_id', $user->id)->lockForUpdate()->firstOrFail();

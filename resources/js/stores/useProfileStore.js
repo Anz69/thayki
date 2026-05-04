@@ -5,14 +5,16 @@ import { prepareImageFileForUpload } from '@/utils/prepareImageForUpload'
 
 function mapFromApi(data) {
   return {
-    name:        data.display_name  ?? '',
-    age:         data.age           ?? 18,
-    height:      data.height_cm     ?? null,
-    weight:      data.weight_kg     ?? null,
-    buttSize:    data.butt_size     ?? null,
-    breastSize:  data.bust_size     ?? null,
-    schedule:    data.schedule      ?? 'any',
-    photos:      Array.isArray(data.photos) ? data.photos : [],
+    name:         data.display_name  ?? '',
+    age:          data.age           ?? 18,
+    height:       data.height_cm     ?? null,
+    weight:       data.weight_kg     ?? null,
+    buttSize:     data.butt_size     ?? null,
+    breastSize:   data.bust_size     ?? null,
+    schedule:     data.schedule      ?? 'any',
+    hourlyRate:   data.hourly_rate_thb ?? null,
+    priceOptions: Array.isArray(data.price_options) ? data.price_options : [],
+    photos:       Array.isArray(data.photos) ? data.photos : [],
   }
 }
 
@@ -29,16 +31,18 @@ function mapToApi(partial) {
 }
 
 const useProfileStore = create((set, get) => ({
-  loaded:     false,
-  error:      null,
-  name:       '',
-  age:        18,
-  height:     null,
-  weight:     null,
-  buttSize:   null,
-  breastSize: null,
-  schedule:   'any',
-  photos:     [],
+  loaded:       false,
+  error:        null,
+  name:         '',
+  age:          18,
+  height:       null,
+  weight:       null,
+  buttSize:     null,
+  breastSize:   null,
+  schedule:     'any',
+  hourlyRate:   null,
+  priceOptions: [],
+  photos:       [],
 
   hydrate: async () => {
     set({ error: null })
@@ -130,18 +134,25 @@ const useProfileStore = create((set, get) => ({
     }))
   },
 
+  savePriceOptions: async (priceOptions) => {
+    const res = await api.patch('/me/model-profile', { price_options: priceOptions })
+    set(mapFromApi(res.data.data))
+  },
+
   reset: () => {
     set({
-      loaded:     false,
-      error:      null,
-      name:       '',
-      age:        18,
-      height:     null,
-      weight:     null,
-      buttSize:   null,
-      breastSize: null,
-      schedule:   'any',
-      photos:     [],
+      loaded:       false,
+      error:        null,
+      name:         '',
+      age:          18,
+      height:       null,
+      weight:       null,
+      buttSize:     null,
+      breastSize:   null,
+      schedule:     'any',
+      hourlyRate:   null,
+      priceOptions: [],
+      photos:       [],
     })
   },
 }))
