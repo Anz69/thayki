@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import ModalSheet from '@/layout/ModalSheet'
 import CustomSelect from '@/components/ui/CustomSelect'
-import { isTouchUi } from '@/utils/isTouchUi'
+import { scrollInputWithNext } from '@/utils/isTouchUi'
 
 const SIZES = ['Маленькая', 'Средняя', 'Большая', 'Очень большая']
 
@@ -25,7 +25,7 @@ function Field({ label, children, boxClassName = '' }) {
   )
 }
 
-function NumberInput({ value, onChange, placeholder, onFocus }) {
+function NumberInput({ value, onChange, placeholder }) {
   return (
     <div className="flex items-center justify-between">
       <input
@@ -33,7 +33,7 @@ function NumberInput({ value, onChange, placeholder, onFocus }) {
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={onFocus}
+        onFocus={(e) => scrollInputWithNext(e.target)}
         placeholder={placeholder}
         className="bg-transparent text-black text-sm/[100%] font-medium outline-none w-full"
       />
@@ -92,16 +92,6 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
   const hasPriceErr  = Boolean(priceErrMessage)
   const canSave      = !heightErr && !weightErr && !hasPriceErr
 
-  const scrollToFocusedInput = useCallback((event) => {
-    if (!isTouchUi()) return
-    const target = event?.target
-    if (!target || typeof target.scrollIntoView !== 'function') return
-    // Small delay lets mobile keyboard open before measuring viewport.
-    setTimeout(() => {
-      target.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    }, 220)
-  }, [])
-
   const handleSave = () => {
     if (!canSave) return
     const priceOptions = PRICE_DURATIONS
@@ -146,7 +136,6 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
             <NumberInput
               value={height}
               onChange={setHeight}
-              onFocus={scrollToFocusedInput}
               placeholder="165"
             />
           </Field>
@@ -157,7 +146,6 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
             <NumberInput
               value={weight}
               onChange={setWeight}
-              onFocus={scrollToFocusedInput}
               placeholder="45"
             />
           </Field>
@@ -178,30 +166,40 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
             Цены
           </p>
           <div className="bg-[#F5F5F7] rounded-2xl overflow-hidden">
-            {PRICE_DURATIONS.map(({ hours, label }, idx) => (
-              <div
-                key={hours}
-                className={`flex items-center justify-between px-4 py-3.5 ${idx < PRICE_DURATIONS.length - 1 ? 'border-b border-[#EBEBEB]' : ''}`}
-              >
-                <span className="text-[#7F7F7F] text-sm/[100%] font-medium shrink-0 w-28">{label}</span>
-                <div className="flex items-center gap-1 flex-1 justify-end">
-                  {(prices[hours] ?? '').length > 0 && (
-                    <span className="text-[#ABABAB] text-sm font-medium">฿</span>
-                  )}
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="—"
-                    value={prices[hours] ?? ''}
-                    onChange={(e) =>
-                      setPrices((p) => ({ ...p, [hours]: e.target.value.replace(/[^0-9]/g, '') }))
-                    }
-                    onFocus={scrollToFocusedInput}
-                    className="bg-transparent text-black text-sm/[100%] font-medium outline-none text-right w-24 placeholder:text-[#C0C0C0]"
-                  />
+            {PRICE_DURATIONS.map(({ hours, label }, idx) => {
+              const val = prices[hours] ?? ''
+              const hasVal = val.length > 0
+              return (
+                <div
+                  key={hours}
+                  className={`flex items-center justify-between px-4 py-3.5 ${idx < PRICE_DURATIONS.length - 1 ? 'border-b border-[#EBEBEB]' : ''}`}
+                >
+                  <span className="text-[#7F7F7F] text-sm/[100%] font-medium shrink-0 w-28">{label}</span>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <span
+                      className="text-[#ABABAB] text-sm font-medium whitespace-nowrap overflow-hidden"
+                      style={{
+                        maxWidth: hasVal ? '1.2em' : 0,
+                        opacity: hasVal ? 1 : 0,
+                        transition: 'max-width 0.15s ease, opacity 0.15s ease',
+                      }}
+                    >฿</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="—"
+                      value={val}
+                      onChange={(e) =>
+                        setPrices((p) => ({ ...p, [hours]: e.target.value.replace(/[^0-9]/g, '') }))
+                      }
+                      onFocus={(e) => scrollInputWithNext(e.target)}
+                      className="bg-transparent text-black text-sm/[100%] font-medium outline-none text-right placeholder:text-[#C0C0C0]"
+                      style={{ width: hasVal ? `${val.length + 1}ch` : '3ch' }}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
           {hasPriceErr && <p className="text-[#E2319B] text-xs/[100%] font-medium px-1">{priceErrMessage}</p>}
           <p className="text-[#ABABAB] text-xs/[140%] font-normal px-1">
