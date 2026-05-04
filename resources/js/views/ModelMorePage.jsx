@@ -43,21 +43,21 @@ export default function ModelMorePage() {
   const navigate = useTransitionNavigate()
   const [faqOpen, setFaqOpen] = useState(false)
 
-  const headerRef   = useRef(null)
   const section1Ref = useRef(null)
   const section2Ref = useRef(null)
 
   useLayoutEffect(() => {
-    gsap.set(headerRef.current,   { autoAlpha: 0, y: -44 })
-    gsap.set(section1Ref.current, { autoAlpha: 0, y: 24  })
-    gsap.set(section2Ref.current, { autoAlpha: 0, y: 24  })
+    if (section1Ref.current) gsap.set(section1Ref.current, { autoAlpha: 0, y: 24 })
+    if (section2Ref.current) gsap.set(section2Ref.current, { autoAlpha: 0, y: 24 })
   }, [])
 
   usePageReady(() => {
+    const s1 = section1Ref.current
+    const s2 = section2Ref.current
+    if (!s1 || !s2) return
     gsap.timeline()
-      .to(headerRef.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
-      .to(section1Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.08)
-      .to(section2Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.14)
+      .to(s1, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
+      .to(s2, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.1)
   })
 
   return (

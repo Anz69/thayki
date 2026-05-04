@@ -11,7 +11,8 @@ function AccordionItem({ item, isOpen, onToggle }) {
     if (!el) return
 
     gsap.killTweensOf(el)
-    gsap.killTweensOf(chevronRef.current)
+    const ch = chevronRef.current
+    if (ch) gsap.killTweensOf(ch)
 
     if (isOpen) {
       const currentH = parseFloat(gsap.getProperty(el, 'height')) || el.offsetHeight
@@ -19,7 +20,7 @@ function AccordionItem({ item, isOpen, onToggle }) {
         { height: currentH },
         { height: 0, duration: 0.26, ease: 'power2.inOut' },
       )
-      gsap.to(chevronRef.current, { rotation: 0, duration: 0.2, ease: 'power2.inOut' })
+      if (ch) gsap.to(ch, { rotation: 0, duration: 0.2, ease: 'power2.inOut' })
     } else {
       gsap.set(el, { height: 'auto' })
       const h = el.scrollHeight
@@ -27,7 +28,7 @@ function AccordionItem({ item, isOpen, onToggle }) {
         { height: 0 },
         { height: h, duration: 0.32, ease: 'power3.out', onComplete: () => gsap.set(el, { height: 'auto' }) },
       )
-      gsap.to(chevronRef.current, { rotation: 180, duration: 0.2, ease: 'power2.inOut' })
+      if (ch) gsap.to(ch, { rotation: 180, duration: 0.2, ease: 'power2.inOut' })
     }
     onToggle(item.id)
   }, [isOpen, item.id, onToggle])

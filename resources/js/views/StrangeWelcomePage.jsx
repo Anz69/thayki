@@ -18,18 +18,23 @@ export default function StrangeWelcomePage() {
   const [checkError, setCheckError] = useState(null)
 
   useLayoutEffect(() => {
-    gsap.set(cardRef.current,  { autoAlpha: 0, y: 24 })
-    gsap.set(titleRef.current, { autoAlpha: 0, y: -10 })
-    gsap.set(subRef.current,   { autoAlpha: 0, y: -8 })
-    gsap.set(btnsRef.current,  { autoAlpha: 0, y: 12, scale: 0.94 })
+    if (cardRef.current) gsap.set(cardRef.current, { autoAlpha: 0, y: 24 })
+    if (titleRef.current) gsap.set(titleRef.current, { autoAlpha: 0, y: -10 })
+    if (subRef.current) gsap.set(subRef.current, { autoAlpha: 0, y: -8 })
+    if (btnsRef.current) gsap.set(btnsRef.current, { autoAlpha: 0, y: 12, scale: 0.94 })
   }, [])
 
   usePageReady(() => {
-    const tl = gsap.timeline()
-    tl.to(cardRef.current,  { autoAlpha: 1, y: 0, duration: 0.5,  ease: 'expo.out' })
-      .to(titleRef.current, { autoAlpha: 1, y: 0, duration: 0.4,  ease: 'expo.out' }, 0.1)
-      .to(subRef.current,   { autoAlpha: 1, y: 0, duration: 0.4,  ease: 'expo.out' }, 0.18)
-      .to(btnsRef.current,  { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, 0.28)
+    const card = cardRef.current
+    const title = titleRef.current
+    const sub = subRef.current
+    const btns = btnsRef.current
+    if (!card || !title || !sub || !btns) return
+    gsap.timeline()
+      .to(card, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'expo.out' })
+      .to(title, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'expo.out' }, 0.1)
+      .to(sub, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'expo.out' }, 0.18)
+      .to(btns, { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, 0.28)
   })
 
   const openChat = useCallback((event) => {

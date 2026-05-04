@@ -84,11 +84,15 @@ export default function CryptoStep({ price, onBack, wrapRef, onPaymentConfirmed 
     navigator.clipboard.writeText(selectedCrypto.address).catch(() => {})
     clearTimeout(copyTimerRef.current)
     confirmedTimerRef.current?.kill()
-    gsap.to(copyIconRef.current,  { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
-    gsap.to(checkIconRef.current, { autoAlpha: 1, scale: 1,   duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
+    const copyIc = copyIconRef.current
+    const checkIc = checkIconRef.current
+    if (copyIc) gsap.to(copyIc, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
+    if (checkIc) gsap.to(checkIc, { autoAlpha: 1, scale: 1, duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
     copyTimerRef.current = setTimeout(() => {
-      gsap.to(checkIconRef.current, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
-      gsap.to(copyIconRef.current,  { autoAlpha: 1, scale: 1,   duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
+      const c2 = checkIconRef.current
+      const p2 = copyIconRef.current
+      if (c2) gsap.to(c2, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
+      if (p2) gsap.to(p2, { autoAlpha: 1, scale: 1, duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
     }, 2000)
     confirmedTimerRef.current = gsap.delayedCall(1, () => onPaymentConfirmed?.())
   }, [selectedCrypto, onPaymentConfirmed])

@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
+import { lockTelegramVerticalSwipes, unlockTelegramVerticalSwipes } from '@/utils/modalLocks'
 
 export default function ModalMiddle({ isOpen, onClose, onAfterClose, children }) {
   const [isVisible, setIsVisible] = useState(isOpen)
@@ -13,10 +14,17 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
   useEffect(() => { onCloseRef.current = onClose }, [onClose])
 
   const animateOut = useCallback((onComplete) => {
-    gsap.killTweensOf([sheetRef.current, rootRef.current])
+    const sheet = sheetRef.current
+    const root = rootRef.current
+    const targets = [sheet, root].filter(Boolean)
+    if (targets.length) gsap.killTweensOf(targets)
+    if (!sheet || !root) {
+      onComplete?.()
+      return
+    }
     gsap.timeline({ onComplete })
-      .to(sheetRef.current,  { y: '100%', duration: 0.32, ease: 'power3.in' }, 0)
-      .to(rootRef.current,   { opacity: 0, duration: 0.24, ease: 'power2.in' }, 0.06)
+      .to(sheet, { y: '100%', duration: 0.32, ease: 'power3.in' }, 0)
+      .to(root, { opacity: 0, duration: 0.24, ease: 'power2.in' }, 0.06)
   }, [])
 
   useEffect(() => {
@@ -26,8 +34,8 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
 
   useEffect(() => {
     if (!isVisible) return
-    window.Telegram?.WebApp?.disableVerticalSwipes?.()
-    return () => window.Telegram?.WebApp?.enableVerticalSwipes?.()
+    lockTelegramVerticalSwipes()
+    return () => unlockTelegramVerticalSwipes()
   }, [isVisible])
 
   // Run before paint so the backdrop never flashes at full opacity (CSS bg would show for one frame,
@@ -70,17 +78,19 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
 
       e.preventDefault()
       touchState.current.isDragging = true
-      gsap.set(sheetRef.current, { y: dy * 0.58 })
+      const sheet = sheetRef.current
+      if (sheet) gsap.set(sheet, { y: dy * 0.58 })
     }
 
     const onEnd = (e) => {
       if (!touchState.current.isDragging) return
       touchState.current.isDragging = false
       const dy = e.changedTouches[0].clientY - touchState.current.startY
+      const sheet = sheetRef.current
       if (dy > 110) {
         onCloseRef.current()
-      } else {
-        gsap.to(sheetRef.current, { y: 0, duration: 0.42, ease: 'back.out(2.2)' })
+      } else if (sheet) {
+        gsap.to(sheet, { y: 0, duration: 0.42, ease: 'back.out(2.2)' })
       }
     }
 

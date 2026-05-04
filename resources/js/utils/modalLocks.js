@@ -49,9 +49,19 @@ export function unlockPageRootScroll(force = false) {
   unlockBodyScrollStyles(force)
 }
 
+/** Bot API 7.7+ swipe behavior; older Telegram WebApp logs a console warning if called anyway. */
+export function telegramSwipeBehaviorSupported() {
+  const tg = resolveTelegramWebApp()
+  return Boolean(
+    tg &&
+    typeof tg.isVersionAtLeast === 'function' &&
+    tg.isVersionAtLeast('7.7'),
+  )
+}
+
 export function lockTelegramVerticalSwipes() {
   const tg = resolveTelegramWebApp()
-  if (!tg?.disableVerticalSwipes) return
+  if (!telegramSwipeBehaviorSupported() || !tg?.disableVerticalSwipes) return
 
   telegramSwipeLockDepth += 1
   tg.disableVerticalSwipes()
@@ -59,7 +69,7 @@ export function lockTelegramVerticalSwipes() {
 
 export function unlockTelegramVerticalSwipes(force = false) {
   const tg = resolveTelegramWebApp()
-  if (!tg?.enableVerticalSwipes) return
+  if (!telegramSwipeBehaviorSupported() || !tg?.enableVerticalSwipes) return
 
   if (force) {
     telegramSwipeLockDepth = 0

@@ -298,15 +298,19 @@ export default function ChatPage() {
   }, [runListEntrance])
 
   useLayoutEffect(() => {
-    gsap.set(headerRef.current,   { y: -44, autoAlpha: 0 })
-    gsap.set(inputBarRef.current, { y: 32,  autoAlpha: 0 })
+    if (headerRef.current) gsap.set(headerRef.current, { y: -44, autoAlpha: 0 })
+    if (inputBarRef.current) gsap.set(inputBarRef.current, { y: 32, autoAlpha: 0 })
     if (listRef.current) gsap.set(listRef.current, { autoAlpha: 0 })
   }, [])
 
   usePageReady(() => {
-    const tl = gsap.timeline()
-    tl.to(headerRef.current,   { y: 0, autoAlpha: 1, duration: 0.4,  ease: 'expo.out' })
-      .to(inputBarRef.current, { y: 0, autoAlpha: 1, duration: 0.38, ease: 'power2.out' }, 0.1)
+    const head = headerRef.current
+    const bar = inputBarRef.current
+    if (head && bar) {
+      gsap.timeline()
+        .to(head, { y: 0, autoAlpha: 1, duration: 0.4, ease: 'expo.out' })
+        .to(bar, { y: 0, autoAlpha: 1, duration: 0.38, ease: 'power2.out' }, 0.1)
+    }
     pageReadyDone.current = true
     tryShowContent()
   })

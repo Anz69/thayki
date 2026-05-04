@@ -154,7 +154,6 @@ export default function MorePage() {
   const [pendingWithdrawal, setPendingWithdrawal] = useState(0)
   const [withdrawMethods, setWithdrawMethods] = useState(['usdt', 'btc', 'ton'])
 
-  const headerRef   = useRef(null)
   const userCardRef = useRef(null)
   const balanceRef  = useRef(null)
   const ordersRef   = useRef(null)
@@ -223,19 +222,21 @@ export default function MorePage() {
   const balanceAnimatedRef = useRef(false)
 
   useLayoutEffect(() => {
-    gsap.set(headerRef.current,   { autoAlpha: 0, y: -44 })
-    gsap.set(userCardRef.current, { autoAlpha: 0, y: 16 })
-    gsap.set(ordersRef.current,   { autoAlpha: 0, y: 20 })
-    gsap.set(section1Ref.current, { autoAlpha: 0, y: 24 })
-    gsap.set(section2Ref.current, { autoAlpha: 0, y: 24 })
+    if (userCardRef.current) gsap.set(userCardRef.current, { autoAlpha: 0, y: 16 })
+    if (ordersRef.current) gsap.set(ordersRef.current, { autoAlpha: 0, y: 20 })
+    if (section1Ref.current) gsap.set(section1Ref.current, { autoAlpha: 0, y: 24 })
+    if (section2Ref.current) gsap.set(section2Ref.current, { autoAlpha: 0, y: 24 })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   usePageReady(() => {
+    const card = userCardRef.current
+    const s1 = section1Ref.current
+    const s2 = section2Ref.current
+    if (!card || !s1 || !s2) return
     gsap.timeline()
-      .to(headerRef.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
-      .to(userCardRef.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.08)
-      .to(section1Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.18)
-      .to(section2Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.24)
+      .to(card, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
+      .to(s1, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.12)
+      .to(s2, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.2)
   })
 
   // Animate balance card in when it first becomes visible (loaded from API)
@@ -253,14 +254,16 @@ export default function MorePage() {
   const activeMeetings = meetings
 
   useEffect(() => {
+    const ordersEl = ordersRef.current
+    if (!ordersEl) return
     if (!loadingMeetings && activeMeetings.length > 0) {
       gsap.fromTo(
-        ordersRef.current,
+        ordersEl,
         { autoAlpha: 0, y: 16 },
         { autoAlpha: 1, y: 0, duration: 0.45, ease: 'expo.out' },
       )
     } else if (!loadingMeetings && activeMeetings.length === 0) {
-      gsap.to(ordersRef.current, { autoAlpha: 0, duration: 0.25 })
+      gsap.to(ordersEl, { autoAlpha: 0, duration: 0.25 })
     }
   }, [loadingMeetings, activeMeetings.length])
 

@@ -30,7 +30,7 @@ export default function CustomSelect({ value, onChange, options = [], onOpen, pl
         { height: el.offsetHeight },
         { height: 0, duration: 0.24, ease: 'power2.inOut', delay: 0.08 },
       )
-      gsap.to(chevronRef.current, { rotation: 0, duration: 0.24, ease: 'back.out(1.4)' })
+      if (chevronRef.current) gsap.to(chevronRef.current, { rotation: 0, duration: 0.24, ease: 'back.out(1.4)' })
       setOpen(false)
     } else {
       gsap.set(el, { height: 'auto' })
@@ -54,7 +54,7 @@ export default function CustomSelect({ value, onChange, options = [], onOpen, pl
           clearProps: 'transform,opacity,visibility',
         },
       )
-      gsap.to(chevronRef.current, { rotation: 180, duration: 0.24, ease: 'back.out(1.4)' })
+      if (chevronRef.current) gsap.to(chevronRef.current, { rotation: 180, duration: 0.24, ease: 'back.out(1.4)' })
       setOpen(true)
       onOpen?.()
     }
@@ -69,7 +69,7 @@ export default function CustomSelect({ value, onChange, options = [], onOpen, pl
       { height: el.offsetHeight },
       { height: 0, duration: 0.22, ease: 'power2.inOut', delay: 0.06 },
     )
-    gsap.to(chevronRef.current, { rotation: 0, duration: 0.22, ease: 'back.out(1.4)' })
+    if (chevronRef.current) gsap.to(chevronRef.current, { rotation: 0, duration: 0.22, ease: 'back.out(1.4)' })
     setOpen(false)
   }, [onChange])
   return (

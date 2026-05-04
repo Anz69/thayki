@@ -199,7 +199,8 @@ export default function BottomNav() {
     if (renderedSlot === null && targetSlot) {
       skipFirst3.current = false
       setRenderedSlot(targetSlot)
-      gsap.fromTo(wrapperRef.current, { y: 20, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.32, ease: 'expo.out' })
+      const w0 = wrapperRef.current
+      if (w0) gsap.fromTo(w0, { y: 20, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.32, ease: 'expo.out' })
       return
     }
     if (skipFirst3.current) { skipFirst3.current = false; return }
@@ -210,7 +211,11 @@ export default function BottomNav() {
     const container = containerRef.current
     const indicator = indicatorRef.current
 
-    const showWrapper = () => gsap.to(wrapper, { y: 0, autoAlpha: 1, duration: 0.32, ease: 'expo.out', overwrite: true })
+    if (!wrapper) return
+
+    const showWrapper = () => {
+      gsap.to(wrapper, { y: 0, autoAlpha: 1, duration: 0.32, ease: 'expo.out', overwrite: true })
+    }
 
     if (!renderedSlot && targetSlot) {
       setRenderedSlot(targetSlot)
@@ -228,8 +233,10 @@ export default function BottomNav() {
 
     if (targetSlot === renderedSlot) {
       widthSnap.current = null
-      gsap.killTweensOf(inner)
-      gsap.to(inner, { opacity: 1, y: 0, duration: 0.18, ease: 'expo.out', overwrite: true })
+      if (inner) {
+        gsap.killTweensOf(inner)
+        gsap.to(inner, { opacity: 1, y: 0, duration: 0.18, ease: 'expo.out', overwrite: true })
+      }
       showWrapper()
       return
     }
@@ -242,11 +249,15 @@ export default function BottomNav() {
     }
 
     widthSnap.current = container?.offsetWidth ?? null
-    gsap.killTweensOf(inner)
-    gsap.to(inner, {
-      opacity: 0, y: 8, duration: 0.14, ease: 'power2.in',
-      onComplete: () => setRenderedSlot(targetSlot),
-    })
+    if (inner) {
+      gsap.killTweensOf(inner)
+      gsap.to(inner, {
+        opacity: 0, y: 8, duration: 0.14, ease: 'power2.in',
+        onComplete: () => setRenderedSlot(targetSlot),
+      })
+    } else {
+      setRenderedSlot(targetSlot)
+    }
 
   }, [targetSlot, isMeetingBootstrapping])
 
