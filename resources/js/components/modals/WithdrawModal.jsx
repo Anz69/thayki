@@ -256,17 +256,16 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
           </div>
         )}
 
-        {/* ── Pending (existing withdrawal) ────────────────────────────────── */}
         {displayedPrecheck === 'pending' && (
           <div className="flex flex-col gap-5 px-5 py-6">
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 text-center">
               <h2 className="text-black text-xl/[100%] font-semibold">Заявка уже подана</h2>
               <p className="text-[#7F7F7F] text-sm/[150%] font-medium">
                 Ваша заявка на вывод находится в обработке. Дождитесь её завершения — мы свяжемся с вами в чате поддержки.
               </p>
             </div>
             {pendingAmountThb != null && (
-              <div className="bg-[#F5F5F7] rounded-2xl px-5 py-4 flex items-center justify-between">
+              <div className="pb-2.5 flex items-center justify-between">
                 <span className="text-[#7F7F7F] text-sm/[100%] font-medium">Сумма к выплате</span>
                 <span className="text-black text-sm/[100%] font-semibold">
                   ฿ {pendingAmountThb.toLocaleString()}
