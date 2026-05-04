@@ -194,7 +194,7 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
                       }
                       onFocus={(e) => scrollInputWithNext(e.target)}
                       className="bg-transparent text-black text-sm/[100%] font-medium outline-none text-right placeholder:text-[#C0C0C0]"
-                      style={{ width: hasVal ? `${val.length + 1}ch` : '3ch' }}
+                      style={{ width: hasVal ? `${val.length + 0.2}ch` : '3ch' }}
                     />
                   </div>
                 </div>
