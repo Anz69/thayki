@@ -274,26 +274,29 @@ export default function MorePage() {
             </div>
           </div>
 
-          <div ref={balanceRef} >
-            <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex items-center justify-between gap-3">
-              <div className="flex flex-col gap-1 min-w-0">
-                <span className="text-[#ABABAB] text-[11px]/[100%] font-medium">Доступный баланс</span>
-                <span className="text-black text-xl/[100%] font-semibold">฿ {balance.toLocaleString()}</span>
-                {pendingWithdrawal > 0 && (
-                  <span className="text-[#E2319B] text-[11px]/[140%] font-medium mt-0.5">
-                    ฿ {pendingWithdrawal.toLocaleString()} — на выводе, ожидайте
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => setWithdrawOpen(true)}
-                className="shrink-0 flex items-center gap-1.5 bg-[#1B1B1B] text-white text-sm/[100%] font-medium px-4 py-2.5 rounded-full active:opacity-70 transition-opacity"
-              >
-                <IconWithdraw />
-                Вывести
-              </button>
-            </GradientBorder>
-          </div>
+          {balance >= 0 && (
+            <div ref={balanceRef} >
+              <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="text-[#ABABAB] text-[11px]/[100%] font-medium">Доступный баланс</span>
+                  <span className="text-black text-xl/[100%] font-semibold">฿ {balance.toLocaleString()}</span>
+                  {pendingWithdrawal > 0 && (
+                    <span className="text-[#E2319B] text-[11px]/[140%] font-medium mt-0.5">
+                      ฿ {pendingWithdrawal.toLocaleString()} — на выводе, ожидайте
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setWithdrawOpen(true)}
+                  className="shrink-0 flex items-center gap-1.5 bg-[#1B1B1B] text-white text-sm/[100%] font-medium px-4 py-2.5 rounded-full active:opacity-70 transition-opacity"
+                >
+                  <IconWithdraw />
+                  Вывести
+                </button>
+              </GradientBorder>
+            </div>
+          )}
+     
 
           <div ref={ordersRef} className="flex flex-col gap-3">
             {activeMeetings.length > 0 && (
