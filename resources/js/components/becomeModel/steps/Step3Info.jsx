@@ -129,8 +129,11 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
           </div>
         </div>
       </div>
-      <div ref={btnRef} className="shrink-0 px-5 pt-4 flex flex-col justify-center"
-        style={{ paddingBottom: 'calc(2rem + var(--keyboard-offset, 0px))' }}>
+      <div
+        ref={btnRef}
+        className="shrink-0 px-5 pt-4 flex flex-col justify-center"
+        style={{ paddingBottom: '2rem' }}
+      >
         <button
           onClick={() => canProceed && onNext({ height, weight, bust, butt })}
           style={{ background: canProceed ? '#1C1C1E' : '#D0D0D0' }}
