@@ -229,9 +229,7 @@ export default function ClientPage() {
                         <span className="relative block h-6 w-28 overflow-hidden rounded-full bg-[#F1F1F4]">
                           <span className="absolute inset-y-0 -left-1/2 w-1/2 bg-linear-to-r from-transparent via-white/80 to-transparent balance-shimmer" />
                         </span>
-                        <span className="text-[#A8A8AD] text-[11px]/[100%] font-medium tracking-wide">
-                          Обновляем баланс...
-                        </span>
+                 
                       </span>
                     ) : (
                       `${(balance ?? 0).toLocaleString()} ฿`
