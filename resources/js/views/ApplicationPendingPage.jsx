@@ -207,8 +207,15 @@ export default function ApplicationPendingPage() {
             .to(ring1Ref.current, { scale: 1.06, duration: 0.18, yoyo: true, repeat: 1, ease: 'sine.inOut' }, 0.68)
             .to({}, { duration: 0.8 })
         }
-      } catch {
-        /* keep polling */
+      } catch (err) {
+        // If the application record doesn't exist, the user shouldn't be here
+        if (err?.response?.status === 404) {
+          stopPolling()
+          resetModelAppGuardCache()
+          navigate('/home', { replace: true })
+          return
+        }
+        /* network/server error — keep polling */
       }
     }
 
