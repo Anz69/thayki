@@ -66,7 +66,7 @@ export default function ModelMorePage() {
 
   
 
-        <div className="flex flex-col gap-4 container pt-[76px] pb-[120px]">
+        <div className="flex flex-col gap-4 container pt-[40px] pb-[120px]">
 
           <div ref={section1Ref} className="flex flex-col gap-4">
             <SectionLabel>Важное</SectionLabel>

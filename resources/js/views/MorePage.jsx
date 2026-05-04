@@ -272,7 +272,7 @@ export default function MorePage() {
       <section className="flex flex-col min-h-screen bg-white">
 
 
-        <div className="flex flex-col gap-4 container pt-[76px] pb-[120px]">
+        <div className="flex flex-col gap-4 container pt-[40px] pb-[120px]">
 
           <div ref={userCardRef} className="flex flex-col gap-3">
             <div className="flex items-center gap-3 bg-[#F5F5F7] rounded-2xl p-4">
