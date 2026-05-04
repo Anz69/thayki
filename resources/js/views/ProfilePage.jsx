@@ -7,7 +7,6 @@ import useAuthStore from '@/stores/useAuthStore'
 import Avatar from '@/components/ui/Avatar'
 import AgeModal from '@/components/modals/AgeModal'
 import MetricsModal from '@/components/modals/MetricsModal'
-import PricesModal from '@/components/modals/PricesModal'
 import ChangeMediaModal from '@/components/modals/ChangeMediaModal'
 import ScheduleSelector from '@/components/profile/ScheduleSelector'
 import Media from '@/components/sections/modelSelectInfo/Media'
@@ -65,7 +64,6 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('info')
   const [ageOpen, setAgeOpen]           = useState(false)
   const [metricsOpen, setMetricsOpen]   = useState(false)
-  const [pricesOpen, setPricesOpen]     = useState(false)
   const [mediaEditOpen, setMediaEditOpen] = useState(false)
 
   const avatarInputRef  = useRef(null)
@@ -424,36 +422,6 @@ export default function ProfilePage() {
                   isEditing={isEditing}
                 />
 
-                <div className="bg-[#F5F5F7] rounded-2xl overflow-hidden py-2">
-                  {profile.priceOptions.length > 0 ? (
-                    profile.priceOptions
-                      .slice()
-                      .sort((a, b) => a.hours - b.hours)
-                      .map((opt, idx) => (
-                        <SettingRow
-                          key={opt.hours}
-                          label={opt.label || `${opt.hours} ч`}
-                          value={`฿ ${Number(opt.price_thb).toLocaleString()}`}
-                          isLast={idx === profile.priceOptions.length - 1}
-                        />
-                      ))
-                  ) : (
-                    <SettingRow
-                      label="Стоимость"
-                      value={profile.hourlyRate ? `฿ ${Number(profile.hourlyRate).toLocaleString()} /ч` : '—'}
-                      isLast
-                    />
-                  )}
-                </div>
-                <button
-                  onClick={() => setPricesOpen(true)}
-                  className="text-[#E2319B] text-xs/[100%] font-medium flex items-center gap-0.5 active:opacity-70 transition-opacity px-1"
-                >
-                  Изменить цены
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 18l6-6-6-6" stroke="#E2319B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
               </>
             )}
           </div>
@@ -489,13 +457,6 @@ export default function ProfilePage() {
         onClose={() => setMetricsOpen(false)}
         profile={profile}
         onSave={(data) => profile.savePatch(data).catch(logError)}
-      />
-      <PricesModal
-        isOpen={pricesOpen}
-        onClose={() => setPricesOpen(false)}
-        priceOptions={profile.priceOptions}
-        hourlyRate={profile.hourlyRate}
-        onSave={(options) => profile.savePriceOptions(options).catch(logError)}
       />
       <ChangeMediaModal isOpen={mediaEditOpen} onClose={() => setMediaEditOpen(false)} />
     </section>

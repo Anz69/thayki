@@ -290,7 +290,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
     return (
       <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>
         <div className="flex flex-col items-center gap-5 px-5 py-6 text-center bg-white">
-          <span className="text-4xl select-none">⏳</span>
+
           <div className="flex flex-col gap-1.5">
             <h2 className="text-black text-xl/[100%] font-semibold">Заявка уже подана</h2>
             <p className="text-[#7F7F7F] text-sm/[150%] font-medium">

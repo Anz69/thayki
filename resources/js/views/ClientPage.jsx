@@ -113,11 +113,13 @@ export default function ClientPage() {
   const [infoOpen, setInfoOpen]             = useState(false)
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
   const [meetings, setMeetings]             = useState([])
-  const [balance, setBalance]               = useState(auth.user?.balance ?? 0)
+  const [balance, setBalance]               = useState(null)
+  const [loadingBalance, setLoadingBalance] = useState(true)
   const [withdrawMethods, setWithdrawMethods] = useState(['usdt', 'btc', 'ton'])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
 
   const balanceRef  = useRef(null)
+  const balanceValueRef = useRef(null)
   const inviteRef   = useRef(null)
   const questionRef = useRef(null)
   const ordersRef   = useRef(null)
@@ -140,6 +142,7 @@ export default function ClientPage() {
   }, [location.key, fetchMeetings])
 
   const fetchBalance = useCallback(() => {
+    setLoadingBalance(true)
     api.get('/wallet')
       .then(r => {
         const w = r.data.data
@@ -147,7 +150,8 @@ export default function ClientPage() {
         const methods = Array.isArray(w?.withdrawal_methods) ? w.withdrawal_methods : []
         setWithdrawMethods(methods.length ? methods : ['usdt', 'btc', 'ton'])
       })
-      .catch(() => setBalance(0))
+      .catch(() => setBalance(null))
+      .finally(() => setLoadingBalance(false))
   }, [])
 
   useEffect(() => {
@@ -196,6 +200,15 @@ export default function ClientPage() {
       .to(ordersRef.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.18)
   })
 
+  useEffect(() => {
+    if (loadingBalance || balance == null || !balanceValueRef.current) return
+    gsap.fromTo(
+      balanceValueRef.current,
+      { autoAlpha: 0, y: 6, scale: 0.985 },
+      { autoAlpha: 1, y: 0, scale: 1, duration: 0.34, ease: 'power2.out', clearProps: 'transform,opacity,visibility' },
+    )
+  }, [loadingBalance, balance])
+
   const activeMeetings = meetings
 
   return (
@@ -210,8 +223,14 @@ export default function ClientPage() {
                   <span className="text-[#777779] text-[14px]/[100%] font-medium uppercase tracking-widest">
                     Баланс
                   </span>
-                  <span className="text-black text-2xl/[100%] font-[500] tracking-tight">
-                    {balance.toLocaleString()} ฿
+                  <span ref={balanceValueRef} className="text-black text-2xl/[100%] font-[500] tracking-tight min-h-[1.15em] flex items-center justify-center">
+                    {loadingBalance ? (
+                      <span className="inline-flex items-center gap-2 animate-pulse">
+                        <span className="h-6 w-24 rounded-full bg-[#EBEBEF]" />
+                      </span>
+                    ) : (
+                      `${(balance ?? 0).toLocaleString()} ฿`
+                    )}
                   </span>
                 </div>
                 <div className="border-t border-[#E1E0E7] flex">
