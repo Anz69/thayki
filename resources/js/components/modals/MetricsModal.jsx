@@ -176,14 +176,7 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
                 >
                   <span className="text-[#7F7F7F] text-sm/[100%] font-medium shrink-0 w-28">{label}</span>
                   <div className="flex items-center shrink-0">
-                    <span
-                      className="text-[#ABABAB] text-sm font-medium whitespace-nowrap overflow-hidden"
-                      style={{
-                        maxWidth: hasVal ? '1.2em' : 0,
-                        opacity: hasVal ? 1 : 0,
-                        transition: 'max-width 0.15s ease, opacity 0.15s ease',
-                      }}
-                    >฿</span>
+          
                     <input
                       type="text"
                       inputMode="numeric"
@@ -194,7 +187,6 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
                       }
                       onFocus={(e) => scrollInputWithNext(e.target)}
                       className="bg-transparent text-black text-sm/[100%] font-medium outline-none text-right placeholder:text-[#C0C0C0]"
-                      style={{ width: hasVal ? `${val.length}ch` : '3ch' }}
                     />
                   </div>
                 </div>

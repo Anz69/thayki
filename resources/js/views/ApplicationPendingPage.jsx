@@ -2,6 +2,7 @@ import { useEffect, useRef, useLayoutEffect } from 'react'
 import gsap from 'gsap'
 import useAuthStore from '@/stores/useAuthStore'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
+import { resetModelAppGuardCache } from '@/RouterShell'
 import api from '@/utils/api'
 
 export default function ApplicationPendingPage() {
@@ -107,6 +108,7 @@ export default function ApplicationPendingPage() {
 
           const tl = gsap.timeline({
             onComplete: async () => {
+              resetModelAppGuardCache()
               try {
                 await refreshUser()
               } catch {
@@ -162,6 +164,7 @@ export default function ApplicationPendingPage() {
 
           const tl = gsap.timeline({
             onComplete: async () => {
+              resetModelAppGuardCache()
               try {
                 await refreshUser()
               } catch {
