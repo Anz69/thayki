@@ -7,6 +7,7 @@ namespace App\Http\Resources;
 use App\Enums\PaymentMethod;
 use App\Models\AppSetting;
 use App\Models\Wallet;
+use App\Models\Withdrawal;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -50,11 +51,17 @@ class WalletResource extends JsonResource
             );
         }
 
+        $pendingWithdrawalMinor = (int) Withdrawal::query()
+            ->where('user_id', $this->user_id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->sum('amount_minor');
+
         return [
             'id' => $this->id,
             'balance_minor' => $this->balance_minor,
             'locked_minor' => $this->locked_minor,
             'available_minor' => $this->availableBalance(),
+            'pending_withdrawal_minor' => $pendingWithdrawalMinor,
             'currency' => $this->currency,
             'version' => $this->version,
             'withdrawal_methods' => $withdrawalMethods,

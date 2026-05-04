@@ -6,6 +6,7 @@ import ShareModelsModal from '@/components/modals/ShareModelsModal'
 import api, { extractErrorMessage } from '@/utils/api'
 
 function ModelCard({ model }) {
+  const [imgFailed, setImgFailed] = useState(false)
   if (!model || typeof model !== 'object') return null
   const photos = Array.isArray(model?.photos) ? model.photos.filter(Boolean) : []
   const prices = Array.isArray(model?.price_options) ? model.price_options.filter(Boolean) : []
@@ -23,12 +24,12 @@ function ModelCard({ model }) {
       to={`/model/${model.id}`}
       className="relative overflow-hidden border-2 border-black/15 rounded-2xl flex flex-col justify-end min-h-[300px] active:scale-[0.97] transition-transform duration-150"
     >
-      {mainPhoto ? (
+      {mainPhoto && !imgFailed ? (
         <img
           src={mainPhoto.url}
           alt={model.display_name}
           className="absolute top-0 left-0 w-full h-full object-cover"
-          loading="lazy"
+          onError={() => setImgFailed(true)}
         />
       ) : (
         <div className="absolute inset-0 bg-[#EFEEF3]" />

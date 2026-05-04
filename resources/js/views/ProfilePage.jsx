@@ -456,7 +456,10 @@ export default function ProfilePage() {
         isOpen={metricsOpen}
         onClose={() => setMetricsOpen(false)}
         profile={profile}
-        onSave={(data) => profile.savePatch(data).catch(logError)}
+        onSave={({ priceOptions, ...metrics }) => {
+          profile.savePatch(metrics).catch(logError)
+          profile.savePriceOptions(priceOptions).catch(logError)
+        }}
       />
       <ChangeMediaModal isOpen={mediaEditOpen} onClose={() => setMediaEditOpen(false)} />
     </section>

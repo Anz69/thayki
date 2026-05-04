@@ -124,7 +124,7 @@ function OrderCard({ meeting, currentUserId, onClick }) {
 
 const IconWithdraw = () => (
   <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-    <path d="M9.6665 9.33366C12.0597 9.33366 13.9998 7.39356 13.9998 5.00033C13.9998 2.60709 12.0597 0.666992 9.6665 0.666992C7.27327 0.666992 5.33317 2.60709 5.33317 5.00033M4.08048 7.83366H5.08048V11.5003M4.08048 11.5003H6.08048M0.666504 9.66699C0.666504 12.0602 2.6066 14.0003 4.99984 14.0003C7.39307 14.0003 9.33317 12.0602 9.33317 9.66699C9.33317 7.27376 7.39307 5.33366 4.99984 5.33366C2.6066 5.33366 0.666504 7.27376 0.666504 9.66699Z" stroke="black" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M9.6665 9.33366C12.0597 9.33366 13.9998 7.39356 13.9998 5.00033C13.9998 2.60709 12.0597 0.666992 9.6665 0.666992C7.27327 0.666992 5.33317 2.60709 5.33317 5.00033M4.08048 7.83366H5.08048V11.5003M4.08048 11.5003H6.08048M0.666504 9.66699C0.666504 12.0602 2.6066 14.0003 4.99984 14.0003C7.39307 14.0003 9.33317 12.0602 9.33317 9.66699C9.33317 7.27376 7.39307 5.33366 4.99984 5.33366C2.6066 5.33366 0.666504 7.27376 0.666504 9.66699Z" stroke="white" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
@@ -151,11 +151,13 @@ export default function MorePage() {
   const [meetings, setMeetings] = useState([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
   const [balance, setBalance] = useState(auth.user?.balance ?? 0)
+  const [pendingWithdrawal, setPendingWithdrawal] = useState(0)
   const [withdrawMethods, setWithdrawMethods] = useState(['usdt', 'btc', 'ton'])
 
-  const headerRef = useRef(null)
+  const headerRef   = useRef(null)
   const userCardRef = useRef(null)
-  const ordersRef = useRef(null)
+  const balanceRef  = useRef(null)
+  const ordersRef   = useRef(null)
   const section1Ref = useRef(null)
   const section2Ref = useRef(null)
 
@@ -174,6 +176,7 @@ export default function MorePage() {
       .then(r => {
         const w = r.data.data
         setBalance(Math.floor((w?.available_minor ?? w?.balance_minor ?? 0) / 100))
+        setPendingWithdrawal(Math.floor((w?.pending_withdrawal_minor ?? 0) / 100))
         const methods = Array.isArray(w?.withdrawal_methods) ? w.withdrawal_methods : []
         setWithdrawMethods(methods.length ? methods : ['usdt', 'btc', 'ton'])
       })
@@ -216,19 +219,21 @@ export default function MorePage() {
   }, [fetchMeetings, fetchBalance])
 
   useLayoutEffect(() => {
-    gsap.set(headerRef.current, { autoAlpha: 0, y: -44 })
+    gsap.set(headerRef.current,   { autoAlpha: 0, y: -44 })
     gsap.set(userCardRef.current, { autoAlpha: 0, y: 16 })
-    gsap.set(ordersRef.current, { autoAlpha: 0, y: 20 })
+    gsap.set(balanceRef.current,  { autoAlpha: 0, y: 18 })
+    gsap.set(ordersRef.current,   { autoAlpha: 0, y: 20 })
     gsap.set(section1Ref.current, { autoAlpha: 0, y: 24 })
     gsap.set(section2Ref.current, { autoAlpha: 0, y: 24 })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   usePageReady(() => {
     gsap.timeline()
-      .to(headerRef.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
+      .to(headerRef.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
       .to(userCardRef.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.08)
-      .to(section1Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.14)
-      .to(section2Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.20)
+      .to(balanceRef.current,  { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.13)
+      .to(section1Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.18)
+      .to(section2Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.24)
   })
 
   const activeMeetings = meetings
@@ -269,6 +274,26 @@ export default function MorePage() {
             </div>
           </div>
 
+          <div ref={balanceRef}>
+            <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-1 min-w-0">
+                <span className="text-[#ABABAB] text-[11px]/[100%] font-medium">Доступный баланс</span>
+                <span className="text-black text-xl/[100%] font-semibold">฿ {balance.toLocaleString()}</span>
+                {pendingWithdrawal > 0 && (
+                  <span className="text-[#E2319B] text-[11px]/[140%] font-medium mt-0.5">
+                    ฿ {pendingWithdrawal.toLocaleString()} — на выводе, ожидайте
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setWithdrawOpen(true)}
+                className="shrink-0 flex items-center gap-1.5 bg-[#1B1B1B] text-white text-sm/[100%] font-medium px-4 py-2.5 rounded-full active:opacity-70 transition-opacity"
+              >
+                <IconWithdraw />
+                Вывести
+              </button>
+            </GradientBorder>
+          </div>
 
           <div ref={ordersRef} className="flex flex-col gap-3">
             {activeMeetings.length > 0 && (

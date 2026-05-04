@@ -17,7 +17,7 @@ async function resetDependentStores() {
 const useAuthStore = create((set, get) => ({
   user:            null,
   needsLogin:      false,
-  authPending:     false,
+  authPending:     true,  // true until first auth resolution — prevents unauth flash
   isBanned:        false,
   authErrorHint:   null,
   authErrorDetail: null,
