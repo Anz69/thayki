@@ -223,10 +223,15 @@ export default function ClientPage() {
                   <span className="text-[#777779] text-[14px]/[100%] font-medium uppercase tracking-widest">
                     Баланс
                   </span>
-                  <span ref={balanceValueRef} className="text-black text-2xl/[100%] font-[500] tracking-tight min-h-[1.15em] flex items-center justify-center">
+                  <span ref={balanceValueRef} className="text-black text-2xl/[100%] font-[500] tracking-tight min-h-[1.5em] flex items-center justify-center">
                     {loadingBalance ? (
-                      <span className="inline-flex items-center gap-2 animate-pulse">
-                        <span className="h-6 w-24 rounded-full bg-[#EBEBEF]" />
+                      <span className="flex flex-col items-center gap-2">
+                        <span className="relative block h-6 w-28 overflow-hidden rounded-full bg-[#F1F1F4]">
+                          <span className="absolute inset-y-0 -left-1/2 w-1/2 bg-linear-to-r from-transparent via-white/80 to-transparent balance-shimmer" />
+                        </span>
+                        <span className="text-[#A8A8AD] text-[11px]/[100%] font-medium tracking-wide">
+                          Обновляем баланс...
+                        </span>
                       </span>
                     ) : (
                       `${(balance ?? 0).toLocaleString()} ฿`

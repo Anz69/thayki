@@ -23,6 +23,15 @@ function getScrollParent(el) {
   return document.documentElement
 }
 
+function isVisiblyFocusable(el) {
+  if (!el) return false
+  const style = getComputedStyle(el)
+  if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false
+  if (el.disabled || el.readOnly) return false
+  const rect = el.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
+}
+
 /**
  * On focus of a form input, scroll the nearest scrollable ancestor so that the
  * NEXT input after the focused one is centered in the visible area above the
@@ -56,7 +65,7 @@ export function scrollInputWithNext(inputEl, { fallbackDelay = 320 } = {}) {
       scrollEl.querySelectorAll(
         'input[type="text"], input:not([type]), input[inputmode], textarea',
       ),
-    )
+    ).filter(isVisiblyFocusable)
     const idx = inputs.findIndex((el) => el === inputEl)
     const targetEl = idx >= 0 && idx + 1 < inputs.length ? inputs[idx + 1] : inputEl
 

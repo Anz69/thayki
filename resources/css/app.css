@@ -98,7 +98,16 @@ html {
   scroll-behavior: smooth;
 }
 
+@keyframes balanceShimmer {
+  from { transform: translateX(0%); }
+  to { transform: translateX(240%); }
+}
+
 @layer utilities {
+  .balance-shimmer {
+    animation: balanceShimmer 1.2s ease-in-out infinite;
+  }
+
   .container {
     max-width: 700px;
     margin-left: auto;
