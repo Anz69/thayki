@@ -6,9 +6,9 @@ import { scrollInputWithNext } from '@/utils/isTouchUi'
 const SIZES = ['Маленькая', 'Средняя', 'Большая', 'Очень большая']
 
 const PRICE_DURATIONS = [
-  { hours: 1,  label: '1 час' },
-  { hours: 3,  label: '3 часа' },
-  { hours: 8,  label: 'Ночь (8 ч)' },
+  { hours: 1, label: '1 час' },
+  { hours: 3, label: '3 часа' },
+  { hours: 8, label: 'Ночь (8 ч)' },
   { hours: 24, label: 'Сутки (24 ч)' },
 ]
 
@@ -66,7 +66,7 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
   const [height, setHeight] = useState(String(profile.height ?? ''))
   const [weight, setWeight] = useState(String(profile.weight ?? ''))
   const [breast, setBreast] = useState(profile.breastSize ?? SIZES[0])
-  const [butt,   setButt]   = useState(profile.buttSize   ?? SIZES[0])
+  const [butt, setButt] = useState(profile.buttSize ?? SIZES[0])
   const [prices, setPrices] = useState({})
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
       setHeight(String(profile.height ?? ''))
       setWeight(String(profile.weight ?? ''))
       setBreast(profile.breastSize ?? SIZES[0])
-      setButt(profile.buttSize   ?? SIZES[0])
+      setButt(profile.buttSize ?? SIZES[0])
       const init = {}
       PRICE_DURATIONS.forEach(({ hours }) => {
         const opt = (profile.priceOptions ?? []).find((p) => p.hours === hours)
@@ -84,13 +84,13 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const heightErr    = validateHeight(height)
-  const weightErr    = validateWeight(weight)
+  const heightErr = validateHeight(height)
+  const weightErr = validateWeight(weight)
   const priceErrMessage = PRICE_DURATIONS
     .map(({ hours }) => validatePrice(prices[hours]))
     .find(Boolean)
-  const hasPriceErr  = Boolean(priceErrMessage)
-  const canSave      = !heightErr && !weightErr && !hasPriceErr
+  const hasPriceErr = Boolean(priceErrMessage)
+  const canSave = !heightErr && !weightErr && !hasPriceErr
 
   const handleSave = () => {
     if (!canSave) return
@@ -102,10 +102,10 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
         label,
       }))
     onSave({
-      height:     parseInt(height)  || profile.height,
-      weight:     parseInt(weight)  || profile.weight,
+      height: parseInt(height) || profile.height,
+      weight: parseInt(weight) || profile.weight,
       breastSize: breast,
-      buttSize:   butt,
+      buttSize: butt,
       priceOptions,
     })
     onClose()
@@ -175,15 +175,8 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
                   className={`flex items-center justify-between px-4 py-3.5 ${idx < PRICE_DURATIONS.length - 1 ? 'border-b border-[#EBEBEB]' : ''}`}
                 >
                   <span className="text-[#7F7F7F] text-sm/[100%] font-medium shrink-0 w-28">{label}</span>
-                  <div className="flex items-center shrink-0">
-                    <span
-                      className="text-[#ABABAB] text-sm font-medium whitespace-nowrap overflow-hidden -translate-x-1.5"
-                      style={{
-                        maxWidth: hasVal ? '1.2em' : 0,
-                        opacity: hasVal ? 1 : 0,
-                        transition: 'max-width 0.15s ease, opacity 0.15s ease',
-                      }}
-                    >฿</span>
+                  <div className="flex items-center shrink-0 gap-0.5">
+
                     <input
                       type="text"
                       inputMode="numeric"
@@ -196,6 +189,10 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
                       className="bg-transparent text-black text-sm/[100%] font-medium outline-none text-right placeholder:text-[#C0C0C0]"
                       style={{ width: hasVal ? `${val.length}ch` : '3ch' }}
                     />
+                    <span
+                      className="text-[#ABABAB] text-sm font-medium whitespace-nowrap overflow-hidden -translate-x-1.5"
+
+                    >฿</span>
                   </div>
                 </div>
               )
