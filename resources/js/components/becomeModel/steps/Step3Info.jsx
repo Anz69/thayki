@@ -64,22 +64,31 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
   const showNextButton = useCallback(() => {
     if (!btnRef.current) return
     gsap.killTweensOf(btnRef.current)
+    gsap.set(btnRef.current, { overflow: 'hidden' })
     gsap.to(btnRef.current, {
+      height: 'auto',
+      paddingTop: '1rem',
+      paddingBottom: '2rem',
       autoAlpha: 1,
       y: 0,
-      duration: 0.32,
+      duration: 0.34,
       ease: 'power2.out',
       pointerEvents: 'auto',
+      clearProps: 'overflow,height',
     })
   }, [])
 
   const hideNextButton = useCallback(() => {
     if (!btnRef.current) return
     gsap.killTweensOf(btnRef.current)
+    gsap.set(btnRef.current, { overflow: 'hidden' })
     gsap.to(btnRef.current, {
+      height: 0,
+      paddingTop: 0,
+      paddingBottom: 0,
       autoAlpha: 0,
-      y: 10,
-      duration: 0.26,
+      y: 8,
+      duration: 0.28,
       ease: 'power2.in',
       pointerEvents: 'none',
     })
@@ -130,7 +139,15 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
       clearTimeout(nextBtnBlurTimer.current)
       if (btnRef.current) {
         gsap.killTweensOf(btnRef.current)
-        gsap.set(btnRef.current, { autoAlpha: 1, y: 0, pointerEvents: 'auto' })
+        gsap.set(btnRef.current, {
+          autoAlpha: 1,
+          y: 0,
+          height: 'auto',
+          paddingTop: '1rem',
+          paddingBottom: '2rem',
+          pointerEvents: 'auto',
+          clearProps: 'overflow,height',
+        })
       }
     }
   }, [isActive])
