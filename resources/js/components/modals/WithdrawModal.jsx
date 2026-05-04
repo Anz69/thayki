@@ -21,6 +21,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [precheck, setPrecheck] = useState(/** @type {'idle'|'loading'|'ok'|'pending'} */('idle'))
+  const [pendingData, setPendingData] = useState(/** @type {object|null} */(null))
 
   const viewRefs = useRef({})
   const contentWrapRef = useRef(null)
@@ -42,9 +43,12 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
 
     // Pre-check for existing pending withdrawal
     setPrecheck('loading')
+    setPendingData(null)
     api.get('/withdrawals/status').then((res) => {
-      const status = res?.data?.data?.status
+      const data = res?.data?.data
+      const status = data?.status
       if (status === 'pending' || status === 'approved') {
+        setPendingData(data)
         setPrecheck('pending')
       } else {
         setPrecheck('ok')
@@ -206,6 +210,11 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
       const code = err?.response?.data?.error?.code
       const raw = err?.response?.data?.error?.message
       if (code === 'PENDING_WITHDRAWAL_EXISTS') {
+        // Try to fetch the pending withdrawal for display
+        api.get('/withdrawals/status').then((res) => {
+          const d = res?.data?.data
+          if (d) setPendingData(d)
+        }).catch(() => {})
         setPrecheck('pending')
         return
       }
@@ -270,6 +279,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
     setError('')
     setSubmitting(false)
     setPrecheck('idle')
+    setPendingData(null)
     isClosingRef.current = false
   }, [])
 
@@ -287,16 +297,29 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
   }
 
   if (precheck === 'pending') {
+    const pendingAmountThb = pendingData?.amount_minor != null
+      ? Math.floor(pendingData.amount_minor / 100)
+      : null
+
     return (
       <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>
-        <div className="flex flex-col items-center gap-5 px-5 py-6 text-center bg-white">
-
+        <div className="flex flex-col gap-5 px-5 py-6 bg-white">
           <div className="flex flex-col gap-1.5">
             <h2 className="text-black text-xl/[100%] font-semibold">Заявка уже подана</h2>
             <p className="text-[#7F7F7F] text-sm/[150%] font-medium">
-              Ваша заявка на вывод уже находится в обработке. Пожалуйста, дождитесь её завершения — мы свяжемся с вами в чате поддержки.
+              Ваша заявка на вывод находится в обработке. Дождитесь её завершения — мы свяжемся с вами в чате поддержки.
             </p>
           </div>
+
+          {pendingAmountThb != null && (
+            <div className="bg-[#F5F5F7] rounded-2xl px-5 py-4 flex items-center justify-between">
+              <span className="text-[#7F7F7F] text-sm/[100%] font-medium">Сумма к выплате</span>
+              <span className="text-black text-sm/[100%] font-semibold">
+                ฿ {pendingAmountThb.toLocaleString()}
+              </span>
+            </div>
+          )}
+
           <button
             onClick={onClose}
             className="w-full py-4 rounded-full bg-[#1C1C1E] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity"

@@ -237,12 +237,9 @@ export default function ClientPage() {
                     )}
                   </span>
                   {!loadingBalance && pendingWithdrawal > 0 && (
-                    <div className="flex items-center gap-1.5 bg-[#FFF0F8] border border-[#F7C4E0] px-3 py-1.5 rounded-full mt-0.5">
-                      <span className="text-[11px]">⏳</span>
-                      <span className="text-[#E2319B] text-[11px]/[100%] font-medium">
-                        ฿ {pendingWithdrawal.toLocaleString()} — выплата в обработке
-                      </span>
-                    </div>
+                    <span className="text-[#ABABAB] text-[12px]/[100%] font-medium">
+                      ฿ {pendingWithdrawal.toLocaleString()} — в обработке
+                    </span>
                   )}
                 </div>
                 <div className="border-t border-[#E1E0E7] flex">
