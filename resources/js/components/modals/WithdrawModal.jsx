@@ -313,7 +313,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
 
           {pendingAmountThb != null && (
             <div className=" flex items-center justify-between">
-              <span className="text-[#7F7F7F] text-sm/[100%] font-medium">Сумма к выплате</span>
+              <span className="text-[#7F7F7F] text-sm/[100%] font-medium">Сумма к выплате:</span>
               <span className="text-black text-sm/[100%] font-semibold">
                 ฿ {pendingAmountThb.toLocaleString()}
               </span>
