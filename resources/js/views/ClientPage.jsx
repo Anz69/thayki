@@ -114,6 +114,7 @@ export default function ClientPage() {
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
   const [meetings, setMeetings]             = useState([])
   const [balance, setBalance]               = useState(null)
+  const [pendingWithdrawal, setPendingWithdrawal] = useState(0)
   const [loadingBalance, setLoadingBalance] = useState(true)
   const [withdrawMethods, setWithdrawMethods] = useState(['usdt', 'btc', 'ton'])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
@@ -147,6 +148,7 @@ export default function ClientPage() {
       .then(r => {
         const w = r.data.data
         setBalance(Math.floor((w?.available_minor ?? w?.balance_minor ?? 0) / 100))
+        setPendingWithdrawal(Math.floor((w?.pending_withdrawal_minor ?? 0) / 100))
         const methods = Array.isArray(w?.withdrawal_methods) ? w.withdrawal_methods : []
         setWithdrawMethods(methods.length ? methods : ['usdt', 'btc', 'ton'])
       })
@@ -229,12 +231,19 @@ export default function ClientPage() {
                         <span className="relative block h-6 w-28 overflow-hidden rounded-full bg-[#F1F1F4]">
                           <span className="absolute inset-y-0 -left-1/2 w-1/2 bg-linear-to-r from-transparent via-white/80 to-transparent balance-shimmer" />
                         </span>
-                 
                       </span>
                     ) : (
                       `${(balance ?? 0).toLocaleString()} ฿`
                     )}
                   </span>
+                  {!loadingBalance && pendingWithdrawal > 0 && (
+                    <div className="flex items-center gap-1.5 bg-[#FFF0F8] border border-[#F7C4E0] px-3 py-1.5 rounded-full mt-0.5">
+                      <span className="text-[11px]">⏳</span>
+                      <span className="text-[#E2319B] text-[11px]/[100%] font-medium">
+                        ฿ {pendingWithdrawal.toLocaleString()} — выплата в обработке
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="border-t border-[#E1E0E7] flex">
                   <button
