@@ -64,11 +64,7 @@ export default function ModelMorePage() {
     <>
       <section className="flex flex-col min-h-screen bg-white">
 
-        <header ref={headerRef} className="w-full py-6 bg-white fixed top-0 z-50">
-          <div className="container flex justify-center">
-            <h1 className="text-black text-base/[100%] font-[500]">Еще</h1>
-          </div>
-        </header>
+  
 
         <div className="flex flex-col gap-4 container pt-[76px] pb-[120px]">
 

@@ -218,10 +218,13 @@ export default function MorePage() {
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [fetchMeetings, fetchBalance])
 
+  // balanceRef is inside {balance >= 0.01 && ...} so it doesn't exist on mount.
+  // Track whether we've already played its entry animation.
+  const balanceAnimatedRef = useRef(false)
+
   useLayoutEffect(() => {
     gsap.set(headerRef.current,   { autoAlpha: 0, y: -44 })
     gsap.set(userCardRef.current, { autoAlpha: 0, y: 16 })
-    gsap.set(balanceRef.current,  { autoAlpha: 0, y: 18 })
     gsap.set(ordersRef.current,   { autoAlpha: 0, y: 20 })
     gsap.set(section1Ref.current, { autoAlpha: 0, y: 24 })
     gsap.set(section2Ref.current, { autoAlpha: 0, y: 24 })
@@ -231,10 +234,21 @@ export default function MorePage() {
     gsap.timeline()
       .to(headerRef.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
       .to(userCardRef.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.08)
-      .to(balanceRef.current,  { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.13)
       .to(section1Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.18)
       .to(section2Ref.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.24)
   })
+
+  // Animate balance card in when it first becomes visible (loaded from API)
+  useEffect(() => {
+    if (!balanceRef.current || balance < 0.01) return
+    if (balanceAnimatedRef.current) return
+    balanceAnimatedRef.current = true
+    gsap.fromTo(
+      balanceRef.current,
+      { autoAlpha: 0, y: 18 },
+      { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' },
+    )
+  }, [balance])
 
   const activeMeetings = meetings
 
@@ -254,11 +268,6 @@ export default function MorePage() {
     <>
       <section className="flex flex-col min-h-screen bg-white">
 
-        <header ref={headerRef} className="w-full py-6 bg-white fixed top-0 z-50">
-          <div className="container flex justify-center">
-            <h1 className="text-black text-base/[100%] font-[500]">Еще</h1>
-          </div>
-        </header>
 
         <div className="flex flex-col gap-4 container pt-[76px] pb-[120px]">
 

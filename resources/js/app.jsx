@@ -1,6 +1,12 @@
 import { createInertiaApp } from '@inertiajs/react'
 import { createRoot } from 'react-dom/client'
+import gsap from 'gsap'
 import '../css/app.css'
+
+// Silence "GSAP target null not found" warnings that appear when refs point
+// to conditionally-rendered elements. GSAP already handles null gracefully
+// (skips the tween); this just removes the console noise.
+gsap.config({ nullTargetWarn: false })
 
 function resolveBuildId() {
   try {
