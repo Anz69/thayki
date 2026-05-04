@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect, useEffect } from 'react'
+import { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react'
 import gsap from 'gsap'
 import StepProgress from '../StepProgress'
 import CustomSelect from '@/components/ui/CustomSelect'
@@ -12,15 +12,20 @@ function FieldLabel({ children }) {
     </span>
   )
 }
-function TextInput({ value, onChange, placeholder, suffix }) {
+function TextInput({ value, onChange, placeholder, suffix, inputRef, onNumericFocus, onNumericBlur }) {
   return (
     <div className="bg-[#F5F5F5] rounded-[14px] px-4 py-[14px] flex items-center gap-2">
       <input
+        ref={inputRef}
         type="text"
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={(e) => scrollInputWithNext(e.target)}
+        onFocus={(e) => {
+          scrollInputWithNext(e.target)
+          onNumericFocus?.()
+        }}
+        onBlur={() => onNumericBlur?.()}
         placeholder={placeholder}
         className="flex-1 bg-transparent text-black text-[15px]/[100%] font-medium outline-none placeholder:text-[#C0C0C0]"
       />
@@ -52,6 +57,48 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
   const scrollRef      = useRef(null)
   const bustWrapRef    = useRef(null)
   const buttWrapRef    = useRef(null)
+  const heightInputRef = useRef(null)
+  const weightInputRef = useRef(null)
+  const nextBtnBlurTimer = useRef(null)
+
+  const showNextButton = useCallback(() => {
+    if (!btnRef.current) return
+    gsap.killTweensOf(btnRef.current)
+    gsap.to(btnRef.current, {
+      autoAlpha: 1,
+      y: 0,
+      duration: 0.32,
+      ease: 'power2.out',
+      pointerEvents: 'auto',
+    })
+  }, [])
+
+  const hideNextButton = useCallback(() => {
+    if (!btnRef.current) return
+    gsap.killTweensOf(btnRef.current)
+    gsap.to(btnRef.current, {
+      autoAlpha: 0,
+      y: 10,
+      duration: 0.26,
+      ease: 'power2.in',
+      pointerEvents: 'none',
+    })
+  }, [])
+
+  const handleNumericFocus = useCallback(() => {
+    clearTimeout(nextBtnBlurTimer.current)
+    hideNextButton()
+  }, [hideNextButton])
+
+  const handleNumericBlur = useCallback(() => {
+    clearTimeout(nextBtnBlurTimer.current)
+    nextBtnBlurTimer.current = setTimeout(() => {
+      const ae = document.activeElement
+      const stillOnNumeric =
+        ae === heightInputRef.current || ae === weightInputRef.current
+      if (!stillOnNumeric) showNextButton()
+    }, 120)
+  }, [showNextButton])
 
   function handleSelectOpen(wrapRef) {
     setTimeout(() => {
@@ -77,6 +124,19 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
       },
     )
   }, [isActive])
+
+  useEffect(() => {
+    if (!isActive) {
+      clearTimeout(nextBtnBlurTimer.current)
+      if (btnRef.current) {
+        gsap.killTweensOf(btnRef.current)
+        gsap.set(btnRef.current, { autoAlpha: 1, y: 0, pointerEvents: 'auto' })
+      }
+    }
+  }, [isActive])
+
+  useEffect(() => () => clearTimeout(nextBtnBlurTimer.current), [])
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-5 pt-8 shrink-0">
@@ -102,14 +162,28 @@ export default function Step3Info({ isActive, stepNum, totalSteps, onNext }) {
           <div className="flex gap-3 flex-col ">
             <div className="flex-1 flex flex-col gap-1.5">
               <FieldLabel>Рост</FieldLabel>
-              <TextInput value={height} onChange={setHeight} placeholder="165" />
+              <TextInput
+                inputRef={heightInputRef}
+                value={height}
+                onChange={setHeight}
+                placeholder="165"
+                onNumericFocus={handleNumericFocus}
+                onNumericBlur={handleNumericBlur}
+              />
               {height && !heightOk && (
                 <span className="text-[#E2319B] text-xs font-medium px-1">От 140 до 210 см</span>
               )}
             </div>
             <div className="flex-1 flex flex-col gap-1.5">
               <FieldLabel>Вес</FieldLabel>
-              <TextInput value={weight} onChange={setWeight} placeholder="55"  />
+              <TextInput
+                inputRef={weightInputRef}
+                value={weight}
+                onChange={setWeight}
+                placeholder="55"
+                onNumericFocus={handleNumericFocus}
+                onNumericBlur={handleNumericBlur}
+              />
               {weight && !weightOk && (
                 <span className="text-[#E2319B] text-xs font-medium px-1">От 35 до 130 кг</span>
               )}
