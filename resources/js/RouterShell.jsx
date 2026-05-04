@@ -234,6 +234,10 @@ function ModelApplicationPendingGuard({ children }) {
   const [applicationOutcome, setApplicationOutcome] = useState(
     /** @type {'pending_review'|'finished'|'absent'|'draft_or_unknown'|'error'|null} */ (null),
   )
+  // Tracks which key the current applicationOutcome was computed for.
+  // When the key changes (route change), we treat state as stale until the
+  // new fetch completes — prevents applying an old outcome to the new route.
+  const [outcomeForKey, setOutcomeForKey] = useState(null)
 
   const modelAppGateRefetchKey = MODEL_APP_GATE_PATHS.has(location.pathname)
     ? location.pathname
@@ -244,6 +248,7 @@ function ModelApplicationPendingGuard({ children }) {
 
     if (!user) {
       setApplicationOutcome('absent')
+      setOutcomeForKey(modelAppGateRefetchKey)
       setGateReady(true)
       return () => { cancelled = true }
     }
@@ -257,6 +262,7 @@ function ModelApplicationPendingGuard({ children }) {
       && now - modelAppGuardCache.checkedAt < MODEL_APP_GUARD_TTL_MS
     ) {
       setApplicationOutcome(modelAppGuardCache.outcome)
+      setOutcomeForKey(modelAppGateRefetchKey)
       setGateReady(true)
       return () => { cancelled = true }
     }
@@ -275,6 +281,7 @@ function ModelApplicationPendingGuard({ children }) {
           outcome = 'draft_or_unknown'
         }
         setApplicationOutcome(outcome)
+        setOutcomeForKey(modelAppGateRefetchKey)
         modelAppGuardCache = { userId: user.id, outcome, checkedAt: Date.now() }
         setGateReady(true)
       })
@@ -290,13 +297,19 @@ function ModelApplicationPendingGuard({ children }) {
           setApplicationOutcome(outcome)
           modelAppGuardCache = { userId: user.id, outcome, checkedAt: Date.now() }
         }
+        setOutcomeForKey(modelAppGateRefetchKey)
         setGateReady(true)
       })
 
     return () => { cancelled = true }
   }, [user?.id, modelAppGateRefetchKey])
 
-  if (!gateReady) {
+  // Render children (no redirect) while:
+  // - fetch is in progress (!gateReady), OR
+  // - the stored outcome is from a previous route (outcomeForKey !== current key),
+  //   which happens on the very first render after a route change before the
+  //   new effect has run — prevents applying a stale outcome to the new route.
+  if (!gateReady || outcomeForKey !== modelAppGateRefetchKey) {
     return children
   }
 
