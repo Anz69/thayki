@@ -303,7 +303,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
 
     return (
       <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>
-        <div className="flex flex-col gap-5 px-5 py-6 bg-white">
+        <div className="flex flex-col gap-5 px-5 py-6 bg-white text-center">
           <div className="flex flex-col gap-1.5">
             <h2 className="text-black text-xl/[100%] font-semibold">Заявка уже подана</h2>
             <p className="text-[#7F7F7F] text-sm/[150%] font-medium">
@@ -312,7 +312,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0 }) {
           </div>
 
           {pendingAmountThb != null && (
-            <div className="bg-[#F5F5F7] rounded-2xl px-5 py-4 flex items-center justify-between">
+            <div className=" flex items-center justify-between">
               <span className="text-[#7F7F7F] text-sm/[100%] font-medium">Сумма к выплате</span>
               <span className="text-black text-sm/[100%] font-semibold">
                 ฿ {pendingAmountThb.toLocaleString()}

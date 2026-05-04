@@ -1,12 +1,29 @@
-import { useRef, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useRef, useEffect, useLayoutEffect, useMemo, useState, useCallback } from 'react'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import TransitionLink from '@/components/TransitionLink'
 import ShareModelsModal from '@/components/modals/ShareModelsModal'
 import api, { extractErrorMessage } from '@/utils/api'
 
+const RETRY_DELAYS = [800, 2000, 4000] // ms between retries
+
 function ModelCard({ model }) {
-  const [imgFailed, setImgFailed] = useState(false)
+  const [imgLoaded, setImgLoaded]   = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
+  const retryTimer = useRef(null)
+
+  const handleError = useCallback(() => {
+    if (retryCount < RETRY_DELAYS.length) {
+      retryTimer.current = setTimeout(
+        () => setRetryCount((c) => c + 1),
+        RETRY_DELAYS[retryCount],
+      )
+    }
+    // beyond max retries: image stays invisible, shimmer remains visible
+  }, [retryCount])
+
+  useEffect(() => () => clearTimeout(retryTimer.current), [])
+
   if (!model || typeof model !== 'object') return null
   const photos = Array.isArray(model?.photos) ? model.photos.filter(Boolean) : []
   const prices = Array.isArray(model?.price_options) ? model.price_options.filter(Boolean) : []
@@ -24,15 +41,25 @@ function ModelCard({ model }) {
       to={`/model/${model.id}`}
       className="relative overflow-hidden border-2 border-black/15 rounded-2xl flex flex-col justify-end min-h-[300px] active:scale-[0.97] transition-transform duration-150"
     >
-      {mainPhoto && !imgFailed ? (
+      {/* Shimmer always present as background — visible while loading or on failure */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(110deg, #EFEEF3 30%, #E4E3E8 50%, #EFEEF3 70%)',
+          backgroundSize: '200% 100%',
+          animation: imgLoaded ? 'none' : 'card-shimmer 1.6s linear infinite',
+        }}
+      />
+      {mainPhoto && (
         <img
+          key={`${mainPhoto.url}__${retryCount}`}
           src={mainPhoto.url}
           alt={model.display_name}
-          className="absolute top-0 left-0 w-full h-full object-cover"
-          onError={() => setImgFailed(true)}
+          className="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-500"
+          style={{ opacity: imgLoaded ? 1 : 0 }}
+          onLoad={() => setImgLoaded(true)}
+          onError={handleError}
         />
-      ) : (
-        <div className="absolute inset-0 bg-[#EFEEF3]" />
       )}
       <div className="absolute bottom-0 left-0 w-full h-28 bg-gradient-to-t from-black/75 to-transparent" />
       <div className="flex flex-col gap-3 relative z-30 px-3.5 py-5">

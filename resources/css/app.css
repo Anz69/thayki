@@ -103,6 +103,11 @@ html {
   to { transform: translateX(240%); }
 }
 
+@keyframes card-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @layer utilities {
   .balance-shimmer {
     animation: balanceShimmer 1.2s ease-in-out infinite;
