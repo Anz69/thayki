@@ -20,6 +20,7 @@ export default function Avatar({ src, name, size = 112, className = '' }) {
   const letter = (String(name || '?').trim()[0] ?? '?').toUpperCase()
   const resolvedSrc = useMemo(() => resolveMediaUrl(src), [src])
   const loadWatchRef = useRef(null)
+  const imgRef       = useRef(null)
 
   useEffect(() => {
     setFailed(false)
@@ -32,6 +33,18 @@ export default function Avatar({ src, name, size = 112, className = '' }) {
     return () => {
       window.clearTimeout(t)
       loadWatchRef.current = null
+    }
+  }, [resolvedSrc])
+
+  // Cached images fire onLoad before React attaches the handler — check .complete after mount
+  useEffect(() => {
+    const img = imgRef.current
+    if (img?.complete && img.naturalWidth > 0) {
+      if (loadWatchRef.current) {
+        window.clearTimeout(loadWatchRef.current)
+        loadWatchRef.current = null
+      }
+      setLoaded(true)
     }
   }, [resolvedSrc])
 
@@ -62,9 +75,9 @@ export default function Avatar({ src, name, size = 112, className = '' }) {
         }}
       />
       <img
+        ref={imgRef}
         src={resolvedSrc}
         alt=""
-        loading="lazy"
         decoding="async"
         style={{ width: size, height: size }}
         className={`absolute inset-0 object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
