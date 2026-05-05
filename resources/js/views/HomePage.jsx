@@ -13,6 +13,7 @@ function ModelCard({ model }) {
   const [imgLoaded, setImgLoaded]   = useState(false)
   const [retryCount, setRetryCount] = useState(0)
   const retryTimer = useRef(null)
+  const imgRef      = useRef(null)
 
   const handleError = useCallback(() => {
     if (retryCount < RETRY_DELAYS.length) {
@@ -22,6 +23,13 @@ function ModelCard({ model }) {
       )
     }
   }, [retryCount])
+
+  // Cached images fire onLoad before React attaches the handler → check .complete
+  useEffect(() => {
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setImgLoaded(true)
+    }
+  }, [retryCount]) // re-run when key changes (new <img> mounted after retry)
 
   useEffect(() => () => clearTimeout(retryTimer.current), [])
 
@@ -53,6 +61,7 @@ function ModelCard({ model }) {
       />
       {photoSrc && (
         <img
+          ref={imgRef}
           key={`${photoSrc}__${retryCount}`}
           src={photoSrc}
           alt={model.display_name}
