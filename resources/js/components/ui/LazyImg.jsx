@@ -20,10 +20,7 @@ export default function LazyImg({
     img.onload  = () => setLoaded(true)
     img.onerror = () => setFailed(true)
     img.src = src
-    // Synchronous cache hit: browser may have already completed the load
-    // before onload could fire (memory cache), so check img.complete as well.
-    if (img.complete && !img.naturalWidth) setFailed(true)
-    else if (img.complete) setLoaded(true)
+    return () => { img.onload = null; img.onerror = null }
   }, [src])
 
   return (
