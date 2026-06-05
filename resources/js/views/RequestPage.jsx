@@ -5,6 +5,7 @@ import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api from '@/utils/api'
 import { logError } from '@/utils/logger'
+import { buildLeadMessage } from '@/utils/leadMessage'
 import CitySelect from '@/components/ui/CitySelect'
 import ru from '@/locales/ru.json'
 
@@ -84,6 +85,13 @@ export default function RequestPage() {
         age_range: ruLabel('ages', values.ageRange),
         height_range: ruLabel('heights', values.height),
         goal: ruLabel('goals', values.goal),
+        // First chat message in the user's selected language (RU/EN).
+        message: buildLeadMessage({
+          t,
+          city: city.trim(),
+          wishes,
+          options: { hair: values.hairType, ages: values.ageRange, heights: values.height, goals: values.goal },
+        }),
       }, { headers: { 'Idempotency-Key': `lead-${Date.now()}` } })
       navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}`, { replace: true })
     } catch (err) {
@@ -114,7 +122,7 @@ export default function RequestPage() {
           <p className="text-black text-[15px]/[100%] font-semibold">
             {t('request.city')} <span className="text-[#E2319B]">*</span>
           </p>
-          <CitySelect value={city} onChange={setCity} placeholder={t('request.cityPlaceholder')} />
+          <CitySelect value={city} onChange={setCity} placeholder={t('request.cityPlaceholder')} inline overlay />
         </div>
 
         {/* Option groups */}
@@ -144,9 +152,16 @@ export default function RequestPage() {
         style={{ paddingBottom: 'max(28px, calc(env(safe-area-inset-bottom) + 16px))' }}
       >
         <div className="container flex flex-col items-center gap-2">
-          {!canSubmit && !submitting && (
-            <span className="text-[#ABABAB] text-xs/[100%] font-medium">{t('request.cityRequiredHint')}</span>
-          )}
+          <span
+            className="text-[#ABABAB] text-xs/[100%] font-medium select-none transition-all duration-300 ease-out"
+            style={{
+              opacity: !canSubmit && !submitting ? 1 : 0,
+              transform: !canSubmit && !submitting ? 'translateY(0)' : 'translateY(6px)',
+              height: 12,
+            }}
+          >
+            {t('request.cityRequiredHint')}
+          </span>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}

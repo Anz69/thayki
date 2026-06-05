@@ -35,6 +35,7 @@ const SupportPage = lazy(() => import('@/views/SupportPage'))
 const FeedbackPage = lazy(() => import('@/views/FeedbackPage'))
 const RequestPage = lazy(() => import('@/views/RequestPage'))
 const RequestChatPage = lazy(() => import('@/views/RequestChatPage'))
+const RequestsPage = lazy(() => import('@/views/RequestsPage'))
 
 function LandingRoute() {
   const { user } = useAuthStore()
@@ -398,6 +399,7 @@ export default function App() {
                         <Route path="/support" element={<SupportPage />} />
                         <Route path="/request" element={<RequestPage />} />
                         <Route path="/request/chat" element={<RequestChatPage />} />
+                        <Route path="/requests" element={<RequestsPage />} />
                         <Route path="/roadmap" element={<RoadmapPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/become-model" element={<BecomeModelPage />} />

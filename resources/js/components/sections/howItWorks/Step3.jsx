@@ -26,7 +26,7 @@ const SPARKLES = [
   top:  CY + s.dy - s.r,   
   left: CX + s.dx - s.r,   
 }))
-export default function HowItWorksStep3() {
+export default function HowItWorksStep3({ isActive }) {
   const centerRef = useRef(null)
   const leftRef   = useRef(null)
   const rightRef  = useRef(null)
@@ -37,12 +37,23 @@ export default function HowItWorksStep3() {
     gsap.set(centerRef.current, { autoAlpha: 0, scale: 0.42 })
     gsap.set(dotsRef.current.filter(Boolean), { autoAlpha: 0, scale: 0 })
   }, [])
+  // Reset + replay whenever this step becomes active (not just on mount), so it
+  // doesn't sit frozen at its end-state when you navigate to it.
   useEffect(() => {
+    if (!isActive) return undefined
     const center = centerRef.current
     const left   = leftRef.current
     const right  = rightRef.current
     const dots   = dotsRef.current.filter(Boolean)
+
+    gsap.killTweensOf([center, left, right, ...dots])
+    gsap.set(left,   { autoAlpha: 0, x: -44, y: 0 })
+    gsap.set(right,  { autoAlpha: 0, x:  44, y: 0 })
+    gsap.set(center, { autoAlpha: 0, scale: 0.42, y: 0 })
+    gsap.set(dots,   { autoAlpha: 0, scale: 0 })
+
     const tl = gsap.timeline({
+      delay: 0.45,
       onComplete() {
         gsap.to(center, {
           y: -14,
@@ -117,7 +128,7 @@ export default function HowItWorksStep3() {
       tl.kill()
       gsap.killTweensOf([center, left, right, ...dots])
     }
-  }, [])
+  }, [isActive])
   return (
     <div className="flex items-center justify-center flex-1 relative overflow-hidden">
       <div

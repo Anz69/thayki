@@ -321,6 +321,19 @@ export default function MorePage() {
             <SectionLabel>{t('more.important')}</SectionLabel>
 
             <button
+              onClick={() => navigate('/requests')}
+              className="w-full flex items-center gap-2.5 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
+            >
+              <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 13h4l2 3h6l2-3h4M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
+                    stroke="#777779" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="text-black text-[16px]/[100%] font-medium">{t('more.myRequests')}</span>
+            </button>
+
+            <button
               onClick={() => setHowItWorksOpen(true)}
               className="w-full flex items-center gap-2.5 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
             >

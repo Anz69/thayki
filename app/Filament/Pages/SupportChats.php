@@ -6,10 +6,12 @@ use App\Actions\Chat\EnsureSupportChatAction;
 use App\Actions\Chat\PostMessageAction;
 use App\Enums\ChatParticipantRole;
 use App\Enums\ChatType;
+use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\Chat;
 use App\Models\ChatParticipant;
+use App\Models\Lead;
 use App\Models\Message;
 use App\Models\User;
 use Filament\Notifications\Notification;
@@ -253,6 +255,22 @@ class SupportChats extends Page
             ->update(['read_at' => $now]);
     }
 
+    /**
+     * When a manager replies in a lead chat, move the lead from "new" to
+     * "in progress" automatically (only if it's still new).
+     */
+    private function markLeadInProgress(Chat $chat): void
+    {
+        if ($chat->type !== ChatType::Lead) {
+            return;
+        }
+
+        Lead::query()
+            ->where('chat_id', $chat->id)
+            ->where('status', LeadStatus::New->value)
+            ->update(['status' => LeadStatus::InProgress->value]);
+    }
+
     private function getSupportUser(): User
     {
         return User::firstOrCreate(
@@ -312,6 +330,7 @@ class SupportChats extends Page
             }
 
             app(PostMessageAction::class)->execute($supportUser, $chat, null, $uploaded);
+            $this->markLeadInProgress($chat);
 
             @unlink($tmpPath);
         } catch (\Throwable $e) {
@@ -363,6 +382,7 @@ class SupportChats extends Page
             }
 
             app(PostMessageAction::class)->execute($supportUser, $chat, $msg);
+            $this->markLeadInProgress($chat);
 
             $this->newMessage = '';
         } catch (\Throwable $e) {

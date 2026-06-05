@@ -11,8 +11,6 @@ export default function LandingPage() {
   const { t } = useTranslation()
   const isCompact = useCompactMode()
 
-  const bottomRef   = useRef(null)
-  const topWrapRef  = useRef(null)
   const globeBoxRef = useRef(null)
   const overlayRef  = useRef(null)
 
@@ -20,19 +18,6 @@ export default function LandingPage() {
   const textLine2   = useRef(null)
   const subtitleRef = useRef(null)
   const btnWrapRef  = useRef(null)
-
-  // Size the top area so the globe fills from the top down to the bottom section
-  useEffect(() => {
-    const resize = () => {
-      if (!bottomRef.current || !topWrapRef.current) return
-      const vh = window.innerHeight
-      const bottomH = bottomRef.current.offsetHeight
-      topWrapRef.current.style.height = vh - bottomH + 'px'
-    }
-    resize()
-    window.addEventListener('resize', resize)
-    return () => window.removeEventListener('resize', resize)
-  }, [])
 
   const startAnimations = () => {
     const wordmark = overlayRef.current?.querySelector('[data-wordmark]')
@@ -80,77 +65,75 @@ export default function LandingPage() {
   usePageReady(startAnimations)
 
   const titleSize = isCompact ? 'text-[26px]' : 'text-[32px]'
-  const bottomPt  = isCompact ? 'pt-3' : 'pt-4'
   const bottomGap = isCompact ? 'gap-3' : 'gap-5'
   const textGap   = isCompact ? 'gap-1' : 'gap-2.5'
 
   return (
     <main className="flex flex-col h-dvh overflow-hidden">
-
-      {/* ── Globe hero — fills from top down to the bottom section ── */}
+      {/* Globe + text + button as one vertically-centred group (no dead gap). */}
       <div
-        ref={topWrapRef}
-        className="absolute inset-x-0 top-0 z-0 flex items-start justify-center px-2 overflow-hidden"
+        className="flex-1 min-h-0 w-full flex flex-col items-center justify-center px-2"
+        style={{
+          paddingTop: 'max(2vh, env(safe-area-inset-top))',
+          paddingBottom: `max(3vh, calc(env(safe-area-inset-bottom) + ${isCompact ? '10px' : '14px'}))`,
+        }}
       >
+        {/* ── Globe ── */}
         <div
           ref={globeBoxRef}
-          className="invisible relative w-full max-w-[600px] aspect-square -mt-[3%]"
-          style={{ willChange: 'transform, opacity' }}
+          className="invisible relative w-full aspect-square shrink-0"
+          style={{
+            willChange: 'transform, opacity',
+            maxWidth: isCompact ? 'min(420px, 52vh)' : 'min(480px, 56vh)',
+          }}
         >
           <Globe className="absolute inset-0" />
           <GlobeOverlay ref={overlayRef} />
         </div>
-      </div>
 
-      {/* ── Bottom section: text + button ── */}
-      <div
-        ref={bottomRef}
-        className={`mt-auto relative z-50 container flex flex-col items-center bg-white ${bottomPt} ${bottomGap}`}
-        style={{
-          paddingBottom: `max(4vh, calc(env(safe-area-inset-bottom) + ${isCompact ? '12px' : '16px'}))`,
-        }}
-      >
-        {/* Title + subtitle */}
-        <div className={`flex flex-col items-center text-center ${textGap}`}>
-          <h1 className={`text-black font-semibold leading-[110%] ${titleSize}`}>
-            <span className="block" style={{ overflow: 'hidden', paddingBottom: 4 }}>
-              <span ref={textLine1} className="block">{t('landing.title')}</span>
-            </span>
-            <span className="block" style={{ overflow: 'hidden', paddingBottom: 4 }}>
-              <span ref={textLine2} className="block">{t('landing.region')}</span>
-            </span>
-          </h1>
-          <p
-            ref={subtitleRef}
-            className={`invisible text-black font-medium opacity-50 ${isCompact ? 'text-sm/[120%]' : 'text-base/[130%]'} max-w-[320px]`}
-          >
-            {t('landing.subtitle')}
-          </p>
-        </div>
-
-        {/* CTA button */}
-        <div ref={btnWrapRef} className="invisible">
-          <TransitionLink
-            to="/home"
-            className="bg-black w-[191px] flex items-center gap-2.5 justify-center text-white text-base/[100%] font-medium rounded-full group"
-            style={{ paddingTop: isCompact ? 14 : 16, paddingBottom: isCompact ? 14 : 16 }}
-          >
-            {t('landing.cta')}
-            <svg
-              className="w-4 h-4 group-hover:translate-x-1 transition-all duration-300"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+        {/* ── Text + button (sit right under the globe) ── */}
+        <div className={`relative z-50 flex flex-col items-center ${bottomGap} ${isCompact ? 'mt-2' : 'mt-4'}`}>
+          <div className={`flex flex-col items-center text-center ${textGap}`}>
+            <h1 className={`text-black font-semibold leading-[110%] ${titleSize}`}>
+              <span className="block" style={{ overflow: 'hidden', paddingBottom: 4 }}>
+                <span ref={textLine1} className="block">{t('landing.title')}</span>
+              </span>
+              <span className="block" style={{ overflow: 'hidden', paddingBottom: 4 }}>
+                <span ref={textLine2} className="block">{t('landing.region')}</span>
+              </span>
+            </h1>
+            <p
+              ref={subtitleRef}
+              className={`invisible text-black font-medium opacity-50 ${isCompact ? 'text-sm/[120%]' : 'text-base/[130%]'} max-w-[320px]`}
             >
-              <path
-                d="M3.28592 8.04705H12.6193M7.99996 12.7611L12.714 8.04705L7.99996 3.33301"
-                stroke="white"
-                strokeWidth="1.33333"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </TransitionLink>
+              {t('landing.subtitle')}
+            </p>
+          </div>
+
+          {/* CTA button */}
+          <div ref={btnWrapRef} className="invisible">
+            <TransitionLink
+              to="/home"
+              className="bg-black w-[191px] flex items-center gap-2.5 justify-center text-white text-base/[100%] font-medium rounded-full group"
+              style={{ paddingTop: isCompact ? 14 : 16, paddingBottom: isCompact ? 14 : 16 }}
+            >
+              {t('landing.cta')}
+              <svg
+                className="w-4 h-4 group-hover:translate-x-1 transition-all duration-300"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3.28592 8.04705H12.6193M7.99996 12.7611L12.714 8.04705L7.99996 3.33301"
+                  stroke="white"
+                  strokeWidth="1.33333"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </TransitionLink>
+          </div>
         </div>
       </div>
     </main>

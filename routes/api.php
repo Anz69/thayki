@@ -113,6 +113,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/chats/{chat}/read', [ChatController::class, 'markRead'])->name('chats.markRead');
 
         // Leads (подбор модели)
+        Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
         Route::post('/leads', [LeadController::class, 'store'])
             ->middleware('idempotency')
             ->name('leads.store');

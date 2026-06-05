@@ -152,7 +152,8 @@
     "notifications": "Receive notifications in TG",
     "faq": "F.A.Q.",
     "support": "Contact support",
-    "language": "Language"
+    "language": "Language",
+    "myRequests": "My requests"
   },
   "hiw": {
     "title": "How it works?",
@@ -185,5 +186,17 @@
     "reload": "Reload page",
     "showError": "View error details",
     "errorDetails": "Error details"
+  },
+  "requests": {
+    "title": "My requests",
+    "viaForm": "Form request",
+    "createCta": "Leave a request",
+    "emptyTitle": "No requests yet",
+    "emptySubtitle": "Leave a request and a manager will find matching options.",
+    "status": {
+      "new": "Under review",
+      "inProgress": "In progress",
+      "closed": "Closed"
+    }
   }
 }

@@ -88,6 +88,8 @@ export default function RequestChatPage() {
 
   const chatId  = Number(params.get('id') || 0) || null
   const leadId  = params.get('lead')
+  // Where the user came from (set by the opener); falls back to home.
+  const backTo  = params.get('from') || '/home'
 
   const [messages, setMessages]   = useState([])
   const [inputText, setInputText] = useState('')
@@ -109,6 +111,8 @@ export default function RequestChatPage() {
   const textareaRef    = useRef(null)
   const sendWrapRef    = useRef(null)
   const prevMsgCount   = useRef(0)
+  const msgInitDone    = useRef(false)
+  const animPrevCount  = useRef(0)
 
   const setSendWrapRef = useCallback((el) => {
     sendWrapRef.current = el
@@ -120,20 +124,18 @@ export default function RequestChatPage() {
     if (root) { root.style.overflowY = 'hidden'; return () => { root.style.overflowY = '' } }
   }, [])
 
+  // Fade-only entrance (no transform) so the page never "jumps"/bounces or looks
+  // like it animates twice. We scroll to the bottom BEFORE revealing, so the
+  // jump-to-latest is invisible.
   useLayoutEffect(() => {
-    gsap.set(headerRef.current,   { y: -40, autoAlpha: 0 })
-    gsap.set(inputBarRef.current, { y: 24,  autoAlpha: 0 })
-    if (messagesRef.current) gsap.set(messagesRef.current, { autoAlpha: 0 })
+    gsap.set([headerRef.current, inputBarRef.current, messagesRef.current].filter(Boolean), { autoAlpha: 0 })
   }, [])
 
   usePageReady(() => {
-    gsap.timeline()
-      .to(headerRef.current,   { y: 0, autoAlpha: 1, duration: 0.38, ease: 'expo.out' })
-      .to(inputBarRef.current, { y: 0, autoAlpha: 1, duration: 0.36, ease: 'power2.out' }, 0.1)
-      .add(() => {
-        if (messagesRef.current) gsap.to(messagesRef.current, { autoAlpha: 1, duration: 0.25 })
-        requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant' }))
-      }, 0.12)
+    const list = messagesRef.current
+    if (list) list.scrollTop = list.scrollHeight
+    gsap.to([headerRef.current, inputBarRef.current, messagesRef.current].filter(Boolean),
+      { autoAlpha: 1, duration: 0.3, ease: 'power2.out' })
   })
 
   useEffect(() => {
@@ -155,11 +157,39 @@ export default function RequestChatPage() {
     })
   }, [chatId, myId])
 
+  // Jump to the latest message instantly once the initial batch has loaded.
+  useEffect(() => {
+    if (initialLoad) return
+    const list = messagesRef.current
+    if (list) list.scrollTop = list.scrollHeight
+  }, [initialLoad])
+
   useEffect(() => {
     if (initialLoad) return
     const isNew = messages.length > prevMsgCount.current
     prevMsgCount.current = messages.length
     if (isNew) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, initialLoad])
+
+  // Animate newly arrived/sent messages (like the support chat). We key off the
+  // message COUNT, not the DOM node: a send adds an optimistic message (count
+  // +1 → animate), then the server swaps it for the real one (count unchanged →
+  // no re-animation), so each message pops in exactly once.
+  useEffect(() => {
+    const root = messagesRef.current
+    if (!root) return undefined
+    const added = messages.length - animPrevCount.current
+    animPrevCount.current = messages.length
+    if (initialLoad) return undefined
+    if (!msgInitDone.current) { msgInitDone.current = true; return undefined }
+    if (added <= 0) return undefined
+    const all = root.querySelectorAll('[data-msg-id]')
+    Array.from(all).slice(-added).forEach((el) => {
+      gsap.fromTo(el,
+        { autoAlpha: 0, y: 12, scale: 0.96 },
+        { autoAlpha: 1, y: 0, scale: 1, duration: 0.3, ease: 'back.out(1.5)', transformOrigin: 'center bottom', clearProps: 'transform,opacity' })
+    })
+    return undefined
   }, [messages, initialLoad])
 
   useEffect(() => {
@@ -257,7 +287,7 @@ export default function RequestChatPage() {
       <header ref={headerRef} className="w-full py-4 bg-white shrink-0">
         <div className="container flex items-center relative">
           <button
-            onClick={() => navigate('/home')}
+            onClick={() => navigate(backTo)}
             className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
           >
             {t('common.back')}
@@ -275,7 +305,7 @@ export default function RequestChatPage() {
           </div>
         )}
 
-        <div ref={messagesRef} className="absolute inset-0 overflow-y-auto" style={{ visibility: 'hidden' }}>
+        <div ref={messagesRef} className="absolute inset-0 overflow-y-auto">
           <div className="flex flex-col px-4 py-4 gap-0 container">
             {messages.map((msg, idx) => {
               const isUser = msg.from === 'user'
@@ -309,7 +339,7 @@ export default function RequestChatPage() {
 
               return (
                 <div key={msg.id}>
-                  <div data-msg className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`}>
+                  <div data-msg data-msg-id={msg.id} className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`}>
                     {bubble}
                   </div>
                   {idx === 0 && <ManagerNote text={t('requestChat.managerNote')} />}

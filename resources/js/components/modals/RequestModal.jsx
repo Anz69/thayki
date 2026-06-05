@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -19,6 +20,7 @@ import CitySelect from '@/components/ui/CitySelect'
 export default function RequestModal({ isOpen, onClose, model }) {
   const { t } = useTranslation()
   const navigate = useTransitionNavigate()
+  const location = useLocation()
 
   const [step, setStep] = useState(1)
   const [city, setCity] = useState('')
@@ -37,19 +39,13 @@ export default function RequestModal({ isOpen, onClose, model }) {
     setSubmitting(false)
   }, [])
 
-  // Collapse the wishes section before first paint (GSAP owns height/opacity/
-  // overflow so React re-renders — e.g. typing — never reset them).
-  useLayoutEffect(() => {
-    const el = extraRef.current
-    if (el) gsap.set(el, { height: 0, opacity: 0, overflow: 'hidden' })
-  }, [])
-
-  // Reveal the wishes section on step 2 with a smooth auto-height tween.
+  // The wishes block is only mounted on step 2 (so it's never visible before
+  // «Далее»). Reveal it with a smooth auto-height grow when it appears.
   useEffect(() => {
     const el = extraRef.current
     if (!el || step !== 2) return undefined
     gsap.killTweensOf(el)
-    gsap.set(el, { height: 'auto' })
+    gsap.set(el, { height: 'auto', overflow: 'hidden' })
     const full = el.offsetHeight
     gsap.fromTo(
       el,
@@ -77,7 +73,8 @@ export default function RequestModal({ isOpen, onClose, model }) {
         wishes: wishes.trim() || null,
         message: buildLeadMessage({ t, modelName: modelName(model), city: city.trim(), wishes }),
       }, { headers: { 'Idempotency-Key': `lead-${Date.now()}` } })
-      navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}`, { replace: true })
+      const from = encodeURIComponent(location.pathname || '/home')
+      navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}&from=${from}`, { replace: true })
     } catch (err) {
       logError(err)
       setSubmitting(false)
@@ -87,9 +84,13 @@ export default function RequestModal({ isOpen, onClose, model }) {
   const primaryBtn = (label, onClick, enabled) => (
     <button
       onClick={onClick}
+      // Keep the focused input from blurring on tap: otherwise the keyboard
+      // closes → visualViewport shifts the sheet → the button moves out from
+      // under the finger and the first tap is lost (needing a second press).
+      onMouseDown={(e) => e.preventDefault()}
       disabled={!enabled}
       className={[
-        'w-full py-4 rounded-full text-base/[100%] font-semibold transition-all duration-200 active:scale-[0.98]',
+        'w-full py-4 rounded-full text-base/[100%] font-[500] transition-all duration-200 active:scale-[0.98]',
         enabled ? 'bg-[#E2319B] text-white active:opacity-80' : 'bg-[#F0F0F0] text-[#BDBDBD] cursor-not-allowed',
       ].join(' ')}
     >
@@ -110,22 +111,30 @@ export default function RequestModal({ isOpen, onClose, model }) {
           <p className="text-black text-[14px]/[100%] font-medium px-1">
             {t('request.city')} <span className="text-[#E2319B]">*</span>
           </p>
-          <CitySelect value={city} onChange={setCity} placeholder={t('request.cityPlaceholder')} />
+          <CitySelect
+            value={city}
+            onChange={setCity}
+            placeholder={t('request.cityPlaceholder')}
+            inline
+            overlay={step === 2}
+          />
         </div>
 
-        {/* Wishes — revealed on step 2 with a smooth height transition */}
-        <div ref={extraRef}>
-          <div className="flex flex-col gap-2">
-            <p className="text-black text-[14px]/[100%] font-medium px-1">{t('request.wishesExtra')}</p>
-            <textarea
-              value={wishes}
-              onChange={(e) => setWishes(e.target.value)}
-              rows={3}
-              placeholder={t('request.wishesPlaceholder')}
-              className="w-full bg-[#F5F5F7] rounded-2xl px-4 py-3.5 text-black text-[15px] outline-none placeholder:text-[#ABABAB] resize-none focus:ring-2 focus:ring-[#E2319B]/30 transition-shadow"
-            />
+        {/* Wishes — mounted & revealed only on step 2 (after «Далее») */}
+        {step === 2 && (
+          <div ref={extraRef} style={{ overflow: 'hidden' }}>
+            <div className="flex flex-col gap-2">
+              <p className="text-black text-[14px]/[100%] font-medium px-1">{t('request.wishesExtra')}</p>
+              <textarea
+                value={wishes}
+                onChange={(e) => setWishes(e.target.value)}
+                rows={3}
+                placeholder={t('request.wishesPlaceholder')}
+                className="w-full bg-[#F5F5F7] rounded-2xl px-4 py-3.5 text-black text-[15px] outline-none placeholder:text-[#ABABAB] resize-none focus:ring-2 focus:ring-[#E2319B]/30 transition-shadow"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {step === 1
           ? primaryBtn(t('request.next'), goNext, cityFilled)

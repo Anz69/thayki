@@ -64,11 +64,12 @@ class CreateLeadAction
 
             $lead->update(['chat_id' => $chat->id]);
 
-            // The client builds a message in their UI language; fall back to a
-            // Russian default if none was supplied.
+            // The client builds the message in their UI language; if none was
+            // supplied, fall back to a server-built message in the client's own
+            // language (from their stored language_code), not always Russian.
             $body = (isset($data['message']) && trim((string) $data['message']) !== '')
                 ? trim((string) $data['message'])
-                : $this->formatMessage($lead, $profile);
+                : $this->formatMessage($lead, $profile, $this->localeFor($client));
 
             $this->postMessage->execute($client, $chat, $body);
 
@@ -76,31 +77,41 @@ class CreateLeadAction
         });
     }
 
-    private function formatMessage(Lead $lead, ?ModelProfile $profile): string
+    private function formatMessage(Lead $lead, ?ModelProfile $profile, string $locale = 'ru'): string
     {
-        $lines = ['📩 Заявка на подбор модели', ''];
+        $L = fn (string $key): string => trans('lead.'.$key, [], $locale);
+
+        $lines = [$L('title'), ''];
 
         if ($profile !== null) {
-            $lines[] = 'Интересует типаж: '.$profile->display_name;
+            $lines[] = $L('interested').': '.($locale === 'en' && $profile->display_name_en ? $profile->display_name_en : $profile->display_name);
         } elseif ($lead->hair_type) {
-            $lines[] = 'Типаж: '.$lead->hair_type;
+            $lines[] = $L('type').': '.$lead->hair_type;
         }
 
-        $lines[] = 'Город: '.$lead->city;
+        $lines[] = $L('city').': '.$lead->city;
 
         if ($lead->age_range) {
-            $lines[] = 'Возраст: '.$lead->age_range;
+            $lines[] = $L('age').': '.$lead->age_range;
         }
         if ($lead->height_range) {
-            $lines[] = 'Рост: '.$lead->height_range;
+            $lines[] = $L('height').': '.$lead->height_range;
         }
         if ($lead->goal) {
-            $lines[] = 'Цель: '.$lead->goal;
+            $lines[] = $L('goal').': '.$lead->goal;
         }
         if ($lead->wishes) {
-            $lines[] = ($profile !== null ? 'Дополнительные пожелания: ' : 'Пожелания: ').$lead->wishes;
+            $lines[] = ($profile !== null ? $L('wishes_extra') : $L('wishes')).': '.$lead->wishes;
         }
 
         return implode("\n", $lines);
+    }
+
+    /** Map the client's stored Telegram/app language to a supported locale. */
+    private function localeFor(User $client): string
+    {
+        $code = strtolower((string) ($client->language_code ?? ''));
+
+        return str_starts_with($code, 'en') ? 'en' : 'ru';
     }
 }

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import gsap from 'gsap'
 import { useTranslation } from 'react-i18next'
 import { searchCities } from '@/data/cities'
 
@@ -23,12 +24,14 @@ const GAP = 8
  * small curated RU/CIS list gives instant results; a debounced Open-Meteo call
  * covers any city in the world with names localized to the active language.
  *
- * The dropdown is rendered in a portal with fixed positioning so it escapes any
- * `overflow: hidden` / sized ancestor (e.g. the bottom-sheet modal). Its height
- * is capped to the available space and the list scrolls internally, so the last
- * options are always reachable instead of being clipped off-screen.
+ * Rendering modes:
+ *  - default (portal): fixed-positioned dropdown rendered in a portal so it
+ *    escapes `overflow:hidden`/transformed ancestors (used on the /request page).
+ *  - `inline`: the list lives in-flow right under the input and grows/shrinks
+ *    its height smoothly. Pass `overlay` to make that inline list absolutely
+ *    positioned (it overlays following content instead of pushing it).
  */
-export default function CitySelect({ value, onChange, placeholder }) {
+export default function CitySelect({ value, onChange, placeholder, inline = false, overlay = false }) {
   const { i18n } = useTranslation()
   const lang = (i18n.language || 'ru').startsWith('en') ? 'en' : 'ru'
 
@@ -41,6 +44,8 @@ export default function CitySelect({ value, onChange, placeholder }) {
 
   const wrapRef = useRef(null)
   const listRef = useRef(null)
+  const inlineWrapRef = useRef(null)
+  const inlineInnerRef = useRef(null)
   const debounceRef = useRef(null)
   const abortRef = useRef(null)
 
@@ -118,9 +123,29 @@ export default function CitySelect({ value, onChange, placeholder }) {
     return () => clearTimeout(debounceRef.current)
   }, [query, lang])
 
-  // Keep the dropdown anchored while open (scroll/resize of any ancestor).
+  // ── Inline mode: grow/shrink the in-flow (or absolute) list height smoothly.
   useEffect(() => {
-    if (!showList) return undefined
+    if (!inline) return undefined
+    const wrap = inlineWrapRef.current
+    const innerEl = inlineInnerRef.current
+    if (!wrap || !innerEl) return undefined
+    gsap.killTweensOf(wrap)
+    if (showList) {
+      gsap.to(wrap, {
+        height: innerEl.offsetHeight,
+        opacity: 1,
+        duration: 0.34,
+        ease: 'power3.out',
+      })
+    } else {
+      gsap.to(wrap, { height: 0, opacity: 0, duration: 0.26, ease: 'power2.in' })
+    }
+    return undefined
+  }, [inline, showList, suggestions, overlay])
+
+  // ── Portal mode below: keep the fixed dropdown anchored while open.
+  useEffect(() => {
+    if (inline || !showList) return undefined
     updatePosition()
     const onReflow = () => updatePosition()
     window.addEventListener('scroll', onReflow, true)
@@ -129,7 +154,7 @@ export default function CitySelect({ value, onChange, placeholder }) {
       window.removeEventListener('scroll', onReflow, true)
       window.removeEventListener('resize', onReflow)
     }
-  }, [showList, suggestions.length, updatePosition])
+  }, [inline, showList, suggestions.length, updatePosition])
 
   // Close on outside click (the portal list lives outside wrapRef).
   useEffect(() => {
@@ -142,17 +167,21 @@ export default function CitySelect({ value, onChange, placeholder }) {
     return () => document.removeEventListener('pointerdown', onDocPointer)
   }, [])
 
-  // Mount + enter/exit animation. Keep the node mounted through the fade-out.
+  // Portal mount + enter/exit animation. Keep node mounted through fade-out.
   useEffect(() => {
+    if (inline) return undefined
     if (showList) {
       setMounted(true)
-      const id = requestAnimationFrame(() => setEntered(true))
-      return () => cancelAnimationFrame(id)
+      let raf2
+      const raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => setEntered(true))
+      })
+      return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2) }
     }
     setEntered(false)
-    const t = setTimeout(() => setMounted(false), 230)
+    const t = setTimeout(() => setMounted(false), 320)
     return () => clearTimeout(t)
-  }, [showList])
+  }, [inline, showList])
 
   useEffect(() => () => {
     clearTimeout(debounceRef.current)
@@ -173,6 +202,26 @@ export default function CitySelect({ value, onChange, placeholder }) {
     else if (e.key === 'Escape') setOpen(false)
   }
 
+  const SuggestionRow = (item, i) => (
+    <button
+      key={`${item.name}-${item.sub || ''}`}
+      type="button"
+      onMouseEnter={() => setHighlight(i)}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => pick(item)}
+      className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors"
+      style={{ background: highlight === i ? '#F5F5F7' : 'transparent' }}
+    >
+      <PinIcon />
+      <span className="flex flex-col min-w-0">
+        <span className="text-black text-[15px]/[120%] font-medium truncate">{item.name}</span>
+        {item.sub && (
+          <span className="text-[#9A9A9F] text-[12px]/[120%] truncate">{item.sub}</span>
+        )}
+      </span>
+    </button>
+  )
+
   return (
     <div ref={wrapRef} className="relative">
       <div className="flex items-center gap-2.5 bg-[#F5F5F7] rounded-xl px-4 py-3.5 focus-within:ring-2 focus-within:ring-[#E2319B]/30 transition-shadow">
@@ -189,7 +238,35 @@ export default function CitySelect({ value, onChange, placeholder }) {
         />
       </div>
 
-      {mounted && pos && typeof document !== 'undefined' && createPortal(
+      {/* Inline list: in-flow (pushes content, grows the sheet) or absolute
+          overlay — both animate their height smoothly. */}
+      {inline && (
+        <div
+          ref={inlineWrapRef}
+          style={{
+            position: overlay ? 'absolute' : 'relative',
+            left: 0,
+            right: 0,
+            top: overlay ? '100%' : undefined,
+            marginTop: GAP,
+            zIndex: 40,
+            height: 0,
+            opacity: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            ref={inlineInnerRef}
+            className="bg-white rounded-2xl border border-black/5"
+            style={{ maxHeight: 220, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
+          >
+            {suggestions.map(SuggestionRow)}
+          </div>
+        </div>
+      )}
+
+      {/* Portal list (default for the full page). */}
+      {!inline && mounted && pos && typeof document !== 'undefined' && createPortal(
         <div
           ref={listRef}
           style={{
@@ -201,38 +278,17 @@ export default function CitySelect({ value, onChange, placeholder }) {
             zIndex: 100050,
             pointerEvents: entered ? 'auto' : 'none',
             opacity: entered ? 1 : 0,
-            transform: entered ? 'translateY(0) scale(1)' : `translateY(${pos.below ? -6 : 6}px) scale(0.985)`,
+            transform: entered ? 'translateY(0) scale(1)' : `translateY(${pos.below ? -10 : 10}px) scale(0.97)`,
             transformOrigin: pos.below ? 'top center' : 'bottom center',
-            transition: 'opacity 0.18s ease, transform 0.22s cubic-bezier(0.34,1.3,0.6,1)',
+            transition: 'opacity 0.24s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1)',
+            willChange: 'opacity, transform',
           }}
         >
           <div
             className="bg-white rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.18)] border border-black/5"
-            style={{
-              maxHeight: '200px',
-              overflowY: 'auto',
-              overscrollBehavior: 'contain',
-              WebkitOverflowScrolling: 'touch',
-            }}
+            style={{ maxHeight: '200px', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
           >
-            {suggestions.map((item, i) => (
-              <button
-                key={`${item.name}-${item.sub || ''}`}
-                type="button"
-                onMouseEnter={() => setHighlight(i)}
-                onClick={() => pick(item)}
-                className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors"
-                style={{ background: highlight === i ? '#F5F5F7' : 'transparent' }}
-              >
-                <PinIcon />
-                <span className="flex flex-col min-w-0">
-                  <span className="text-black text-[15px]/[120%] font-medium truncate">{item.name}</span>
-                  {item.sub && (
-                    <span className="text-[#9A9A9F] text-[12px]/[120%] truncate">{item.sub}</span>
-                  )}
-                </span>
-              </button>
-            ))}
+            {suggestions.map(SuggestionRow)}
           </div>
         </div>,
         document.body,

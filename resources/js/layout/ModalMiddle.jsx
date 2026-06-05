@@ -38,6 +38,33 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
     return () => unlockTelegramVerticalSwipes()
   }, [isVisible])
 
+  // Keep the sheet (and its submit button) above the on-screen keyboard.
+  // When the keyboard opens, visualViewport shrinks — lift the sheet by that
+  // inset and cap its height to the visible area so nothing slides off / under.
+  useEffect(() => {
+    if (!isVisible) return undefined
+    const vv = window.visualViewport
+    if (!vv) return undefined
+    const update = () => {
+      const sheet = sheetRef.current
+      if (!sheet) return
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      sheet.style.bottom = inset + 'px'
+      sheet.style.maxHeight = Math.round(vv.height - 24) + 'px'
+    }
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+      if (sheetRef.current) {
+        sheetRef.current.style.bottom = ''
+        sheetRef.current.style.maxHeight = ''
+      }
+    }
+  }, [isVisible])
+
   // Run before paint so the backdrop never flashes at full opacity (CSS bg would show for one frame,
   // then gsap.set(opacity:0) in useEffect caused appear → vanish → fade-in).
   useLayoutEffect(() => {
@@ -124,7 +151,7 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
           position: absolute; bottom: 0; left: 0; right: 0; z-index: 9001; background: #fff;
           border-radius: 24px; display: flex; flex-direction: column;
           pointer-events: all; will-change: transform;
-          box-shadow: 0 -6px 48px rgba(0,0,0,0.14); overflow: hidden; max-height: 92dvh;
+          box-shadow: 0 -4px 24px rgba(0,0,0,0.12); overflow: hidden; max-height: 92dvh;
         }
         .modal-middle-handle {
           touch-action: none;

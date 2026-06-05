@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { pushPageBack, restorePageFront, setPageDepth } from '@/composables/usePageDepth'
@@ -40,7 +40,9 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
     }
   }, [isVisible])
 
-  useEffect(() => {
+  // Layout effect (before paint) so the sheet never flashes at its final
+  // position for a frame before snapping to y:100% — that flash read as "lag".
+  useLayoutEffect(() => {
     if (!isVisible || !sheetRef.current) return
     const kids = Array.from(sheetRef.current.children)
     gsap.killTweensOf(sheetRef.current)
@@ -174,7 +176,7 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
           position: absolute; bottom: 0; left: 0; right: 0; background: #fff;
           border-radius: 28px 28px 0 0; display: flex; flex-direction: column;
           pointer-events: all; will-change: transform;
-          box-shadow: 0 -6px 48px rgba(0,0,0,0.14); overflow: hidden;
+          box-shadow: 0 -4px 24px rgba(0,0,0,0.12); overflow: hidden;
         }
         .modal-layout-handle {
           touch-action: none;

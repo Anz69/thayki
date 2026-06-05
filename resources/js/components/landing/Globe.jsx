@@ -94,9 +94,23 @@ export default function Globe({ className = '', style }) {
 
     let width = 0
     let phi = 0
-    const onResize = () => { width = canvas.offsetWidth }
+    const onResize = () => {
+      const w = canvas.offsetWidth
+      if (w > 0) width = w
+    }
     onResize()
     window.addEventListener('resize', onResize)
+
+    // When the mini-app is minimized & reopened the rAF loop pauses and the
+    // canvas can be re-measured as 0; re-measure on resume and reset timing so
+    // the rotation doesn't snap forward by the whole backgrounded interval.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        onResize()
+        lastT = -1
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
 
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
 
@@ -127,16 +141,18 @@ export default function Globe({ className = '', style }) {
     let faded = false
     let lastT = -1
     let ringAngle = 0
-    const FRAME_MS = 1000 / 30
     const STEP = (2 * Math.PI) / RING_N
     let ringW = -1
     const render = (t) => {
       frame = requestAnimationFrame(render)
-      if (lastT >= 0 && t - lastT < FRAME_MS) return
+
+      // Frame-rate independent advance (normalised to a 60fps baseline) so the
+      // motion is buttery smooth on 60/120Hz alike and never speeds up/snaps.
+      const dt = lastT < 0 ? 1 : Math.min((t - lastT) / (1000 / 60), 3)
       lastT = t
 
-      if (pointerInteracting.current === null) phi += 0.011
-      ringAngle += 0.006
+      if (pointerInteracting.current === null) phi += 0.0055 * dt
+      ringAngle += 0.003 * dt
       const effPhi = phi + rotation.current
       globe.update({ phi: effPhi, width: width * dpr, height: width * dpr })
 
@@ -198,6 +214,7 @@ export default function Globe({ className = '', style }) {
       cancelAnimationFrame(frame)
       globe.destroy()
       window.removeEventListener('resize', onResize)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [])
 
