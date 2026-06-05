@@ -5,19 +5,26 @@ import HowItWorksModal from '@/components/modals/HowItWorksModal'
 import FaqModal from '@/components/modals/FaqModal'
 
 const ROTATE_MS = 5500
+const SWIPE_THRESHOLD = 40
 
 export default function CatalogNotice() {
   const { t } = useTranslation()
   const PHRASES = [t('catalogNotice.p1'), t('catalogNotice.p2'), t('catalogNotice.p3')]
+  const N = PHRASES.length
+
   const [idx, setIdx] = useState(0)
+  const [drag, setDrag] = useState(0)
+  const [dragging, setDragging] = useState(false)
   const [howOpen, setHowOpen] = useState(false)
   const [faqOpen, setFaqOpen] = useState(false)
+
   const timerRef = useRef(null)
-  const touchX = useRef(null)
+  const startX = useRef(null)
+  const viewportRef = useRef(null)
 
   const restartTimer = () => {
     clearInterval(timerRef.current)
-    timerRef.current = setInterval(() => setIdx((i) => (i + 1) % PHRASES.length), ROTATE_MS)
+    timerRef.current = setInterval(() => setIdx((i) => (i + 1) % N), ROTATE_MS)
   }
 
   useEffect(() => {
@@ -26,35 +33,65 @@ export default function CatalogNotice() {
   }, [])
 
   const goTo = (i) => {
-    setIdx(((i % PHRASES.length) + PHRASES.length) % PHRASES.length)
+    setIdx(((i % N) + N) % N)
     restartTimer()
   }
 
-  const onTouchStart = (e) => { touchX.current = e.touches[0]?.clientX ?? null }
-  const onTouchEnd = (e) => {
-    if (touchX.current == null) return
-    const dx = (e.changedTouches[0]?.clientX ?? touchX.current) - touchX.current
-    if (Math.abs(dx) > 40) goTo(idx + (dx < 0 ? 1 : -1))
-    touchX.current = null
+  const onPointerDown = (e) => {
+    startX.current = e.clientX
+    setDragging(true)
+    clearInterval(timerRef.current)
+    viewportRef.current?.setPointerCapture?.(e.pointerId)
+  }
+
+  const onPointerMove = (e) => {
+    if (startX.current == null) return
+    setDrag(e.clientX - startX.current)
+  }
+
+  const endDrag = (e) => {
+    if (startX.current == null) return
+    const dx = (e.clientX ?? startX.current) - startX.current
+    const target = idx + (dx < 0 ? 1 : -1)
+    if (Math.abs(dx) > SWIPE_THRESHOLD && target >= 0 && target < N) goTo(target)
+    else restartTimer()
+    startX.current = null
+    setDragging(false)
+    setDrag(0)
   }
 
   return (
     <div className="container">
       <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex flex-col gap-3.5">
-        {/* Auto-cycling disclaimer (crossfade; all phrases stacked so height = tallest) */}
-        <div className="grid touch-pan-y" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-          {PHRASES.map((p, i) => (
-            <p
-              key={i}
-              style={{ gridArea: '1 / 1', opacity: i === idx ? 1 : 0, transition: 'opacity 0.6s ease' }}
-              className="text-[#5B5B5B] text-[12.5px]/[160%] font-medium"
-            >
-              {p}
-            </p>
-          ))}
+        <div
+          ref={viewportRef}
+          className="overflow-hidden select-none"
+          style={{ touchAction: 'pan-y', cursor: dragging ? 'grabbing' : 'grab' }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+        >
+          <div
+            className="flex"
+            style={{
+              width: `${N * 100}%`,
+              transform: `translateX(calc(${(-idx * 100) / N}% + ${drag}px))`,
+              transition: dragging ? 'none' : 'transform 0.45s cubic-bezier(0.22,1,0.36,1)',
+            }}
+          >
+            {PHRASES.map((p, i) => (
+              <p
+                key={i}
+                style={{ width: `${100 / N}%` }}
+                className="shrink-0 px-0 text-[#5B5B5B] text-[12.5px]/[160%] font-medium pointer-events-none"
+              >
+                {p}
+              </p>
+            ))}
+          </div>
         </div>
 
-        {/* Progress dots (tap to switch) */}
         <div className="flex items-center gap-1.5">
           {PHRASES.map((_, i) => (
             <button
@@ -72,7 +109,6 @@ export default function CatalogNotice() {
           ))}
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setHowOpen(true)}
