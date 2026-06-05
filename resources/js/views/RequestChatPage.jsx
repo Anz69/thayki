@@ -198,17 +198,14 @@ export default function RequestChatPage() {
     const els = messagesRef.current?.querySelectorAll('[data-msg]')
     if (els?.length) {
       const last = els[els.length - 1]
-      const prev = els.length > 1 ? els[els.length - 2] : null
-      const targets = prev ? [prev, last] : [last]
       gsap.fromTo(
-        targets,
+        last,
         { y: 18, autoAlpha: 0, scale: 0.94 },
         {
           y: 0,
           autoAlpha: 1,
           scale: 1,
           duration: 0.34,
-          stagger: 0.05,
           ease: 'back.out(2)',
           clearProps: 'transform,opacity,visibility',
         },
