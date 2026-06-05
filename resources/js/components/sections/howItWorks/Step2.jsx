@@ -73,7 +73,9 @@ export default function HowItWorksStep2({ isActive }) {
 
     const partial = demoCity.slice(0, Math.min(4, demoCity.length))
 
-    const tl = gsap.timeline({ delay: 0.1 })
+    // Start only after the modal's slide-in transition has finished, otherwise
+    // the demo competes with the slide animation and stutters.
+    const tl = gsap.timeline({ delay: 0.55 })
 
     // 1) Cards rise in.
     tl.to(rowsRef.current.filter(Boolean), {
