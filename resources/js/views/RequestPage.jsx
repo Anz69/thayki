@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
@@ -6,6 +7,8 @@ import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api from '@/utils/api'
 import { logError } from '@/utils/logger'
 import { buildLeadMessage } from '@/utils/leadMessage'
+import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
+import { modelName } from '@/utils/modelName'
 import CitySelect from '@/components/ui/CitySelect'
 import ru from '@/locales/ru.json'
 
@@ -47,6 +50,10 @@ export default function RequestPage() {
   const { t } = useTranslation()
   const navigate = useTransitionNavigate()
 
+  const [params] = useSearchParams()
+  const modelId = params.get('model')
+
+  const [model, setModel] = useState(null)
   const [city, setCity] = useState('')
   const [values, setValues] = useState({ hairType: null, ageRange: null, height: null, goal: null })
   const [wishes, setWishes] = useState('')
@@ -54,6 +61,23 @@ export default function RequestPage() {
 
   const rootRef = useRef(null)
   const canSubmit = city.trim().length > 0 && !submitting
+
+  // When opened from a prototype ("Интересует этот типаж") — load it to show
+  // the selected model and attach it to the lead.
+  useEffect(() => {
+    if (!modelId) { setModel(null); return undefined }
+    let cancelled = false
+    api.get(`/catalog/models/${modelId}`)
+      .then((r) => { if (!cancelled) setModel(r?.data?.data ?? null) })
+      .catch(() => { if (!cancelled) setModel(null) })
+    return () => { cancelled = true }
+  }, [modelId])
+
+  const modelPhoto = (() => {
+    const photos = Array.isArray(model?.photos) ? model.photos.filter(Boolean) : []
+    const main = photos.find((p) => p?.is_main) ?? photos[0]
+    return main?.url ? resolveMediaUrl(main.url) : null
+  })()
 
   usePageReady(() => {
     const els = rootRef.current?.querySelectorAll('[data-anim]') ?? []
@@ -79,21 +103,24 @@ export default function RequestPage() {
     setSubmitting(true)
     try {
       const { data } = await api.post('/leads', {
+        model_profile_id: model?.id ?? null,
         city: city.trim(),
         wishes: wishes.trim() || null,
-        hair_type: ruLabel('hair', values.hairType),
-        age_range: ruLabel('ages', values.ageRange),
-        height_range: ruLabel('heights', values.height),
-        goal: ruLabel('goals', values.goal),
+        hair_type: model ? null : ruLabel('hair', values.hairType),
+        age_range: model ? null : ruLabel('ages', values.ageRange),
+        height_range: model ? null : ruLabel('heights', values.height),
+        goal: model ? null : ruLabel('goals', values.goal),
         // First chat message in the user's selected language (RU/EN).
         message: buildLeadMessage({
           t,
+          modelName: model ? modelName(model) : undefined,
           city: city.trim(),
           wishes,
-          options: { hair: values.hairType, ages: values.ageRange, heights: values.height, goals: values.goal },
+          options: model ? {} : { hair: values.hairType, ages: values.ageRange, heights: values.height, goals: values.goal },
         }),
       }, { headers: { 'Idempotency-Key': `lead-${Date.now()}` } })
-      navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}`, { replace: true })
+      const from = encodeURIComponent(model ? `/model/${model.id}` : '/home')
+      navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}&from=${from}`, { replace: true })
     } catch (err) {
       logError(err)
       setSubmitting(false)
@@ -117,28 +144,55 @@ export default function RequestPage() {
       </header>
 
       <div className="container flex flex-col gap-4 pt-3 pb-40">
+        {/* Selected prototype (when arriving from «Интересует этот типаж») */}
+        {model && (
+          <div data-anim className="flex items-center gap-3.5 rounded-2xl p-3 bg-white border border-black/5 shadow-[0_6px_22px_rgba(226,49,155,0.12)]">
+            <div className="size-16 rounded-2xl overflow-hidden bg-[#F4EEF1] shrink-0 ring-2 ring-[#E2319B]/15">
+              {modelPhoto
+                ? <img src={modelPhoto} alt="" className="w-full h-full object-cover object-top" />
+                : <span className="w-full h-full flex items-center justify-center text-xl">✨</span>}
+            </div>
+            <div className="flex flex-col min-w-0 gap-1.5">
+              <span className="inline-flex items-center gap-1.5 text-[#E2319B] text-[11px]/[100%] font-semibold uppercase tracking-[0.04em]">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#E2319B">
+                  <path d="M12 21s-7-4.35-9.5-8.5C.7 9.3 2.2 5.5 5.8 5.5c2 0 3.3 1.2 4.2 2.6.9-1.4 2.2-2.6 4.2-2.6 3.6 0 5.1 3.8 3.3 7C19 16.65 12 21 12 21Z" />
+                </svg>
+                {t('request.interested')}
+              </span>
+              <span className="text-black text-[18px]/[110%] font-bold truncate">
+                {modelName(model)}{model.age ? `, ${model.age}` : ''}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* City — required, prominent */}
-        <div data-anim className="flex flex-col gap-2.5 bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div data-anim className="flex flex-col gap-2.5 bg-white rounded-2xl p-4 border border-black/5">
           <p className="text-black text-[15px]/[100%] font-semibold">
             {t('request.city')} <span className="text-[#E2319B]">*</span>
           </p>
           <CitySelect value={city} onChange={setCity} placeholder={t('request.cityPlaceholder')} inline overlay />
         </div>
 
-        {/* Option groups */}
-        {GROUPS.map(({ field, group, labelKey, keys }) => (
-          <div key={field} data-anim className="flex flex-col gap-3 bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        {/* Option groups — only for the open "подбор" form, not the prototype flow */}
+        {!model && GROUPS.map(({ field, group, labelKey, keys }) => (
+          <div key={field} data-anim className="flex flex-col gap-3 bg-white rounded-2xl p-4 border border-black/5">
             <p className="text-black text-[15px]/[100%] font-semibold">{t(`request.${labelKey}`)}</p>
             <Chips group={group} keys={keys} value={values[field]} onChange={(v) => setVal(field, v)} t={t} />
           </div>
         ))}
 
         {/* Wishes */}
-        <div data-anim className="flex flex-col gap-2.5 bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          <p className="text-black text-[15px]/[100%] font-semibold">{t('request.wishes')}</p>
+        <div data-anim className="flex flex-col gap-2.5 bg-white rounded-2xl p-4 border border-black/5">
+          <p className="text-black text-[15px]/[100%] font-semibold">{model ? t('request.wishesExtra') : t('request.wishes')}</p>
           <textarea
             value={wishes}
             onChange={(e) => setWishes(e.target.value)}
+            onFocus={(e) => {
+              // Phone keyboard covers the field — scroll it into view above it.
+              const el = e.currentTarget
+              setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300)
+            }}
             rows={4}
             placeholder={t('request.wishesPlaceholder')}
             className="w-full bg-[#F5F5F7] rounded-xl px-4 py-3.5 text-black text-[15px] outline-none placeholder:text-[#ABABAB] resize-none focus:ring-2 focus:ring-[#E2319B]/30 transition-shadow"

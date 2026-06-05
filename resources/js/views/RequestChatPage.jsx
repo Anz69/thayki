@@ -293,7 +293,7 @@ export default function RequestChatPage() {
             {t('common.back')}
           </button>
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500]">
-            {t('requestChat.title')}
+            {t('requestChat.title')}{leadId ? ` #${leadId}` : ''}
           </span>
         </div>
       </header>

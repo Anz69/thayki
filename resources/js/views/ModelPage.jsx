@@ -12,7 +12,6 @@ import useMeetingStore from '@/stores/useMeetingStore'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api, { extractErrorMessage } from '@/utils/api'
 import ShareModelsModal from '@/components/modals/ShareModelsModal'
-import RequestModal from '@/components/modals/RequestModal'
 import LazyImg from '@/components/ui/LazyImg'
 import { declAge } from '@/utils/datetime'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
@@ -31,7 +30,6 @@ export default function ModelPage() {
   const [loading,   setLoading]   = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [shareModalOpen, setShareModalOpen] = useState(false)
-  const [requestOpen, setRequestOpen] = useState(false)
 
   const handleShare = useCallback(() => {
     if (!model) return
@@ -264,7 +262,7 @@ export default function ModelPage() {
             ) : (
               <button
                 ref={bookBtnRef}
-                onClick={() => setRequestOpen(true)}
+                onClick={() => navigate(`/request?model=${id}`)}
                 disabled={!model}
                 className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto disabled:opacity-50"
                 style={{ willChange: 'transform, opacity' }}
@@ -362,12 +360,6 @@ export default function ModelPage() {
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         models={model ? [model] : []}
-      />
-
-      <RequestModal
-        isOpen={requestOpen}
-        onClose={() => setRequestOpen(false)}
-        model={model}
       />
     </div>
   )

@@ -112,7 +112,12 @@ export default function Globe({ className = '', style }) {
     }
     document.addEventListener('visibilitychange', onVisible)
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
+    // Cap the render resolution hard on phones — drawing the globe at the
+    // device's full 2–3× DPR is the main source of mobile jank. Desktops keep
+    // the crisper 1.5×.
+    const isMobile = window.matchMedia?.('(pointer: coarse)')?.matches
+      || Math.min(window.innerWidth, window.innerHeight) < 600
+    const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.5)
 
     const globe = createGlobe(canvas, {
       devicePixelRatio: dpr,
@@ -169,8 +174,10 @@ export default function Globe({ className = '', style }) {
       const dt = lastT < 0 ? 1 : Math.min((t - lastT) / (1000 / 60), 3)
       lastT = t
 
-      if (pointerInteracting.current === null) phi += 0.0055 * dt
-      ringAngle += 0.003 * dt
+      // Slower, calmer spin (closer to cobe.vercel.app). Ring turns the same
+      // way as the globe (rightwards) — negative advance.
+      if (pointerInteracting.current === null) phi += 0.004 * dt
+      ringAngle -= 0.0026 * dt
       const effPhi = phi + rotation.current
       globe.update({ phi: effPhi, width: width * dpr, height: width * dpr })
 

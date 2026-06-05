@@ -157,8 +157,8 @@ export default function MorePage() {
   const [pendingWithdrawal, setPendingWithdrawal] = useState(0)
   const [withdrawMethods, setWithdrawMethods] = useState(['usdt', 'btc', 'ton'])
 
-  const balanceRef  = useRef(null)
-  const ordersRef   = useRef(null)
+  const balanceRef = useRef(null)
+  const ordersRef = useRef(null)
   const section1Ref = useRef(null)
   const section2Ref = useRef(null)
 
@@ -273,7 +273,23 @@ export default function MorePage() {
 
         <div className="flex flex-col gap-4 container pt-[40px] pb-[120px]">
 
-       
+          {auth.user && (
+            <div className="flex items-center gap-3">
+              <div className="size-14 rounded-full overflow-hidden bg-[#EFEAEE] shrink-0 flex items-center justify-center">
+                {auth.user.photo_url
+                  ? <img src={resolveMediaUrl(auth.user.photo_url)} alt="" className="w-full h-full object-cover" />
+                  : <span className="text-[#E2319B] text-xl font-bold">{(auth.user.first_name || '?')[0]?.toUpperCase()}</span>}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-black text-[18px]/[120%] font-semibold truncate">
+                  {`${auth.user.first_name || ''} ${auth.user.last_name || ''}`.trim() || t('common.client')}
+                </span>
+                {auth.user.username && (
+                  <span className="text-[#8A8A8A] text-sm/[120%] truncate">@{auth.user.username}</span>
+                )}
+              </div>
+            </div>
+          )}
 
           {balance >= 0.01 && (
             <div ref={balanceRef} >
@@ -297,7 +313,7 @@ export default function MorePage() {
               </GradientBorder>
             </div>
           )}
-     
+
 
           <div ref={ordersRef} className="flex flex-col gap-3">
             {activeMeetings.length > 0 && (
@@ -343,35 +359,12 @@ export default function MorePage() {
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.howItWorks')}</span>
             </button>
 
+
+
             <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-4">
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.notifications')}</span>
               <Toggle value={notifications} onChange={handleNotificationsChange} />
             </div>
-          </div>
-
-          <div ref={section2Ref} className="flex flex-col gap-4">
-            <SectionLabel>{t('more.additional')}</SectionLabel>
-
-            <button
-              onClick={() => setFaqOpen(true)}
-              className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
-            >
-              <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
-                <IconQuestion />
-              </span>
-              <span className="text-black text-[16px]/[100%] font-medium">{t('more.faq')}</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/support')}
-              className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
-            >
-              <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
-                <IconSupport />
-              </span>
-              <span className="text-black text-[16px]/[100%] font-medium">{t('more.support')}</span>
-            </button>
-
             <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-3">
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.language')}</span>
               {(() => {
@@ -403,6 +396,30 @@ export default function MorePage() {
                 )
               })()}
             </div>
+          </div>
+
+          <div ref={section2Ref} className="flex flex-col gap-4">
+            <SectionLabel>{t('more.additional')}</SectionLabel>
+
+            <button
+              onClick={() => setFaqOpen(true)}
+              className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
+            >
+              <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
+                <IconQuestion />
+              </span>
+              <span className="text-black text-[16px]/[100%] font-medium">{t('more.faq')}</span>
+            </button>
+
+            <button
+              onClick={() => navigate('/support')}
+              className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
+            >
+              <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
+                <IconSupport />
+              </span>
+              <span className="text-black text-[16px]/[100%] font-medium">{t('more.support')}</span>
+            </button>
           </div>
 
         </div>
