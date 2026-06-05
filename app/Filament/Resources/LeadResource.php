@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Enums\LeadStatus;
 use App\Filament\Pages\SupportChats;
 use App\Filament\Resources\LeadResource\Pages;
 use App\Models\Lead;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -72,6 +75,14 @@ class LeadResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('view')
+                    ->label('Просмотр')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->modalHeading(fn (Lead $r): string => 'Заявка #'.$r->id)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Закрыть')
+                    ->infolist(fn (Infolist $infolist): Infolist => static::leadInfolist($infolist)),
                 Tables\Actions\Action::make('openChat')
                     ->label('Открыть чат')
                     ->icon('heroicon-o-chat-bubble-left-right')
@@ -79,6 +90,81 @@ class LeadResource extends Resource
                     ->url(fn (Lead $r) => SupportChats::getUrl(['chat' => $r->chat_id])),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    public static function leadInfolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make('Клиент')
+                ->icon('heroicon-o-user')
+                ->schema([
+                    Infolists\Components\TextEntry::make('user.first_name')
+                        ->label('Имя')
+                        ->formatStateUsing(fn ($state, Lead $r): string => trim(($r->user?->first_name ?? '').' '.($r->user?->last_name ?? '')) ?: '—'),
+                    Infolists\Components\TextEntry::make('user.username')
+                        ->label('Username')
+                        ->formatStateUsing(fn ($state): string => $state ? '@'.$state : '—'),
+                ])
+                ->columns(2),
+
+            Infolists\Components\Section::make('Интересует типаж')
+                ->icon('heroicon-o-sparkles')
+                ->visible(fn (Lead $r): bool => $r->modelProfile !== null)
+                ->schema([
+                    Infolists\Components\ImageEntry::make('model_photo')
+                        ->label('')
+                        ->disk('public')
+                        ->height(160)
+                        ->state(function (Lead $r): ?string {
+                            $p = $r->modelProfile?->photos()->where('is_main', true)->first()
+                                ?? $r->modelProfile?->photos()->orderBy('position')->first();
+
+                            return $p?->path;
+                        }),
+                    Infolists\Components\TextEntry::make('modelProfile.display_name')->label('Модель'),
+                    Infolists\Components\TextEntry::make('modelProfile.age')->label('Возраст')->suffix(' лет')->placeholder('—'),
+                    Infolists\Components\TextEntry::make('modelProfile.height_cm')->label('Рост')->suffix(' см')->placeholder('—'),
+                ])
+                ->columns(2),
+
+            Infolists\Components\Section::make('Параметры подбора')
+                ->icon('heroicon-o-adjustments-horizontal')
+                ->visible(fn (Lead $r): bool => $r->modelProfile === null)
+                ->schema([
+                    Infolists\Components\TextEntry::make('hair_type')->label('Типаж')->placeholder('—'),
+                    Infolists\Components\TextEntry::make('age_range')->label('Возраст')->placeholder('—'),
+                    Infolists\Components\TextEntry::make('height_range')->label('Рост')->placeholder('—'),
+                    Infolists\Components\TextEntry::make('goal')->label('Цель')->placeholder('—'),
+                ])
+                ->columns(2),
+
+            Infolists\Components\Section::make('Заявка')
+                ->icon('heroicon-o-inbox-arrow-down')
+                ->schema([
+                    Infolists\Components\TextEntry::make('city')->label('Город')->placeholder('—'),
+                    Infolists\Components\TextEntry::make('status')
+                        ->label('Статус')
+                        ->badge()
+                        ->formatStateUsing(fn (LeadStatus $state): string => match ($state) {
+                            LeadStatus::New => 'Новая',
+                            LeadStatus::InProgress => 'В работе',
+                            LeadStatus::Closed => 'Закрыта',
+                        })
+                        ->color(fn (LeadStatus $state): string => match ($state) {
+                            LeadStatus::New => 'danger',
+                            LeadStatus::InProgress => 'warning',
+                            LeadStatus::Closed => 'success',
+                        }),
+                    Infolists\Components\TextEntry::make('wishes')
+                        ->label('Пожелания')
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('created_at')
+                        ->label('Создана')
+                        ->dateTime('d.m.Y H:i'),
+                ])
+                ->columns(2),
+        ]);
     }
 
     public static function getPages(): array

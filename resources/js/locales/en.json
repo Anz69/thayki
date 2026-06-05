@@ -84,7 +84,12 @@
       "brown": "Brown-haired",
       "red": "Redhead"
     },
-    "ages": { "a1": "18–23", "a2": "24–29", "a3": "30–35", "a4": "35+" },
+    "ages": {
+      "a1": "18–23",
+      "a2": "24–29",
+      "a3": "30–35",
+      "a4": "35+"
+    },
     "heights": {
       "any": "Doesn't matter",
       "upTo165": "Up to 165 cm",
@@ -159,7 +164,8 @@
     "s2t": "Leave a request",
     "s2s": "Fill out a short form — it takes less than a minute.",
     "s3t": "A manager will contact you",
-    "s3s": "We'll find suitable options and reply in chat — on average within an hour."
+    "s3s": "We'll find suitable options and reply in chat — on average within an hour.",
+    "sent": "Request sent"
   },
   "faqModal": {
     "title": "F.A.Q.",
@@ -172,9 +178,8 @@
     "accessDeniedText": "To use the app you need an invite from a current member or verification by an administrator.",
     "goSupport": "Go to support chat",
     "checkAccess": "Already verified? Check access",
-    "accessNotYet": "Access is not open yet",
-    "checkFailed": "Couldn't verify access. Please try again.",
     "accessNotYet": "Access not granted yet",
+    "checkFailed": "Couldn't verify access. Please try again.",
     "loginErrorTitle": "Sign-in error",
     "loginErrorText": "Couldn't sign in to the app.\nTry reloading the page.",
     "reload": "Reload page",

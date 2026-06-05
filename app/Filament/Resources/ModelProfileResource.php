@@ -63,18 +63,6 @@ class ModelProfileResource extends Resource
                 Forms\Components\Textarea::make('description')
                     ->label('Описание')
                     ->columnSpanFull(),
-                Forms\Components\FileUpload::make('photo_files')
-                    ->label('Фотографии')
-                    ->helperText('Можно выбрать сразу несколько. Первое фото станет главным. После создания фото можно добавлять и менять порядок на странице редактирования.')
-                    ->multiple()
-                    ->image()
-                    ->reorderable()
-                    ->appendFiles()
-                    ->panelLayout('grid')
-                    ->disk('public')
-                    ->directory('model-photos')
-                    ->visibleOn('create')
-                    ->columnSpanFull(),
                 Forms\Components\Toggle::make('is_published')->label('Опубликована')->default(true),
                 Forms\Components\Toggle::make('is_verified')->label('Верифицирована')->default(true),
                 Forms\Components\DateTimePicker::make('published_at')
@@ -85,7 +73,69 @@ class ModelProfileResource extends Resource
                     ->helperText('Прототип-анкету можно создавать без привязки к пользователю.')
                     ->relationship('user', 'first_name')
                     ->searchable(),
+
+                // Photos live at the very bottom — right above the save button —
+                // so the form reads top-to-bottom and you confirm with the photos
+                // in view. The `photo_files` key isn't a model column: the
+                // Create/Edit pages strip it out and persist via syncPhotos().
+                Forms\Components\Section::make('Фотографии')
+                    ->icon('heroicon-o-photo')
+                    ->columnSpanFull()
+                    ->schema([
+                        Forms\Components\FileUpload::make('photo_files')
+                            ->hiddenLabel()
+                            ->helperText('Можно выбрать сразу несколько. Перетаскивайте для смены порядка — первое фото станет главным.')
+                            ->multiple()
+                            ->image()
+                            ->reorderable()
+                            ->appendFiles()
+                            ->panelLayout('grid')
+                            ->disk('public')
+                            ->directory('model-photos')
+                            ->afterStateHydrated(function (Forms\Components\FileUpload $component, ?ModelProfile $record): void {
+                                if ($record !== null) {
+                                    $component->state(
+                                        $record->photos()->orderBy('position')->pluck('path')->all(),
+                                    );
+                                }
+                            })
+                            ->columnSpanFull(),
+                    ]),
             ]);
+    }
+
+    /**
+     * Reconcile a profile's ModelPhoto rows with the ordered list of paths
+     * coming from the form's FileUpload (kept + newly uploaded). Removed files
+     * are deleted from disk; order/main flag follow the list order.
+     *
+     * @param  list<string>  $paths
+     */
+    public static function syncPhotos(ModelProfile $profile, array $paths): void
+    {
+        $paths = array_values(array_filter($paths));
+        $existing = $profile->photos()->get()->keyBy('path');
+
+        foreach ($existing as $path => $photo) {
+            if (! in_array($path, $paths, true)) {
+                \Illuminate\Support\Facades\Storage::disk($photo->disk)->delete($photo->path);
+                $photo->delete();
+            }
+        }
+
+        foreach ($paths as $i => $path) {
+            $photo = $existing->get($path);
+            if ($photo !== null) {
+                $photo->update(['position' => $i, 'is_main' => $i === 0]);
+            } else {
+                $profile->photos()->create([
+                    'disk' => 'public',
+                    'path' => $path,
+                    'position' => $i,
+                    'is_main' => $i === 0,
+                ]);
+            }
+        }
     }
 
     public static function table(Table $table): Table
@@ -116,6 +166,16 @@ class ModelProfileResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_verified')->label('Верифицирована'),
             ])
             ->actions([
+                Tables\Actions\Action::make('leads')
+                    ->label(fn (ModelProfile $record): string => 'Заявки ('.$record->leads()->count().')')
+                    ->icon('heroicon-o-inbox-arrow-down')
+                    ->color('warning')
+                    ->modalHeading('Заявки по анкете')
+                    ->modalContent(fn (ModelProfile $record) => view('filament.modals.model-leads', [
+                        'leads' => $record->leads()->with('user')->get(),
+                    ]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Закрыть'),
                 Tables\Actions\EditAction::make()->label('Изменить'),
             ])
             ->bulkActions([
@@ -128,9 +188,9 @@ class ModelProfileResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            ModelProfileResource\RelationManagers\PhotosRelationManager::class,
-        ];
+        // Photos are managed inside the form (above the save button) via the
+        // FileUpload + syncPhotos, so no separate relation-manager panel below.
+        return [];
     }
 
     public static function getPages(): array

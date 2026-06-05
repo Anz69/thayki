@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\LatestLeadsWidget;
+use App\Filament\Widgets\LeadsChartWidget;
+use App\Filament\Widgets\LeadStatsOverviewWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Widgets\AccountWidget;
 
@@ -25,6 +28,9 @@ class Dashboard extends BaseDashboard
     {
         return [
             AccountWidget::class,
+            LeadStatsOverviewWidget::class,
+            LeadsChartWidget::class,
+            LatestLeadsWidget::class,
         ];
     }
 

@@ -34,6 +34,7 @@ export default function CitySelect({ value, onChange, placeholder }) {
 
   const [open, setOpen] = useState(false)
   const [entered, setEntered] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [highlight, setHighlight] = useState(-1)
   const [remote, setRemote] = useState([])
   const [pos, setPos] = useState(null)
@@ -141,11 +142,16 @@ export default function CitySelect({ value, onChange, placeholder }) {
     return () => document.removeEventListener('pointerdown', onDocPointer)
   }, [])
 
-  // Entrance animation toggle (next frame after the list becomes visible).
+  // Mount + enter/exit animation. Keep the node mounted through the fade-out.
   useEffect(() => {
-    if (!showList) { setEntered(false); return undefined }
-    const id = requestAnimationFrame(() => setEntered(true))
-    return () => cancelAnimationFrame(id)
+    if (showList) {
+      setMounted(true)
+      const id = requestAnimationFrame(() => setEntered(true))
+      return () => cancelAnimationFrame(id)
+    }
+    setEntered(false)
+    const t = setTimeout(() => setMounted(false), 230)
+    return () => clearTimeout(t)
   }, [showList])
 
   useEffect(() => () => {
@@ -183,7 +189,7 @@ export default function CitySelect({ value, onChange, placeholder }) {
         />
       </div>
 
-      {showList && pos && typeof document !== 'undefined' && createPortal(
+      {mounted && pos && typeof document !== 'undefined' && createPortal(
         <div
           ref={listRef}
           style={{
@@ -193,6 +199,7 @@ export default function CitySelect({ value, onChange, placeholder }) {
             top: pos.top,
             bottom: pos.bottom,
             zIndex: 100050,
+            pointerEvents: entered ? 'auto' : 'none',
             opacity: entered ? 1 : 0,
             transform: entered ? 'translateY(0) scale(1)' : `translateY(${pos.below ? -6 : 6}px) scale(0.985)`,
             transformOrigin: pos.below ? 'top center' : 'bottom center',

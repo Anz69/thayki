@@ -2,13 +2,11 @@ import { useEffect, useRef } from 'react'
 import createGlobe from 'cobe'
 import { projectCity, projectArcMid } from './globeProjection'
 
-const PINK_VEC = [0.886, 0.192, 0.608] // #E2319B in cobe 0..1 RGB
+const PINK_VEC = [0.886, 0.192, 0.608]
 const PINK = '#E2319B'
 const THETA = 0.22
 const ELEVATION = 0.04
 
-// World capitals — [lat, lng], deliberately spread far apart in longitude AND
-// latitude so their labels rarely cluster on screen.
 const C = {
   moscow:    [55.7558, 37.6173],
   london:    [51.5074, -0.1278],
@@ -44,17 +42,11 @@ const ARCS = [
 const MARKERS = CITIES.map((c) => ({ location: c.loc, size: c.size }))
 const COBE_ARCS = ARCS.map((a) => ({ from: a.from, to: a.to }))
 
-// Orbit text — a real 3D ring. The chars are laid on a flat circle inside a
-// plane that is tilted with rotateX under CSS perspective, so the text actually
-// lies on the ring (far/top side recedes & shrinks) instead of facing the
-// screen. The plane spins via rotateZ; per-char opacity softly dims the back.
-const RING_TEXT = (Array(3).fill('RUS-MODEL MODEL AGENCY').join('   •   ') + '   •   ').split('')
+const RING_TEXT = (Array(3).fill('RUS-MODEL MODEL AGENCY').join(' • ') + ' • ').split('')
 const RING_N = RING_TEXT.length
-const RING_RADIUS = 0.43          // fraction of the box (sits just inside the globe rim)
-const RING_TILT_DEG = 62          // 3D tilt of the ring plane so the text lies down
+const RING_RADIUS = 0.43
+const RING_TILT_DEG = 62
 
-// City/route labels only become visible once well toward the front of the
-// globe, so edge cities fade out and labels don't overlap.
 function frontOpacity(depth) {
   if (depth <= 0.05) return 0
   if (depth >= 0.3) return 1
@@ -67,7 +59,6 @@ function MarkerDot() {
       className="absolute"
       style={{ left: 0, top: 0, transform: 'translate(-50%, -50%)', width: 12, height: 12 }}
     >
-      {/* static halo — no infinite animation (11 of them tanked FPS) */}
       <span
         className="absolute inset-0 rounded-full"
         style={{ background: PINK, opacity: 0.22 }}
@@ -84,18 +75,14 @@ function MarkerDot() {
   )
 }
 
-/**
- * COBE WebGL globe with DOM city/route labels anchored to their real projected
- * positions (cobe's own math, see ./globeProjection). Auto-rotates; draggable.
- */
 export default function Globe({ className = '', style }) {
   const wrapRef   = useRef(null)
   const canvasRef = useRef(null)
-  const labelRefs = useRef({}) // id → outer label element
+  const labelRefs = useRef({})
 
   const ringRefs = useRef([])
-  const ringWrapRef  = useRef(null) // perspective container
-  const ringPlaneRef = useRef(null) // tilted + spinning plane (preserve-3d)
+  const ringWrapRef  = useRef(null)
+  const ringPlaneRef = useRef(null)
 
   const pointerInteracting = useRef(null)
   const pointerMovement    = useRef(0)
@@ -140,54 +127,46 @@ export default function Globe({ className = '', style }) {
     let faded = false
     let lastT = -1
     let ringAngle = 0
-    const FRAME_MS = 1000 / 30 // cap the heavy WebGL redraw at ~30fps
+    const FRAME_MS = 1000 / 30
     const STEP = (2 * Math.PI) / RING_N
     let ringW = -1
     const render = (t) => {
       frame = requestAnimationFrame(render)
-      if (lastT >= 0 && t - lastT < FRAME_MS) return // skip frame
+      if (lastT >= 0 && t - lastT < FRAME_MS) return
       lastT = t
 
-      if (pointerInteracting.current === null) phi += 0.011 // faster auto-spin (per 30fps frame)
+      if (pointerInteracting.current === null) phi += 0.011
       ringAngle += 0.006
       const effPhi = phi + rotation.current
       globe.update({ phi: effPhi, width: width * dpr, height: width * dpr })
 
       const w = width
 
-      // (Re)lay the chars on a flat circle when the box size changes; scale the
-      // perspective with the box so the 3D look is consistent at any size.
       if (ringPlaneRef.current && w !== ringW) {
         ringW = w
-        if (ringWrapRef.current) ringWrapRef.current.style.perspective = `${(w * 1.05).toFixed(0)}px`
+        if (ringWrapRef.current) ringWrapRef.current.style.perspective = `${(w * 2.8).toFixed(0)}px`
         const R = RING_RADIUS * w
         for (let i = 0; i < RING_N; i++) {
           const el = ringRefs.current[i]
           if (!el) continue
-          // rotate(-angle) translateY(R): char sits on the circle starting from
-          // the bottom (front) reading left→right, baseline tangent to the ring.
           const angDeg = (i * STEP * 180) / Math.PI
           el.style.transform = `translate(-50%, -50%) rotate(${(-angDeg).toFixed(2)}deg) translateY(${R.toFixed(1)}px)`
         }
       }
 
-      // Tilt + spin the whole ring plane in 3D — the chars lie on it.
       if (ringPlaneRef.current) {
         const spinDeg = (ringAngle * 180) / Math.PI
         ringPlaneRef.current.style.transform = `rotateX(${RING_TILT_DEG}deg) rotateZ(${spinDeg.toFixed(2)}deg)`
       }
 
-      // Soft depth fade: bright in front (bottom), gently dimming only near the
-      // very back (top) so the ring stays readable around the sides.
       for (let i = 0; i < RING_N; i++) {
         const el = ringRefs.current[i]
         if (!el) continue
         const eff = ringAngle - i * STEP
-        const tt = (1 + Math.cos(eff)) / 2 // 1 front (bottom) .. 0 back (top)
-        const fade = Math.pow(tt, 0.4)     // stays high, drops only near the back
-        el.style.opacity = (0.3 + 0.7 * fade).toFixed(3)
+        const tt = (1 + Math.cos(eff)) / 2
+        const fade = Math.pow(tt, 0.85)
+        el.style.opacity = (0.1 + 0.9 * fade).toFixed(3)
       }
-      // Anchor city labels — position via transform (no per-frame layout).
       for (const c of CITIES) {
         const el = labelRefs.current[c.id]
         if (!el) continue
@@ -197,7 +176,6 @@ export default function Globe({ className = '', style }) {
         if (op <= 0) continue
         el.style.transform = `translate3d(${(p.x * w).toFixed(1)}px, ${(p.y * w).toFixed(1)}px, 0)`
       }
-      // Anchor route labels to arc peaks
       for (const a of ARCS) {
         if (!a.label) continue
         const el = labelRefs.current[a.id]
@@ -260,33 +238,37 @@ export default function Globe({ className = '', style }) {
         }}
       />
 
-      {/* City + route labels, positioned every frame by the render loop */}
       <div className="absolute inset-0 pointer-events-none select-none">
 
-        {/* Tilted 3D orbit text */}
-        {RING_TEXT.map((ch, i) => (
-          <span
-            key={`ring-${i}`}
-            ref={(el) => { ringRefs.current[i] = el }}
-            className="absolute font-semibold uppercase"
-            style={{
-              left: 0,
-              top: 0,
-              opacity: 0,
-              color: PINK,
-              fontSize: 'clamp(8px, 2vw, 11.5px)',
-              letterSpacing: '2px',
-              lineHeight: 1,
-              textShadow: '0 1px 6px rgba(226,49,155,0.18)',
-              willChange: 'transform, opacity',
-              // 3D tilt
-              transform: 'perspective(20px) rotateX(60deg) rotateZ(-60deg)',
-            }}
+        <div className="absolute inset-0" style={{ transform: 'translateY(-3%)' }}>
+        <div ref={ringWrapRef} className="absolute inset-0" style={{ perspective: '1000px' }}>
+          <div
+            ref={ringPlaneRef}
+            className="absolute inset-0"
+            style={{ transformStyle: 'preserve-3d', willChange: 'transform' }}
           >
-  
-            {ch === ' ' ? ' ' : ch}
-          </span>
-        ))}
+            {RING_TEXT.map((ch, i) => (
+              <span
+                key={`ring-${i}`}
+                ref={(el) => { ringRefs.current[i] = el }}
+                className="absolute left-1/2 top-1/2 font-semibold uppercase"
+                style={{
+                  opacity: 0,
+                  color: PINK,
+                  fontSize: 'clamp(9px, 2.3vw, 13px)',
+                  letterSpacing: '1.5px',
+                  lineHeight: 1,
+                  whiteSpace: 'pre',
+                  textShadow: '0 1px 6px rgba(226,49,155,0.18)',
+                  willChange: 'opacity',
+                }}
+              >
+                {ch === ' ' ? '\u00A0' : ch}
+              </span>
+            ))}
+          </div>
+        </div>
+        </div>
 
         {CITIES.map((c) => (
           <div

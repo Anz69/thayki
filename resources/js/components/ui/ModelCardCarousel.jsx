@@ -58,6 +58,14 @@ export default function ModelCardCarousel({ className = '', isActive }) {
   const wrapRef  = useRef(null)
   const swiperRef = useRef(null)
   const [models, setModels] = useState(FALLBACK)
+  // We reveal the carousel only once BOTH conditions hold:
+  //   1) catalog data has settled (no fallback→real flash), and
+  //   2) the modal open animation has finished (no init jank).
+  // Until then the wrapper stays invisible — so there's no "card pops in
+  // without animation, then updates" — just one smooth fade-up.
+  const [loaded, setLoaded]   = useState(false)
+  const [settled, setSettled] = useState(false)
+  const ready = loaded && settled
 
   // Use real imported prototype photos when available
   useEffect(() => {
@@ -77,38 +85,39 @@ export default function ModelCardCarousel({ className = '', isActive }) {
         if (mapped.length) setModels(mapped)
       })
       .catch(() => {})
+      .finally(() => { if (!cancelled) setLoaded(true) })
     return () => { cancelled = true }
   }, [])
 
+  // Start hidden.
   useLayoutEffect(() => {
     gsap.set(wrapRef.current, { autoAlpha: 0, y: 24 })
   }, [])
+
+  // Wait out the modal open animation before allowing the reveal.
   useEffect(() => {
-    gsap.to(wrapRef.current, {
-      autoAlpha: 1,
-      y: 0,
-      duration: 0.6,
-      ease: 'power3.out',
-      delay: 0.08,
+    if (!isActive || settled) return undefined
+    const id = setTimeout(() => setSettled(true), 440)
+    return () => clearTimeout(id)
+  }, [isActive, settled])
+
+  // Single smooth fade-up once everything is ready (Swiper is already mounted
+  // & laid out at this point, just behind opacity 0).
+  useEffect(() => {
+    if (!ready || !wrapRef.current) return undefined
+    // Let Swiper lay out its (looped/centered) slides for a frame, then reveal.
+    const raf = requestAnimationFrame(() => {
+      if (!wrapRef.current) return
+      gsap.to(wrapRef.current, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.55,
+        ease: 'power3.out',
+      })
     })
-  }, [])
-  // The carousel mounts while the modal is still animating open (zero/!=final
-  // width), so side cards can be mispositioned. Re-layout a few times as the
-  // sheet settles + whenever it becomes active or the data changes.
-  useEffect(() => {
-    if (!isActive) return undefined
-    const sw = swiperRef.current
-    if (!sw) return undefined
-    const relayout = () => {
-      sw.update?.()
-      sw.updateSlides?.()
-      sw.loopFix?.()
-      sw.autoplay?.start?.()
-    }
-    const ids = [120, 320, 520].map((ms) => setTimeout(relayout, ms))
-    const raf = requestAnimationFrame(relayout)
-    return () => { ids.forEach(clearTimeout); cancelAnimationFrame(raf) }
-  }, [isActive, models])
+    return () => cancelAnimationFrame(raf)
+  }, [ready])
+
   return (
     <>
       <style>{STYLES}</style>
@@ -117,27 +126,26 @@ export default function ModelCardCarousel({ className = '', isActive }) {
         className={`w-full max-h-[550px] ${className}`}
         style={{ height: '95%' }}
       >
-        <Swiper
-          className="mc-swiper"
-          modules={[Autoplay]}
-          centeredSlides
-          slidesPerView="auto"
-          loop
-          loopAdditionalSlides={2}
-          speed={500}
-          grabCursor
-          observer
-          observeParents
-          observeSlideChildren
-          autoplay={{ delay: 3000, disableOnInteraction: false }}
-          onSwiper={(s) => { swiperRef.current = s }}
-        >
-          {models.map((m) => (
-            <SwiperSlide key={m.id}>
-              <ModelCard m={m} />
-            </SwiperSlide>
-          ))}
-        </Swiper>
+        {ready && (
+          <Swiper
+            className="mc-swiper"
+            modules={[Autoplay]}
+            centeredSlides
+            slidesPerView="auto"
+            loop
+            loopAdditionalSlides={2}
+            speed={500}
+            grabCursor
+            autoplay={{ delay: 3000, disableOnInteraction: false }}
+            onSwiper={(s) => { swiperRef.current = s }}
+          >
+            {models.map((m) => (
+              <SwiperSlide key={m.id}>
+                <ModelCard m={m} />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
       </div>
     </>
   )

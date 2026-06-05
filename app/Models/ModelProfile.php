@@ -84,6 +84,12 @@ class ModelProfile extends Model
         return $this->hasMany(Meeting::class);
     }
 
+    /** @return HasMany<Lead, $this> Leads that expressed interest in this prototype. */
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class)->latest();
+    }
+
     /**
      * @param  Builder<ModelProfile>  $query
      * @return Builder<ModelProfile>

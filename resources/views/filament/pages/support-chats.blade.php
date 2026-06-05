@@ -190,7 +190,13 @@
                         @endif
                     </div>
                     <div style="margin-left:auto;">
-                        <span style="font-size:11px;color:#555;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:99px;padding:3px 10px;">Поддержка</span>
+                        @php $isLeadChat = $selectedChat->type === \App\Enums\ChatType::Lead; @endphp
+                        <span style="font-size:11px;color:#fff;border-radius:99px;padding:3px 10px;
+                                     background:{{ $isLeadChat ? '#E2319B' : '#1a1a1a' }};
+                                     border:1px solid {{ $isLeadChat ? '#E2319B' : '#2a2a2a' }};
+                                     {{ $isLeadChat ? '' : 'color:#555;' }}">
+                            {{ $isLeadChat ? '📩 Заявка' : 'Поддержка' }}
+                        </span>
                     </div>
                 </div>
 

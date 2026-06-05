@@ -18,6 +18,12 @@ const SendIcon = () => (
   </svg>
 )
 
+const PaperclipIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 21 21" fill="none">
+    <path d="M14.2275 5.71149L7.31849 12.6205C6.69202 13.247 6.69202 14.2627 7.31849 14.8891C7.94495 15.5156 8.96065 15.5156 9.58712 14.8891L16.393 8.08325C17.646 6.83031 17.646 4.79891 16.393 3.54598C15.1401 2.29305 13.1087 2.29305 11.8558 3.54598L5.15297 10.2488C3.27357 12.1282 3.27357 15.1753 5.15297 17.0547C7.03237 18.9341 10.0795 18.9341 11.9589 17.0547L16.5993 12.4143" stroke="#7F7F7F" strokeWidth="1.75" strokeLinecap="round" />
+  </svg>
+)
+
 function fmtTime(iso) {
   if (!iso) return ''
   const d = new Date(iso)
@@ -54,6 +60,10 @@ function mergeIncomingMessage(prev, incoming, myId) {
       && String(m.text ?? '').trim() === String(n.text ?? '').trim())
     if (i !== -1) { const next = prev.slice(); next[i] = { ...next[i], ...n, uploading: false }; return next }
   }
+  if (n.type === 'image' && n.attachmentUrl) {
+    const i = prev.findIndex((m) => m.from === n.from && m.type === 'image' && m.attachmentUrl === n.attachmentUrl)
+    if (i !== -1) { const next = prev.slice(); next[i] = { ...next[i], ...n, uploading: false }; return next }
+  }
   return [...prev, n]
 }
 
@@ -82,12 +92,16 @@ export default function RequestChatPage() {
   const [messages, setMessages]   = useState([])
   const [inputText, setInputText] = useState('')
   const [sending, setSending]     = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
   const [viewerSrc, setViewerSrc] = useState(null)
 
   const hasText = inputText.trim().length > 0
 
   const sendingRef     = useRef(false)
+  const uploadingRef   = useRef(false)
+  const fileInputRef   = useRef(null)
+  const lastAttachmentKeyRef = useRef({ key: null, ts: 0 })
   const messagesEndRef = useRef(null)
   const headerRef      = useRef(null)
   const messagesRef    = useRef(null)
@@ -189,6 +203,49 @@ export default function RequestChatPage() {
     }
   }
 
+  const handleAttachmentChange = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !chatId || uploadingRef.current) return
+
+    const attachmentKey = `${chatId}:${file.name}:${file.size}:${file.lastModified}`
+    const nowTs = Date.now()
+    if (lastAttachmentKeyRef.current.key === attachmentKey && nowTs - lastAttachmentKeyRef.current.ts < 5000) return
+    lastAttachmentKeyRef.current = { key: attachmentKey, ts: nowTs }
+
+    uploadingRef.current = true
+    setUploading(true)
+    const clientMessageId = `cmsg-att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const optimisticId = `opt-${clientMessageId}`
+    const previewUrl = URL.createObjectURL(file)
+    setMessages((prev) => [...prev, {
+      id: optimisticId,
+      clientMessageId,
+      from: 'user',
+      text: '',
+      type: 'image',
+      attachmentUrl: previewUrl,
+      uploading: true,
+      time: fmtTime(new Date().toISOString()),
+    }])
+
+    try {
+      const fd = new FormData()
+      fd.append('attachment', file)
+      fd.append('client_message_id', clientMessageId)
+      const { data } = await api.post(`/chats/${chatId}/messages`, fd, {
+        headers: { 'Idempotency-Key': `att-${attachmentKey}` },
+      })
+      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId))
+    } catch {
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
+    } finally {
+      try { URL.revokeObjectURL(previewUrl) } catch {}
+      uploadingRef.current = false
+      setUploading(false)
+    }
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
@@ -233,6 +290,11 @@ export default function RequestChatPage() {
                     onClick={() => msg.attachmentUrl && !msg.uploading && setViewerSrc(msg.attachmentUrl)}
                   >
                     {msg.attachmentUrl && <img src={msg.attachmentUrl} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />}
+                    {msg.uploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      </div>
+                    )}
                   </div>
                   <span className="text-[#ABABAB] text-xs font-medium px-1">{msg.time}</span>
                 </div>
@@ -260,7 +322,26 @@ export default function RequestChatPage() {
       </div>
 
       <div ref={inputBarRef} className="bg-white px-4 py-3 pb-8 shrink-0 container">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAttachmentChange}
+        />
         <div className="flex items-end">
+          <button
+            type="button"
+            disabled={uploading || !chatId}
+            onClick={() => fileInputRef.current?.click()}
+            className="shrink-0 size-11 bg-[#EFEEF3] rounded-full flex items-center justify-center active:opacity-60 transition-opacity mr-3 disabled:opacity-50"
+          >
+            {uploading ? (
+              <div className="w-4 h-4 rounded-full border-2 border-[#7F7F7F] border-t-transparent animate-spin" />
+            ) : (
+              <PaperclipIcon />
+            )}
+          </button>
           <div className="flex-1 min-w-0 bg-[#EFEEF3] rounded-[22px] px-4 py-3 overflow-hidden">
             <textarea
               ref={textareaRef}

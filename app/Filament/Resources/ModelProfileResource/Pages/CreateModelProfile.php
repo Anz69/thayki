@@ -10,11 +10,10 @@ class CreateModelProfile extends CreateRecord
     protected static string $resource = ModelProfileResource::class;
 
     /**
-     * Paths of photos uploaded in the create form, pulled out before the
-     * ModelProfile is created (it has no `photo_files` column) and turned
-     * into ModelPhoto rows afterwards.
+     * Ordered photo paths pulled out of the form before the ModelProfile is
+     * created (it has no `photo_files` column) and synced into ModelPhoto rows.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected array $photoFiles = [];
 
@@ -24,7 +23,7 @@ class CreateModelProfile extends CreateRecord
      */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $this->photoFiles = array_values(array_filter((array) ($data['photo_files'] ?? [])));
+        $this->photoFiles = array_values((array) ($data['photo_files'] ?? []));
         unset($data['photo_files']);
 
         return $data;
@@ -32,15 +31,6 @@ class CreateModelProfile extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $profile = $this->record;
-
-        foreach ($this->photoFiles as $i => $path) {
-            $profile->photos()->create([
-                'disk' => 'public',
-                'path' => $path,
-                'position' => $i,
-                'is_main' => $i === 0,
-            ]);
-        }
+        ModelProfileResource::syncPhotos($this->record, $this->photoFiles);
     }
 }
