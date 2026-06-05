@@ -52,6 +52,9 @@ export default function RequestPage() {
 
   const [params] = useSearchParams()
   const modelId = params.get('model')
+  // The flow is decided by the URL param immediately (not after the fetch), so
+  // the page never first renders the generic form and then swaps.
+  const isModelFlow = !!modelId
 
   const [model, setModel] = useState(null)
   const [city, setCity] = useState('')
@@ -103,23 +106,23 @@ export default function RequestPage() {
     setSubmitting(true)
     try {
       const { data } = await api.post('/leads', {
-        model_profile_id: model?.id ?? null,
+        model_profile_id: isModelFlow ? Number(modelId) : null,
         city: city.trim(),
         wishes: wishes.trim() || null,
-        hair_type: model ? null : ruLabel('hair', values.hairType),
-        age_range: model ? null : ruLabel('ages', values.ageRange),
-        height_range: model ? null : ruLabel('heights', values.height),
-        goal: model ? null : ruLabel('goals', values.goal),
+        hair_type: isModelFlow ? null : ruLabel('hair', values.hairType),
+        age_range: isModelFlow ? null : ruLabel('ages', values.ageRange),
+        height_range: isModelFlow ? null : ruLabel('heights', values.height),
+        goal: isModelFlow ? null : ruLabel('goals', values.goal),
         // First chat message in the user's selected language (RU/EN).
         message: buildLeadMessage({
           t,
           modelName: model ? modelName(model) : undefined,
           city: city.trim(),
           wishes,
-          options: model ? {} : { hair: values.hairType, ages: values.ageRange, heights: values.height, goals: values.goal },
+          options: isModelFlow ? {} : { hair: values.hairType, ages: values.ageRange, heights: values.height, goals: values.goal },
         }),
       }, { headers: { 'Idempotency-Key': `lead-${Date.now()}` } })
-      const from = encodeURIComponent(model ? `/model/${model.id}` : '/home')
+      const from = encodeURIComponent(isModelFlow ? `/model/${modelId}` : '/home')
       navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}&from=${from}`, { replace: true })
     } catch (err) {
       logError(err)
@@ -145,12 +148,12 @@ export default function RequestPage() {
 
       <div className="container flex flex-col gap-4 pt-3 pb-40">
         {/* Selected prototype (when arriving from «Интересует этот типаж») */}
-        {model && (
+        {isModelFlow && (
           <div data-anim className="flex items-center gap-3.5 rounded-2xl p-3 bg-white border-[1.5px] border-[#E2319B]/35">
             <div className="size-16 rounded-2xl overflow-hidden bg-[#F4EEF1] shrink-0">
               {modelPhoto
                 ? <img src={modelPhoto} alt="" className="w-full h-full object-cover object-top" />
-                : <span className="w-full h-full flex items-center justify-center text-xl">✨</span>}
+                : <div className="w-full h-full bg-[#F0E6EC] animate-pulse" />}
             </div>
             <div className="flex flex-col min-w-0 gap-1.5">
               <span className="inline-flex items-center gap-1.5 text-[#E2319B] text-[11px]/[100%] font-semibold uppercase tracking-[0.04em]">
@@ -159,9 +162,13 @@ export default function RequestPage() {
                 </svg>
                 {t('request.interested')}
               </span>
-              <span className="text-black text-[18px]/[110%] font-bold truncate">
-                {modelName(model)}{model.age ? `, ${model.age}` : ''}
-              </span>
+              {model
+                ? (
+                  <span className="text-black text-[18px]/[110%] font-bold truncate">
+                    {modelName(model)}{model.age ? `, ${model.age}` : ''}
+                  </span>
+                )
+                : <div className="h-[18px] w-32 rounded-md bg-[#EFE6EC] animate-pulse" />}
             </div>
           </div>
         )}
@@ -175,7 +182,7 @@ export default function RequestPage() {
         </div>
 
         {/* Option groups — only for the open "подбор" form, not the prototype flow */}
-        {!model && GROUPS.map(({ field, group, labelKey, keys }) => (
+        {!isModelFlow && GROUPS.map(({ field, group, labelKey, keys }) => (
           <div key={field} data-anim className="flex flex-col gap-3 bg-white rounded-2xl p-4 border border-black/5">
             <p className="text-black text-[15px]/[100%] font-semibold">{t(`request.${labelKey}`)}</p>
             <Chips group={group} keys={keys} value={values[field]} onChange={(v) => setVal(field, v)} t={t} />
@@ -184,7 +191,7 @@ export default function RequestPage() {
 
         {/* Wishes */}
         <div data-anim className="flex flex-col gap-2.5 bg-white rounded-2xl p-4 border border-black/5">
-          <p className="text-black text-[15px]/[100%] font-semibold">{model ? t('request.wishesExtra') : t('request.wishes')}</p>
+          <p className="text-black text-[15px]/[100%] font-semibold">{isModelFlow ? t('request.wishesExtra') : t('request.wishes')}</p>
           <textarea
             value={wishes}
             onChange={(e) => setWishes(e.target.value)}
