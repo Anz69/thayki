@@ -15,6 +15,9 @@ class MeetingResource extends Resource
 {
     protected static ?string $model = Meeting::class;
 
+    // Legacy booking/meeting flow — disabled in the lead-gen product.
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
     protected static ?string $navigationGroup = 'Бронирования';

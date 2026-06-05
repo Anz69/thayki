@@ -19,9 +19,14 @@ use Illuminate\Support\Carbon;
  * @property string $display_name
  * @property int $age
  * @property int $height_cm
- * @property int $weight_kg
- * @property string $bust_size
- * @property string $butt_size
+ * @property int|null $weight_kg
+ * @property int|null $bust_cm
+ * @property int|null $waist_cm
+ * @property int|null $hips_cm
+ * @property string|null $eyes
+ * @property string|null $breast_size
+ * @property string|null $bust_size
+ * @property string|null $butt_size
  * @property string|null $description
  * @property ModelSchedule $schedule
  * @property int $hourly_rate_thb
@@ -43,6 +48,9 @@ class ModelProfile extends Model
             'age' => 'integer',
             'height_cm' => 'integer',
             'weight_kg' => 'integer',
+            'bust_cm' => 'integer',
+            'waist_cm' => 'integer',
+            'hips_cm' => 'integer',
             'hourly_rate_thb' => 'integer',
             'commission_override' => 'decimal:4',
             'is_published' => 'boolean',

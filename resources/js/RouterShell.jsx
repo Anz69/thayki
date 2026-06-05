@@ -1,5 +1,6 @@
 import { useEffect, useRef, lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { registerOverlay, registerPageRoot } from '@/utils/pageTransition'
 import RouteChangeEffect from '@/components/RouteChangeEffect'
 import BottomNav from '@/components/ui/BottomNav'
@@ -32,6 +33,8 @@ const BecomeModelPage = lazy(() => import('@/views/BecomeModelPage'))
 const ApplicationPendingPage = lazy(() => import('@/views/ApplicationPendingPage'))
 const SupportPage = lazy(() => import('@/views/SupportPage'))
 const FeedbackPage = lazy(() => import('@/views/FeedbackPage'))
+const RequestPage = lazy(() => import('@/views/RequestPage'))
+const RequestChatPage = lazy(() => import('@/views/RequestChatPage'))
 
 function LandingRoute() {
   const { user } = useAuthStore()
@@ -77,6 +80,7 @@ export function resetModelAppGuardCache() {
 }
 
 function AuthErrorScreen() {
+  const { t } = useTranslation()
   const authStore = useAuthStore()
   const meetingStore = useMeetingStore()
   const hint = authStore.authErrorHint
@@ -176,9 +180,9 @@ function AuthErrorScreen() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-8 text-center bg-white">
         <div className="flex flex-col items-center gap-3">
           <span className="text-5xl select-none">😕</span>
-          <h1 className="text-xl font-semibold text-black">Ошибка входа</h1>
-          <p className="text-sm text-[#7F7F7F] leading-relaxed">
-            Не удалось войти в приложение.<br />Попробуйте перезагрузить страницу.
+          <h1 className="text-xl font-semibold text-black">{t('auth.loginErrorTitle')}</h1>
+          <p className="text-sm text-[#7F7F7F] leading-relaxed whitespace-pre-line">
+            {t('auth.loginErrorText')}
           </p>
           {hint && (
             <p className="text-xs text-[#AAAAAA] leading-relaxed mt-1 max-w-xs">
@@ -190,19 +194,19 @@ function AuthErrorScreen() {
           onClick={() => { authRetried = false; window.location.reload() }}
           className="w-full max-w-xs py-4 rounded-full bg-[#E2319B] text-white text-base font-semibold active:opacity-80 transition-opacity"
         >
-          Перезагрузить страницу
+          {t('auth.reload')}
         </button>
         <button
           onClick={() => setShowDetail(true)}
           className="text-xs text-[#CCCCCC] underline underline-offset-2 active:opacity-60 transition-opacity"
         >
-          Посмотреть причину ошибки
+          {t('auth.showError')}
         </button>
       </div>
 
       <ModalMiddle isOpen={showDetail} onClose={() => setShowDetail(false)}>
         <div className="px-5 pb-6">
-          <p className="text-base font-semibold text-gray-900 mb-3">Детали ошибки</p>
+          <p className="text-base font-semibold text-gray-900 mb-3">{t('auth.errorDetails')}</p>
           <pre className="text-[11px] leading-relaxed text-gray-600 bg-gray-50 rounded-2xl p-4 overflow-x-auto whitespace-pre-wrap break-all">
             {JSON.stringify(detail ?? { message: 'Детали ошибки недоступны' }, null, 2)}
           </pre>
@@ -210,7 +214,7 @@ function AuthErrorScreen() {
             onClick={() => setShowDetail(false)}
             className="mt-4 w-full py-3 rounded-2xl bg-gray-100 text-gray-700 text-sm font-medium active:opacity-70 transition-opacity"
           >
-            Закрыть
+            {t('common.close')}
           </button>
         </div>
       </ModalMiddle>
@@ -392,6 +396,8 @@ export default function App() {
                         <Route path="/model-meeting" element={<Navigate to="/meeting" replace />} />
                         <Route path="/chat" element={<ChatPage />} />
                         <Route path="/support" element={<SupportPage />} />
+                        <Route path="/request" element={<RequestPage />} />
+                        <Route path="/request/chat" element={<RequestChatPage />} />
                         <Route path="/roadmap" element={<RoadmapPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/become-model" element={<BecomeModelPage />} />

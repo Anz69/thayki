@@ -171,9 +171,9 @@ export default function AppLoader() {
 
       <img
         ref={logoRef}
-        src="/img/thaiky.png"
+        src="/img/rus-model-logo.png"
         alt=""
-        style={{ width: 130, height: 'auto', visibility: 'hidden', position: 'relative', zIndex: 1 }}
+        style={{ width: 80, height: 'auto', visibility: 'hidden', position: 'relative', zIndex: 1 }}
       />
     </div>
   )

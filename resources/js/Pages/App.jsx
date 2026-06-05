@@ -5,7 +5,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import useMeetingStore from '@/stores/useMeetingStore'
 import api, { getStoredToken, clearToken } from '@/utils/api'
 import { logWarn } from '@/utils/logger'
-import { parseTelegramStartParam } from '@/utils/telegramAuth'
+import { parseTelegramStartParam, buildDevInitData, getOrCreateDevTelegramId } from '@/utils/telegramAuth'
 
 /**
  * Single Inertia page — the React app shell.
@@ -20,7 +20,7 @@ import { parseTelegramStartParam } from '@/utils/telegramAuth'
  * of the SANCTUM_STATEFUL_DOMAINS configuration on the server.
  */
 export default function App() {
-  const { auth }     = usePage().props
+  const { auth, appEnv } = usePage().props
   const authStore    = useAuthStore()
   const meetingStore = useMeetingStore()
 
@@ -96,6 +96,23 @@ export default function App() {
 
         authStore.setNeedsLogin(null, { step: 'POST /auth/telegram', message: 'Ответ сервера не содержал токен' })
         return
+      }
+
+      // No Telegram context. In local dev, auto-login a stable test account.
+      if (appEnv === 'local') {
+        try {
+          const devId = getOrCreateDevTelegramId()
+          const { data } = await api.post('/auth/telegram', {
+            init_data: buildDevInitData(devId),
+          })
+          if (data.ok && data.data?.token && data.data?.user) {
+            authStore.setUser(data.data.user, data.data.token)
+            meetingStore.loadLatest()
+            return
+          }
+        } catch (err) {
+          logWarn('[App auth] dev login failed', { error: err?.message })
+        }
       }
 
       authStore.setNeedsLogin('Не удалось получить данные авторизации из Telegram.', { step: 'initData check', message: 'window.Telegram.WebApp.initData отсутствует' })

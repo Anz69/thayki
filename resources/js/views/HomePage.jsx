@@ -2,9 +2,12 @@ import { useRef, useEffect, useLayoutEffect, useMemo, useState, useCallback } fr
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import TransitionLink from '@/components/TransitionLink'
+import { useTranslation } from 'react-i18next'
 import ShareModelsModal from '@/components/modals/ShareModelsModal'
+import CatalogNotice from '@/components/CatalogNotice'
 import api, { extractErrorMessage } from '@/utils/api'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
+import { modelName } from '@/utils/modelName'
 
 const PER_PAGE = 20
 const RETRY_DELAYS = [800, 2000, 4000]
@@ -35,15 +38,7 @@ function ModelCard({ model }) {
 
   if (!model || typeof model !== 'object') return null
   const photos = Array.isArray(model?.photos) ? model.photos.filter(Boolean) : []
-  const prices = Array.isArray(model?.price_options) ? model.price_options.filter(Boolean) : []
   const mainPhoto = photos.find((p) => p?.is_main) ?? photos[0]
-  const cheapestOption = prices.length
-    ? prices.reduce((best, p) => (Number(p?.price_thb) < Number(best?.price_thb) ? p : best), prices[0])
-    : null
-  const minPrice = cheapestOption ? Number(cheapestOption.price_thb) : model.hourly_rate_thb
-  const priceLabel = cheapestOption
-    ? (cheapestOption.hours === 1 ? '/ч' : `/ ${cheapestOption.hours} ч`)
-    : '/ч'
   const photoSrc = mainPhoto ? resolveMediaUrl(mainPhoto.url) : null
 
   return (
@@ -73,11 +68,8 @@ function ModelCard({ model }) {
       )}
       <div className="absolute bottom-0 left-0 w-full h-28 bg-gradient-to-t from-black/75 to-transparent" />
       <div className="flex flex-col gap-3 relative z-30 px-3.5 py-5">
-        <div className="p-2 bg-[#EFEEF3] rounded-2xl text-[#1B1B1B] font-medium text-xs/[100%] w-max">
-          {`฿ ${minPrice?.toLocaleString()} ${priceLabel}`}
-        </div>
         <h1 className="text-white text-base/[100%] font-medium">
-          {model.display_name}, {model.age}
+          {modelName(model)}, {model.age}
         </h1>
       </div>
     </TransitionLink>
@@ -92,6 +84,7 @@ export default function HomePage() {
   const sentinelRef   = useRef(null)
   const isFetchingRef = useRef(false)
   const prevCountRef  = useRef(0)
+  const { t } = useTranslation()
 
   const [models,      setModels]      = useState([])
   const [loading,     setLoading]     = useState(true)
@@ -129,7 +122,7 @@ export default function HomePage() {
       })
       .catch((err) => {
         if (cancelled) return
-        setError(extractErrorMessage(err, 'Не удалось загрузить моделей'))
+        setError(extractErrorMessage(err, t('home.error')))
       })
       .finally(() => { if (!cancelled) setLoading(false) })
 
@@ -247,7 +240,7 @@ export default function HomePage() {
       >
         <div className="container flex items-center justify-between">
           <h1 ref={titleRef} className="invisible text-black text-2xl/[100%] font-[500]">
-            Модели
+            {t('home.title')}
           </h1>
           <button
             ref={shareBtnRef}
@@ -255,10 +248,12 @@ export default function HomePage() {
             disabled={loading || safeModels.length === 0}
             className="invisible px-2.5 py-3 bg-[#EFEEF3] text-black text-base/[80%] font-medium active:bg-[#E0DEDF] transition-colors duration-200 cursor-pointer rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Поделиться
+            {t('home.share')}
           </button>
         </div>
       </header>
+
+      <CatalogNotice />
 
       <style>{`
         @keyframes shimmer {
@@ -295,12 +290,12 @@ export default function HomePage() {
               onClick={() => setReloadKey((k) => k + 1)}
               className="px-4 py-2.5 bg-[#EFEEF3] text-black text-sm font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
             >
-              Попробовать снова
+              {t('common.retry')}
             </button>
           </div>
         ) : safeModels.length === 0 ? (
           <div className="col-span-2 text-center text-[#7F7F7F] py-20 text-sm">
-            Моделей пока нет
+            {t('home.empty')}
           </div>
         ) : (
           safeModels.map((m) => (

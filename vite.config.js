@@ -27,6 +27,7 @@ export default defineConfig({
         manualChunks: {
           react:    ['react', 'react-dom', 'react-router-dom'],
           gsap:     ['gsap'],
+          cobe:     ['cobe'],
           swiper:   ['swiper', 'swiper/react', 'swiper/modules'],
           realtime: ['laravel-echo', 'pusher-js'],
         },

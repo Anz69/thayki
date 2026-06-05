@@ -77,18 +77,29 @@ class InitDataValidator
             $botToken = trim((string) env('TELEGRAM_BOT_TOKEN', ''));
         }
 
-        if ($botToken === '') {
+        // APP_ENV=local always permits unsigned (dev test-account) login, even
+        // without a configured bot token, so a fresh local checkout can log in.
+        $isLocal = $this->config->get('app.env') === 'local';
+        $allowUnsigned = $isLocal || (bool) $this->config->get('telegram.allow_unsigned', false);
+
+        if ($botToken === '' && ! $allowUnsigned) {
             throw InvalidInitDataException::malformed('Server misconfiguration: bot token is not set.');
         }
 
-        $secretKey = hash_hmac('sha256', $botToken, 'WebAppData', true);
-        $expected = hash_hmac('sha256', $dataCheckString, $secretKey);
+        $valid = false;
+        if ($botToken !== '') {
+            $secretKey = hash_hmac('sha256', $botToken, 'WebAppData', true);
+            $expected = hash_hmac('sha256', $dataCheckString, $secretKey);
+            $valid = hash_equals($expected, $providedHash);
+        }
 
-        $allowUnsigned = (bool) $this->config->get('telegram.allow_unsigned', false);
-
-        $valid = hash_equals($expected, $providedHash);
-
-        if (! $valid) {
+        if (! $valid && $allowUnsigned) {
+            // Dev / unsigned mode: accept without the bot-token network
+            // diagnostics below. Still enforces auth_date freshness + payload shape.
+            \Illuminate\Support\Facades\Log::warning(
+                'Telegram initData HMAC skipped — unsigned login allowed (APP_ENV=local or TELEGRAM_ALLOW_UNSIGNED=true).'
+            );
+        } elseif (! $valid) {
             // Auto-diagnose: verify the bot token against Telegram API (cached 1 h).
             // This distinguishes "wrong token in .env" from "tampered initData".
             $tokenStatus = $this->checkBotToken($botToken);
@@ -125,13 +136,8 @@ class InitDataValidator
                 ]
             );
 
-            if (! $allowUnsigned) {
-                throw InvalidInitDataException::signature();
-            }
-
-            \Illuminate\Support\Facades\Log::warning(
-                'Telegram initData HMAC skipped — TELEGRAM_ALLOW_UNSIGNED=true. Remove this flag once the signature issue is resolved.'
-            );
+            // Reached only when unsigned login is NOT allowed (production).
+            throw InvalidInitDataException::signature();
         }
 
         $ttl = (int) $this->config->get('telegram.init_data_ttl', 86400);

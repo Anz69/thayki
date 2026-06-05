@@ -14,32 +14,28 @@ class ModelProfileResource extends Resource
 {
     protected static ?string $model = ModelProfile::class;
 
-    protected static bool $shouldRegisterNavigation = false;
-
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationGroup = 'Пользователи и модели';
 
-    protected static ?string $navigationLabel = 'Профили моделей';
+    protected static ?string $navigationLabel = 'Модели (анкеты)';
 
-    protected static ?string $modelLabel = 'Профиль модели';
+    protected static ?string $modelLabel = 'Анкета модели';
 
-    protected static ?string $pluralModelLabel = 'Профили моделей';
+    protected static ?string $pluralModelLabel = 'Модели (анкеты)';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('user_id')
-                    ->label('Пользователь')
-                    ->relationship('user', 'first_name')
-                    ->searchable()
-                    ->required(),
                 Forms\Components\TextInput::make('display_name')
-                    ->label('Отображаемое имя')
+                    ->label('Имя (RU)')
                     ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('display_name_en')
+                    ->label('Имя (EN)')
                     ->maxLength(255),
                 Forms\Components\TextInput::make('age')
                     ->label('Возраст')
@@ -49,51 +45,46 @@ class ModelProfileResource extends Resource
                     ->label('Рост (см)')
                     ->required()
                     ->numeric(),
-                Forms\Components\TextInput::make('weight_kg')
-                    ->label('Вес (кг)')
-                    ->required()
+                Forms\Components\TextInput::make('bust_cm')
+                    ->label('Грудь (обхват, см)')
                     ->numeric(),
-                Forms\Components\TextInput::make('bust_size')
-                    ->label('Грудь')
-                    ->required()
+                Forms\Components\TextInput::make('waist_cm')
+                    ->label('Талия (см)')
+                    ->numeric(),
+                Forms\Components\TextInput::make('hips_cm')
+                    ->label('Бёдра (см)')
+                    ->numeric(),
+                Forms\Components\TextInput::make('breast_size')
+                    ->label('Размер груди (чашка)')
                     ->maxLength(16),
-                Forms\Components\TextInput::make('butt_size')
-                    ->label('Бёдра')
-                    ->required()
-                    ->maxLength(16),
+                Forms\Components\TextInput::make('eyes')
+                    ->label('Цвет глаз')
+                    ->maxLength(32),
                 Forms\Components\Textarea::make('description')
                     ->label('Описание')
                     ->columnSpanFull(),
-                Forms\Components\Select::make('schedule')
-                    ->label('Расписание')
-                    ->options([
-                        'any' => 'Любое время',
-                        'day' => 'День (07:00–20:00)',
-                        'night' => 'Ночь (20:00–07:00)',
-                    ])
-                    ->required()
-                    ->default('any'),
-                Forms\Components\TextInput::make('hourly_rate_thb')
-                    ->label('Цена за час (฿)')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('commission_override')
-                    ->label('Индив. комиссия (%)')
-                    ->helperText('Оставьте пустым для использования глобальной ставки.')
-                    ->numeric()
-                    ->minValue(0)
-                    ->maxValue(50)
-                    ->step(0.1)
-                    ->suffix('%')
-                    ->formatStateUsing(fn ($state) => $state === null
-                        ? null
-                        : round(((float) $state) * 100, 2))
-                    ->dehydrateStateUsing(fn ($state) => ($state === null || $state === '')
-                        ? null
-                        : round(((float) $state) / 100, 4)),
-                Forms\Components\Toggle::make('is_published')->label('Опубликована'),
-                Forms\Components\Toggle::make('is_verified')->label('Верифицирована'),
-                Forms\Components\DateTimePicker::make('published_at')->label('Опубликована (дата)'),
+                Forms\Components\FileUpload::make('photo_files')
+                    ->label('Фотографии')
+                    ->helperText('Можно выбрать сразу несколько. Первое фото станет главным. После создания фото можно добавлять и менять порядок на странице редактирования.')
+                    ->multiple()
+                    ->image()
+                    ->reorderable()
+                    ->appendFiles()
+                    ->panelLayout('grid')
+                    ->disk('public')
+                    ->directory('model-photos')
+                    ->visibleOn('create')
+                    ->columnSpanFull(),
+                Forms\Components\Toggle::make('is_published')->label('Опубликована')->default(true),
+                Forms\Components\Toggle::make('is_verified')->label('Верифицирована')->default(true),
+                Forms\Components\DateTimePicker::make('published_at')
+                    ->label('Опубликована (дата)')
+                    ->default(now()),
+                Forms\Components\Select::make('user_id')
+                    ->label('Пользователь (необязательно)')
+                    ->helperText('Прототип-анкету можно создавать без привязки к пользователю.')
+                    ->relationship('user', 'first_name')
+                    ->searchable(),
             ]);
     }
 
@@ -107,20 +98,12 @@ class ModelProfileResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('age')->label('Возраст')->numeric()->sortable(),
                 Tables\Columns\TextColumn::make('height_cm')->label('Рост')->numeric()->sortable(),
-                Tables\Columns\TextColumn::make('weight_kg')->label('Вес')->numeric()->sortable(),
-                Tables\Columns\TextColumn::make('bust_size')->label('Грудь')->searchable(),
-                Tables\Columns\TextColumn::make('butt_size')->label('Бёдра')->searchable(),
-                Tables\Columns\TextColumn::make('schedule')
-                    ->label('Расписание')
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'day' => 'День',
-                        'night' => 'Ночь',
-                        default => 'Любое',
-                    }),
-                Tables\Columns\TextColumn::make('hourly_rate_thb')
-                    ->label('Цена/ч')
-                    ->formatStateUsing(fn ($state) => '฿ '.number_format((int) $state))
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('bust_cm')->label('Грудь')->numeric()->toggleable(),
+                Tables\Columns\TextColumn::make('waist_cm')->label('Талия')->numeric()->toggleable(),
+                Tables\Columns\TextColumn::make('hips_cm')->label('Бёдра')->numeric()->toggleable(),
+                Tables\Columns\TextColumn::make('breast_size')->label('Размер груди'),
+                Tables\Columns\TextColumn::make('eyes')->label('Глаза')->toggleable(),
+                Tables\Columns\TextColumn::make('photos_count')->counts('photos')->label('Фото'),
                 Tables\Columns\IconColumn::make('is_published')->label('Опубл.')->boolean(),
                 Tables\Columns\IconColumn::make('is_verified')->label('Верифиц.')->boolean(),
                 Tables\Columns\TextColumn::make('published_at')->label('Опубл. (дата)')
@@ -145,7 +128,9 @@ class ModelProfileResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            ModelProfileResource\RelationManagers\PhotosRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

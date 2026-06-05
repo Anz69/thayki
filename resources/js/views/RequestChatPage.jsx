@@ -1,0 +1,289 @@
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
+import gsap from 'gsap'
+import { usePageReady } from '@/composables/usePageReady'
+import useAuthStore from '@/stores/useAuthStore'
+import api from '@/utils/api'
+import { subscribePrivate } from '@/utils/safeEcho'
+import ChatLoadingSkeleton from '@/components/ui/ChatLoadingSkeleton'
+import PhotoViewer from '@/components/ui/PhotoViewer'
+import GradientBorder from '@/components/ui/GradientBorder'
+import { logError } from '@/utils/logger'
+
+const SendIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+  </svg>
+)
+
+function fmtTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+function normalizeMsg(raw, myUserId) {
+  const isSupport = raw.is_support === true
+  const isMe = !isSupport && (raw.user_id === myUserId || raw.sender_id === myUserId)
+  return {
+    id: raw.id,
+    clientMessageId: raw.client_message_id ?? raw.clientMessageId ?? null,
+    from: isMe ? 'user' : 'them',
+    isSupport,
+    text: raw.body ?? raw.text ?? '',
+    time: raw.created_at ? fmtTime(raw.created_at) : (raw.time ?? ''),
+    type: raw.type ?? (raw.attachment_url ? 'image' : 'text'),
+    attachmentUrl: raw.attachment_url ?? raw.attachmentUrl ?? null,
+  }
+}
+
+function mergeIncomingMessage(prev, incoming, myId) {
+  const n = normalizeMsg(incoming, myId)
+  const byServerId = prev.findIndex((m) => String(m.id) === String(n.id))
+  if (byServerId !== -1) {
+    const next = prev.slice(); next[byServerId] = { ...next[byServerId], ...n, uploading: false }; return next
+  }
+  if (n.clientMessageId) {
+    const i = prev.findIndex((m) => m.clientMessageId === n.clientMessageId)
+    if (i !== -1) { const next = prev.slice(); next[i] = { ...next[i], ...n, uploading: false }; return next }
+  }
+  if (n.from === 'user') {
+    const i = prev.findIndex((m) => typeof m.id === 'string' && m.id.startsWith('opt-') && m.from === 'user'
+      && String(m.text ?? '').trim() === String(n.text ?? '').trim())
+    if (i !== -1) { const next = prev.slice(); next[i] = { ...next[i], ...n, uploading: false }; return next }
+  }
+  return [...prev, n]
+}
+
+function ManagerNote({ text }) {
+  return (
+    <div className="flex justify-center my-3 px-2" data-msg>
+      <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-3">
+        <p className="text-[#5B5B5B] text-[12.5px]/[155%] font-medium text-center max-w-[300px]">
+          {text}
+        </p>
+      </GradientBorder>
+    </div>
+  )
+}
+
+export default function RequestChatPage() {
+  const { t } = useTranslation()
+  const navigate = useTransitionNavigate()
+  const [params] = useSearchParams()
+  const auth     = useAuthStore()
+  const myId     = auth.user?.id
+
+  const chatId  = Number(params.get('id') || 0) || null
+  const leadId  = params.get('lead')
+
+  const [messages, setMessages]   = useState([])
+  const [inputText, setInputText] = useState('')
+  const [sending, setSending]     = useState(false)
+  const [initialLoad, setInitialLoad] = useState(true)
+  const [viewerSrc, setViewerSrc] = useState(null)
+
+  const hasText = inputText.trim().length > 0
+
+  const sendingRef     = useRef(false)
+  const messagesEndRef = useRef(null)
+  const headerRef      = useRef(null)
+  const messagesRef    = useRef(null)
+  const inputBarRef    = useRef(null)
+  const textareaRef    = useRef(null)
+  const sendWrapRef    = useRef(null)
+  const prevMsgCount   = useRef(0)
+
+  const setSendWrapRef = useCallback((el) => {
+    sendWrapRef.current = el
+    if (el) gsap.set(el, { width: 0, marginLeft: 0, overflow: 'hidden' })
+  }, [])
+
+  useEffect(() => {
+    const root = document.getElementById('page-root')
+    if (root) { root.style.overflowY = 'hidden'; return () => { root.style.overflowY = '' } }
+  }, [])
+
+  useLayoutEffect(() => {
+    gsap.set(headerRef.current,   { y: -40, autoAlpha: 0 })
+    gsap.set(inputBarRef.current, { y: 24,  autoAlpha: 0 })
+    if (messagesRef.current) gsap.set(messagesRef.current, { autoAlpha: 0 })
+  }, [])
+
+  usePageReady(() => {
+    gsap.timeline()
+      .to(headerRef.current,   { y: 0, autoAlpha: 1, duration: 0.38, ease: 'expo.out' })
+      .to(inputBarRef.current, { y: 0, autoAlpha: 1, duration: 0.36, ease: 'power2.out' }, 0.1)
+      .add(() => {
+        if (messagesRef.current) gsap.to(messagesRef.current, { autoAlpha: 1, duration: 0.25 })
+        requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant' }))
+      }, 0.12)
+  })
+
+  useEffect(() => {
+    if (!chatId) { navigate('/home', { replace: true }); return }
+    api.get(`/chats/${chatId}/messages`)
+      .then((res) => {
+        const normalized = (res.data.data ?? []).map((m) => normalizeMsg(m, myId))
+        prevMsgCount.current = normalized.length
+        setMessages(normalized)
+      })
+      .catch(logError)
+      .finally(() => setInitialLoad(false))
+  }, [chatId, myId, navigate])
+
+  useEffect(() => {
+    if (!chatId) return undefined
+    return subscribePrivate(`chats.${chatId}`, {
+      '.message.sent': (e) => setMessages((prev) => mergeIncomingMessage(prev, e.message ?? e, myId)),
+    })
+  }, [chatId, myId])
+
+  useEffect(() => {
+    if (initialLoad) return
+    const isNew = messages.length > prevMsgCount.current
+    prevMsgCount.current = messages.length
+    if (isNew) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, initialLoad])
+
+  useEffect(() => {
+    const el = sendWrapRef.current
+    if (!el) return
+    gsap.killTweensOf(el)
+    gsap.to(el, hasText
+      ? { width: 44, marginLeft: 10, duration: 0.38, ease: 'back.out(2.5)' }
+      : { width: 0, marginLeft: 0, duration: 0.22, ease: 'power3.in' })
+  }, [hasText])
+
+  const autoResize = () => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+  }
+
+  const handleSend = async () => {
+    const text = inputText.trim()
+    if (!text || sendingRef.current || !chatId) return
+    sendingRef.current = true
+    setSending(true)
+
+    const optimisticId = `opt-${Date.now()}`
+    setMessages((prev) => [...prev, { id: optimisticId, from: 'user', text, type: 'text', time: fmtTime(new Date().toISOString()) }])
+    setInputText('')
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
+
+    const clientMessageId = `cmsg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    try {
+      const { data } = await api.post(`/chats/${chatId}/messages`, { body: text, client_message_id: clientMessageId }, {
+        headers: { 'Idempotency-Key': `msg-${chatId}-${optimisticId}` },
+      })
+      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId))
+    } catch {
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
+    } finally {
+      sendingRef.current = false
+      setSending(false)
+    }
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
+  }
+
+  return (
+    <section className="flex flex-col bg-white overflow-hidden" style={{ height: '100dvh' }}>
+      {viewerSrc && <PhotoViewer src={viewerSrc} onClose={() => setViewerSrc(null)} />}
+
+      <header ref={headerRef} className="w-full py-4 bg-white shrink-0">
+        <div className="container flex items-center relative">
+          <button
+            onClick={() => navigate('/home')}
+            className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
+          >
+            {t('common.back')}
+          </button>
+          <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500]">
+            {t('requestChat.title')}
+          </span>
+        </div>
+      </header>
+
+      <div className="flex-1 relative min-h-0 container">
+        {initialLoad && (
+          <div className="absolute inset-0 z-10 bg-white flex flex-col pt-4">
+            <ChatLoadingSkeleton />
+          </div>
+        )}
+
+        <div ref={messagesRef} className="absolute inset-0 overflow-y-auto" style={{ visibility: 'hidden' }}>
+          <div className="flex flex-col px-4 py-4 gap-0 container">
+            {messages.map((msg, idx) => {
+              const isUser = msg.from === 'user'
+              const prevMsg = messages[idx - 1]
+              const isFirstInGroup = !prevMsg || prevMsg.from !== msg.from
+              const gap = isFirstInGroup && idx > 0 ? 'mt-3' : 'mt-1'
+
+              const bubble = msg.type === 'image' ? (
+                <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+                  <div
+                    className="w-[180px] h-[160px] rounded-2xl overflow-hidden bg-[#F0F0F0] relative cursor-pointer active:opacity-80 transition-opacity"
+                    onClick={() => msg.attachmentUrl && !msg.uploading && setViewerSrc(msg.attachmentUrl)}
+                  >
+                    {msg.attachmentUrl && <img src={msg.attachmentUrl} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />}
+                  </div>
+                  <span className="text-[#ABABAB] text-xs font-medium px-1">{msg.time}</span>
+                </div>
+              ) : (
+                <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+                  <div className={['max-w-[260px] px-4 py-3 rounded-3xl', isUser ? 'bg-[#1C1C1E] text-[#D2D2D2]' : 'bg-[#F0F0F0] text-black'].join(' ')}>
+                    <p className="text-[15px]/[148%] font-normal" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+                  </div>
+                  <span className="text-[#ABABAB] text-xs font-medium px-1">{msg.time}</span>
+                </div>
+              )
+
+              return (
+                <div key={msg.id}>
+                  <div data-msg className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`}>
+                    {bubble}
+                  </div>
+                  {idx === 0 && <ManagerNote text={t('requestChat.managerNote')} />}
+                </div>
+              )
+            })}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+      </div>
+
+      <div ref={inputBarRef} className="bg-white px-4 py-3 pb-8 shrink-0 container">
+        <div className="flex items-end">
+          <div className="flex-1 min-w-0 bg-[#EFEEF3] rounded-[22px] px-4 py-3 overflow-hidden">
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={inputText}
+              onChange={(e) => { setInputText(e.target.value); autoResize() }}
+              onKeyDown={handleKeyDown}
+              placeholder={t('requestChat.placeholder')}
+              className="w-full bg-transparent text-black text-[15px]/[145%] font-normal outline-none placeholder:text-[#ABABAB] resize-none"
+              style={{ maxHeight: 120, display: 'block', overflowY: 'auto', wordBreak: 'break-word', overflowWrap: 'break-word' }}
+            />
+          </div>
+          <div ref={setSendWrapRef} className="shrink-0 overflow-hidden">
+            <button
+              onClick={handleSend}
+              disabled={sending}
+              className="size-11 rounded-full bg-[#E2319B] text-white flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            >
+              <SendIcon />
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

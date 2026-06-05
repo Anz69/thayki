@@ -1,10 +1,5 @@
+import { useTranslation } from 'react-i18next'
 import { declAge } from '@/utils/datetime'
-
-const scheduleLabels = {
-  day: 'День',
-  night: 'Ночь',
-  any: 'Любое время',
-}
 
 function Row({ label, value, last }) {
   return (
@@ -19,31 +14,28 @@ function Row({ label, value, last }) {
 }
 
 export default function Info({ model }) {
+  const { t } = useTranslation()
   if (!model) return null
+
+  const cm = (v) => (v ? `${v} ${t('modelInfo.cm')}` : '—')
 
   return (
     <div className="flex flex-col gap-6 w-full container pb-20">
       <div className="flex flex-col gap-2.5 py-1 bg-[#EFEEF3] w-full rounded-2xl">
-      <div className="flex items-center justify-between px-5 py-4 w-full">
-        <h1 className="text-black text-base/[100%] font-medium">Возраст</h1>
-        <h2 className="text-[#7F7F7F] text-base/[100%] font-medium">{declAge(model.age)}</h2>
-      </div>
+        <div className="flex items-center justify-between px-5 py-4 w-full">
+          <h1 className="text-black text-base/[100%] font-medium">{t('modelInfo.age')}</h1>
+          <h2 className="text-[#7F7F7F] text-base/[100%] font-medium">{declAge(model.age)}</h2>
+        </div>
       </div>
 
       {/* Physical info */}
       <div className="flex flex-col gap-2.5 py-1 bg-[#EFEEF3] w-full rounded-2xl">
-
-        <Row label="Рост" value={model.height_cm ? `${model.height_cm} см` : '—'} />
-        <Row label="Вес" value={model.weight_kg ? `${model.weight_kg} кг` : '—'} />
-        <Row label="Размер попы" value={model.butt_size ?? '—'} />
-        <Row label="Размер груди" value={model.bust_size ?? '—'} last />
-      </div>
-
-      <div className="flex items-center justify-between p-5 bg-[#EFEEF3] w-full rounded-xl">
-        <h1 className="text-black text-base/[100%] font-medium">График</h1>
-        <h2 className="text-[#7F7F7F] text-base/[100%] font-medium">
-          {scheduleLabels[model.schedule] ?? model.schedule ?? '—'}
-        </h2>
+        <Row label={t('modelInfo.height')}     value={cm(model.height_cm)} />
+        <Row label={t('modelInfo.bust')}       value={cm(model.bust_cm)} />
+        <Row label={t('modelInfo.waist')}      value={cm(model.waist_cm)} />
+        <Row label={t('modelInfo.hips')}       value={cm(model.hips_cm)} />
+        <Row label={t('modelInfo.breastSize')} value={model.breast_size ?? '—'} />
+        <Row label={t('modelInfo.eyes')}       value={model.eyes ?? '—'} last />
       </div>
     </div>
   )

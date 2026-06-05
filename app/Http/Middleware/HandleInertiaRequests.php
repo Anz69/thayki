@@ -55,6 +55,9 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'message' => session('message'),
             ],
+            // Exposed so the SPA can offer a dev test-account login when
+            // running locally (no Telegram context). Never 'local' in prod.
+            'appEnv' => app()->environment(),
         ];
     }
 }

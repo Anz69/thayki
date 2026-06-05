@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import gsap from 'gsap'
 import ModalSheet from '@/layout/ModalSheet'
 import api from '@/utils/api'
+import { useTranslation } from 'react-i18next'
 
 function AccordionItem({ item, isOpen, onToggle }) {
   const bodyRef    = useRef(null)
@@ -59,6 +60,7 @@ function AccordionItem({ item, isOpen, onToggle }) {
 }
 
 export default function FaqModal({ isOpen, onClose }) {
+  const { t } = useTranslation()
   const [openId, setOpenId] = useState(null)
   const [items, setItems]   = useState([])
   const fetchedRef          = useRef(false)
@@ -81,22 +83,22 @@ export default function FaqModal({ isOpen, onClose }) {
           onClick={onClose}
           className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
         >
-          Назад
+          {t('common.back')}
         </button>
-        <h2 className="text-base/[100%] font-[500] text-black">F.A.Q</h2>
+        <h2 className="text-base/[100%] font-[500] text-black">{t('faqModal.title')}</h2>
         <button
           onClick={onClose}
           className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
         >
-          Готово
+          {t('faqModal.done')}
         </button>
       </div>
       <div className="flex-1 overflow-y-auto px-5 pb-8">
         <h3 className="text-2xl/[100%] font-[500] text-black mb-6">
-          Не нашли ответа в функционале нашего приложения?
+          {t('faqModal.notFound')}
         </h3>
         {items.length === 0 ? (
-          <p className="text-[#7F7F7F] text-sm text-center py-8">Загрузка…</p>
+          <p className="text-[#7F7F7F] text-sm text-center py-8">{t('faqModal.loading')}</p>
         ) : (
           <div className="flex flex-col gap-3">
             {items.map((item) => (

@@ -1,5 +1,6 @@
 import { useRef, useEffect, useLayoutEffect, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import useMeetingStore from '@/stores/useMeetingStore'
 import useModelMeetingStore from '@/stores/useModelMeetingStore'
@@ -8,8 +9,9 @@ import api from '@/utils/api'
 import gsap from 'gsap'
 
 const TABS = [
-  { label: 'Главная', path: '/home', match: ['/home'] },
-  { label: 'Еще',     path: '/more', match: ['/more'] },
+  { label: 'nav.home', path: '/home',    match: ['/home'] },
+  { label: 'nav.find', path: '/request', match: ['/request'] },
+  { label: 'nav.more', path: '/more',    match: ['/more'] },
 ]
 
 function getSlot(pathname, clientStatus, modelStatus, isModel) {
@@ -42,12 +44,15 @@ const PINK   = `${BASE} bg-[#E2319B] text-white active:opacity-80 transition-opa
 export default function BottomNav() {
   const location     = useLocation()
   const [params]     = useSearchParams()
+  const { t, i18n }  = useTranslation()
   const nav          = useTransitionNavigate()
   const meeting      = useMeetingStore()
   const modelMeeting = useModelMeetingStore()
   const auth         = useAuthStore()
 
   const { pathname } = location
+  // '/request' is NOT hidden here — getSlot returns null for it so the pill
+  // animates out smoothly (the page shows its own submit bar instead).
   const hiddenPaths = new Set(['/become-model', '/application-pending', '/welcome'])
   const isHiddenPath = hiddenPaths.has(pathname) || pathname === '/'
 
@@ -303,6 +308,17 @@ export default function BottomNav() {
 
   }, [activeIndex, renderedSlot])
 
+  // Re-place the active pill when labels change width (e.g. language switch)
+  useEffect(() => {
+    if (renderedSlot !== 'tabs' || activeIndex < 0) return
+    const id = requestAnimationFrame(() => {
+      const pos = measureBtn(activeIndex)
+      const ind = indicatorRef.current
+      if (pos && ind) gsap.to(ind, { left: pos.left, width: pos.width, opacity: 1, duration: 0.3, ease: 'expo.out', overwrite: 'auto' })
+    })
+    return () => cancelAnimationFrame(id)
+  }, [i18n.language, activeIndex, renderedSlot]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (isHiddenPath) return null
 
   return (
@@ -324,14 +340,17 @@ export default function BottomNav() {
         <div ref={innerRef} className="flex items-center gap-2">
           {renderedTabs ? (
             <>
-              <button
-                ref={el => { btnRefs.current[0] = el }}
-                onClick={() => handleTabClick(0, renderedTabs[0].path)}
-                className="relative z-10 px-4 py-2.5 rounded-full text-base/[80%] font-medium select-none"
-                style={{ color: activeIndex === 0 ? '#1C1C1E' : '#7F7F7F', transition: 'color 0.25s ease' }}
-              >
-                {renderedTabs[0].label}
-              </button>
+              {renderedTabs.map((tab, i) => (
+                <button
+                  key={tab.path}
+                  ref={el => { btnRefs.current[i] = el }}
+                  onClick={() => handleTabClick(i, tab.path)}
+                  className="relative z-10 px-4 py-2.5 rounded-full text-base/[80%] font-medium select-none"
+                  style={{ color: activeIndex === i ? '#1C1C1E' : '#7F7F7F', transition: 'color 0.25s ease' }}
+                >
+                  {t(tab.label)}
+                </button>
+              ))}
 
               {renderedSlot === 'tabs' && !auth.isModel() && meeting.meeting && !['cancelled', 'rejected', 'expired', 'completed'].includes(meeting.status) && (
                 <button
@@ -371,15 +390,6 @@ export default function BottomNav() {
                   })()}
                 </button>
               )}
-
-              <button
-                ref={el => { btnRefs.current[1] = el }}
-                onClick={() => handleTabClick(1, renderedTabs[1].path)}
-                className="relative z-10 px-4 py-2.5 rounded-full text-base/[80%] font-medium select-none"
-                style={{ color: activeIndex === 1 ? '#1C1C1E' : '#7F7F7F', transition: 'color 0.25s ease' }}
-              >
-                {renderedTabs[1].label}
-              </button>
             </>
           ) : renderedSlot ? (
             renderMeetingButtons(renderedSlot)

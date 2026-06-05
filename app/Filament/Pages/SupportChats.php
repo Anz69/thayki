@@ -38,7 +38,8 @@ class SupportChats extends Page
 
     public string $search = '';
 
-    public string $activeTab = 'users';
+    /** 'leads' = заявки на подбор (ChatType::Lead), 'support' = поддержка (ChatType::Support). */
+    public string $activeTab = 'leads';
 
     /** Synced with query string ?user= — deep links from admin (e.g. complaints) preselect the chat. */
     #[Url(as: 'user', except: null)]
@@ -85,22 +86,14 @@ class SupportChats extends Page
         $target = Chat::query()
             ->with('participants.user')
             ->whereKey($preselect)
-            ->where('type', ChatType::Support)
+            ->whereIn('type', [ChatType::Support, ChatType::Lead])
             ->first();
 
         if ($target === null) {
             return;
         }
 
-        $clientOrModel = $target->participants
-            ->map(fn (ChatParticipant $p) => $p->user)
-            ->first(fn (?User $u) => $u !== null && in_array($u->role, [UserRole::Client, UserRole::Model], true));
-
-        if ($clientOrModel?->role === UserRole::Model) {
-            $this->activeTab = 'models';
-        } else {
-            $this->activeTab = 'users';
-        }
+        $this->activeTab = $target->type === ChatType::Support ? 'support' : 'leads';
 
         $this->selectChat($target->id);
     }
@@ -128,12 +121,11 @@ class SupportChats extends Page
 
     public function getChats(): Collection
     {
-        $role = $this->activeTab === 'models' ? UserRole::Model : UserRole::Client;
+        $type = $this->activeTab === 'support' ? ChatType::Support : ChatType::Lead;
         $supportUserId = $this->getSupportUser()->id;
 
         return Chat::query()
-            ->where('type', ChatType::Support)
-            ->whereHas('participants.user', fn ($u) => $u->where('role', $role))
+            ->where('type', $type)
             ->with(['participants.user', 'messages' => fn ($q) => $q->latest()->limit(1)])
             ->withCount(['messages as unread_count' => fn ($q) => $q
                 ->where('sender_id', '!=', $supportUserId)
@@ -174,7 +166,7 @@ class SupportChats extends Page
     {
         $supportUserId = $this->getSupportUser()->id;
 
-        $countForRole = function (UserRole $role) use ($supportUserId): int {
+        $countForType = function (ChatType $type) use ($supportUserId): int {
             return Message::query()
                 ->where('sender_id', '!=', $supportUserId)
                 ->where(function ($w) use ($supportUserId) {
@@ -198,16 +190,13 @@ class SupportChats extends Page
                                 });
                         });
                 })
-                ->whereHas('chat', fn ($q) => $q
-                    ->where('type', ChatType::Support)
-                    ->whereHas('participants.user', fn ($u) => $u->where('role', $role))
-                )
+                ->whereHas('chat', fn ($q) => $q->where('type', $type))
                 ->count();
         };
 
         return [
-            'users' => $countForRole(UserRole::Client),
-            'models' => $countForRole(UserRole::Model),
+            'leads' => $countForType(ChatType::Lead),
+            'support' => $countForType(ChatType::Support),
         ];
     }
 

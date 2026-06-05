@@ -8,4 +8,5 @@ enum ChatType: string
 {
     case Meeting = 'meeting';
     case Support = 'support';
+    case Lead = 'lead';
 }

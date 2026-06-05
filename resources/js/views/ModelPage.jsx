@@ -1,6 +1,7 @@
 import { useRef, useEffect, useLayoutEffect, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import TransitionLink from '@/components/TransitionLink'
@@ -11,13 +12,16 @@ import useMeetingStore from '@/stores/useMeetingStore'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api, { extractErrorMessage } from '@/utils/api'
 import ShareModelsModal from '@/components/modals/ShareModelsModal'
+import RequestModal from '@/components/modals/RequestModal'
 import LazyImg from '@/components/ui/LazyImg'
 import { declAge } from '@/utils/datetime'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
+import { modelName } from '@/utils/modelName'
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'paid', 'confirmed']
 
 export default function ModelPage() {
+  const { t }   = useTranslation()
   const { id }  = useParams()
   const store   = useBookingStore()
   const meeting = useMeetingStore()
@@ -27,6 +31,7 @@ export default function ModelPage() {
   const [loading,   setLoading]   = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [requestOpen, setRequestOpen] = useState(false)
 
   const handleShare = useCallback(() => {
     if (!model) return
@@ -189,7 +194,7 @@ export default function ModelPage() {
           navigate('/home', { replace: true })
           return
         }
-        setLoadError(extractErrorMessage(err, 'Не удалось загрузить модель'))
+        setLoadError(extractErrorMessage(err, t('model.loadError')))
       })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
@@ -220,11 +225,11 @@ export default function ModelPage() {
               to="/home"
               className="invisible px-2.5 py-3 bg-[#EFEEF3] absolute left-4 text-black text-base/[80%] font-medium hover:bg-[#E0DEDF] transition-all duration-300 cursor-pointer rounded-full"
             >
-              Назад
+              {t('common.back')}
             </TransitionLink>
             <div className="w-full flex items-center justify-center">
               <h1 ref={headerTitleRef} className="invisible text-black text-base/[100%] font-medium">
-                Модель
+                {t('model.headerTitle')}
               </h1>
             </div>
             <button
@@ -232,9 +237,9 @@ export default function ModelPage() {
               disabled={!model}
               onClick={handleShare}
               className="absolute right-4 px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors disabled:opacity-40"
-              aria-label="Поделиться"
+              aria-label={t('common.share')}
             >
-              Поделиться
+              {t('common.share')}
             </button>
           </div>
         </header>
@@ -253,18 +258,19 @@ export default function ModelPage() {
                 style={{ willChange: 'transform, opacity' }}
               >
                 <div className="p-3 bg-[#232323] rounded-full text-white text-base/[100%] font-medium">
-                  Перейти к встрече →
+                  {t('model.goToMeeting')}
                 </div>
               </button>
             ) : (
               <button
                 ref={bookBtnRef}
-                onClick={() => store.open(model)}
-                className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto"
+                onClick={() => setRequestOpen(true)}
+                disabled={!model}
+                className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto disabled:opacity-50"
                 style={{ willChange: 'transform, opacity' }}
               >
                 <div className="p-3 bg-[#E2319B] rounded-full text-white text-base/[100%] font-medium">
-                  Забронировать встречу
+                  {t('model.cta')}
                 </div>
               </button>
             )
@@ -282,7 +288,7 @@ export default function ModelPage() {
                 onClick={() => navigate('/home')}
                 className="px-4 py-2.5 bg-[#EFEEF3] text-black text-sm font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
               >
-                К списку моделей
+                {t('model.toList')}
               </button>
             </div>
           )}
@@ -313,7 +319,7 @@ export default function ModelPage() {
             </div>
             <div className="overflow-hidden">
               <h1 ref={nameRef} className="text-black text-2xl/[100%] font-bold">
-                {model?.display_name ?? ''}
+                {modelName(model)}
               </h1>
             </div>
             <p ref={descRef} className="invisible text-[#7F7F7F] text-[13px]/[160%] font-medium">
@@ -328,14 +334,14 @@ export default function ModelPage() {
                 onClick={() => switchTab(0)}
                 className="px-5 py-2 relative z-10 text-sm font-medium transition-colors duration-300"
               >
-                Информация
+                {t('model.tabInfo')}
               </button>
               <button
                 ref={tab1Ref}
                 onClick={() => switchTab(1)}
                 className="px-5 py-2 relative z-10 text-sm font-medium transition-colors duration-300"
               >
-                Медиа
+                {t('model.tabMedia')}
               </button>
               <div
                 ref={tabIndicatorRef}
@@ -356,6 +362,12 @@ export default function ModelPage() {
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         models={model ? [model] : []}
+      />
+
+      <RequestModal
+        isOpen={requestOpen}
+        onClose={() => setRequestOpen(false)}
+        model={model}
       />
     </div>
   )

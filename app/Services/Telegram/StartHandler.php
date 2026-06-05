@@ -45,15 +45,17 @@ class StartHandler
 
         $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
 
+        $locale = $this->localeFor($user);
+
         if ($startParam === null || $startParam === '') {
             if (! $user->is_strange) {
                 if ($user->role === UserRole::Model) {
-                    $this->sendModelWelcome($chatId, $user->first_name ?? '');
+                    $this->sendModelWelcome($chatId, $user->first_name ?? '', $locale);
                 } else {
-                    $this->sendVerifiedWelcome($chatId, $user->first_name ?? '');
+                    $this->sendVerifiedWelcome($chatId, $user->first_name ?? '', $locale);
                 }
             } else {
-                $this->sendStrangeWelcome($chatId);
+                $this->sendStrangeWelcome($chatId, false, $locale);
             }
 
             return;
@@ -62,7 +64,7 @@ class StartHandler
         $invite = StartInvite::query()->where('token', $startParam)->first();
 
         if ($invite === null || ! $invite->isUsable()) {
-            $this->sendStrangeWelcome($chatId, expired: $invite !== null);
+            $this->sendStrangeWelcome($chatId, expired: $invite !== null, locale: $locale);
 
             return;
         }
@@ -94,12 +96,12 @@ class StartHandler
         });
 
         if ($invite->kind === StartInvite::KIND_MODEL) {
-            $this->sendModelInviteWelcome($chatId, $user->first_name ?? '');
+            $this->sendModelInviteWelcome($chatId, $user->first_name ?? '', $locale);
 
             return;
         }
 
-        $this->sendVerifiedWelcome($chatId, $user->first_name ?? '');
+        $this->sendVerifiedWelcome($chatId, $user->first_name ?? '', $locale);
     }
 
     private function upsertUser(int $telegramId, int $chatId, array $tgFrom): User
@@ -136,45 +138,56 @@ class StartHandler
         });
     }
 
-    private function sendStrangeWelcome(int $chatId, bool $expired = false): void
+    private function sendStrangeWelcome(int $chatId, bool $expired = false, string $locale = 'ru'): void
     {
-        $text = $expired
-            ? "Ссылка устарела или больше не действует.\n\nВы можете присоединиться к нашему чату @ThaikyChat и начать общение!"
-            : "Здравствуйте! 👋\n\nВы можете присоединиться к нашему чату @ThaikyChat и начать общение!";
+        $text = trans($expired ? 'start.strange_expired' : 'start.strange_welcome', [], $locale);
 
         $this->bot->sendMessage($chatId, $text);
     }
 
-    private function sendVerifiedWelcome(int $chatId, string $firstName): void
+    private function sendVerifiedWelcome(int $chatId, string $firstName, string $locale = 'ru'): void
     {
-        $greeting = $firstName !== '' ? "Привет, {$firstName}! " : 'Привет! ';
         $this->bot->sendMessage(
             $chatId,
-            "{$greeting}Доступ открыт. Откройте мини-приложение, чтобы начать.",
+            trans('start.verified', ['greeting' => $this->greeting($firstName, $locale)], $locale),
             openPath: '/home',
-            buttonLabel: 'Открыть приложение',
+            buttonLabel: trans('start.open_app', [], $locale),
         );
     }
 
-    private function sendModelWelcome(int $chatId, string $firstName): void
+    private function sendModelWelcome(int $chatId, string $firstName, string $locale = 'ru'): void
     {
-        $greeting = $firstName !== '' ? "Привет, {$firstName}! " : 'Привет! ';
         $this->bot->sendMessage(
             $chatId,
-            "{$greeting}Рады видеть вас снова. Откройте приложение для управления встречами.",
+            trans('start.model', ['greeting' => $this->greeting($firstName, $locale)], $locale),
             openPath: '/home',
-            buttonLabel: 'Открыть приложение',
+            buttonLabel: trans('start.open_app', [], $locale),
         );
     }
 
-    private function sendModelInviteWelcome(int $chatId, string $firstName): void
+    private function sendModelInviteWelcome(int $chatId, string $firstName, string $locale = 'ru'): void
     {
-        $greeting = $firstName !== '' ? "Привет, {$firstName}! " : 'Привет! ';
         $this->bot->sendMessage(
             $chatId,
-            "{$greeting}Вы получили приглашение стать моделью.\nОткройте приложение и заполните анкету.",
+            trans('start.model_invite', ['greeting' => $this->greeting($firstName, $locale)], $locale),
             openPath: '/become-model',
-            buttonLabel: 'Стать моделью',
+            buttonLabel: trans('start.become_model', [], $locale),
         );
+    }
+
+    /** Localized "Hi, Name! " / "Hi! " prefix. */
+    private function greeting(string $firstName, string $locale): string
+    {
+        return $firstName !== ''
+            ? trans('start.greeting_named', ['name' => $firstName], $locale)
+            : trans('start.greeting', [], $locale);
+    }
+
+    /** Map a user's stored Telegram/app language to a supported locale. */
+    private function localeFor(User $user): string
+    {
+        $code = strtolower((string) ($user->language_code ?? ''));
+
+        return str_starts_with($code, 'en') ? 'en' : 'ru';
     }
 }

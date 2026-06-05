@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
-use App\Filament\Widgets\LatestMeetingsWidget;
-use App\Filament\Widgets\MeetingsChartWidget;
-use App\Filament\Widgets\PlatformRevenueChartWidget;
-use App\Filament\Widgets\PlatformRevenueStatsWidget;
-use App\Filament\Widgets\RevenueChartWidget;
-use App\Filament\Widgets\StatsOverviewWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Widgets\AccountWidget;
 
@@ -21,27 +15,21 @@ class Dashboard extends BaseDashboard
 
     protected static ?string $title = 'Обзор';
 
-    /** Widgets shown on this dashboard page in order. */
+    /**
+     * Widgets shown on this dashboard page in order.
+     *
+     * The legacy booking/revenue widgets (meetings, payments, platform
+     * commission) were removed with the pivot to the lead-gen product.
+     */
     public function getWidgets(): array
     {
         return [
             AccountWidget::class,
-            StatsOverviewWidget::class,
-            PlatformRevenueStatsWidget::class,
-            MeetingsChartWidget::class,
-            RevenueChartWidget::class,
-            PlatformRevenueChartWidget::class,
-            LatestMeetingsWidget::class,
         ];
     }
 
-    /** Two-column layout for charts side-by-side. */
     public function getColumns(): int|array
     {
-        return [
-            'default' => 1,
-            'sm'      => 2,
-            'xl'      => 2,
-        ];
+        return 1;
     }
 }

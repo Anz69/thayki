@@ -62,6 +62,11 @@ class AuthenticateTelegramUserAction
                     'replay_key' => $replayKey,
                     'telegram_id' => $replayTelegramId,
                 ]);
+                // Local dev test accounts are always verified.
+                if ($this->config->get('app.env') === 'local' && $existingUser->is_strange !== false) {
+                    $existingUser->is_strange = false;
+                    $existingUser->save();
+                }
                 $token = $existingUser->createToken(
                     name: 'mini-app',
                     abilities: ['role:' . $existingUser->role->value],
@@ -108,6 +113,14 @@ class AuthenticateTelegramUserAction
                 ['user_id' => $user->id],
                 ['balance_minor' => 0, 'locked_minor' => 0, 'currency' => 'THB', 'version' => 0],
             );
+
+            // Local dev test accounts are always verified — skip the welcome stub.
+            // NB: on a fresh firstOrCreate the in-memory is_strange is null (the
+            // DB default applies server-side), so force-set rather than guard on it.
+            if ($this->config->get('app.env') === 'local' && $user->is_strange !== false) {
+                $user->is_strange = false;
+                $user->save();
+            }
 
             return $user;
         });

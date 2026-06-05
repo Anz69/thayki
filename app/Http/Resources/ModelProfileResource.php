@@ -21,8 +21,16 @@ class ModelProfileResource extends JsonResource
         return [
             'id' => $this->id,
             'display_name' => $this->display_name,
+            'display_name_en' => $this->display_name_en,
             'age' => $this->age,
             'height_cm' => $this->height_cm,
+            // New prototype params
+            'bust_cm' => $this->bust_cm,
+            'waist_cm' => $this->waist_cm,
+            'hips_cm' => $this->hips_cm,
+            'eyes' => $this->eyes,
+            'breast_size' => $this->breast_size,
+            // Legacy (kept until Part 2 removes booking) — FE no longer renders these
             'weight_kg' => $this->weight_kg,
             'bust_size' => $this->bust_size,
             'butt_size' => $this->butt_size,

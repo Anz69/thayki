@@ -29,6 +29,16 @@ class SettingsPage extends Page implements HasForms
 
     protected static ?int $navigationSort = 2;
 
+    /**
+     * Hidden in the lead-gen product: every setting here (meeting TTL,
+     * commission, withdrawal minimum, model-application auto-approve)
+     * belongs to the legacy booking flow. Kept for reference/re-enable.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     /** @var array<string, mixed> */
     public ?array $data = [];
 

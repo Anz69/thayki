@@ -8,7 +8,8 @@ import HowItWorksModal from '@/components/modals/HowItWorksModal'
 import WithdrawModal from '@/components/modals/WithdrawModal'
 import GradientBorder from '@/components/ui/GradientBorder'
 import useAuthStore from '@/stores/useAuthStore'
-import Avatar from '@/components/ui/Avatar'
+import { useTranslation } from 'react-i18next'
+import i18n, { setLanguage } from '@/i18n'
 import api from '@/utils/api'
 import { subscribeActiveMeetingsRefresh } from '@/utils/activeMeetingsBus'
 import { logError } from '@/utils/logger'
@@ -82,20 +83,21 @@ function formatDate(iso) {
 }
 
 function OrderCard({ meeting, currentUserId, onClick }) {
+  const { t } = useTranslation()
   const [imgFailed, setImgFailed] = useState(false)
 
   const isClient = meeting.client_id === currentUserId
   const counterName = isClient
     ? (meeting.model_profile?.display_name ?? '—')
-    : (meeting.client?.first_name ?? meeting.client?.username ?? 'Клиент')
+    : (meeting.client?.first_name ?? meeting.client?.username ?? t('common.client'))
   const counterPhotoRaw = isClient
     ? (meeting.model_profile?.user?.photo_url ?? meeting.model_profile?.photos?.find(p => p.is_main)?.url ?? meeting.model_profile?.photos?.[0]?.url ?? null)
     : (meeting.client?.photo_url ?? null)
   const counterPhoto = counterPhotoRaw ? resolveMediaUrl(counterPhotoRaw) : null
 
-  const statusLabel = STATUS_MAP[meeting.status] ?? meeting.status
+  const statusLabel = t(`orderStatus.${meeting.status}`, STATUS_MAP[meeting.status] ?? meeting.status)
   const price = meeting.price_thb ?? 0
-  const duration = meeting.duration_hours ? `${meeting.duration_hours} ч` : '—'
+  const duration = meeting.duration_hours ? `${meeting.duration_hours} ${t('common.hoursShort')}` : '—'
 
   return (
     <button
@@ -132,6 +134,7 @@ export default function MorePage() {
   const navigate = useTransitionNavigate()
   const location = useLocation()
   const auth = useAuthStore()
+  const { t } = useTranslation()
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
   const [faqOpen, setFaqOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
@@ -154,7 +157,6 @@ export default function MorePage() {
   const [pendingWithdrawal, setPendingWithdrawal] = useState(0)
   const [withdrawMethods, setWithdrawMethods] = useState(['usdt', 'btc', 'ton'])
 
-  const userCardRef = useRef(null)
   const balanceRef  = useRef(null)
   const ordersRef   = useRef(null)
   const section1Ref = useRef(null)
@@ -222,21 +224,18 @@ export default function MorePage() {
   const balanceAnimatedRef = useRef(false)
 
   useLayoutEffect(() => {
-    if (userCardRef.current) gsap.set(userCardRef.current, { autoAlpha: 0, y: 16 })
     if (ordersRef.current) gsap.set(ordersRef.current, { autoAlpha: 0, y: 20 })
     if (section1Ref.current) gsap.set(section1Ref.current, { autoAlpha: 0, y: 24 })
     if (section2Ref.current) gsap.set(section2Ref.current, { autoAlpha: 0, y: 24 })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   usePageReady(() => {
-    const card = userCardRef.current
     const s1 = section1Ref.current
     const s2 = section2Ref.current
-    if (!card || !s1 || !s2) return
+    if (!s1 || !s2) return
     gsap.timeline()
-      .to(card, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
-      .to(s1, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.12)
-      .to(s2, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.2)
+      .to(s1, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0)
+      .to(s2, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.1)
   })
 
   // Animate balance card in when it first becomes visible (loaded from API)
@@ -274,27 +273,17 @@ export default function MorePage() {
 
         <div className="flex flex-col gap-4 container pt-[40px] pb-[120px]">
 
-          <div ref={userCardRef} className="flex flex-col gap-3">
-            <div className="flex items-center gap-3 bg-[#F5F5F7] rounded-2xl p-4">
-              <Avatar src={auth.user?.photo_url} name={auth.displayName()} size={56} />
-              <div className="flex flex-col">
-                <span className="text-black text-base font-medium">{auth.displayName()}</span>
-                {auth.user?.username && (
-                  <span className="text-[#7F7F7F] text-xs">@{auth.user.username}</span>
-                )}
-              </div>
-            </div>
-          </div>
+       
 
           {balance >= 0.01 && (
             <div ref={balanceRef} >
               <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex items-center justify-between gap-3">
                 <div className="flex flex-col gap-1 min-w-0">
-                  <span className="text-[#ABABAB] text-[11px]/[100%] font-medium">Доступный баланс</span>
+                  <span className="text-[#ABABAB] text-[11px]/[100%] font-medium">{t('more.balance')}</span>
                   <span className="text-black text-xl/[100%] font-semibold">฿ {balance.toLocaleString()}</span>
                   {pendingWithdrawal > 0 && (
                     <span className="text-[#E2319B] text-[11px]/[140%] font-medium mt-0.5">
-                      ฿ {pendingWithdrawal.toLocaleString()} — на выводе, ожидайте
+                      {t('more.pendingWithdrawal', { amount: `฿ ${pendingWithdrawal.toLocaleString()}` })}
                     </span>
                   )}
                 </div>
@@ -303,7 +292,7 @@ export default function MorePage() {
                   className="shrink-0 flex items-center gap-1.5 bg-[#1B1B1B] text-white text-sm/[100%] font-medium px-4 py-2.5 rounded-full active:opacity-70 transition-opacity"
                 >
                   <IconWithdraw />
-                  Вывести
+                  {t('more.withdraw')}
                 </button>
               </GradientBorder>
             </div>
@@ -313,7 +302,7 @@ export default function MorePage() {
           <div ref={ordersRef} className="flex flex-col gap-3">
             {activeMeetings.length > 0 && (
               <>
-                <SectionLabel>Текущие заказы</SectionLabel>
+                <SectionLabel>{t('more.orders')}</SectionLabel>
                 <div className="flex flex-col gap-2 rounded-2xl overflow-hidden">
                   {activeMeetings.map(m => (
                     <OrderCard
@@ -329,7 +318,7 @@ export default function MorePage() {
           </div>
 
           <div ref={section1Ref} className="flex flex-col gap-4">
-            <SectionLabel>Важное</SectionLabel>
+            <SectionLabel>{t('more.important')}</SectionLabel>
 
             <button
               onClick={() => setHowItWorksOpen(true)}
@@ -338,22 +327,17 @@ export default function MorePage() {
               <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
                 <IconQuestion />
               </span>
-              <span className="text-black text-[16px]/[100%] font-medium">Как это работает?</span>
+              <span className="text-black text-[16px]/[100%] font-medium">{t('more.howItWorks')}</span>
             </button>
 
-            <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-4.5">
-              <span className="text-black text-[16px]/[100%] font-medium">Изменить город</span>
-              <span className="text-[#777779] text-sm/[100%] font-medium">Пока недоступно</span>
-            </div>
-
             <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-4">
-              <span className="text-black text-[16px]/[100%] font-medium">Получать уведомления в ТГ</span>
+              <span className="text-black text-[16px]/[100%] font-medium">{t('more.notifications')}</span>
               <Toggle value={notifications} onChange={handleNotificationsChange} />
             </div>
           </div>
 
           <div ref={section2Ref} className="flex flex-col gap-4">
-            <SectionLabel>Дополнительно</SectionLabel>
+            <SectionLabel>{t('more.additional')}</SectionLabel>
 
             <button
               onClick={() => setFaqOpen(true)}
@@ -362,7 +346,7 @@ export default function MorePage() {
               <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
                 <IconQuestion />
               </span>
-              <span className="text-black text-[16px]/[100%] font-medium">F.A.Q.</span>
+              <span className="text-black text-[16px]/[100%] font-medium">{t('more.faq')}</span>
             </button>
 
             <button
@@ -372,8 +356,40 @@ export default function MorePage() {
               <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
                 <IconSupport />
               </span>
-              <span className="text-black text-[16px]/[100%] font-medium">Написать в поддержку</span>
+              <span className="text-black text-[16px]/[100%] font-medium">{t('more.support')}</span>
             </button>
+
+            <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-3">
+              <span className="text-black text-[16px]/[100%] font-medium">{t('more.language')}</span>
+              {(() => {
+                const langs = ['ru', 'en']
+                const active = (i18n.language || 'ru').startsWith('en') ? 'en' : 'ru'
+                const idx = langs.indexOf(active)
+                return (
+                  <div className="relative flex items-center bg-white rounded-full p-0.5">
+                    <span
+                      className="absolute top-0.5 bottom-0.5 rounded-full bg-[#E2319B]"
+                      style={{
+                        width: 44,
+                        left: 2,
+                        transform: `translateX(${idx * 44}px)`,
+                        transition: 'transform 0.35s cubic-bezier(0.34,1.4,0.55,1)',
+                      }}
+                    />
+                    {langs.map((lng) => (
+                      <button
+                        key={lng}
+                        onClick={() => setLanguage(lng)}
+                        className="relative z-10 py-1 rounded-full text-[13px] font-semibold transition-colors duration-300 outline-none focus:outline-none focus-visible:outline-none"
+                        style={{ width: 44, color: active === lng ? '#fff' : '#9B9AA0' }}
+                      >
+                        {lng.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                )
+              })()}
+            </div>
           </div>
 
         </div>

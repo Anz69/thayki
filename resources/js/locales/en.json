@@ -1,0 +1,184 @@
+{
+  "common": {
+    "back": "Back",
+    "share": "Share",
+    "retry": "Try again",
+    "close": "Close",
+    "loading": "Checking...",
+    "client": "Client",
+    "hoursShort": "h"
+  },
+  "orderStatus": {
+    "pending": "Awaiting confirmation",
+    "accepted": "Accepted",
+    "paid": "Paid",
+    "confirmed": "Confirmed",
+    "completed": "Completed",
+    "expired": "Expired"
+  },
+  "nav": {
+    "home": "Home",
+    "find": "Find",
+    "more": "More"
+  },
+  "landing": {
+    "title": "Verified models",
+    "region": "from Russia",
+    "subtitle": "An exclusive base of verified girls for any leisure.",
+    "cta": "Get started"
+  },
+  "home": {
+    "title": "Rus-Model",
+    "share": "Share",
+    "empty": "No models yet",
+    "error": "Failed to load models"
+  },
+  "catalogNotice": {
+    "p1": "To protect the safety and privacy of our models, we do not publish their real photos or personal data.",
+    "p2": "All images shown in the profiles are for reference only and are prototypes of real models.",
+    "p3": "Choose a profile you like or specify your preferences, and we will pick options that match them as closely as possible.",
+    "howItWorks": "How it works",
+    "faq": "F.A.Q."
+  },
+  "model": {
+    "headerTitle": "Model",
+    "tabInfo": "Information",
+    "tabMedia": "Media",
+    "cta": "I'm interested in this type",
+    "goToMeeting": "Go to meeting →",
+    "loadError": "Failed to load the model",
+    "toList": "Back to models",
+    "photosEmpty": "No photos added yet"
+  },
+  "modelInfo": {
+    "age": "Age",
+    "height": "Height",
+    "bust": "Bust",
+    "waist": "Waist",
+    "hips": "Hips",
+    "breastSize": "Cup size",
+    "eyes": "Eyes",
+    "cm": "cm"
+  },
+  "request": {
+    "title": "Find a model",
+    "city": "City",
+    "cityPlaceholder": "e.g. Moscow",
+    "hairType": "Hair type",
+    "age": "Age",
+    "height": "Height",
+    "goal": "Purpose",
+    "wishes": "Preferences",
+    "wishesExtra": "Additional preferences",
+    "wishesPlaceholder": "Describe the type, looks, personality and any other preferences.",
+    "submit": "Send request",
+    "submitting": "Sending…",
+    "next": "Next",
+    "cityRequiredHint": "Enter a city to continue",
+    "interested": "You're interested in",
+    "change": "Change",
+    "hair": {
+      "any": "Doesn't matter",
+      "blonde": "Blonde",
+      "brunette": "Brunette",
+      "brown": "Brown-haired",
+      "red": "Redhead"
+    },
+    "ages": { "a1": "18–23", "a2": "24–29", "a3": "30–35", "a4": "35+" },
+    "heights": {
+      "any": "Doesn't matter",
+      "upTo165": "Up to 165 cm",
+      "h165_175": "165–175 cm",
+      "over175": "175+ cm"
+    },
+    "goals": {
+      "date": "Date",
+      "leisure": "Leisure together",
+      "travel": "Travel",
+      "events": "Attending events",
+      "wife": "Finding a wife",
+      "undecided": "Not sure yet"
+    }
+  },
+  "share": {
+    "title": "Share a selection",
+    "subtitle": "Select models and send a message with links that open their profiles in the bot.",
+    "selectAll": "Select all",
+    "reset": "Reset",
+    "sendTelegram": "Send in Telegram",
+    "share": "Share",
+    "copy": "Copy"
+  },
+  "leadMsg": {
+    "title": "📩 Model request",
+    "interested": "Interested in",
+    "city": "City",
+    "hair": "Type",
+    "age": "Age",
+    "height": "Height",
+    "goal": "Purpose",
+    "wishes": "Preferences",
+    "wishesExtra": "Additional preferences"
+  },
+  "requestModal": {
+    "title": "Leave a request",
+    "subtitle": "Enter your city — and a manager will find similar options."
+  },
+  "requestChat": {
+    "title": "Request",
+    "managerNote": "A manager will contact you shortly. On average, replies take no more than an hour.",
+    "placeholder": "Message..."
+  },
+  "support": {
+    "title": "Support",
+    "emptyTitle": "Have a question?",
+    "emptySubtitle": "Write to us — we'll reply shortly",
+    "placeholder": "Message..."
+  },
+  "more": {
+    "title": "More",
+    "balance": "Available balance",
+    "withdraw": "Withdraw",
+    "pendingWithdrawal": "{{amount}} — pending withdrawal",
+    "orders": "Current orders",
+    "important": "Important",
+    "additional": "Additional",
+    "howItWorks": "How it works?",
+    "notifications": "Receive notifications in TG",
+    "faq": "F.A.Q.",
+    "support": "Contact support",
+    "language": "Language"
+  },
+  "hiw": {
+    "title": "How it works?",
+    "next": "Next",
+    "done": "Done",
+    "step": "Step {{n}} of {{total}}",
+    "s1t": "Choose a type you like",
+    "s1s": "Pick a profile among the prototypes or specify your desired parameters.",
+    "s2t": "Leave a request",
+    "s2s": "Fill out a short form — it takes less than a minute.",
+    "s3t": "A manager will contact you",
+    "s3s": "We'll find suitable options and reply in chat — on average within an hour."
+  },
+  "faqModal": {
+    "title": "F.A.Q.",
+    "done": "Done",
+    "notFound": "Didn't find the answer in our app's features?",
+    "loading": "Loading…"
+  },
+  "auth": {
+    "accessDeniedTitle": "Access restricted",
+    "accessDeniedText": "To use the app you need an invite from a current member or verification by an administrator.",
+    "goSupport": "Go to support chat",
+    "checkAccess": "Already verified? Check access",
+    "accessNotYet": "Access is not open yet",
+    "checkFailed": "Couldn't verify access. Please try again.",
+    "accessNotYet": "Access not granted yet",
+    "loginErrorTitle": "Sign-in error",
+    "loginErrorText": "Couldn't sign in to the app.\nTry reloading the page.",
+    "reload": "Reload page",
+    "showError": "View error details",
+    "errorDetails": "Error details"
+  }
+}

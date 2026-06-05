@@ -108,6 +108,12 @@ html {
   100% { background-position: -200% 0; }
 }
 
+@keyframes marker-pulse {
+  0%   { transform: scale(0.5); opacity: 0.7; }
+  70%  { transform: scale(2.4); opacity: 0; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
 @layer utilities {
   .balance-shimmer {
     animation: balanceShimmer 1.2s ease-in-out infinite;

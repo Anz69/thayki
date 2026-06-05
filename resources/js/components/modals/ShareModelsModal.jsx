@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
 import api from '@/utils/api'
@@ -92,6 +93,7 @@ const IconCheck = () => (
 )
 
 export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
+  const { t } = useTranslation()
   const headerRef = useRef(null)
   const counterRef = useRef(null)
   const listRef = useRef(null)
@@ -364,16 +366,16 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
       <div className="px-4 pb-4 sm:px-5 sm:pb-5 flex flex-col gap-3.5">
         <div ref={headerRef} className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-black text-xl/[100%] font-[500]">Поделиться подборкой</h2>
+            <h2 className="text-black text-xl/[100%] font-[500]">{t('share.title')}</h2>
             <p className="text-[#7F7F7F] text-sm mt-1 leading-snug">
-              Выберите модели и отправьте сообщение со ссылками, которые откроют их профили в боте.
+              {t('share.subtitle')}
             </p>
           </div>
           <button
             onClick={onClose}
             className="px-3 py-2 bg-[#EFEEF3] rounded-full text-xs font-medium text-black active:bg-[#E0DEDF] transition-colors"
           >
-            Закрыть
+            {t('common.close')}
           </button>
         </div>
 
@@ -385,10 +387,10 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
             {!isSingleModel && (
               <>
                 <button onClick={selectAll} className="text-xs px-2.5 py-1.5 bg-[#EFEEF3] rounded-full text-black font-[500] active:bg-[#E6E4EB] transition-colors">
-                  Выбрать все
+                  {t('share.selectAll')}
                 </button>
                 <button onClick={clearSelection} className="text-xs px-2.5 py-1.5 bg-[#F0F0F3] rounded-full text-[#6B6B75] font-[500] active:bg-[#E8E8ED] transition-colors">
-                  Сбросить
+                  {t('share.reset')}
                 </button>
               </>
             )}
@@ -420,9 +422,6 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
                     <p className="text-sm font-[500] text-black truncate">
                       {model.name}{model.age ? `, ${model.age}` : ''}
                     </p>
-                    <p className="text-xs text-[#7F7F7F] mt-0.5">
-                      {model.price ? `от ฿ ${Number(model.price).toLocaleString()}/ч` : 'Цена не указана'}
-                    </p>
                   </div>
                   <div className={`size-5 rounded-full border-2 transition-colors flex items-center justify-center ${selectedIds.includes(model.id) ? 'border-[#E2319B] bg-[#E2319B]' : 'border-[#C9C7CF] bg-white'
                     }`}>
@@ -446,20 +445,20 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
             onClick={shareToTelegram}
             className="py-3 rounded-2xl bg-[#E2319B] text-white text-sm font-[500] active:opacity-90 transition-opacity"
           >
-            Отправить в Telegram
+            {t('share.sendTelegram')}
           </button>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={shareNative}
               className="py-3 rounded-2xl bg-[#F5F5F7] text-black text-sm font-[500] active:bg-[#ECEAEC] transition-colors"
             >
-              Поделиться
+              {t('share.share')}
             </button>
             <button
               onClick={copyText}
               className="py-2.5 rounded-2xl bg-[#F5F5F7] text-black text-sm font-[500] active:bg-[#ECEAEC] transition-colors flex items-center justify-center gap-2"
             >
-              <span>Скопировать</span>
+              <span>{t('share.copy')}</span>
               <div className="relative w-[18px] h-[18px]">
                 <div ref={setCopyIconRef} className="absolute inset-0 flex items-center justify-center"><IconCopy /></div>
                 <div ref={setCheckIconRef} className="absolute inset-0 flex items-center justify-center"><IconCheck /></div>

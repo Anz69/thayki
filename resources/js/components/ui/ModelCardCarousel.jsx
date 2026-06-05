@@ -1,17 +1,27 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay } from 'swiper/modules'
 import gsap from 'gsap'
 import 'swiper/css'
 import { getEmojiUrl } from '@/utils/emoji'
 import OptimizedImage from '@/components/ui/OptimizedImage'
-const MODELS = [
-  { id: 1, photo: '/img/girls/big/6.png', name: 'Канника', desc: 'Описание сгенерировать нужно здесь для модели', emojis: ['🐵', '❤️', '😍'] },
-  { id: 2, photo: '/img/girls/big/2.png', name: 'Намфон',  desc: 'Описание сгенерировать нужно здесь для модели', emojis: ['💫', '🔥', '😘'] },
-  { id: 3, photo: '/img/girls/big/3.png', name: 'Малай',   desc: 'Описание сгенерировать нужно здесь для модели', emojis: ['✨', '💕', '🥰'] },
-  { id: 4, photo: '/img/girls/big/4.png', name: 'Супхан',  desc: 'Описание сгенерировать нужно здесь для модели', emojis: ['🌸', '😻', '💖'] },
-  { id: 5, photo: '/img/girls/big/5.png', name: 'Пранни',  desc: 'Описание сгенерировать нужно здесь для модели', emojis: ['🦋', '💓', '🤩'] },
-  { id: 6, photo: '/img/girls/big/1.png', name: 'Чалида',  desc: 'Описание сгенерировать нужно здесь для модели', emojis: ['🌺', '❤️', '😏'] },
+import api from '@/utils/api'
+import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
+import { modelName } from '@/utils/modelName'
+
+const EMOJI_SETS = [
+  ['🐵', '❤️', '😍'], ['💫', '🔥', '😘'], ['✨', '💕', '🥰'],
+  ['🌸', '😻', '💖'], ['🦋', '💓', '🤩'], ['🌺', '❤️', '😏'],
+]
+
+// Fallback if the catalog request fails / is empty
+const FALLBACK = [
+  { id: 1, photo: '/img/girls/big/6.png', name: 'Канника', emojis: EMOJI_SETS[0] },
+  { id: 2, photo: '/img/girls/big/2.png', name: 'Намфон',  emojis: EMOJI_SETS[1] },
+  { id: 3, photo: '/img/girls/big/3.png', name: 'Малай',   emojis: EMOJI_SETS[2] },
+  { id: 4, photo: '/img/girls/big/4.png', name: 'Супхан',  emojis: EMOJI_SETS[3] },
+  { id: 5, photo: '/img/girls/big/5.png', name: 'Пранни',  emojis: EMOJI_SETS[4] },
+  { id: 6, photo: '/img/girls/big/1.png', name: 'Чалида',  emojis: EMOJI_SETS[5] },
 ]
 const CARD_H = 460
 const STYLES = `
@@ -47,6 +57,29 @@ const STYLES = `
 export default function ModelCardCarousel({ className = '', isActive }) {
   const wrapRef  = useRef(null)
   const swiperRef = useRef(null)
+  const [models, setModels] = useState(FALLBACK)
+
+  // Use real imported prototype photos when available
+  useEffect(() => {
+    let cancelled = false
+    api.get('/catalog/models', { params: { per_page: 6 } })
+      .then((r) => {
+        if (cancelled) return
+        const list = Array.isArray(r?.data?.data) ? r.data.data : []
+        const mapped = list
+          .map((m, i) => {
+            const photos = Array.isArray(m.photos) ? m.photos.filter(Boolean) : []
+            const main = photos.find((p) => p?.is_main) ?? photos[0]
+            if (!main?.url) return null
+            return { id: m.id, photo: resolveMediaUrl(main.url), name: modelName(m), emojis: EMOJI_SETS[i % EMOJI_SETS.length] }
+          })
+          .filter(Boolean)
+        if (mapped.length) setModels(mapped)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
   useLayoutEffect(() => {
     gsap.set(wrapRef.current, { autoAlpha: 0, y: 24 })
   }, [])
@@ -59,15 +92,23 @@ export default function ModelCardCarousel({ className = '', isActive }) {
       delay: 0.08,
     })
   }, [])
+  // The carousel mounts while the modal is still animating open (zero/!=final
+  // width), so side cards can be mispositioned. Re-layout a few times as the
+  // sheet settles + whenever it becomes active or the data changes.
   useEffect(() => {
-    if (isActive && swiperRef.current) {
-      const id = setTimeout(() => {
-        swiperRef.current?.update()
-        swiperRef.current?.autoplay?.start()
-      }, 80)
-      return () => clearTimeout(id)
+    if (!isActive) return undefined
+    const sw = swiperRef.current
+    if (!sw) return undefined
+    const relayout = () => {
+      sw.update?.()
+      sw.updateSlides?.()
+      sw.loopFix?.()
+      sw.autoplay?.start?.()
     }
-  }, [isActive])
+    const ids = [120, 320, 520].map((ms) => setTimeout(relayout, ms))
+    const raf = requestAnimationFrame(relayout)
+    return () => { ids.forEach(clearTimeout); cancelAnimationFrame(raf) }
+  }, [isActive, models])
   return (
     <>
       <style>{STYLES}</style>
@@ -82,12 +123,16 @@ export default function ModelCardCarousel({ className = '', isActive }) {
           centeredSlides
           slidesPerView="auto"
           loop
+          loopAdditionalSlides={2}
           speed={500}
           grabCursor
+          observer
+          observeParents
+          observeSlideChildren
           autoplay={{ delay: 3000, disableOnInteraction: false }}
           onSwiper={(s) => { swiperRef.current = s }}
         >
-          {MODELS.map((m) => (
+          {models.map((m) => (
             <SwiperSlide key={m.id}>
               <ModelCard m={m} />
             </SwiperSlide>
@@ -143,9 +188,11 @@ function ModelCard({ m }) {
         <span className="text-black text-[31px]/[110%] font-semibold tracking-[-0.02em]">
           {m.name}
         </span>
-        <span className="text-[#777779] text-[13px]/[145%] font-medium text-center mt-1.5 px-3">
-          {m.desc}
-        </span>
+        {m.desc && (
+          <span className="text-[#777779] text-[13px]/[145%] font-medium text-center mt-1.5 px-3">
+            {m.desc}
+          </span>
+        )}
       </div>
     </div>
   )

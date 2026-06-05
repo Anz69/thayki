@@ -18,6 +18,10 @@ class ModelResource extends Resource
 {
     protected static ?string $model = User::class;
 
+    // Legacy: per-model user accounts (role=model) from the booking product.
+    // The lead-gen catalog uses standalone ModelProfile prototypes instead.
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $navigationGroup = 'Пользователи и модели';

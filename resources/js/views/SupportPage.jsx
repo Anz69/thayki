@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
+import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import useAuthStore from '@/stores/useAuthStore'
@@ -93,6 +94,7 @@ function mergeIncomingMessage(prev, incoming, myId) {
 
 
 export default function SupportPage() {
+  const { t } = useTranslation()
   const navigate = useTransitionNavigate()
   const auth     = useAuthStore()
   const myId     = auth.user?.id
@@ -413,10 +415,10 @@ export default function SupportPage() {
             onClick={() => navigate(-1) ? navigate('/home') : null}
             className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
           >
-            Назад
+            {t('common.back')}
           </button>
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500]">
-            Поддержка
+            {t('support.title')}
           </span>
         </div>
       </header>
@@ -434,10 +436,10 @@ export default function SupportPage() {
           style={{ visibility: 'hidden' }}
         >
           <span ref={titleRef} className="text-black text-2xl/[100%] font-semibold">
-            У вас возник вопрос?
+            {t('support.emptyTitle')}
           </span>
           <span ref={subtitleRef} className="text-[#777779] text-base/[130%] font-medium">
-            Напишите нам — мы ответим в ближайшее время
+            {t('support.emptySubtitle')}
           </span>
         </div>
 
@@ -542,7 +544,7 @@ export default function SupportPage() {
               value={inputText}
               onChange={(e) => { setInputText(e.target.value); autoResize() }}
               onKeyDown={handleKeyDown}
-              placeholder="Сообщение..."
+              placeholder={t('support.placeholder')}
               className="w-full bg-transparent text-black text-[15px]/[145%] font-normal outline-none placeholder:text-[#ABABAB] resize-none"
               style={{ maxHeight: 120, display: 'block', overflowY: 'auto', wordBreak: 'break-word', overflowWrap: 'break-word' }}
             />

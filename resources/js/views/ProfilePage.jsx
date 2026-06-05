@@ -6,7 +6,6 @@ import useProfileStore from '@/stores/useProfileStore'
 import useAuthStore from '@/stores/useAuthStore'
 import Avatar from '@/components/ui/Avatar'
 import AgeModal from '@/components/modals/AgeModal'
-import MetricsModal from '@/components/modals/MetricsModal'
 import ChangeMediaModal from '@/components/modals/ChangeMediaModal'
 import ScheduleSelector from '@/components/profile/ScheduleSelector'
 import Media from '@/components/sections/modelSelectInfo/Media'
@@ -65,7 +64,6 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('info')
   const [mediaEverMounted, setMediaEverMounted] = useState(false)
   const [ageOpen, setAgeOpen]           = useState(false)
-  const [metricsOpen, setMetricsOpen]   = useState(false)
   const [mediaEditOpen, setMediaEditOpen] = useState(false)
 
   const avatarInputRef  = useRef(null)
@@ -412,17 +410,7 @@ export default function ProfilePage() {
                         Не знаете точных данных? Введите примерные значения, соответствующие вашему телосложению.
                       </p>
                     </div>
-                    <div ref={metricsEditRef} style={{ overflow: 'hidden' }}>
-                      <button
-                        onClick={() => setMetricsOpen(true)}
-                        className="text-[#E2319B] text-xs/[100%] font-medium mt-1.5 flex items-center gap-0.5 active:opacity-70 transition-opacity"
-                      >
-                        Изменить
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                          <path d="M9 18l6-6-6-6" stroke="#E2319B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                    </div>
+                    <div ref={metricsEditRef} style={{ overflow: 'hidden' }} />
                   </div>
                 </div>
 
@@ -461,15 +449,6 @@ export default function ProfilePage() {
         isOpen={ageOpen}
         onClose={() => setAgeOpen(false)}
         onSavePatch={(age) => profile.savePatch({ age }).catch(logError)}
-      />
-      <MetricsModal
-        isOpen={metricsOpen}
-        onClose={() => setMetricsOpen(false)}
-        profile={profile}
-        onSave={({ priceOptions, ...metrics }) => {
-          profile.savePatch(metrics).catch(logError)
-          profile.savePriceOptions(priceOptions).catch(logError)
-        }}
       />
       <ChangeMediaModal isOpen={mediaEditOpen} onClose={() => setMediaEditOpen(false)} />
     </section>

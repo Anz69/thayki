@@ -62,25 +62,25 @@
                 @php $unread = $this->getUnreadCounts(); @endphp
                 <div style="display:flex;gap:6px;margin-bottom:10px;">
                     <button
-                        wire:click="setTab('users')"
+                        wire:click="setTab('leads')"
                         style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:background .12s,color .12s;
-                               background:{{ $activeTab === 'users' ? '#E2319B' : '#1a1a1a' }};
-                               color:{{ $activeTab === 'users' ? '#fff' : '#888' }};"
+                               background:{{ $activeTab === 'leads' ? '#E2319B' : '#1a1a1a' }};
+                               color:{{ $activeTab === 'leads' ? '#fff' : '#888' }};"
                     >
-                        Пользователи
-                        @if($unread['users'] > 0)
-                            <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:{{ $activeTab === 'users' ? 'rgba(255,255,255,0.3)' : '#E2319B' }};color:#fff;font-size:10px;margin-left:4px;">{{ $unread['users'] }}</span>
+                        Заявки
+                        @if($unread['leads'] > 0)
+                            <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:{{ $activeTab === 'leads' ? 'rgba(255,255,255,0.3)' : '#E2319B' }};color:#fff;font-size:10px;margin-left:4px;">{{ $unread['leads'] }}</span>
                         @endif
                     </button>
                     <button
-                        wire:click="setTab('models')"
+                        wire:click="setTab('support')"
                         style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:background .12s,color .12s;
-                               background:{{ $activeTab === 'models' ? '#E2319B' : '#1a1a1a' }};
-                               color:{{ $activeTab === 'models' ? '#fff' : '#888' }};"
+                               background:{{ $activeTab === 'support' ? '#E2319B' : '#1a1a1a' }};
+                               color:{{ $activeTab === 'support' ? '#fff' : '#888' }};"
                     >
-                        Модели
-                        @if($unread['models'] > 0)
-                            <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:{{ $activeTab === 'models' ? 'rgba(255,255,255,0.3)' : '#E2319B' }};color:#fff;font-size:10px;margin-left:4px;">{{ $unread['models'] }}</span>
+                        Поддержка
+                        @if($unread['support'] > 0)
+                            <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:{{ $activeTab === 'support' ? 'rgba(255,255,255,0.3)' : '#E2319B' }};color:#fff;font-size:10px;margin-left:4px;">{{ $unread['support'] }}</span>
                         @endif
                     </button>
                 </div>

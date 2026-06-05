@@ -13,6 +13,9 @@ class ReviewResource extends Resource
 {
     protected static ?string $model = Complaint::class;
 
+    // Legacy post-meeting reviews — disabled in the lead-gen product.
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationIcon = 'heroicon-o-star';
 
     protected static ?string $navigationGroup = 'Обратная связь';

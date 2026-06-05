@@ -1,5 +1,6 @@
 import { useRef, useLayoutEffect, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import useAuthStore from '@/stores/useAuthStore'
@@ -7,6 +8,7 @@ import useAuthStore from '@/stores/useAuthStore'
 const CHAT_URL = 'https://t.me/ThaikyChat'
 
 export default function StrangeWelcomePage() {
+  const { t } = useTranslation()
   const cardRef  = useRef(null)
   const titleRef = useRef(null)
   const subRef   = useRef(null)
@@ -68,7 +70,7 @@ export default function StrangeWelcomePage() {
       setCheckError(
         err?.userMessage
         ?? err?.response?.data?.error?.message
-        ?? 'Не удалось проверить доступ. Попробуйте снова.',
+        ?? t('auth.checkFailed'),
       )
     } finally {
       setChecking(false)
@@ -86,11 +88,11 @@ export default function StrangeWelcomePage() {
         </div>
 
         <h1 ref={titleRef} className="text-black text-[22px]/[120%] font-semibold">
-          Доступ ограничен
+          {t('auth.accessDeniedTitle')}
         </h1>
 
         <p ref={subRef} className="text-[#7F7F7F] text-sm/[160%] font-medium max-w-[260px]">
-          Для использования приложения необходим инвайт от текущего участника или верификация администратором.
+          {t('auth.accessDeniedText')}
         </p>
 
         <div ref={btnsRef} className="w-full flex flex-col gap-3">
@@ -102,7 +104,7 @@ export default function StrangeWelcomePage() {
             onClick={openChat}
             className="w-full py-4 rounded-full bg-[#E2319B] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity"
           >
-            Перейти в чат поддержки
+            {t('auth.goSupport')}
           </button>
 
           <button
@@ -112,10 +114,10 @@ export default function StrangeWelcomePage() {
             className="w-full py-4 rounded-full border border-[#E2319B]/30 text-[#E2319B] text-sm/[100%] font-semibold active:opacity-70 transition-opacity disabled:opacity-50"
           >
             {checking
-              ? 'Проверяем...'
+              ? t('common.loading', 'Проверяем...')
               : checkDone
-                ? 'Доступ пока не открыт'
-                : 'Уже верифицированы? Проверить доступ'}
+                ? t('auth.accessNotYet', 'Доступ пока не открыт')
+                : t('auth.checkAccess')}
           </button>
         </div>
       </div>

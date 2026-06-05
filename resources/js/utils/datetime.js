@@ -23,6 +23,8 @@
  * and consistent.
  */
 
+import i18n from '@/i18n'
+
 const MONTHS_GENITIVE = [
   'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
   'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
@@ -116,6 +118,9 @@ export function formatRussianDaySeparator(iso) {
  */
 export function declAge(n) {
   if (!n) return '—'
+  let lang = 'ru'
+  try { lang = (i18n.language || 'ru').slice(0, 2) } catch {}
+  if (lang === 'en') return `${n} y.o.`
   return `${n} ${pluralRu(n, ['год', 'года', 'лет'])}`
 }
 

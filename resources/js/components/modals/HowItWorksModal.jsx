@@ -5,24 +5,13 @@ import HowItWorksStep1 from '@/components/sections/howItWorks/Step1'
 import HowItWorksStep2 from '@/components/sections/howItWorks/Step2'
 import HowItWorksStep3 from '@/components/sections/howItWorks/Step3'
 import { useCompactMode } from '@/composables/useCompactMode'
-const STEPS = [
-  {
-    title:    'Выберите модель, которая вам понравилась',
-    subtitle: 'Укажите все данные для встречи, а затем завершите процессы связанные с подтверждением встречи',
-  },
-  {
-    title:    'Оплатите и продолжите в чате',
-    subtitle: 'Укажите все данные для встречи, а затем завершите процессы связанные с подтверждением встречи',
-  },
-  {
-    title:    'После встречи оставьте отзыв',
-    subtitle: 'Это поможет нам отсеивать плохих моделей от хороших. Не поленитесь сделать наш сервис лучше',
-  },
-]
+import { useTranslation } from 'react-i18next'
+const STEPS = ['s1', 's2', 's3']
 const STEP_CONTENT = [HowItWorksStep1, HowItWorksStep2, HowItWorksStep3]
 const DUR_OUT = 0.20   // уходящий слайд исчезает быстро
 const DUR_IN  = 0.46   // входящий плавно тормозит
 export default function HowItWorksModal({ isOpen, onClose }) {
+  const { t } = useTranslation()
   const [stepIdx, setStepIdx] = useState(0)
   const isCompact = useCompactMode()
   const slidesRef    = useRef([])
@@ -137,7 +126,7 @@ export default function HowItWorksModal({ isOpen, onClose }) {
     if (stepRef.current === STEPS.length - 1) { onClose(); return }
     goTo(stepRef.current + 1)
   }, [goTo, onClose])
-  const step = STEPS[stepIdx]
+  const stepKey = STEPS[stepIdx]
   return (
     <ModalSheet isOpen={isOpen} onClose={onClose} height="95dvh">
       <div className="flex h-full flex-col">
@@ -146,14 +135,14 @@ export default function HowItWorksModal({ isOpen, onClose }) {
             onClick={handleBack}
             className="px-2.5 py-3 rounded-full bg-[#F5F5F7] text-black text-sm/[100%] font-medium active:bg-[#EBEBEB] transition-colors"
           >
-            Назад
+            {t('common.back')}
           </button>
-          <span className="text-black text-base/[100%] font-medium">Как это работает?</span>
+          <span className="text-black text-base/[100%] font-medium">{t('hiw.title')}</span>
           <button
             onClick={handleNext}
             className="px-2.5 py-3 rounded-full bg-[#F5F5F7] text-black text-sm/[100%] font-medium active:bg-[#EBEBEB] transition-colors"
           >
-            {stepIdx < STEPS.length - 1 ? 'Далее' : 'Готово'}
+            {stepIdx < STEPS.length - 1 ? t('hiw.next') : t('hiw.done')}
           </button>
         </div>
         <div className="relative flex-1 min-h-0 overflow-hidden">
@@ -182,20 +171,20 @@ export default function HowItWorksModal({ isOpen, onClose }) {
               className={`px-4 py-1.5 rounded-full bg-[#F5F5F7] inline-block ${isCompact ? 'mb-3' : 'mb-4'}`}
             >
               <span className="text-black text-sm/[100%] font-medium">
-                Шаг {stepIdx + 1} из {STEPS.length}
+                {t('hiw.step', { n: stepIdx + 1, total: STEPS.length })}
               </span>
             </div>
             <h2
               ref={titleRef}
               className={`font-medium text-black mb-2.5 ${isCompact ? 'text-[20px]/[116%]' : 'text-[24px]/[116%]'}`}
             >
-              {step.title}
+              {t(`hiw.${stepKey}t`)}
             </h2>
             <p
               ref={subtitleRef}
               className="max-w-[300px] text-[14px]/[130%] font-medium text-[#8A8A8A] line-clamp-2"
             >
-              {step.subtitle}
+              {t(`hiw.${stepKey}s`)}
             </p>
           </div>
         </div>

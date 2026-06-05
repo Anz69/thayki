@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\FaqController;
 use App\Http\Controllers\Api\V1\PhotoUploadController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\ChatController;
+use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\ComplaintController;
 use App\Http\Controllers\Api\V1\InviteController;
 use App\Http\Controllers\Api\V1\MeController;
@@ -110,6 +111,11 @@ Route::prefix('v1')->group(function (): void {
             ->middleware(['throttle:messages', 'idempotency'])
             ->name('chats.postMessage');
         Route::post('/chats/{chat}/read', [ChatController::class, 'markRead'])->name('chats.markRead');
+
+        // Leads (подбор модели)
+        Route::post('/leads', [LeadController::class, 'store'])
+            ->middleware('idempotency')
+            ->name('leads.store');
 
         // Complaints (post-meeting feedback / abuse report)
         Route::get('/complaints',  [ComplaintController::class, 'index'])->name('complaints.index');
