@@ -111,8 +111,9 @@ export default function RequestChatPage() {
   const textareaRef    = useRef(null)
   const sendWrapRef    = useRef(null)
   const prevMsgCount   = useRef(0)
-  const msgInitDone    = useRef(false)
-  const animPrevCount  = useRef(0)
+  const pageReadyDone  = useRef(false)
+  const loadDone       = useRef(false)
+  const contentState   = useRef('idle')
 
   const setSendWrapRef = useCallback((el) => {
     sendWrapRef.current = el
@@ -124,18 +125,45 @@ export default function RequestChatPage() {
     if (root) { root.style.overflowY = 'hidden'; return () => { root.style.overflowY = '' } }
   }, [])
 
-  // Fade-only entrance (no transform) so the page never "jumps"/bounces or looks
-  // like it animates twice. We scroll to the bottom BEFORE revealing, so the
-  // jump-to-latest is invisible.
+  // ── Entrance + message animations ported 1:1 from the support chat ──
   useLayoutEffect(() => {
-    gsap.set([headerRef.current, inputBarRef.current, messagesRef.current].filter(Boolean), { autoAlpha: 0 })
+    gsap.set(headerRef.current,   { y: -40, autoAlpha: 0 })
+    gsap.set(inputBarRef.current, { y: 24,  autoAlpha: 0 })
+    if (messagesRef.current) gsap.set(messagesRef.current, { autoAlpha: 0 })
   }, [])
 
+  function animateMessagesIn() {
+    if (!messagesRef.current) return
+    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
+    gsap.set(messagesRef.current, { autoAlpha: 1 })
+    const els = messagesRef.current.querySelectorAll('[data-msg]')
+    if (els.length) {
+      gsap.set(els, { y: 8, autoAlpha: 0 })
+      gsap.to(els, {
+        y: 0,
+        autoAlpha: 1,
+        duration: 0.28,
+        stagger: 0.03,
+        ease: 'power2.out',
+        clearProps: 'transform,opacity,visibility',
+      })
+    }
+    requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant' }))
+  }
+
+  function tryShowContent() {
+    if (!pageReadyDone.current || !loadDone.current) return
+    if (contentState.current !== 'idle') return
+    contentState.current = 'messages'
+    if (messagesRef.current) gsap.set(messagesRef.current, { autoAlpha: 0 })
+    requestAnimationFrame(() => requestAnimationFrame(animateMessagesIn))
+  }
+
   usePageReady(() => {
-    const list = messagesRef.current
-    if (list) list.scrollTop = list.scrollHeight
-    gsap.to([headerRef.current, inputBarRef.current, messagesRef.current].filter(Boolean),
-      { autoAlpha: 1, duration: 0.3, ease: 'power2.out' })
+    gsap.timeline()
+      .to(headerRef.current,   { y: 0, autoAlpha: 1, duration: 0.38, ease: 'expo.out' })
+      .to(inputBarRef.current, { y: 0, autoAlpha: 1, duration: 0.36, ease: 'power2.out' }, 0.1)
+      .add(() => { pageReadyDone.current = true; tryShowContent() }, 0.12)
   })
 
   useEffect(() => {
@@ -147,7 +175,7 @@ export default function RequestChatPage() {
         setMessages(normalized)
       })
       .catch(logError)
-      .finally(() => setInitialLoad(false))
+      .finally(() => { setInitialLoad(false); loadDone.current = true; tryShowContent() })
   }, [chatId, myId, navigate])
 
   useEffect(() => {
@@ -157,40 +185,36 @@ export default function RequestChatPage() {
     })
   }, [chatId, myId])
 
-  // Jump to the latest message instantly once the initial batch has loaded.
+  // New-message pop — identical to the support chat (count-based, so the
+  // optimistic→real swap never double-animates).
   useEffect(() => {
-    if (initialLoad) return
-    const list = messagesRef.current
-    if (list) list.scrollTop = list.scrollHeight
-  }, [initialLoad])
+    if (contentState.current !== 'messages') return
+    const currentCount = messages.length
+    const isNewMessage = currentCount > prevMsgCount.current
+    prevMsgCount.current = currentCount
+    if (!isNewMessage) return
 
-  useEffect(() => {
-    if (initialLoad) return
-    const isNew = messages.length > prevMsgCount.current
-    prevMsgCount.current = messages.length
-    if (isNew) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, initialLoad])
-
-  // Animate newly arrived/sent messages (like the support chat). We key off the
-  // message COUNT, not the DOM node: a send adds an optimistic message (count
-  // +1 → animate), then the server swaps it for the real one (count unchanged →
-  // no re-animation), so each message pops in exactly once.
-  useEffect(() => {
-    const root = messagesRef.current
-    if (!root) return undefined
-    const added = messages.length - animPrevCount.current
-    animPrevCount.current = messages.length
-    if (initialLoad) return undefined
-    if (!msgInitDone.current) { msgInitDone.current = true; return undefined }
-    if (added <= 0) return undefined
-    const all = root.querySelectorAll('[data-msg-id]')
-    Array.from(all).slice(-added).forEach((el) => {
-      gsap.fromTo(el,
-        { autoAlpha: 0, y: 12, scale: 0.96 },
-        { autoAlpha: 1, y: 0, scale: 1, duration: 0.3, ease: 'back.out(1.5)', transformOrigin: 'center bottom', clearProps: 'transform,opacity' })
-    })
-    return undefined
-  }, [messages, initialLoad])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const els = messagesRef.current?.querySelectorAll('[data-msg]')
+    if (els?.length) {
+      const last = els[els.length - 1]
+      const prev = els.length > 1 ? els[els.length - 2] : null
+      const targets = prev ? [prev, last] : [last]
+      gsap.fromTo(
+        targets,
+        { y: 18, autoAlpha: 0, scale: 0.94 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          scale: 1,
+          duration: 0.34,
+          stagger: 0.05,
+          ease: 'back.out(2)',
+          clearProps: 'transform,opacity,visibility',
+        },
+      )
+    }
+  }, [messages])
 
   useEffect(() => {
     const el = sendWrapRef.current

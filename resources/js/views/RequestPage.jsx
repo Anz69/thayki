@@ -146,16 +146,16 @@ export default function RequestPage() {
       <div className="container flex flex-col gap-4 pt-3 pb-40">
         {/* Selected prototype (when arriving from «Интересует этот типаж») */}
         {model && (
-          <div data-anim className="flex items-center gap-3.5 rounded-2xl p-3 bg-white border border-black/5 shadow-[0_6px_22px_rgba(226,49,155,0.12)]">
-            <div className="size-16 rounded-2xl overflow-hidden bg-[#F4EEF1] shrink-0 ring-2 ring-[#E2319B]/15">
+          <div data-anim className="flex items-center gap-3.5 rounded-2xl p-3 bg-white border-[1.5px] border-[#E2319B]/35">
+            <div className="size-16 rounded-2xl overflow-hidden bg-[#F4EEF1] shrink-0">
               {modelPhoto
                 ? <img src={modelPhoto} alt="" className="w-full h-full object-cover object-top" />
                 : <span className="w-full h-full flex items-center justify-center text-xl">✨</span>}
             </div>
             <div className="flex flex-col min-w-0 gap-1.5">
               <span className="inline-flex items-center gap-1.5 text-[#E2319B] text-[11px]/[100%] font-semibold uppercase tracking-[0.04em]">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="#E2319B">
-                  <path d="M12 21s-7-4.35-9.5-8.5C.7 9.3 2.2 5.5 5.8 5.5c2 0 3.3 1.2 4.2 2.6.9-1.4 2.2-2.6 4.2-2.6 3.6 0 5.1 3.8 3.3 7C19 16.65 12 21 12 21Z" />
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#E2319B" aria-hidden="true">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                 </svg>
                 {t('request.interested')}
               </span>
