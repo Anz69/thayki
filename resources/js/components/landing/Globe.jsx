@@ -143,6 +143,24 @@ export default function Globe({ className = '', style }) {
     let ringAngle = 0
     const STEP = (2 * Math.PI) / RING_N
     let ringW = -1
+    // Per-frame DOM writes are the main cost here (70 ring chars + 11 labels).
+    // Cache last-written values and skip writes that wouldn't change anything —
+    // identical visuals, far fewer style mutations & string allocations.
+    const ringLastOp = new Float32Array(RING_N).fill(-1)
+    const labelCache = new Map()
+    const writeLabel = (el, id, op, px, py) => {
+      let c = labelCache.get(id)
+      if (!c) { c = { op: -1, x: NaN, y: NaN }; labelCache.set(id, c) }
+      const ro = Math.round(op * 1000) / 1000
+      if (Math.abs(ro - c.op) >= 0.003) { el.style.opacity = ro; c.op = ro }
+      if (ro <= 0) return
+      const x = Math.round(px * 10) / 10
+      const y = Math.round(py * 10) / 10
+      if (x !== c.x || y !== c.y) {
+        el.style.transform = `translate3d(${x}px, ${y}px, 0)`
+        c.x = x; c.y = y
+      }
+    }
     const render = (t) => {
       frame = requestAnimationFrame(render)
 
@@ -180,27 +198,24 @@ export default function Globe({ className = '', style }) {
         if (!el) continue
         const eff = ringAngle - i * STEP
         const tt = (1 + Math.cos(eff)) / 2
-        const fade = Math.pow(tt, 0.85)
-        el.style.opacity = (0.1 + 0.9 * fade).toFixed(3)
+        const op = Math.round((0.1 + 0.9 * Math.pow(tt, 0.85)) * 1000) / 1000
+        if (Math.abs(op - ringLastOp[i]) >= 0.003) {
+          el.style.opacity = op
+          ringLastOp[i] = op
+        }
       }
       for (const c of CITIES) {
         const el = labelRefs.current[c.id]
         if (!el) continue
         const p = projectCity(c.loc[0], c.loc[1], effPhi, THETA, ELEVATION)
-        const op = frontOpacity(p.depth)
-        el.style.opacity = op.toFixed(3)
-        if (op <= 0) continue
-        el.style.transform = `translate3d(${(p.x * w).toFixed(1)}px, ${(p.y * w).toFixed(1)}px, 0)`
+        writeLabel(el, c.id, frontOpacity(p.depth), p.x * w, p.y * w)
       }
       for (const a of ARCS) {
         if (!a.label) continue
         const el = labelRefs.current[a.id]
         if (!el) continue
         const p = projectArcMid(a.from, a.to, effPhi, THETA, 0.42, ELEVATION)
-        const op = frontOpacity(p.depth)
-        el.style.opacity = op.toFixed(3)
-        if (op <= 0) continue
-        el.style.transform = `translate3d(${(p.x * w).toFixed(1)}px, ${(p.y * w).toFixed(1)}px, 0)`
+        writeLabel(el, a.id, frontOpacity(p.depth), p.x * w, p.y * w)
       }
 
       if (!faded && canvasRef.current) {
