@@ -4,17 +4,23 @@ import { useTranslation } from 'react-i18next'
 import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import FaqModal from '@/components/modals/FaqModal'
-import GradientBorder from '@/components/ui/GradientBorder'
-import useAuthStore from '@/stores/useAuthStore'
 import i18n, { setLanguage } from '@/i18n'
+import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
-import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
+import { SectionLabel } from './kit'
 
-function SectionLabel({ children }) {
-  return (
-    <p className="text-[#7F7F7F] text-[14px]/[100%] font-medium uppercase tracking-[0.1em] px-1">{children}</p>
-  )
-}
+const IconQuestion = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <path d="M7.36 7.31c.07-.19.17-.37.3-.52.12-.15.27-.27.44-.37.34-.2.74-.27 1.14-.21.39.07.75.27 1 .58.26.3.4.69.4 1.09 0 1.12-1.69 1.69-1.69 1.69v.15M8.97 11.81h.01M16.5 9A7.5 7.5 0 1 1 1.5 9a7.5 7.5 0 0 1 15 0Z" stroke="#777779" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+const IconSupport = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="9.25" stroke="#777779" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="3.75" stroke="#777779" strokeWidth="1.5" />
+    <path d="m5.4 5.4 3.95 3.95M14.65 14.65l3.95 3.95M14.65 9.35l3.95-3.95M9.35 14.65 5.4 18.6" stroke="#777779" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+)
 
 function Toggle({ value, onChange }) {
   return (
@@ -33,7 +39,6 @@ export default function ManagerMorePage() {
   const auth = useAuthStore()
   const [faqOpen, setFaqOpen] = useState(false)
   const [notifications, setNotifications] = useState(auth.user?.notifications_enabled ?? true)
-
   const rootRef = useRef(null)
 
   useLayoutEffect(() => {
@@ -62,6 +67,7 @@ export default function ManagerMorePage() {
     <>
       <section ref={rootRef} className="flex flex-col min-h-screen bg-white">
         <div className="flex flex-col gap-4 container pt-[40px] pb-[120px]">
+
           <div data-anim className="flex flex-col gap-4">
             <SectionLabel>{t('more.important')}</SectionLabel>
             <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-3">
@@ -84,9 +90,11 @@ export default function ManagerMorePage() {
           <div data-anim className="flex flex-col gap-4">
             <SectionLabel>{t('more.additional')}</SectionLabel>
             <button onClick={() => setFaqOpen(true)} className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors">
+              <span className="flex items-center justify-center w-5 h-5"><IconQuestion /></span>
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.faq')}</span>
             </button>
             <button onClick={() => navigate('/support')} className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors">
+              <span className="flex items-center justify-center w-5 h-5"><IconSupport /></span>
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.support')}</span>
             </button>
           </div>

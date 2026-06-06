@@ -7,14 +7,9 @@ import GradientBorder from '@/components/ui/GradientBorder'
 import useAuthStore from '@/stores/useAuthStore'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import api from '@/utils/api'
+import { SectionLabel, Chevron } from './kit'
 
 const fmtMoney = (minor) => '฿ ' + Math.round((minor || 0) / 100).toLocaleString()
-
-function SectionLabel({ children }) {
-  return (
-    <p className="text-[#7F7F7F] text-[14px]/[100%] font-medium uppercase tracking-[0.1em] px-1">{children}</p>
-  )
-}
 
 function MenuItem({ icon, label, badge, right, onClick, disabled }) {
   return (
@@ -22,11 +17,11 @@ function MenuItem({ icon, label, badge, right, onClick, disabled }) {
       onClick={onClick}
       disabled={disabled}
       className={[
-        'w-full flex items-center gap-3 bg-[#EFEEF3] rounded-2xl px-4 py-4.5 transition-colors',
+        'w-full flex items-center gap-2.5 bg-[#EFEEF3] rounded-xl px-4 py-4.5 transition-colors',
         disabled ? 'opacity-50 cursor-not-allowed' : 'active:bg-[#ECEAEC]',
       ].join(' ')}
     >
-      <span className="w-5 h-5 flex items-center justify-center flex-shrink-0">{icon}</span>
+      <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">{icon}</span>
       <span className="text-black text-[16px]/[100%] font-medium">{label}</span>
       <span className="ml-auto flex items-center gap-2">
         {badge > 0 && (
@@ -35,9 +30,7 @@ function MenuItem({ icon, label, badge, right, onClick, disabled }) {
           </span>
         )}
         {right && <span className="text-[#9B9AA0] text-[13px] font-medium">{right}</span>}
-        <svg className="w-4 h-4 text-[#C4C4C4]" viewBox="0 0 16 16" fill="none">
-          <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <Chevron />
       </span>
     </button>
   )
@@ -53,11 +46,9 @@ export default function ManagerHomePage() {
 
   useEffect(() => {
     api.get('/manager/leads', { params: { tab: 'new' } })
-      .then((r) => setNewCount(Array.isArray(r?.data?.data) ? r.data.data.length : 0))
-      .catch(() => setNewCount(0))
+      .then((r) => setNewCount(Array.isArray(r?.data?.data) ? r.data.data.length : 0)).catch(() => setNewCount(0))
     api.get('/manager/earnings')
-      .then((r) => setEarnToday(r?.data?.data?.today ?? 0))
-      .catch(() => setEarnToday(0))
+      .then((r) => setEarnToday(r?.data?.data?.today ?? 0)).catch(() => setEarnToday(0))
   }, [])
 
   usePageReady(() => {
@@ -71,7 +62,7 @@ export default function ManagerHomePage() {
 
   return (
     <section ref={rootRef} className="flex flex-col min-h-screen bg-white">
-      <div className="container flex flex-col gap-5 pt-[40px] pb-[120px]">
+      <div className="flex flex-col gap-5 container pt-[40px] pb-[120px]">
 
         {/* Greeting + avatar */}
         <div data-anim className="flex items-center justify-between gap-3">
@@ -86,7 +77,7 @@ export default function ManagerHomePage() {
           </div>
         </div>
 
-        {/* Stats — single accent card (project style: GradientBorder) */}
+        {/* Stats — GradientBorder accent (like the balance card) */}
         <div data-anim>
           <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex items-center">
             <div className="flex-1 flex flex-col gap-1">
@@ -104,21 +95,17 @@ export default function ManagerHomePage() {
         {/* Panel sections */}
         <div data-anim className="flex flex-col gap-3">
           <SectionLabel>{t('manager.title')}</SectionLabel>
-
           <MenuItem
-            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 13h4l2 3h6l2-3h4M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="#E2319B" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-            label={t('manager.leads')}
-            badge={newCount ?? 0}
+            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 13h4l2 3h6l2-3h4M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="#777779" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+            label={t('manager.leads')} badge={newCount ?? 0}
             onClick={() => navigate('/manager/leads')}
           />
           <MenuItem
-            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" stroke="#2F6BD8" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-            label={t('manager.support')}
-            right={t('manager.soon')}
-            disabled
+            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.25" stroke="#777779" strokeWidth="1.6" /><circle cx="12" cy="12" r="3.75" stroke="#777779" strokeWidth="1.6" /><path d="m5.4 5.4 3.95 3.95M14.65 14.65l3.95 3.95M14.65 9.35l3.95-3.95M9.35 14.65 5.4 18.6" stroke="#777779" strokeWidth="1.6" strokeLinecap="round" /></svg>}
+            label={t('manager.support')} right={t('manager.soon')} disabled
           />
           <MenuItem
-            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h12M19 15l2 2-2 2" stroke="#1E9E4E" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2.5" stroke="#777779" strokeWidth="1.6" /><circle cx="12" cy="12" r="2.3" stroke="#777779" strokeWidth="1.6" /><path d="M6 9.5h.01M18 14.5h.01" stroke="#777779" strokeWidth="1.7" strokeLinecap="round" /></svg>}
             label={t('manager.earnings')}
             onClick={() => navigate('/manager/earnings')}
           />

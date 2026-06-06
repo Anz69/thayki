@@ -21,6 +21,21 @@ class ManagerStatsController extends Controller
             ->when($since, fn ($q) => $q->where('confirmed_at', '>=', $since))
             ->sum('amount_minor');
 
+        // Daily totals for the last 14 days (oldest → newest), zero-filled.
+        $days = 14;
+        $series = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $start = now()->subDays($i)->startOfDay();
+            $end = (clone $start)->addDay();
+            $series[] = [
+                'date' => $start->toDateString(),
+                'amount' => (int) (clone $confirmed)
+                    ->where('confirmed_at', '>=', $start)
+                    ->where('confirmed_at', '<', $end)
+                    ->sum('amount_minor'),
+            ];
+        }
+
         return ApiResponse::ok([
             'currency' => 'THB',
             'today' => $sum(now()->startOfDay()),
@@ -28,6 +43,7 @@ class ManagerStatsController extends Controller
             'month' => $sum(now()->startOfMonth()),
             'total' => $sum(null),
             'count' => (clone $confirmed)->count(),
+            'series' => $series,
         ]);
     }
 }

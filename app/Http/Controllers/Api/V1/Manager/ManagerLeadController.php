@@ -79,11 +79,27 @@ class ManagerLeadController extends Controller
             'client' => $client ? [
                 'name' => trim(($client->first_name ?? '').' '.($client->last_name ?? '')) ?: ($client->username ?? '—'),
                 'username' => $client->username,
+                'photo' => $client->photo_url,
             ] : null,
             'model' => $profile ? [
+                'id' => $profile->id,
                 'display_name' => $profile->display_name,
                 'display_name_en' => $profile->display_name_en,
                 'photo' => $main?->getUrl(),
+                'age' => $profile->age,
+                'height_cm' => $profile->height_cm,
+                'bust_cm' => $profile->bust_cm,
+                'waist_cm' => $profile->waist_cm,
+                'hips_cm' => $profile->hips_cm,
+                'eyes' => $profile->eyes,
+                'breast_size' => $profile->breast_size,
+                'description' => $profile->description,
+                'is_verified' => $profile->is_verified,
+                'photos' => $profile->photos
+                    ->sortByDesc(fn ($p) => $p->is_main)
+                    ->map(fn ($p) => $p->getUrl())
+                    ->values()
+                    ->all(),
             ] : null,
         ];
     }
