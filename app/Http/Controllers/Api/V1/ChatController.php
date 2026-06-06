@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Actions\Chat\EnsureMeetingChatAction;
 use App\Actions\Chat\EnsureSupportChatAction;
 use App\Actions\Chat\PostMessageAction;
+use App\Enums\ChatType;
+use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Events\MessagesRead;
 use App\Exceptions\DomainException;
@@ -15,6 +17,7 @@ use App\Http\Requests\Chat\PostMessageRequest;
 use App\Http\Resources\ChatResource;
 use App\Http\Resources\MessageResource;
 use App\Models\Chat;
+use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\Message;
 use App\Models\User;
@@ -145,7 +148,35 @@ class ChatController extends Controller
             $request->input('client_message_id'),
         );
 
+        $this->advanceLeadStatus($chat, $user);
+
         return ApiResponse::created(new MessageResource($message->load('sender')));
+    }
+
+    /**
+     * Lead chats track a conversational status: when the client writes it goes
+     * back to "in progress"; when the manager writes it becomes "awaiting client".
+     */
+    private function advanceLeadStatus(Chat $chat, User $sender): void
+    {
+        if ($chat->type !== ChatType::Lead) {
+            return;
+        }
+
+        $lead = Lead::query()->where('chat_id', $chat->id)->first();
+        if ($lead === null) {
+            return;
+        }
+
+        $fromClient = $lead->user_id === $sender->id;
+
+        if ($fromClient) {
+            if ($lead->status === LeadStatus::AwaitingClient) {
+                $lead->update(['status' => LeadStatus::InProgress]);
+            }
+        } elseif (in_array($lead->status, [LeadStatus::New, LeadStatus::InProgress], true)) {
+            $lead->update(['status' => LeadStatus::AwaitingClient]);
+        }
     }
 
     public function markRead(Request $request, Chat $chat): JsonResponse

@@ -7,4 +7,6 @@ return [
     'open_chat' => 'Open chat',
     'support' => 'Support',
     'user_fallback' => 'User',
+    'new_lead' => '📩 New model request — :city',
+    'open' => 'Open',
 ];

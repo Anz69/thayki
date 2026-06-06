@@ -37,7 +37,7 @@ class CreateLeadAction
      */
     public function execute(User $client, array $data): Lead
     {
-        return DB::transaction(function () use ($client, $data): Lead {
+        $lead = DB::transaction(function () use ($client, $data): Lead {
             $profile = null;
             if (! empty($data['model_profile_id'])) {
                 $profile = ModelProfile::query()->find((int) $data['model_profile_id']);
@@ -75,6 +75,32 @@ class CreateLeadAction
 
             return $lead->fresh();
         });
+
+        $this->notifyManagers($lead);
+
+        return $lead;
+    }
+
+    /** Ping every manager about a brand-new lead so they can pick it up. */
+    private function notifyManagers(Lead $lead): void
+    {
+        $managers = User::query()
+            ->where('role', \App\Enums\UserRole::Manager->value)
+            ->whereNotNull('tg_chat_id')
+            ->where('notifications_enabled', true)
+            ->get();
+
+        $notifier = \App\Services\Telegram\Notifier::default();
+        foreach ($managers as $manager) {
+            $locale = str_starts_with(strtolower((string) ($manager->language_code ?? '')), 'en') ? 'en' : 'ru';
+            $notifier->notifyUser(
+                $manager,
+                trans('notifications.new_lead', ['city' => $lead->city], $locale),
+                '/home',
+                trans('notifications.open', [], $locale),
+                'new-lead:'.$lead->id,
+            );
+        }
     }
 
     private function formatMessage(Lead $lead, ?ModelProfile $profile, string $locale = 'ru'): string
