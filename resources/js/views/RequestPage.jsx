@@ -99,6 +99,13 @@ export default function RequestPage() {
   })
 
   const setVal = (field, v) => setValues((p) => ({ ...p, [field]: v }))
+
+  // On focus, lift the active field to the top of the scroll area so it (and the
+  // next field below it) stay visible above the on-screen keyboard.
+  const scrollFieldIntoView = (e) => {
+    const card = e.currentTarget
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
+  }
   const ruLabel = (group, key) => (key ? ru.request[group]?.[key] ?? key : null)
 
   const handleSubmit = async () => {
@@ -174,7 +181,12 @@ export default function RequestPage() {
         )}
 
         {/* City — required, prominent */}
-        <div data-anim className="flex flex-col gap-2.5 bg-white rounded-2xl p-4 border border-black/5">
+        <div
+          data-anim
+          onFocusCapture={scrollFieldIntoView}
+          style={{ scrollMarginTop: 80 }}
+          className="flex flex-col gap-2.5 bg-white rounded-2xl p-4 border border-black/5"
+        >
           <p className="text-black text-[15px]/[100%] font-semibold">
             {t('request.city')} <span className="text-[#E2319B]">*</span>
           </p>
@@ -190,16 +202,16 @@ export default function RequestPage() {
         ))}
 
         {/* Wishes */}
-        <div data-anim className="flex flex-col gap-2.5 bg-white rounded-2xl p-4 border border-black/5">
+        <div
+          data-anim
+          onFocusCapture={scrollFieldIntoView}
+          style={{ scrollMarginTop: 80 }}
+          className="flex flex-col gap-2.5 bg-white rounded-2xl p-4 border border-black/5"
+        >
           <p className="text-black text-[15px]/[100%] font-semibold">{isModelFlow ? t('request.wishesExtra') : t('request.wishes')}</p>
           <textarea
             value={wishes}
             onChange={(e) => setWishes(e.target.value)}
-            onFocus={(e) => {
-              // Phone keyboard covers the field — scroll it into view above it.
-              const el = e.currentTarget
-              setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300)
-            }}
             rows={4}
             placeholder={t('request.wishesPlaceholder')}
             className="w-full bg-[#F5F5F7] rounded-xl px-4 py-3.5 text-black text-[15px] outline-none placeholder:text-[#ABABAB] resize-none focus:ring-2 focus:ring-[#E2319B]/30 transition-shadow"

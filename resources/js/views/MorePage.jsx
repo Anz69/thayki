@@ -274,7 +274,7 @@ export default function MorePage() {
         <div className="flex flex-col gap-4 container pt-[40px] pb-[120px]">
 
           {auth.user && (
-            <div className="flex items-center gap-3">
+            <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-3.5 flex items-center gap-3">
               <div className="size-14 rounded-full overflow-hidden bg-[#EFEAEE] shrink-0 flex items-center justify-center">
                 {auth.user.photo_url
                   ? <img src={resolveMediaUrl(auth.user.photo_url)} alt="" className="w-full h-full object-cover" />
@@ -288,7 +288,7 @@ export default function MorePage() {
                   <span className="text-[#8A8A8A] text-sm/[120%] truncate">@{auth.user.username}</span>
                 )}
               </div>
-            </div>
+            </GradientBorder>
           )}
 
           {balance >= 0.01 && (
@@ -361,10 +361,6 @@ export default function MorePage() {
 
 
 
-            <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-4">
-              <span className="text-black text-[16px]/[100%] font-medium">{t('more.notifications')}</span>
-              <Toggle value={notifications} onChange={handleNotificationsChange} />
-            </div>
             <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-3">
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.language')}</span>
               {(() => {
@@ -395,6 +391,11 @@ export default function MorePage() {
                   </div>
                 )
               })()}
+            </div>
+
+            <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-4">
+              <span className="text-black text-[16px]/[100%] font-medium">{t('more.notifications')}</span>
+              <Toggle value={notifications} onChange={handleNotificationsChange} />
             </div>
           </div>
 
