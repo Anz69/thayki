@@ -224,6 +224,10 @@
       "month": "This month",
       "total": "Total",
       "count": "Confirmed payments: {{n}}"
-    }
+    },
+    "statusTitle": "Request status",
+    "leadsHint": "Accept and handle requests",
+    "earningsHint": "Payments summary",
+    "greeting": "Hello,"
   }
 }

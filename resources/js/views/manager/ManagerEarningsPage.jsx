@@ -29,7 +29,7 @@ export default function ManagerEarningsPage() {
       <header className="w-full py-4 bg-[#FAFAFB]/90 backdrop-blur-xs sticky top-0 z-50">
         <div className="container flex items-center relative">
           <button
-            onClick={() => navigate('/manager')}
+            onClick={() => navigate('/home')}
             className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
           >
             {t('common.back')}

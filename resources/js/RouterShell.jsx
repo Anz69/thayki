@@ -36,25 +36,30 @@ const FeedbackPage = lazy(() => import('@/views/FeedbackPage'))
 const RequestPage = lazy(() => import('@/views/RequestPage'))
 const RequestChatPage = lazy(() => import('@/views/RequestChatPage'))
 const RequestsPage = lazy(() => import('@/views/RequestsPage'))
-const ManagerPage = lazy(() => import('@/views/manager/ManagerPage'))
+const ManagerHomePage = lazy(() => import('@/views/manager/ManagerHomePage'))
+const ManagerMorePage = lazy(() => import('@/views/manager/ManagerMorePage'))
 const ManagerLeadsPage = lazy(() => import('@/views/manager/ManagerLeadsPage'))
 const ManagerEarningsPage = lazy(() => import('@/views/manager/ManagerEarningsPage'))
 
 function LandingRoute() {
   const { user } = useAuthStore()
   if (!user) return <LandingPage />
-  if (user?.role === 'model') return <Navigate to="/home" replace />
+  if (user?.role === 'model' || user?.role === 'manager') return <Navigate to="/home" replace />
   return <LandingPage />
 }
 
 function MainPage() {
   const { user } = useAuthStore()
-  return user?.role === 'model' ? <ClientPage /> : <HomePage />
+  if (user?.role === 'model') return <ClientPage />
+  if (user?.role === 'manager') return <ManagerHomePage />
+  return <HomePage />
 }
 
 function MoreRolePage() {
   const { user } = useAuthStore()
-  return user?.role === 'model' ? <ModelMorePage /> : <MorePage />
+  if (user?.role === 'model') return <ModelMorePage />
+  if (user?.role === 'manager') return <ManagerMorePage />
+  return <MorePage />
 }
 
 function MeetingRolePage() {
@@ -403,7 +408,7 @@ export default function App() {
                         <Route path="/request" element={<RequestPage />} />
                         <Route path="/request/chat" element={<RequestChatPage />} />
                         <Route path="/requests" element={<RequestsPage />} />
-                        <Route path="/manager" element={<ManagerPage />} />
+                        <Route path="/manager" element={<Navigate to="/home" replace />} />
                         <Route path="/manager/leads" element={<ManagerLeadsPage />} />
                         <Route path="/manager/earnings" element={<ManagerEarningsPage />} />
                         <Route path="/roadmap" element={<RoadmapPage />} />
