@@ -234,7 +234,8 @@
     "statNew": "Новые заявки",
     "statToday": "Сегодня",
     "created": "Создана",
-    "interested": "Интересующий типаж"
+    "interested": "Интересующий типаж",
+    "supportEmpty": "Обращений пока нет"
   },
   "leadChat": {
     "actions": "Действия",

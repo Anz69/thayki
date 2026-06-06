@@ -102,7 +102,8 @@ export default function ManagerHomePage() {
           />
           <MenuItem
             icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.25" stroke="#777779" strokeWidth="1.6" /><circle cx="12" cy="12" r="3.75" stroke="#777779" strokeWidth="1.6" /><path d="m5.4 5.4 3.95 3.95M14.65 14.65l3.95 3.95M14.65 9.35l3.95-3.95M9.35 14.65 5.4 18.6" stroke="#777779" strokeWidth="1.6" strokeLinecap="round" /></svg>}
-            label={t('manager.support')} right={t('manager.soon')} disabled
+            label={t('manager.support')}
+            onClick={() => navigate('/manager/support')}
           />
           <MenuItem
             icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2.5" stroke="#777779" strokeWidth="1.6" /><circle cx="12" cy="12" r="2.3" stroke="#777779" strokeWidth="1.6" /><path d="M6 9.5h.01M18 14.5h.01" stroke="#777779" strokeWidth="1.7" strokeLinecap="round" /></svg>}

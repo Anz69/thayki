@@ -182,6 +182,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/leads/{lead}/send-models', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'sendModels'])->name('manager.leads.sendModels');
             Route::post('/leads/{lead}/parse-model', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'parseModel'])->name('manager.leads.parseModel');
             Route::post('/leads/{lead}/send-parsed', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'sendParsed'])->name('manager.leads.sendParsed');
+            Route::get('/support', [\App\Http\Controllers\Api\V1\Manager\ManagerSupportController::class, 'index'])->name('manager.support.index');
             Route::get('/earnings', [\App\Http\Controllers\Api\V1\Manager\ManagerStatsController::class, 'earnings'])->name('manager.earnings');
         });
     });

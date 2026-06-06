@@ -5,6 +5,7 @@ import api from '@/utils/api'
 import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
+import ClientPaymentSheet from '@/components/modals/PaymentSheet'
 
 const money = (minor, currency = 'THB') => {
   const v = Math.round((minor || 0) / 100).toLocaleString()
@@ -35,6 +36,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   const [modelView, setModelView] = useState(null)
+  const [payOpen, setPayOpen] = useState(false)
   const p = msg.payload || {}
 
   if (msg.type === 'payment_request') {
@@ -55,7 +57,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
               <button
                 onClick={() => {
                   if (p.pay_url) { window.Telegram?.WebApp?.openLink ? window.Telegram.WebApp.openLink(p.pay_url) : window.open(p.pay_url, '_blank') }
-                  else { (window.Telegram?.WebApp?.showAlert || window.alert)(t('leadChat.payGatewaySoon')) }
+                  else setPayOpen(true)
                 }}
                 className="mt-1.5 w-full py-2.5 rounded-xl bg-[#1B1B1B] text-white text-[14px] font-semibold active:opacity-80 transition-opacity"
               >
@@ -66,6 +68,13 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
               <span className="mt-0.5 text-[#9B9AA0] text-[12px]">{t('leadChat.payCryptoHint')}</span>
             )}
           </div>
+          {!isManager && (
+            <ClientPaymentSheet
+              isOpen={payOpen}
+              onClose={() => setPayOpen(false)}
+              price={(p.amount_minor || 0) / 100}
+            />
+          )}
           <div className={`px-4 py-2.5 text-center text-[13px] font-semibold ${confirmed ? 'bg-[#E6F5EA] text-[#1E9E4E]' : 'bg-[#FFF1DC] text-[#C77A12]'}`}>
             {confirmed ? t('leadChat.payConfirmed') : t('leadChat.payPending')}
           </div>

@@ -234,7 +234,8 @@
     "statNew": "New requests",
     "statToday": "Today",
     "created": "Created",
-    "interested": "Requested type"
+    "interested": "Requested type",
+    "supportEmpty": "No conversations yet"
   },
   "leadChat": {
     "actions": "Actions",

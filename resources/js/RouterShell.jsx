@@ -40,6 +40,7 @@ const ManagerHomePage = lazy(() => import('@/views/manager/ManagerHomePage'))
 const ManagerMorePage = lazy(() => import('@/views/manager/ManagerMorePage'))
 const ManagerLeadsPage = lazy(() => import('@/views/manager/ManagerLeadsPage'))
 const ManagerEarningsPage = lazy(() => import('@/views/manager/ManagerEarningsPage'))
+const ManagerSupportPage = lazy(() => import('@/views/manager/ManagerSupportPage'))
 
 function LandingRoute() {
   const { user } = useAuthStore()
@@ -411,6 +412,7 @@ export default function App() {
                         <Route path="/manager" element={<Navigate to="/home" replace />} />
                         <Route path="/manager/leads" element={<ManagerLeadsPage />} />
                         <Route path="/manager/earnings" element={<ManagerEarningsPage />} />
+                        <Route path="/manager/support" element={<ManagerSupportPage />} />
                         <Route path="/roadmap" element={<RoadmapPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/become-model" element={<BecomeModelPage />} />
