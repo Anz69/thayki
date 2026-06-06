@@ -180,6 +180,8 @@ Route::prefix('v1')->group(function (): void {
                 ->middleware('idempotency')->name('manager.leads.paymentConfirm');
             Route::post('/leads/{lead}/verification-request', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'verificationRequest'])->name('manager.leads.verificationRequest');
             Route::post('/leads/{lead}/send-models', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'sendModels'])->name('manager.leads.sendModels');
+            Route::post('/leads/{lead}/parse-model', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'parseModel'])->name('manager.leads.parseModel');
+            Route::post('/leads/{lead}/send-parsed', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'sendParsed'])->name('manager.leads.sendParsed');
             Route::get('/earnings', [\App\Http\Controllers\Api\V1\Manager\ManagerStatsController::class, 'earnings'])->name('manager.earnings');
         });
     });

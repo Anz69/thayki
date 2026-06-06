@@ -260,6 +260,27 @@
     "verifySheetBtn": "Request verification",
     "modelsTitle": "Model selection ({{n}})",
     "modelsSheetTitle": "Pick models",
-    "modelsSend": "Send ({{n}})"
+    "modelsSend": "Send ({{n}})",
+    "modelLink": "Model by link",
+    "parseError": "Could not parse the page",
+    "linkSheetTitle": "Model by link",
+    "linkSheetHint": "Paste one or more model page links (e100.club), one per line. We will fetch photos, videos and params.",
+    "parsing": "Loading…",
+    "parseBtn": "Load",
+    "previewTitle": "Preview",
+    "videosCount": "Videos: {{n}}",
+    "fieldName": "Name",
+    "fieldDesc": "Description",
+    "sendToClient": "Send to client",
+    "parsingN": "Loading {{done}}/{{total}}…",
+    "parseSomeFailed": "Failed to load: {{n}}",
+    "photosCount": "Photos: {{n}}",
+    "sendAll": "Send to client ({{n}})",
+    "payMethodManual": "Requisites",
+    "payMethodCrypto": "Crypto",
+    "payCryptoSheetHint": "The client gets a «Pay» button. The payment module will be connected later — confirm the payment manually.",
+    "payNow": "Pay",
+    "payGatewaySoon": "The payment module will be connected soon. The manager will confirm the payment.",
+    "payCryptoHint": "Crypto payment — confirm manually once funds arrive."
   }
 }

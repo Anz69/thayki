@@ -45,11 +45,25 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
           <div className="px-4 pt-3.5 pb-3 flex flex-col gap-1.5">
             <span className="text-[#9B9AA0] text-[12px] font-medium uppercase tracking-[0.08em]">{t('leadChat.payTitle')}</span>
             <span className="text-black text-[24px]/[100%] font-bold">{money(p.amount_minor, p.currency)}</span>
-            {p.requisites && (
+            {p.method !== 'crypto' && p.requisites && (
               <div className="mt-1 bg-[#F5F5F7] rounded-xl px-3 py-2.5">
                 <span className="text-[#7F7F7F] text-[11px] font-medium">{t('leadChat.payRequisites')}</span>
                 <p className="text-black text-[13px]/[150%] font-medium select-text" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{p.requisites}</p>
               </div>
+            )}
+            {p.method === 'crypto' && !confirmed && !isManager && (
+              <button
+                onClick={() => {
+                  if (p.pay_url) { window.Telegram?.WebApp?.openLink ? window.Telegram.WebApp.openLink(p.pay_url) : window.open(p.pay_url, '_blank') }
+                  else { (window.Telegram?.WebApp?.showAlert || window.alert)(t('leadChat.payGatewaySoon')) }
+                }}
+                className="mt-1.5 w-full py-2.5 rounded-xl bg-[#1B1B1B] text-white text-[14px] font-semibold active:opacity-80 transition-opacity"
+              >
+                {t('leadChat.payNow')}
+              </button>
+            )}
+            {p.method === 'crypto' && isManager && !confirmed && (
+              <span className="mt-0.5 text-[#9B9AA0] text-[12px]">{t('leadChat.payCryptoHint')}</span>
             )}
           </div>
           <div className={`px-4 py-2.5 text-center text-[13px] font-semibold ${confirmed ? 'bg-[#E6F5EA] text-[#1E9E4E]' : 'bg-[#FFF1DC] text-[#C77A12]'}`}>
@@ -159,11 +173,19 @@ function ModelDetailSheet({ model, onClose }) {
   useEffect(() => { if (model) { setData(model); setOpen(true) } }, [model])
   if (!data && !open) return null
   const photos = (data?.photos ?? []).map((p) => resolveMediaUrl(p)).filter(Boolean)
+  const videos = (data?.videos ?? []).filter((v) => v?.url)
   const cm = (v) => (v ? `${v} ${t('modelInfo.cm')}` : null)
+  const rows = data ? [
+    [t('modelInfo.height'), cm(data.height_cm)],
+    [t('modelInfo.bust'), cm(data.bust_cm)],
+    [t('modelInfo.waist'), cm(data.waist_cm)],
+    [t('modelInfo.hips'), cm(data.hips_cm)],
+    [t('modelInfo.eyes'), data.eyes],
+  ].filter(([, v]) => v) : []
   return (
     <ModalMiddle isOpen={open} onClose={() => { setOpen(false); onClose?.() }} onAfterClose={() => setData(null)}>
       {data && (
-        <div className="flex flex-col px-5 pt-1 pb-6 gap-4">
+        <div className="flex flex-col px-5 pt-1 pb-6 gap-4" style={{ maxHeight: '84dvh', overflowY: 'auto' }}>
           <div className="flex items-center gap-2">
             <h2 className="text-black text-lg font-bold truncate">{modelName(data)}</h2>
             {data.age != null && <span className="text-[#9B9AA0] text-[14px] ml-auto">{data.age}</span>}
@@ -175,11 +197,33 @@ function ModelDetailSheet({ model, onClose }) {
               ))}
             </div>
           )}
-          {cm(data.height_cm) && (
-            <div className="bg-[#F5F5F7] rounded-2xl px-4 py-2.5 flex items-center justify-between">
-              <span className="text-[#9B9AA0] text-[13px]">{t('modelInfo.height')}</span>
-              <span className="text-black text-[14px] font-medium">{cm(data.height_cm)}</span>
+          {videos.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
+              {videos.map((v, i) => (
+                <video
+                  key={i}
+                  src={resolveMediaUrl(v.url)}
+                  poster={v.poster ? resolveMediaUrl(v.poster) : undefined}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="h-[220px] w-[156px] rounded-2xl object-cover shrink-0 bg-black"
+                />
+              ))}
             </div>
+          )}
+          {rows.length > 0 && (
+            <div className="bg-[#F5F5F7] rounded-2xl px-4 py-1.5">
+              {rows.map(([label, value], i) => (
+                <div key={i} className="flex items-center justify-between py-2.5 border-b border-black/[0.06] last:border-0">
+                  <span className="text-[#9B9AA0] text-[13px]">{label}</span>
+                  <span className="text-black text-[14px] font-medium">{value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {data.description && (
+            <p className="text-[#7F7F7F] text-[13px]/[160%] whitespace-pre-line">{data.description}</p>
           )}
         </div>
       )}
@@ -193,7 +237,7 @@ function ModelDetailSheet({ model, onClose }) {
 export function LeadActionMenu({ leadId, onPickMedia, onPosted }) {
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [sheet, setSheet] = useState(null) // 'payment' | 'verify' | 'models'
+  const [sheet, setSheet] = useState(null) // 'payment' | 'verify' | 'models' | 'link'
 
   const open = (which) => { setMenuOpen(false); setSheet(which) }
 
@@ -215,13 +259,189 @@ export function LeadActionMenu({ leadId, onPickMedia, onPosted }) {
           <MenuRow icon="💳" label={t('leadChat.payment')} onClick={() => open('payment')} />
           <MenuRow icon="🪪" label={t('leadChat.verification')} onClick={() => open('verify')} />
           <MenuRow icon="👤" label={t('leadChat.models')} onClick={() => open('models')} />
+          <MenuRow icon="🔗" label={t('leadChat.modelLink')} onClick={() => open('link')} />
         </div>
       </ModalMiddle>
 
       <PaymentSheet open={sheet === 'payment'} onClose={() => setSheet(null)} leadId={leadId} onPosted={onPosted} />
       <VerifySheet open={sheet === 'verify'} onClose={() => setSheet(null)} leadId={leadId} onPosted={onPosted} />
       <ModelsSheet open={sheet === 'models'} onClose={() => setSheet(null)} leadId={leadId} onPosted={onPosted} />
+      <ParsedModelSheet open={sheet === 'link'} onClose={() => setSheet(null)} leadId={leadId} onPosted={onPosted} />
     </>
+  )
+}
+
+/* ── Parse external model links (e100.club) → sequential preview editor → send.
+   Supports one or many links (one per line); bulk parsing runs sequentially
+   with progress, then a card-by-card preview with nav/swipe. ─────────────── */
+function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
+  const { t } = useTranslation()
+  const [urls, setUrls] = useState('')
+  const [drafts, setDrafts] = useState(null)
+  const [idx, setIdx] = useState(0)
+  const [progress, setProgress] = useState(null) // {done,total} while parsing
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(null)
+  const swipeX = useRef(null)
+
+  const reset = () => { setUrls(''); setDrafts(null); setIdx(0); setProgress(null); setErr(null) }
+
+  const parse = async () => {
+    const links = urls.split(/[\s,]+/).map((l) => l.trim()).filter((l) => l.includes('e100.club') || /\?p=/.test(l))
+    if (!links.length || progress) return
+    setErr(null); setProgress({ done: 0, total: links.length })
+    const out = []
+    let failed = 0
+    for (let i = 0; i < links.length; i++) {
+      try {
+        const { data } = await api.post(`/manager/leads/${leadId}/parse-model`, { url: links[i] })
+        out.push({ ...data.data, photos: data.data.photos ?? [], videos: data.data.videos ?? [] })
+      } catch (e) { logError(e); failed++ }
+      setProgress({ done: i + 1, total: links.length })
+    }
+    setProgress(null)
+    if (!out.length) { setErr(t('leadChat.parseError')); return }
+    if (failed) setErr(t('leadChat.parseSomeFailed', { n: failed }))
+    setDrafts(out); setIdx(0)
+  }
+
+  const patch = (fn) => setDrafts((arr) => arr.map((d, j) => (j === idx ? fn(d) : d)))
+  const setField = (k, v) => patch((d) => ({ ...d, [k]: v }))
+  const removePhoto = (i) => patch((d) => ({ ...d, photos: d.photos.filter((_, j) => j !== i) }))
+  const removeVideo = (i) => patch((d) => ({ ...d, videos: d.videos.filter((_, j) => j !== i) }))
+
+  const go = (dir) => setIdx((i) => Math.min(drafts.length - 1, Math.max(0, i + dir)))
+  const onSwipeStart = (e) => { swipeX.current = e.clientX }
+  const onSwipeEnd = (e) => {
+    if (swipeX.current == null) return
+    const dx = e.clientX - swipeX.current
+    if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1)
+    swipeX.current = null
+  }
+
+  const send = async () => {
+    if (!drafts?.length || busy) return
+    setBusy(true)
+    try {
+      await api.post(`/manager/leads/${leadId}/send-parsed`, { models: drafts })
+      onPosted?.(); onClose(); reset()
+    } catch (e) { logError(e) } finally { setBusy(false) }
+  }
+
+  const cur = drafts?.[idx]
+  const numField = (k, label) => (
+    <label className="flex flex-col gap-1">
+      <span className="text-[#9B9AA0] text-[12px]">{label}</span>
+      <input value={cur[k] ?? ''} onChange={(e) => setField(k, e.target.value.replace(/[^0-9]/g, '') || null)} inputMode="numeric" className="bg-[#F5F5F7] rounded-lg px-3 py-2 text-black text-[14px] font-medium outline-none" />
+    </label>
+  )
+
+  return (
+    <ModalMiddle isOpen={open} onClose={onClose} onAfterClose={reset}>
+      <div className="flex flex-col px-5 pt-1 pb-6 gap-3" style={{ maxHeight: '82dvh' }}>
+        {!drafts ? (
+          <>
+            <h2 className="text-black text-lg font-bold">{t('leadChat.linkSheetTitle')}</h2>
+            <p className="text-[#9B9AA0] text-[13px]/[150%]">{t('leadChat.linkSheetHint')}</p>
+            <textarea
+              value={urls}
+              onChange={(e) => setUrls(e.target.value)}
+              rows={4}
+              placeholder={'https://e100.club/?p=…\nhttps://e100.club/?p=…'}
+              className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[14px] outline-none resize-none"
+            />
+            {err && <span className="text-[#E2314C] text-[13px]">{err}</span>}
+            <button disabled={!!progress || !urls.trim()} onClick={parse} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
+              {progress ? t('leadChat.parsingN', { done: progress.done, total: progress.total }) : t('leadChat.parseBtn')}
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Card navigation header (counter + arrows + swipe) */}
+            <div
+              className="flex items-center justify-between select-none"
+              onPointerDown={onSwipeStart}
+              onPointerUp={onSwipeEnd}
+              style={{ touchAction: 'pan-y' }}
+            >
+              <button onClick={() => setDrafts(null)} className="text-[#9B9AA0] text-[13px] font-medium active:opacity-60">{t('common.back')}</button>
+              <div className="flex items-center gap-3">
+                <button disabled={idx === 0} onClick={() => go(-1)} className="size-7 rounded-full bg-[#EFEEF3] flex items-center justify-center disabled:opacity-30 active:scale-90 transition-transform">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="m14 6-6 6 6 6" stroke="#7F7F7F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+                <span className="text-black text-[14px] font-semibold tabular-nums">{idx + 1} / {drafts.length}</span>
+                <button disabled={idx === drafts.length - 1} onClick={() => go(1)} className="size-7 rounded-full bg-[#EFEEF3] flex items-center justify-center disabled:opacity-30 active:scale-90 transition-transform">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="m10 6 6 6-6 6" stroke="#7F7F7F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex flex-col gap-3" style={{ maxHeight: '60dvh' }}>
+              {/* Photos with delete */}
+              {cur.photos.length > 0 && (
+                <div>
+                  <span className="text-[#9B9AA0] text-[12px] mb-1 block">{t('leadChat.photosCount', { n: cur.photos.length })}</span>
+                  <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                    {cur.photos.map((src, i) => (
+                      <div key={i} className="relative shrink-0">
+                        <img src={resolveMediaUrl(src)} alt="" className="h-[140px] w-[100px] rounded-xl object-cover object-top bg-[#EFEAEE]" />
+                        <button onClick={() => removePhoto(i)} className="absolute top-1 right-1 size-6 rounded-full bg-black/55 text-white flex items-center justify-center active:scale-90 transition-transform">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Videos with delete */}
+              {cur.videos?.length > 0 && (
+                <div>
+                  <span className="text-[#9B9AA0] text-[12px] mb-1 block">{t('leadChat.videosCount', { n: cur.videos.length })}</span>
+                  <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                    {cur.videos.map((v, i) => (
+                      <div key={i} className="relative shrink-0 h-[80px] w-[110px] rounded-xl overflow-hidden bg-black/80 flex items-center justify-center">
+                        {v.poster && <img src={resolveMediaUrl(v.poster)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-70" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
+                        <svg className="relative" width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z" /></svg>
+                        <button onClick={() => removeVideo(i)} className="absolute top-1 right-1 size-6 rounded-full bg-black/60 text-white flex items-center justify-center active:scale-90 transition-transform">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <label className="flex flex-col gap-1">
+                <span className="text-[#9B9AA0] text-[12px]">{t('leadChat.fieldName')}</span>
+                <input value={cur.display_name ?? ''} onChange={(e) => setField('display_name', e.target.value)} className="bg-[#F5F5F7] rounded-lg px-3 py-2 text-black text-[14px] font-medium outline-none" />
+              </label>
+
+              <div className="grid grid-cols-3 gap-2">
+                {numField('age', t('modelInfo.age'))}
+                {numField('height_cm', t('modelInfo.height'))}
+                {numField('bust_cm', t('modelInfo.bust'))}
+                {numField('waist_cm', t('modelInfo.waist'))}
+                {numField('hips_cm', t('modelInfo.hips'))}
+                <label className="flex flex-col gap-1">
+                  <span className="text-[#9B9AA0] text-[12px]">{t('modelInfo.eyes')}</span>
+                  <input value={cur.eyes ?? ''} onChange={(e) => setField('eyes', e.target.value)} className="bg-[#F5F5F7] rounded-lg px-3 py-2 text-black text-[14px] font-medium outline-none" />
+                </label>
+              </div>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-[#9B9AA0] text-[12px]">{t('leadChat.fieldDesc')}</span>
+                <textarea value={cur.description ?? ''} onChange={(e) => setField('description', e.target.value)} rows={2} className="bg-[#F5F5F7] rounded-lg px-3 py-2 text-black text-[14px] outline-none resize-none" />
+              </label>
+            </div>
+
+            <button disabled={busy} onClick={send} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
+              {busy ? '…' : t('leadChat.sendAll', { n: drafts.length })}
+            </button>
+          </>
+        )}
+      </div>
+    </ModalMiddle>
   )
 }
 
@@ -234,36 +454,60 @@ function MenuRow({ icon, label, onClick }) {
   )
 }
 
-/* ── Payment requisites form ─────────────────────────────────────────── */
+/* ── Payment request: manual requisites or crypto button ─────────────── */
 function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const { t } = useTranslation()
+  const [method, setMethod] = useState('manual') // 'manual' | 'crypto'
   const [amount, setAmount] = useState('')
   const [requisites, setRequisites] = useState('')
   const [busy, setBusy] = useState(false)
 
+  const reset = () => { setMethod('manual'); setAmount(''); setRequisites('') }
+  const valid = amount && (method === 'crypto' || requisites.trim())
+
   const submit = async () => {
-    if (!amount || !requisites.trim() || busy) return
+    if (!valid || busy) return
     setBusy(true)
     try {
-      await api.post(`/manager/leads/${leadId}/payment-request`, { amount: Number(amount), currency: 'THB', requisites: requisites.trim() })
-      onPosted?.(); onClose()
-      setAmount(''); setRequisites('')
+      await api.post(`/manager/leads/${leadId}/payment-request`, {
+        amount: Number(amount),
+        currency: 'THB',
+        method,
+        requisites: method === 'manual' ? requisites.trim() : null,
+      })
+      onPosted?.(); onClose(); reset()
     } catch (e) { logError(e) } finally { setBusy(false) }
   }
 
   return (
-    <ModalMiddle isOpen={open} onClose={onClose}>
+    <ModalMiddle isOpen={open} onClose={onClose} onAfterClose={reset}>
       <div className="flex flex-col px-5 pt-1 pb-6 gap-3">
         <h2 className="text-black text-lg font-bold">{t('leadChat.paySheetTitle')}</h2>
+
+        {/* Method toggle */}
+        <div className="flex gap-1 bg-[#EFEEF3] rounded-full p-1">
+          {[['manual', t('leadChat.payMethodManual')], ['crypto', t('leadChat.payMethodCrypto')]].map(([k, label]) => (
+            <button key={k} onClick={() => setMethod(k)} className={`flex-1 py-2 rounded-full text-[13px] font-semibold transition-colors ${method === k ? 'bg-[#E2319B] text-white' : 'text-[#9B9AA0]'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
         <label className="flex flex-col gap-1.5">
           <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payAmount')}</span>
           <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="0" className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[16px] font-semibold outline-none" />
         </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payRequisites')}</span>
-          <textarea value={requisites} onChange={(e) => setRequisites(e.target.value)} rows={3} placeholder={t('leadChat.payRequisitesPlaceholder')} className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[15px] outline-none resize-none" />
-        </label>
-        <button disabled={busy || !amount || !requisites.trim()} onClick={submit} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
+
+        {method === 'manual' ? (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payRequisites')}</span>
+            <textarea value={requisites} onChange={(e) => setRequisites(e.target.value)} rows={3} placeholder={t('leadChat.payRequisitesPlaceholder')} className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[15px] outline-none resize-none" />
+          </label>
+        ) : (
+          <p className="text-[#9B9AA0] text-[13px]/[150%]">{t('leadChat.payCryptoSheetHint')}</p>
+        )}
+
+        <button disabled={busy || !valid} onClick={submit} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
           {busy ? '…' : t('leadChat.paySend')}
         </button>
       </div>

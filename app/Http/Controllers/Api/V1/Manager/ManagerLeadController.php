@@ -15,6 +15,7 @@ use App\Models\LeadPayment;
 use App\Models\Message;
 use App\Models\ModelProfile;
 use App\Models\User;
+use App\Services\Parsing\E100Parser;
 use App\Services\Telegram\Notifier;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -61,17 +62,19 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
     }
 
-    /** Manager sends payment requisites + amount → message in chat, status → awaiting payment. */
+    /** Manager sends a payment request (manual requisites or crypto button). */
     public function paymentRequest(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
     {
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:1'],
             'currency' => ['nullable', 'string', 'size:3'],
-            'requisites' => ['required', 'string', 'max:2000'],
+            'method' => ['nullable', 'in:manual,crypto'],
+            'requisites' => ['nullable', 'required_if:method,manual', 'string', 'max:2000'],
         ]);
 
         /** @var User $manager */
         $manager = $request->user();
+        $method = $data['method'] ?? 'manual';
         $currency = strtoupper($data['currency'] ?? 'THB');
         $amountMinor = (int) round(((float) $data['amount']) * 100);
         $locale = $this->leadLocale($lead);
@@ -79,7 +82,11 @@ class ManagerLeadController extends Controller
         $this->postCard($post, $manager, $lead, 'payment_request', [
             'amount_minor' => $amountMinor,
             'currency' => $currency,
-            'requisites' => trim((string) $data['requisites']),
+            'method' => $method,
+            'requisites' => $method === 'manual' ? trim((string) ($data['requisites'] ?? '')) : null,
+            // Crypto gateway is not wired yet — the client gets a "pay" button
+            // that opens a placeholder until a provider is connected.
+            'pay_url' => null,
             'status' => 'pending',
         ], trans('lead.payment_body', ['amount' => $this->money($amountMinor, $currency)], $locale));
 
@@ -101,6 +108,7 @@ class ManagerLeadController extends Controller
 
         $amountMinor = (int) ($req?->payload['amount_minor'] ?? 0);
         $currency = (string) ($req?->payload['currency'] ?? 'THB');
+        $method = (string) ($req?->payload['method'] ?? 'manual');
         if ($request->filled('amount')) {
             $amountMinor = (int) round(((float) $request->input('amount')) * 100);
         }
@@ -110,7 +118,7 @@ class ManagerLeadController extends Controller
             'manager_id' => $manager->id,
             'amount_minor' => $amountMinor,
             'currency' => $currency,
-            'method' => 'manual',
+            'method' => $method,
             'status' => 'confirmed',
             'confirmed_at' => now(),
         ]);
@@ -167,6 +175,74 @@ class ManagerLeadController extends Controller
         $this->postCard($post, $manager, $lead, 'model_card', ['models' => $models],
             trans('lead.models_body', ['n' => count($models)], $locale));
 
+        $this->pushClient($lead, trans('lead.models_push', [], $locale));
+
+        return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
+    }
+
+    /** Parse a single external model page (e100.club) into an editable draft. */
+    public function parseModel(Request $request, Lead $lead, E100Parser $parser): JsonResponse
+    {
+        $data = $request->validate([
+            'url' => ['required', 'string', 'max:500', 'url'],
+        ]);
+
+        return ApiResponse::ok($parser->parse($data['url']));
+    }
+
+    /** Send one or more reviewed (parsed/edited) external cards to the client. */
+    public function sendParsed(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
+    {
+        $data = $request->validate([
+            'models' => ['required', 'array', 'min:1'],
+            'models.*.display_name' => ['nullable', 'string', 'max:255'],
+            'models.*.age' => ['nullable', 'integer'],
+            'models.*.height_cm' => ['nullable', 'integer'],
+            'models.*.bust_cm' => ['nullable', 'integer'],
+            'models.*.waist_cm' => ['nullable', 'integer'],
+            'models.*.hips_cm' => ['nullable', 'integer'],
+            'models.*.breast_size' => ['nullable', 'string', 'max:32'],
+            'models.*.eyes' => ['nullable', 'string', 'max:64'],
+            'models.*.hair' => ['nullable', 'string', 'max:64'],
+            'models.*.description' => ['nullable', 'string', 'max:4000'],
+            'models.*.photos' => ['nullable', 'array'],
+            'models.*.photos.*' => ['string'],
+            'models.*.videos' => ['nullable', 'array'],
+            'models.*.videos.*.url' => ['required', 'string'],
+            'models.*.videos.*.poster' => ['nullable', 'string'],
+        ]);
+
+        /** @var User $manager */
+        $manager = $request->user();
+
+        $models = array_map(function (array $m): array {
+            $photos = array_values(array_filter($m['photos'] ?? []));
+
+            return [
+                'id' => null,
+                'source' => 'e100',
+                'display_name' => $m['display_name'] ?? null,
+                'display_name_en' => null,
+                'photo' => $photos[0] ?? null,
+                'age' => $m['age'] ?? null,
+                'height_cm' => $m['height_cm'] ?? null,
+                'bust_cm' => $m['bust_cm'] ?? null,
+                'waist_cm' => $m['waist_cm'] ?? null,
+                'hips_cm' => $m['hips_cm'] ?? null,
+                'breast_size' => $m['breast_size'] ?? null,
+                'eyes' => $m['eyes'] ?? null,
+                'description' => $m['description'] ?? null,
+                'photos' => $photos,
+                'videos' => array_values(array_map(
+                    fn (array $v) => ['url' => $v['url'], 'poster' => $v['poster'] ?? null],
+                    $m['videos'] ?? [],
+                )),
+            ];
+        }, $data['models']);
+
+        $locale = $this->leadLocale($lead);
+        $this->postCard($post, $manager, $lead, 'model_card', ['models' => $models],
+            trans('lead.models_body', ['n' => count($models)], $locale));
         $this->pushClient($lead, trans('lead.models_push', [], $locale));
 
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
@@ -234,8 +310,8 @@ class ManagerLeadController extends Controller
 
         return [
             'id' => $p->id,
-            'name' => $p->display_name,
-            'name_en' => $p->display_name_en,
+            'display_name' => $p->display_name,
+            'display_name_en' => $p->display_name_en,
             'photo' => $photos[0] ?? null,
             'age' => $p->age,
             'height_cm' => $p->height_cm,
