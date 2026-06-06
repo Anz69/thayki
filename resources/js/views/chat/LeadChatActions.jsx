@@ -29,6 +29,13 @@ function requestTelegramContact() {
   })
 }
 
+/* Lets a horizontal strip scroll with a vertical mouse wheel (desktop). */
+const onHWheel = (e) => {
+  const el = e.currentTarget
+  if (el.scrollWidth <= el.clientWidth) return
+  el.scrollLeft += (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX)
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    Typed message cards (payment / verification / model selection)
    ═══════════════════════════════════════════════════════════════════════ */
@@ -38,11 +45,13 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
   const [modelView, setModelView] = useState(null)
   const [payOpen, setPayOpen] = useState(false)
   const p = msg.payload || {}
+  // Typed cards sit on the sender's side, like normal messages.
+  const side = msg.from === 'user' ? 'justify-end' : 'justify-start'
 
   if (msg.type === 'payment_request') {
     const confirmed = p.status === 'confirmed'
     return (
-      <div data-msg className="flex justify-center my-3 px-2">
+      <div data-msg className={`flex ${side} my-3 px-2`}>
         <div className="w-full max-w-[320px] rounded-2xl bg-white border border-black/[0.08] overflow-hidden">
           <div className="px-4 pt-3.5 pb-3 flex flex-col gap-1.5">
             <span className="text-[#9B9AA0] text-[12px] font-medium uppercase tracking-[0.08em]">{t('leadChat.payTitle')}</span>
@@ -99,7 +108,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
   if (msg.type === 'verification_request') {
     const done = p.status === 'done'
     return (
-      <div data-msg className="flex justify-center my-3 px-2">
+      <div data-msg className={`flex ${side} my-3 px-2`}>
         <div className="w-full max-w-[320px] rounded-2xl bg-white border border-black/[0.08] overflow-hidden">
           <div className="px-4 pt-3.5 pb-3 flex items-center gap-2.5">
             <span className="size-9 rounded-full bg-[#E9F0FF] flex items-center justify-center shrink-0">
@@ -144,10 +153,10 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
     if (!models.length) return null
     return (
       <>
-        <div data-msg className="flex justify-center my-3 px-2 w-full">
+        <div data-msg className={`flex ${side} my-3 px-2 w-full`}>
           <div className="w-full max-w-[340px] flex flex-col gap-2">
             <span className="text-[#9B9AA0] text-[12px] font-medium px-1">{t('leadChat.modelsTitle', { n: models.length })}</span>
-            <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            <div onWheel={onHWheel} className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {models.map((m, i) => {
                 const photo = m.photo ? resolveMediaUrl(m.photo) : null
                 return (
@@ -200,14 +209,14 @@ function ModelDetailSheet({ model, onClose }) {
             {data.age != null && <span className="text-[#9B9AA0] text-[14px] ml-auto">{data.age}</span>}
           </div>
           {photos.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
+            <div onWheel={onHWheel} className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
               {photos.map((src, i) => (
                 <img key={i} src={src} alt="" className="h-[220px] w-[156px] rounded-2xl object-cover object-top shrink-0 bg-[#EFEAEE]" />
               ))}
             </div>
           )}
           {videos.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
+            <div onWheel={onHWheel} className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
               {videos.map((v, i) => (
                 <video
                   key={i}
@@ -264,17 +273,15 @@ export function LeadActionMenu({ leadId, onPickMedia, onPosted }) {
       {/* Action chooser */}
       <ModalMiddle isOpen={menuOpen} onClose={() => setMenuOpen(false)}>
         <div className="flex flex-col px-4 pt-1 pb-6 gap-2">
-          <MenuRow icon="📷" label={t('leadChat.media')} onClick={() => { setMenuOpen(false); onPickMedia?.() }} />
-          <MenuRow icon="💳" label={t('leadChat.payment')} onClick={() => open('payment')} />
-          <MenuRow icon="🪪" label={t('leadChat.verification')} onClick={() => open('verify')} />
-          <MenuRow icon="👤" label={t('leadChat.models')} onClick={() => open('models')} />
-          <MenuRow icon="🔗" label={t('leadChat.modelLink')} onClick={() => open('link')} />
+          <MenuRow icon={ICONS.media} tint="#2F6BD8" label={t('leadChat.media')} onClick={() => { setMenuOpen(false); onPickMedia?.() }} />
+          <MenuRow icon={ICONS.payment} tint="#1E9E4E" label={t('leadChat.payment')} onClick={() => open('payment')} />
+          <MenuRow icon={ICONS.verify} tint="#C77A12" label={t('leadChat.verification')} onClick={() => open('verify')} />
+          <MenuRow icon={ICONS.models} tint="#E2319B" label={t('leadChat.models')} onClick={() => open('link')} />
         </div>
       </ModalMiddle>
 
       <PaymentSheet open={sheet === 'payment'} onClose={() => setSheet(null)} leadId={leadId} onPosted={onPosted} />
       <VerifySheet open={sheet === 'verify'} onClose={() => setSheet(null)} leadId={leadId} onPosted={onPosted} />
-      <ModelsSheet open={sheet === 'models'} onClose={() => setSheet(null)} leadId={leadId} onPosted={onPosted} />
       <ParsedModelSheet open={sheet === 'link'} onClose={() => setSheet(null)} leadId={leadId} onPosted={onPosted} />
     </>
   )
@@ -390,7 +397,7 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
               {cur.photos.length > 0 && (
                 <div>
                   <span className="text-[#9B9AA0] text-[12px] mb-1 block">{t('leadChat.photosCount', { n: cur.photos.length })}</span>
-                  <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                  <div onWheel={onHWheel} className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
                     {cur.photos.map((src, i) => (
                       <div key={i} className="relative shrink-0">
                         <img src={resolveMediaUrl(src)} alt="" className="h-[140px] w-[100px] rounded-xl object-cover object-top bg-[#EFEAEE]" />
@@ -407,7 +414,7 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
               {cur.videos?.length > 0 && (
                 <div>
                   <span className="text-[#9B9AA0] text-[12px] mb-1 block">{t('leadChat.videosCount', { n: cur.videos.length })}</span>
-                  <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                  <div onWheel={onHWheel} className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
                     {cur.videos.map((v, i) => (
                       <div key={i} className="relative shrink-0 h-[80px] w-[110px] rounded-xl overflow-hidden bg-black/80 flex items-center justify-center">
                         {v.poster && <img src={resolveMediaUrl(v.poster)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-70" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
@@ -454,11 +461,22 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
   )
 }
 
-function MenuRow({ icon, label, onClick }) {
+const ICONS = {
+  media: <><rect x="3" y="6" width="18" height="13" rx="2.5" /><circle cx="12" cy="12.5" r="3.2" /><path d="M8 6l1.2-2h5.6L16 6" /></>,
+  payment: <><rect x="3" y="5.5" width="18" height="13" rx="2.5" /><path d="M3 10h18" /><path d="M7 14.5h3" /></>,
+  verify: <><rect x="3" y="5" width="18" height="14" rx="2.5" /><circle cx="8.5" cy="11" r="2" /><path d="M13.5 9.5h4M13.5 13h4M5.5 15.2c.4-1.3 1.6-2 3-2s2.6.7 3 2" /></>,
+  models: <><circle cx="12" cy="8" r="3.4" /><path d="M5.5 19c.6-3.2 3.2-5 6.5-5s5.9 1.8 6.5 5" /></>,
+  link: <><path d="M9.5 14.5l5-5M8 12l-1.6 1.6a3.1 3.1 0 0 0 4.4 4.4L12.5 16M16 12l1.6-1.6a3.1 3.1 0 0 0-4.4-4.4L11.5 8" /></>,
+}
+
+function MenuRow({ icon, label, tint = '#7F7F7F', onClick }) {
   return (
-    <button onClick={onClick} className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-3.5 active:bg-[#E4E3E8] transition-colors">
-      <span className="text-[20px]">{icon}</span>
+    <button onClick={onClick} className="w-full flex items-center gap-3.5 bg-[#F5F5F7] rounded-2xl px-3.5 py-3 active:bg-[#ECEAF0] transition-colors">
+      <span className="size-9 rounded-full flex items-center justify-center shrink-0" style={{ background: tint + '1A' }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={tint} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+      </span>
       <span className="text-black text-[15px] font-medium">{label}</span>
+      <svg className="ml-auto text-[#C4C4C4]" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
     </button>
   )
 }
@@ -539,59 +557,6 @@ function VerifySheet({ open, onClose, leadId, onPosted }) {
           catch (e) { logError(e) } finally { setBusy(false) }
         }} className="w-full py-3.5 rounded-full bg-[#2F6BD8] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
           {busy ? '…' : t('leadChat.verifySheetBtn')}
-        </button>
-      </div>
-    </ModalMiddle>
-  )
-}
-
-/* ── Internal-catalog model picker (single or multiple) ──────────────── */
-function ModelsSheet({ open, onClose, leadId, onPosted }) {
-  const { t } = useTranslation()
-  const [list, setList] = useState(null)
-  const [selected, setSelected] = useState([])
-  const [busy, setBusy] = useState(false)
-  const loadedRef = useRef(false)
-
-  useEffect(() => {
-    if (!open || loadedRef.current) return
-    loadedRef.current = true
-    api.get('/catalog/models', { params: { per_page: 50 } })
-      .then((r) => setList(Array.isArray(r?.data?.data) ? r.data.data : []))
-      .catch((e) => { logError(e); setList([]) })
-  }, [open])
-
-  const toggle = (id) => setSelected((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id])
-
-  const send = async () => {
-    if (!selected.length || busy) return
-    setBusy(true)
-    try { await api.post(`/manager/leads/${leadId}/send-models`, { model_profile_ids: selected }); onPosted?.(); onClose(); setSelected([]) }
-    catch (e) { logError(e) } finally { setBusy(false) }
-  }
-
-  return (
-    <ModalMiddle isOpen={open} onClose={onClose}>
-      <div className="flex flex-col px-5 pt-1 pb-6 gap-3" style={{ maxHeight: '78dvh' }}>
-        <h2 className="text-black text-lg font-bold">{t('leadChat.modelsSheetTitle')}</h2>
-        <div className="grid grid-cols-3 gap-2 overflow-y-auto" style={{ maxHeight: '52dvh' }}>
-          {list === null && [0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="aspect-[3/4] rounded-xl bg-[#ECEAF0] animate-pulse" />)}
-          {list?.map((m) => {
-            const photo = m.photos?.[0]?.url ? resolveMediaUrl(m.photos[0].url) : null
-            const on = selected.includes(m.id)
-            return (
-              <button key={m.id} onClick={() => toggle(m.id)} className={`relative rounded-xl overflow-hidden border-2 transition-colors ${on ? 'border-[#E2319B]' : 'border-transparent'}`}>
-                <div className="aspect-[3/4] bg-[#EFEAEE]">
-                  {photo && <img src={photo} alt="" className="w-full h-full object-cover object-top" />}
-                </div>
-                <span className="absolute bottom-1 left-1 right-1 text-white text-[11px] font-semibold truncate drop-shadow">{modelName(m)}</span>
-                {on && <span className="absolute top-1 right-1 size-5 rounded-full bg-[#E2319B] flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.5 4.5L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg></span>}
-              </button>
-            )
-          })}
-        </div>
-        <button disabled={!selected.length || busy} onClick={send} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
-          {busy ? '…' : t('leadChat.modelsSend', { n: selected.length })}
         </button>
       </div>
     </ModalMiddle>

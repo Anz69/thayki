@@ -217,9 +217,12 @@ export default function ManagerLeadsPage() {
                 <div className="flex flex-col min-w-0">
                   <span className="flex items-center gap-1.5">
                     <span className="text-black text-[16px] font-bold truncate">{viewing.client?.name ?? '—'}</span>
-          
+                    {viewing.identity_verified && <VerifiedMark size={15} />}
                   </span>
                   {viewing.client?.username && <span className="text-[#9B9AA0] text-[13px]">@{viewing.client.username}</span>}
+                  {viewing.client?.phone && (
+                    <a href={`tel:${viewing.client.phone}`} className="text-[#2F6BD8] text-[13px] font-medium mt-0.5">{viewing.client.phone}</a>
+                  )}
                 </div>
               </div>
 

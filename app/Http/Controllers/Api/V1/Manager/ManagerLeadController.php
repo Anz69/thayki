@@ -345,6 +345,8 @@ class ManagerLeadController extends Controller
                 'name' => trim(($client->first_name ?? '').' '.($client->last_name ?? '')) ?: ($client->username ?? '—'),
                 'username' => $client->username,
                 'photo' => $client->photo_url,
+                // Only exposed once the client passed identity verification.
+                'phone' => $lead->identity_verified_at !== null ? $client->phone_number : null,
             ] : null,
             'model' => $profile ? [
                 'id' => $profile->id,

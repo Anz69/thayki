@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Enums\ChatType;
+use App\Enums\UserRole;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
@@ -93,9 +94,13 @@ class SendChatMessageNotificationJob implements ShouldQueue
 
                 // Each recipient is notified in their own UI language.
                 $locale = $this->localeFor($recipient);
+                // Staff (manager/admin) is shown generically as "Менеджер",
+                // never by personal name.
                 $title = $senderIsSupport
                     ? trans('notifications.support', [], $locale)
-                    : $this->senderDisplayName($sender, $locale);
+                    : (in_array($sender?->role, [UserRole::Manager, UserRole::Admin], true)
+                        ? trans('notifications.manager_name', [], $locale)
+                        : $this->senderDisplayName($sender, $locale));
                 $text = trans('notifications.new_message', ['name' => $title], $locale);
                 $button = trans('notifications.open_chat', [], $locale);
 
