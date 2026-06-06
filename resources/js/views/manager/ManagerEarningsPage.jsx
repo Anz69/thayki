@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
+import GradientBorder from '@/components/ui/GradientBorder'
 import api from '@/utils/api'
 import { logError } from '@/utils/logger'
 
@@ -17,16 +18,14 @@ export default function ManagerEarningsPage() {
       .catch((e) => { logError(e); setData({ today: 0, week: 0, month: 0, total: 0, count: 0 }) })
   }, [])
 
-  const cards = [
-    { key: 'today', accent: true },
+  const small = [
     { key: 'week' },
     { key: 'month' },
-    { key: 'total' },
   ]
 
   return (
-    <main className="flex flex-col min-h-screen bg-[#FAFAFB]">
-      <header className="w-full py-4 bg-[#FAFAFB]/90 backdrop-blur-xs sticky top-0 z-50">
+    <section className="flex flex-col min-h-screen bg-white">
+      <header className="w-full py-4 bg-white/90 backdrop-blur-xs sticky top-0 z-40">
         <div className="container flex items-center relative">
           <button
             onClick={() => navigate('/home')}
@@ -40,29 +39,34 @@ export default function ManagerEarningsPage() {
         </div>
       </header>
 
-      <div className="container grid grid-cols-2 gap-3 pt-3 pb-24">
-        {cards.map(({ key, accent }) => (
-          <div
-            key={key}
-            className={[
-              'rounded-2xl p-4 flex flex-col gap-1.5',
-              accent ? 'bg-[#E2319B] text-white' : 'bg-white text-black shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
-            ].join(' ')}
-          >
-            <span className={`text-[12px]/[100%] font-medium ${accent ? 'text-white/80' : 'text-[#9B9AA0]'}`}>
-              {t(`manager.earn.${key}`)}
-            </span>
-            <span className="text-[22px]/[110%] font-bold">
-              {data === null ? '…' : fmt(data[key])}
-            </span>
-          </div>
-        ))}
-        {data !== null && (
-          <div className="col-span-2 text-center text-[#8A8A8A] text-[13px] mt-1">
-            {t('manager.earn.count', { n: data.count ?? 0 })}
-          </div>
-        )}
+      <div className="container flex flex-col gap-3 pt-2 pb-24">
+        {/* Total — accent */}
+        <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-5 flex flex-col gap-1.5">
+          <span className="text-[#ABABAB] text-[12px]/[100%] font-medium">{t('manager.earn.total')}</span>
+          <span className="text-[#E2319B] text-[32px]/[100%] font-bold">
+            {data === null ? '…' : fmt(data.total)}
+          </span>
+          {data !== null && (
+            <span className="text-[#8A8A8A] text-[12px]/[120%]">{t('manager.earn.count', { n: data.count ?? 0 })}</span>
+          )}
+        </GradientBorder>
+
+        {/* Today */}
+        <div className="bg-[#EFEEF3] rounded-2xl px-4 py-4 flex items-center justify-between">
+          <span className="text-black text-[15px]/[100%] font-medium">{t('manager.earn.today')}</span>
+          <span className="text-black text-[18px]/[100%] font-bold">{data === null ? '…' : fmt(data.today)}</span>
+        </div>
+
+        {/* Week / month */}
+        <div className="grid grid-cols-2 gap-3">
+          {small.map(({ key }) => (
+            <div key={key} className="bg-[#EFEEF3] rounded-2xl px-4 py-4 flex flex-col gap-1.5">
+              <span className="text-[#9B9AA0] text-[12px]/[100%] font-medium">{t(`manager.earn.${key}`)}</span>
+              <span className="text-black text-[20px]/[100%] font-bold">{data === null ? '…' : fmt(data[key])}</span>
+            </div>
+          ))}
+        </div>
       </div>
-    </main>
+    </section>
   )
 }

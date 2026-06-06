@@ -103,7 +103,7 @@ export default function ManagerLeadsPage() {
               onClick={() => setTab(x)}
               className={[
                 'px-4 py-2 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all active:scale-95',
-                tab === x ? 'bg-[#E2319B] text-white shadow-[0_6px_16px_rgba(226,49,155,0.25)]' : 'bg-white text-[#7A7A80] border border-black/5',
+                tab === x ? 'bg-[#E2319B] text-white' : 'bg-[#EFEEF3] text-[#7A7A80]',
               ].join(' ')}
             >
               {t(`manager.tab.${x}`)}
@@ -114,7 +114,7 @@ export default function ManagerLeadsPage() {
 
       <div className="container flex flex-col gap-3 pt-3 pb-24">
         {leads === null && [0, 1, 2].map((i) => (
-          <div key={i} className="flex items-center gap-3 bg-white rounded-2xl p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div key={i} className="flex items-center gap-3 bg-white rounded-2xl p-3.5 border border-black/5">
             <div className="size-12 rounded-xl bg-[#ECEAF0] animate-pulse shrink-0" />
             <div className="flex-1 flex flex-col gap-2">
               <div className="h-3.5 w-1/2 rounded-full bg-[#ECEAF0] animate-pulse" />
@@ -135,7 +135,7 @@ export default function ManagerLeadsPage() {
           const interest = lead.model ? modelName(lead.model) : t('requests.viaForm')
           const isNew = lead.status === 'new'
           return (
-            <div key={lead.id} className="flex flex-col gap-3 bg-white rounded-2xl p-3.5 shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
+            <div key={lead.id} className="flex flex-col gap-3 bg-white rounded-2xl p-3.5 border border-black/5">
               <div className="flex items-center gap-3">
                 <div className="size-12 rounded-xl overflow-hidden bg-[#EFEAEE] shrink-0 flex items-center justify-center">
                   {photo ? <img src={photo} alt="" className="w-full h-full object-cover object-top" /> : <span className="text-lg">🔎</span>}
