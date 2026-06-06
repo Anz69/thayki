@@ -196,7 +196,34 @@
     "status": {
       "new": "Under review",
       "inProgress": "In progress",
-      "closed": "Closed"
+      "closed": "Closed",
+      "awaitingClient": "Awaiting client",
+      "awaitingPayment": "Awaiting payment",
+      "prepaid": "Prepaid",
+      "completed": "Completed"
+    }
+  },
+  "manager": {
+    "title": "Manager panel",
+    "leads": "Requests",
+    "support": "Support",
+    "earnings": "Earnings",
+    "soon": "Soon",
+    "accept": "Accept request",
+    "openChat": "Open chat",
+    "empty": "No requests",
+    "tab": {
+      "new": "New",
+      "active": "In progress",
+      "closed": "Closed",
+      "all": "All"
+    },
+    "earn": {
+      "today": "Today",
+      "week": "This week",
+      "month": "This month",
+      "total": "Total",
+      "count": "Confirmed payments: {{n}}"
     }
   }
 }

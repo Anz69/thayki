@@ -58,15 +58,12 @@ class LatestLeadsWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('status')
                     ->label('Статус')
                     ->badge()
-                    ->formatStateUsing(fn (LeadStatus $state): string => match ($state) {
-                        LeadStatus::New => 'Новая',
-                        LeadStatus::InProgress => 'В работе',
-                        LeadStatus::Closed => 'Закрыта',
-                    })
+                    ->formatStateUsing(fn (LeadStatus $state): string => $state->label())
                     ->color(fn (LeadStatus $state): string => match ($state) {
                         LeadStatus::New => 'danger',
-                        LeadStatus::InProgress => 'warning',
-                        LeadStatus::Closed => 'success',
+                        LeadStatus::InProgress, LeadStatus::AwaitingClient, LeadStatus::AwaitingPayment => 'warning',
+                        LeadStatus::Prepaid, LeadStatus::Completed => 'success',
+                        LeadStatus::Closed => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('created_at')

@@ -24,7 +24,10 @@ class MessageResource extends JsonResource
             'sender_id'       => $this->sender_id,
             'client_message_id' => $this->client_message_id,
             'body'            => $this->body,
-            'type'            => $this->attachment_path ? 'image' : 'text',
+            'type'            => ($this->type && $this->type !== 'text')
+                ? $this->type
+                : ($this->attachment_path ? 'image' : 'text'),
+            'payload'         => $this->payload,
             'attachment_url'  => $this->attachmentUrl(),
             'attachment_mime' => $this->attachment_mime,
             'read_at'         => $this->read_at?->toIso8601String(),
@@ -39,7 +42,7 @@ class MessageResource extends JsonResource
                 ];
             }),
             'is_support'      => $this->whenLoaded('sender', fn () =>
-                in_array($this->sender?->role?->value, ['admin', 'support'])
+                in_array($this->sender?->role?->value, ['admin', 'support', 'manager'])
             ),
         ];
     }

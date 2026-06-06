@@ -8,9 +8,13 @@ import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
 
 const STATUS = {
-  new:         { key: 'new',        bg: '#FDE8F5', fg: '#E2319B' },
-  in_progress: { key: 'inProgress', bg: '#FFF1DC', fg: '#C77A12' },
-  closed:      { key: 'closed',     bg: '#E6F5EA', fg: '#1E9E4E' },
+  new:              { key: 'new',             bg: '#FDE8F5', fg: '#E2319B' },
+  in_progress:      { key: 'inProgress',      bg: '#FFF1DC', fg: '#C77A12' },
+  awaiting_client:  { key: 'awaitingClient',  bg: '#E9F0FF', fg: '#2F6BD8' },
+  awaiting_payment: { key: 'awaitingPayment', bg: '#FFF1DC', fg: '#C77A12' },
+  prepaid:          { key: 'prepaid',         bg: '#EAF7EF', fg: '#1E9E4E' },
+  completed:        { key: 'completed',       bg: '#E6F5EA', fg: '#1E9E4E' },
+  closed:           { key: 'closed',          bg: '#EFEFF2', fg: '#7A7A80' },
 }
 
 function fmtDate(iso, lang) {

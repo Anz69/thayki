@@ -41,6 +41,7 @@ class UserResource extends Resource
             Forms\Components\Select::make('role')->label('Роль')
                 ->options([
                     UserRole::Client->value => 'Клиент',
+                    UserRole::Manager->value => 'Менеджер',
                     UserRole::Admin->value => 'Администратор',
                 ])
                 ->required(fn (string $operation): bool => $operation === 'create'),

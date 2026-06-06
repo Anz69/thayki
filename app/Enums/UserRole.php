@@ -8,11 +8,17 @@ enum UserRole: string
 {
     case Client = 'client';
     case Model = 'model';
+    case Manager = 'manager';
     case Admin = 'admin';
 
     public function isAdmin(): bool
     {
         return $this === self::Admin;
+    }
+
+    public function isManager(): bool
+    {
+        return $this === self::Manager;
     }
 
     public function isModel(): bool

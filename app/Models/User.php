@@ -127,6 +127,11 @@ class User extends Authenticatable
         return $this->role === UserRole::Model;
     }
 
+    public function isManager(): bool
+    {
+        return $this->role === UserRole::Manager;
+    }
+
     public function isClient(): bool
     {
         return $this->role === UserRole::Client;

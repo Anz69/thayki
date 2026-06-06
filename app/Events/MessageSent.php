@@ -48,6 +48,10 @@ class MessageSent implements ShouldBroadcastNow
             'sender_id'       => $this->message->sender_id,
             'client_message_id' => $this->message->client_message_id,
             'body'            => $this->message->body,
+            'type'            => ($this->message->type && $this->message->type !== 'text')
+                ? $this->message->type
+                : ($this->message->attachment_path ? 'image' : 'text'),
+            'payload'         => $this->message->payload,
             'attachment_url'  => $this->message->attachmentUrl(),
             'attachment_mime' => $this->message->attachment_mime,
             'created_at'      => $this->message->created_at?->toIso8601String(),

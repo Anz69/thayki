@@ -23,6 +23,8 @@ class PostMessageAction
         ?string $body,
         ?UploadedFile $attachment = null,
         ?string $clientMessageId = null,
+        string $type = 'text',
+        ?array $payload = null,
     ): Message
     {
         if (! $chat->isParticipant($sender)) {
@@ -36,11 +38,14 @@ class PostMessageAction
             }
         }
 
-        if (($body === null || trim($body) === '') && $attachment === null) {
+        // Special messages (system note, payment/verification/model cards) may
+        // carry no body/attachment — they're described entirely by type+payload.
+        $isSpecial = $type !== 'text' || $payload !== null;
+        if (! $isSpecial && ($body === null || trim($body) === '') && $attachment === null) {
             throw DomainException::invalid('MESSAGE_EMPTY', 'Message body or attachment is required.');
         }
 
-        $message = DB::transaction(function () use ($sender, $chat, $body, $attachment, $clientMessageId): Message {
+        $message = DB::transaction(function () use ($sender, $chat, $body, $attachment, $clientMessageId, $type, $payload): Message {
             $disk = 'public';
             $path = null;
             $mime = null;
@@ -77,6 +82,8 @@ class PostMessageAction
             $message = Message::query()->create([
                 'chat_id'          => $chat->id,
                 'sender_id'        => $sender->id,
+                'type'             => $type,
+                'payload'          => $payload,
                 'body'             => $body,
                 'attachment_disk'  => $path !== null ? $disk : null,
                 'attachment_path'  => $path,

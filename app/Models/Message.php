@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Storage;
  * @property int $id
  * @property int $chat_id
  * @property int $sender_id
+ * @property string $type
+ * @property array|null $payload
  * @property string|null $body
  * @property string|null $client_message_id
  * @property string|null $attachment_disk
@@ -33,6 +35,7 @@ class Message extends Model
     {
         return [
             'read_at' => 'datetime',
+            'payload' => 'array',
         ];
     }
 

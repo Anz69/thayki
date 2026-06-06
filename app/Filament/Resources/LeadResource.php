@@ -57,22 +57,14 @@ class LeadResource extends Resource
                 Tables\Columns\TextColumn::make('wishes')->label('Пожелания')->limit(40)->toggleable()->placeholder('—'),
                 Tables\Columns\SelectColumn::make('status')
                     ->label('Статус')
-                    ->options([
-                        'new' => 'Новая',
-                        'in_progress' => 'В работе',
-                        'closed' => 'Закрыта',
-                    ]),
+                    ->options(collect(LeadStatus::cases())->mapWithKeys(fn (LeadStatus $s) => [$s->value => $s->label()])->all()),
                 Tables\Columns\TextColumn::make('created_at')->label('Создана')
                     ->dateTime('d.m.Y H:i')->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Статус')
-                    ->options([
-                        'new' => 'Новая',
-                        'in_progress' => 'В работе',
-                        'closed' => 'Закрыта',
-                    ]),
+                    ->options(collect(LeadStatus::cases())->mapWithKeys(fn (LeadStatus $s) => [$s->value => $s->label()])->all()),
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
@@ -145,15 +137,12 @@ class LeadResource extends Resource
                     Infolists\Components\TextEntry::make('status')
                         ->label('Статус')
                         ->badge()
-                        ->formatStateUsing(fn (LeadStatus $state): string => match ($state) {
-                            LeadStatus::New => 'Новая',
-                            LeadStatus::InProgress => 'В работе',
-                            LeadStatus::Closed => 'Закрыта',
-                        })
+                        ->formatStateUsing(fn (LeadStatus $state): string => $state->label())
                         ->color(fn (LeadStatus $state): string => match ($state) {
                             LeadStatus::New => 'danger',
-                            LeadStatus::InProgress => 'warning',
-                            LeadStatus::Closed => 'success',
+                            LeadStatus::InProgress, LeadStatus::AwaitingClient, LeadStatus::AwaitingPayment => 'warning',
+                            LeadStatus::Prepaid, LeadStatus::Completed => 'success',
+                            LeadStatus::Closed => 'gray',
                         }),
                     Infolists\Components\TextEntry::make('wishes')
                         ->label('Пожелания')

@@ -8,6 +8,10 @@ enum LeadStatus: string
 {
     case New = 'new';
     case InProgress = 'in_progress';
+    case AwaitingClient = 'awaiting_client';
+    case AwaitingPayment = 'awaiting_payment';
+    case Prepaid = 'prepaid';
+    case Completed = 'completed';
     case Closed = 'closed';
 
     public function label(): string
@@ -15,7 +19,24 @@ enum LeadStatus: string
         return match ($this) {
             self::New => 'Новая',
             self::InProgress => 'В работе',
+            self::AwaitingClient => 'Ожидает ответа клиента',
+            self::AwaitingPayment => 'Ожидает оплаты',
+            self::Prepaid => 'Предоплачена',
+            self::Completed => 'Выполнена',
             self::Closed => 'Закрыта',
         };
+    }
+
+    /** Statuses a manager can pick manually in the panel. */
+    public static function managerSelectable(): array
+    {
+        return [
+            self::InProgress,
+            self::AwaitingClient,
+            self::AwaitingPayment,
+            self::Prepaid,
+            self::Completed,
+            self::Closed,
+        ];
     }
 }
