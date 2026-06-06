@@ -63,14 +63,6 @@ export default function CatalogNotice() {
   return (
     <div className="container">
       <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 pt-5 pb-4 flex flex-col items-center gap-3.5">
-        {/* Info badge */}
-        <span className="size-9 rounded-full bg-[#FDE8F5] flex items-center justify-center shrink-0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2 4 5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V5l-8-3Z" stroke="#E2319B" strokeWidth="1.7" strokeLinejoin="round" />
-            <path d="M12 8h.01M11.4 11.5h.6v4" stroke="#E2319B" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-
         {/* Rotating text — centered, fixed height to avoid layout jumps */}
         <div
           ref={viewportRef}
