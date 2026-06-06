@@ -11,6 +11,9 @@ import ChatLoadingSkeleton from '@/components/ui/ChatLoadingSkeleton'
 import PhotoViewer from '@/components/ui/PhotoViewer'
 import GradientBorder from '@/components/ui/GradientBorder'
 import { logError } from '@/utils/logger'
+import { LeadActionMenu, TypedMessageCard } from '@/views/chat/LeadChatActions'
+
+const TYPED = new Set(['payment_request', 'verification_request', 'model_card'])
 
 const SendIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
@@ -43,6 +46,7 @@ function normalizeMsg(raw, myUserId) {
     text: raw.body ?? raw.text ?? '',
     time: raw.created_at ? fmtTime(raw.created_at) : (raw.time ?? ''),
     type: raw.type ?? (raw.attachment_url ? 'image' : 'text'),
+    payload: raw.payload ?? null,
     attachmentUrl: raw.attachment_url ?? raw.attachmentUrl ?? null,
   }
 }
@@ -92,6 +96,10 @@ export default function RequestChatPage() {
   const leadId  = params.get('lead')
   // Where the user came from (set by the opener); falls back to home.
   const backTo  = params.get('from') || '/home'
+
+  const role     = auth.user?.role
+  const isStaff  = role === 'manager' || role === 'admin'
+  const isLead   = !!leadId
 
   const [messages, setMessages]   = useState([])
   const [inputText, setInputText] = useState('')
@@ -167,6 +175,13 @@ export default function RequestChatPage() {
       .to(inputBarRef.current, { y: 0, autoAlpha: 1, duration: 0.36, ease: 'power2.out' }, 0.1)
       .add(() => { pageReadyDone.current = true; tryShowContent() }, 0.12)
   })
+
+  const reloadMessages = useCallback(() => {
+    if (!chatId) return
+    api.get(`/chats/${chatId}/messages`)
+      .then((res) => setMessages((res.data.data ?? []).map((m) => normalizeMsg(m, myId))))
+      .catch(logError)
+  }, [chatId, myId])
 
   useEffect(() => {
     if (!chatId) { navigate('/home', { replace: true }); return }
@@ -341,6 +356,18 @@ export default function RequestChatPage() {
                 )
               }
 
+              if (TYPED.has(msg.type)) {
+                return (
+                  <TypedMessageCard
+                    key={msg.id}
+                    msg={msg}
+                    isManager={isStaff}
+                    leadId={leadId}
+                    onPosted={reloadMessages}
+                  />
+                )
+              }
+
               const isUser = msg.from === 'user'
               const prevMsg = messages[idx - 1]
               const isFirstInGroup = !prevMsg || prevMsg.from !== msg.from
@@ -393,18 +420,26 @@ export default function RequestChatPage() {
           onChange={handleAttachmentChange}
         />
         <div className="flex items-end">
-          <button
-            type="button"
-            disabled={uploading || !chatId}
-            onClick={() => fileInputRef.current?.click()}
-            className="shrink-0 size-11 bg-[#EFEEF3] rounded-full flex items-center justify-center active:opacity-60 transition-opacity mr-3 disabled:opacity-50"
-          >
-            {uploading ? (
-              <div className="w-4 h-4 rounded-full border-2 border-[#7F7F7F] border-t-transparent animate-spin" />
-            ) : (
-              <PaperclipIcon />
-            )}
-          </button>
+          {isStaff && isLead ? (
+            <LeadActionMenu
+              leadId={leadId}
+              onPickMedia={() => fileInputRef.current?.click()}
+              onPosted={reloadMessages}
+            />
+          ) : (
+            <button
+              type="button"
+              disabled={uploading || !chatId}
+              onClick={() => fileInputRef.current?.click()}
+              className="shrink-0 size-11 bg-[#EFEEF3] rounded-full flex items-center justify-center active:opacity-60 transition-opacity mr-3 disabled:opacity-50"
+            >
+              {uploading ? (
+                <div className="w-4 h-4 rounded-full border-2 border-[#7F7F7F] border-t-transparent animate-spin" />
+              ) : (
+                <PaperclipIcon />
+              )}
+            </button>
+          )}
           <div className="flex-1 min-w-0 bg-[#EFEEF3] rounded-[22px] px-4 py-3 overflow-hidden">
             <textarea
               ref={textareaRef}

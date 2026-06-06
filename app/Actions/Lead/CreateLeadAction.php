@@ -96,12 +96,20 @@ class CreateLeadAction
             ->get();
 
         $notifier = \App\Services\Telegram\Notifier::default();
+        // The client's own request message (first message in the lead chat) so
+        // the manager sees what was asked straight from the push.
+        $firstMessage = $lead->chat?->messages()->orderBy('id')->value('body');
+
         foreach ($managers as $manager) {
             $locale = str_starts_with(strtolower((string) ($manager->language_code ?? '')), 'en') ? 'en' : 'ru';
+            $text = trans('notifications.new_lead', ['city' => $lead->city], $locale);
+            if (is_string($firstMessage) && trim($firstMessage) !== '') {
+                $text .= "\n\n".$firstMessage;
+            }
             $notifier->notifyUser(
                 $manager,
-                trans('notifications.new_lead', ['city' => $lead->city], $locale),
-                '/home',
+                $text,
+                "/request/chat?id={$lead->chat_id}&lead={$lead->id}&from=".rawurlencode('/manager/leads'),
                 trans('notifications.open', [], $locale),
                 'new-lead:'.$lead->id,
             );

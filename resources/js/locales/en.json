@@ -235,5 +235,31 @@
     "statToday": "Today",
     "created": "Created",
     "interested": "Requested type"
+  },
+  "leadChat": {
+    "actions": "Actions",
+    "media": "Send media",
+    "payment": "Payment button",
+    "verification": "Identity verification",
+    "models": "Model profiles",
+    "payTitle": "Payment request",
+    "payRequisites": "Requisites",
+    "payPending": "Awaiting payment",
+    "payConfirmed": "Paid",
+    "payConfirmBtn": "Confirm payment",
+    "paySheetTitle": "Issue an invoice",
+    "payAmount": "Amount, ฿",
+    "payRequisitesPlaceholder": "Where and how to pay…",
+    "paySend": "Send invoice",
+    "verifyTitle": "Identity verification",
+    "verifySub": "Verification required",
+    "verifyDone": "Identity verified",
+    "verifyBtn": "Verify identity",
+    "verifySheetTitle": "Request verification",
+    "verifySheetText": "The client will get a «Verify identity» button and confirm via their Telegram contact.",
+    "verifySheetBtn": "Request verification",
+    "modelsTitle": "Model selection ({{n}})",
+    "modelsSheetTitle": "Pick models",
+    "modelsSend": "Send ({{n}})"
   }
 }

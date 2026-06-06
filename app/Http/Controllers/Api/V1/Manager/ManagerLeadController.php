@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Manager;
 
+use App\Actions\Chat\PostMessageAction;
 use App\Actions\Lead\AcceptLeadAction;
+use App\Enums\ChatParticipantRole;
 use App\Enums\LeadStatus;
+use App\Exceptions\DomainException;
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
+use App\Models\LeadPayment;
+use App\Models\Message;
+use App\Models\ModelProfile;
 use App\Models\User;
+use App\Services\Telegram\Notifier;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -52,6 +59,188 @@ class ManagerLeadController extends Controller
         $lead->update(['status' => $data['status']]);
 
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
+    }
+
+    /** Manager sends payment requisites + amount → message in chat, status → awaiting payment. */
+    public function paymentRequest(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:1'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'requisites' => ['required', 'string', 'max:2000'],
+        ]);
+
+        /** @var User $manager */
+        $manager = $request->user();
+        $currency = strtoupper($data['currency'] ?? 'THB');
+        $amountMinor = (int) round(((float) $data['amount']) * 100);
+        $locale = $this->leadLocale($lead);
+
+        $this->postCard($post, $manager, $lead, 'payment_request', [
+            'amount_minor' => $amountMinor,
+            'currency' => $currency,
+            'requisites' => trim((string) $data['requisites']),
+            'status' => 'pending',
+        ], trans('lead.payment_body', ['amount' => $this->money($amountMinor, $currency)], $locale));
+
+        $lead->update(['status' => LeadStatus::AwaitingPayment]);
+        $this->pushClient($lead, trans('lead.payment_push', [], $locale));
+
+        return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
+    }
+
+    /** Manager confirms the payment was received → records it, status → prepaid. */
+    public function paymentConfirm(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
+    {
+        /** @var User $manager */
+        $manager = $request->user();
+        $locale = $this->leadLocale($lead);
+
+        $req = Message::query()->where('chat_id', $lead->chat_id)
+            ->where('type', 'payment_request')->orderByDesc('id')->first();
+
+        $amountMinor = (int) ($req?->payload['amount_minor'] ?? 0);
+        $currency = (string) ($req?->payload['currency'] ?? 'THB');
+        if ($request->filled('amount')) {
+            $amountMinor = (int) round(((float) $request->input('amount')) * 100);
+        }
+
+        LeadPayment::query()->create([
+            'lead_id' => $lead->id,
+            'manager_id' => $manager->id,
+            'amount_minor' => $amountMinor,
+            'currency' => $currency,
+            'method' => 'manual',
+            'status' => 'confirmed',
+            'confirmed_at' => now(),
+        ]);
+
+        if ($req !== null) {
+            $req->update(['payload' => array_merge($req->payload ?? [], ['status' => 'confirmed'])]);
+        }
+
+        $this->postCard($post, $manager, $lead, 'system', null,
+            trans('lead.payment_confirmed', ['amount' => $this->money($amountMinor, $currency)], $locale));
+
+        $lead->update(['status' => LeadStatus::Prepaid]);
+        $this->pushClient($lead, trans('lead.payment_confirmed_push', [], $locale));
+
+        return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
+    }
+
+    /** Manager asks the client to verify their identity (Telegram contact). */
+    public function verificationRequest(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
+    {
+        /** @var User $manager */
+        $manager = $request->user();
+        $locale = $this->leadLocale($lead);
+
+        $this->postCard($post, $manager, $lead, 'verification_request',
+            ['status' => $lead->identity_verified_at !== null ? 'done' : 'pending'],
+            trans('lead.verification_body', [], $locale));
+
+        $this->pushClient($lead, trans('lead.verification_push', [], $locale));
+
+        return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
+    }
+
+    /** Manager sends one or several internal-catalog model profiles to the client. */
+    public function sendModels(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
+    {
+        $data = $request->validate([
+            'model_profile_ids' => ['required', 'array', 'min:1'],
+            'model_profile_ids.*' => ['integer'],
+        ]);
+
+        /** @var User $manager */
+        $manager = $request->user();
+        $profiles = ModelProfile::query()->with('photos')
+            ->whereIn('id', $data['model_profile_ids'])->get();
+
+        if ($profiles->isEmpty()) {
+            throw DomainException::invalid('NO_MODELS', 'No matching model profiles.');
+        }
+
+        $models = $profiles->map(fn (ModelProfile $p) => $this->modelCardData($p))->values()->all();
+        $locale = $this->leadLocale($lead);
+
+        $this->postCard($post, $manager, $lead, 'model_card', ['models' => $models],
+            trans('lead.models_body', ['n' => count($models)], $locale));
+
+        $this->pushClient($lead, trans('lead.models_push', [], $locale));
+
+        return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
+    }
+
+    // ── helpers ──────────────────────────────────────────────────────────
+
+    /** Ensure the manager is a chat participant, then post a typed card message. */
+    private function postCard(PostMessageAction $post, User $manager, Lead $lead, string $type, ?array $payload, ?string $body): void
+    {
+        $chat = $lead->chat;
+        if ($chat === null) {
+            return;
+        }
+        if (! $chat->participants()->where('user_id', $manager->id)->exists()) {
+            $chat->participants()->create([
+                'user_id' => $manager->id,
+                'role' => ChatParticipantRole::Support,
+            ]);
+        }
+        $post->execute($manager, $chat->fresh(['participants']), $body, null, null, $type, $payload);
+    }
+
+    private function pushClient(Lead $lead, string $text): void
+    {
+        $client = $lead->user;
+        if ($client === null || $lead->chat_id === null) {
+            return;
+        }
+        Notifier::default()->notifyUser(
+            $client,
+            $text,
+            "/request/chat?id={$lead->chat_id}&lead={$lead->id}",
+            trans('notifications.open_chat', [], $this->leadLocale($lead)),
+            'lead-event:'.$lead->id.':'.substr(md5($text), 0, 8),
+        );
+    }
+
+    private function leadLocale(Lead $lead): string
+    {
+        if (in_array($lead->locale, ['ru', 'en'], true)) {
+            return $lead->locale;
+        }
+        $code = strtolower((string) ($lead->user?->language_code ?? ''));
+
+        return str_starts_with($code, 'en') ? 'en' : 'ru';
+    }
+
+    private function money(int $minor, string $currency): string
+    {
+        $amount = number_format($minor / 100, 0, '.', ' ');
+        $symbol = $currency === 'THB' ? '฿' : ($currency === 'USD' ? '$' : $currency.' ');
+
+        return $symbol.$amount;
+    }
+
+    /** @return array<string, mixed> */
+    private function modelCardData(ModelProfile $p): array
+    {
+        $photos = $p->photos
+            ->sortByDesc(fn ($ph) => $ph->is_main)
+            ->map(fn ($ph) => $ph->getUrl())
+            ->values()
+            ->all();
+
+        return [
+            'id' => $p->id,
+            'name' => $p->display_name,
+            'name_en' => $p->display_name_en,
+            'photo' => $photos[0] ?? null,
+            'age' => $p->age,
+            'height_cm' => $p->height_cm,
+            'photos' => $photos,
+        ];
     }
 
     /** @return array<string, mixed> */

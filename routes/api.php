@@ -117,6 +117,9 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/leads', [LeadController::class, 'store'])
             ->middleware('idempotency')
             ->name('leads.store');
+        Route::post('/leads/{lead}/verify-contact', [LeadController::class, 'verifyContact'])
+            ->middleware('idempotency')
+            ->name('leads.verifyContact');
 
         // Complaints (post-meeting feedback / abuse report)
         Route::get('/complaints',  [ComplaintController::class, 'index'])->name('complaints.index');
@@ -172,6 +175,11 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/leads/{lead}/accept', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'accept'])
                 ->middleware('idempotency')->name('manager.leads.accept');
             Route::patch('/leads/{lead}/status', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'updateStatus'])->name('manager.leads.status');
+            Route::post('/leads/{lead}/payment-request', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'paymentRequest'])->name('manager.leads.paymentRequest');
+            Route::post('/leads/{lead}/payment-confirm', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'paymentConfirm'])
+                ->middleware('idempotency')->name('manager.leads.paymentConfirm');
+            Route::post('/leads/{lead}/verification-request', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'verificationRequest'])->name('manager.leads.verificationRequest');
+            Route::post('/leads/{lead}/send-models', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'sendModels'])->name('manager.leads.sendModels');
             Route::get('/earnings', [\App\Http\Controllers\Api\V1\Manager\ManagerStatsController::class, 'earnings'])->name('manager.earnings');
         });
     });

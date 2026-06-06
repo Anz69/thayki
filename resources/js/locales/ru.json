@@ -235,5 +235,31 @@
     "statToday": "Сегодня",
     "created": "Создана",
     "interested": "Интересующий типаж"
+  },
+  "leadChat": {
+    "actions": "Действия",
+    "media": "Отправить медиа",
+    "payment": "Кнопка оплаты",
+    "verification": "Верификация личности",
+    "models": "Профили моделей",
+    "payTitle": "Запрос оплаты",
+    "payRequisites": "Реквизиты",
+    "payPending": "Ожидает оплаты",
+    "payConfirmed": "Оплачено",
+    "payConfirmBtn": "Подтвердить оплату",
+    "paySheetTitle": "Выставить счёт",
+    "payAmount": "Сумма, ฿",
+    "payRequisitesPlaceholder": "Куда и как оплатить…",
+    "paySend": "Отправить счёт",
+    "verifyTitle": "Подтверждение личности",
+    "verifySub": "Требуется верификация",
+    "verifyDone": "Личность подтверждена",
+    "verifyBtn": "Пройти верификацию",
+    "verifySheetTitle": "Запросить верификацию",
+    "verifySheetText": "Клиенту придёт кнопка «Пройти верификацию». Он подтвердит личность через Telegram-контакт.",
+    "verifySheetBtn": "Запросить верификацию",
+    "modelsTitle": "Подборка моделей ({{n}})",
+    "modelsSheetTitle": "Выбрать модели",
+    "modelsSend": "Отправить ({{n}})"
   }
 }

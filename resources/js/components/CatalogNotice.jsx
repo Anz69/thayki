@@ -62,68 +62,87 @@ export default function CatalogNotice() {
 
   return (
     <div className="container">
-      <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex flex-col items-center gap-3">
-        {/* Rotating text — centered, fixed height to avoid layout jumps */}
+      <style>{`@keyframes cnGrow{from{width:0%}to{width:100%}}`}</style>
+      <div className="relative">
+        {/* Progress sits ON the top border — one opaque track fully masks the frame line */}
         <div
-          ref={viewportRef}
-          className="overflow-hidden select-none w-full"
-          style={{ touchAction: 'pan-y', cursor: dragging ? 'grabbing' : 'grab' }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
+          className="absolute top-0 inset-x-0 px-4 z-10"
+          style={{ transform: 'translateY(-1.5px)' }}
         >
-          <div
-            className="flex items-start"
-            style={{
-              width: `${N * 100}%`,
-              transform: `translateX(calc(${(-idx * 100) / N}% + ${drag}px))`,
-              transition: dragging ? 'none' : 'transform 0.45s cubic-bezier(0.22,1,0.36,1)',
-            }}
-          >
-            {PHRASES.map((p, i) => (
-              <div key={i} style={{ width: `${100 / N}%` }} className="shrink-0 flex items-center justify-center min-h-[52px] px-2">
-                <p className="text-center text-[#5B5B5B] text-[13px]/[155%] font-medium pointer-events-none">
-                  {p}
-                </p>
-              </div>
+          <div className="flex items-stretch gap-[3px] h-[3px] rounded-full bg-[#E7E5EB] overflow-hidden">
+            {PHRASES.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={`Слайд ${i + 1}`}
+                className="flex-1 h-full overflow-hidden"
+              >
+                <span
+                  key={i === idx ? `run-${idx}` : `seg-${i}`}
+                  className="block h-full bg-[#E2319B]"
+                  style={
+                    i < idx
+                      ? { width: '100%' }
+                      : i === idx
+                        ? {
+                            width: '0%',
+                            animation: `cnGrow ${ROTATE_MS}ms linear forwards`,
+                            animationPlayState: dragging ? 'paused' : 'running',
+                          }
+                        : { width: '0%' }
+                  }
+                />
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Dots — centered */}
-        <div className="flex items-center justify-center gap-1.5">
-          {PHRASES.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => goTo(i)}
-              aria-label={`Слайд ${i + 1}`}
-              className="h-2.5 flex items-center"
+        <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 pt-4 pb-4 flex flex-col items-center gap-3.5">
+          {/* Rotating text — centered, fixed height to avoid layout jumps */}
+          <div
+            ref={viewportRef}
+            className="overflow-hidden select-none w-full"
+            style={{ touchAction: 'pan-y', cursor: dragging ? 'grabbing' : 'grab' }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+          >
+            <div
+              className="flex items-start"
+              style={{
+                width: `${N * 100}%`,
+                transform: `translateX(calc(${(-idx * 100) / N}% + ${drag}px))`,
+                transition: dragging ? 'none' : 'transform 0.45s cubic-bezier(0.22,1,0.36,1)',
+              }}
             >
-              <span
-                className="h-1.5 rounded-full transition-all duration-300 block"
-                style={{ width: i === idx ? 18 : 6, background: i === idx ? '#E2319B' : '#D6D4DA' }}
-              />
-            </button>
-          ))}
-        </div>
+              {PHRASES.map((p, i) => (
+                <div key={i} style={{ width: `${100 / N}%` }} className="shrink-0 flex items-center justify-center min-h-[52px] px-2">
+                  <p className="text-center text-[#5B5B5B] text-[13px]/[155%] font-medium pointer-events-none">
+                    {p}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        <div className="flex items-center gap-2 w-full pt-0.5">
-          <button
-            onClick={() => setHowOpen(true)}
-            className="flex-1 py-2.5 rounded-full bg-[#EFEEF3] text-black text-[13px]/[100%] font-medium active:bg-[#E4E3E8] transition-colors"
-          >
-            {t('catalogNotice.howItWorks')}
-          </button>
-          <button
-            onClick={() => setFaqOpen(true)}
-            className="flex-1 py-2.5 rounded-full bg-[#EFEEF3] text-black text-[13px]/[100%] font-medium active:bg-[#E4E3E8] transition-colors"
-          >
-            {t('catalogNotice.faq')}
-          </button>
-        </div>
-      </GradientBorder>
+          <div className="flex items-center gap-2 w-full pt-0.5">
+            <button
+              onClick={() => setHowOpen(true)}
+              className="flex-1 py-2.5 rounded-full bg-[#EFEEF3] text-black text-[13px]/[100%] font-medium active:bg-[#E4E3E8] transition-colors"
+            >
+              {t('catalogNotice.howItWorks')}
+            </button>
+            <button
+              onClick={() => setFaqOpen(true)}
+              className="flex-1 py-2.5 rounded-full bg-[#EFEEF3] text-black text-[13px]/[100%] font-medium active:bg-[#E4E3E8] transition-colors"
+            >
+              {t('catalogNotice.faq')}
+            </button>
+          </div>
+        </GradientBorder>
+      </div>
 
       <HowItWorksModal isOpen={howOpen} onClose={() => setHowOpen(false)} />
       <FaqModal isOpen={faqOpen} onClose={() => setFaqOpen(false)} />
