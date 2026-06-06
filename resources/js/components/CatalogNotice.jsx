@@ -62,10 +62,19 @@ export default function CatalogNotice() {
 
   return (
     <div className="container">
-      <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex flex-col gap-3.5">
+      <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 pt-5 pb-4 flex flex-col items-center gap-3.5">
+        {/* Info badge */}
+        <span className="size-9 rounded-full bg-[#FDE8F5] flex items-center justify-center shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2 4 5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V5l-8-3Z" stroke="#E2319B" strokeWidth="1.7" strokeLinejoin="round" />
+            <path d="M12 8h.01M11.4 11.5h.6v4" stroke="#E2319B" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+
+        {/* Rotating text — centered, fixed height to avoid layout jumps */}
         <div
           ref={viewportRef}
-          className="overflow-hidden select-none"
+          className="overflow-hidden select-none w-full"
           style={{ touchAction: 'pan-y', cursor: dragging ? 'grabbing' : 'grab' }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -73,7 +82,7 @@ export default function CatalogNotice() {
           onPointerCancel={endDrag}
         >
           <div
-            className="flex"
+            className="flex items-start"
             style={{
               width: `${N * 100}%`,
               transform: `translateX(calc(${(-idx * 100) / N}% + ${drag}px))`,
@@ -81,18 +90,17 @@ export default function CatalogNotice() {
             }}
           >
             {PHRASES.map((p, i) => (
-              <p
-                key={i}
-                style={{ width: `${100 / N}%` }}
-                className="shrink-0 px-0 text-[#5B5B5B] text-[12.5px]/[160%] font-medium pointer-events-none"
-              >
-                {p}
-              </p>
+              <div key={i} style={{ width: `${100 / N}%` }} className="shrink-0 flex items-center justify-center min-h-[72px] px-2">
+                <p className="text-center text-[#5B5B5B] text-[13px]/[155%] font-medium pointer-events-none">
+                  {p}
+                </p>
+              </div>
             ))}
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        {/* Dots — centered */}
+        <div className="flex items-center justify-center gap-1.5">
           {PHRASES.map((_, i) => (
             <button
               key={i}
@@ -102,14 +110,14 @@ export default function CatalogNotice() {
               className="h-2.5 flex items-center"
             >
               <span
-                className="h-1 rounded-full transition-all duration-300 block"
-                style={{ width: i === idx ? 16 : 6, background: i === idx ? '#E2319B' : '#D6D4DA' }}
+                className="h-1.5 rounded-full transition-all duration-300 block"
+                style={{ width: i === idx ? 18 : 6, background: i === idx ? '#E2319B' : '#D6D4DA' }}
               />
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full pt-0.5">
           <button
             onClick={() => setHowOpen(true)}
             className="flex-1 py-2.5 rounded-full bg-[#EFEEF3] text-black text-[13px]/[100%] font-medium active:bg-[#E4E3E8] transition-colors"
