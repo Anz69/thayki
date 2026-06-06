@@ -114,7 +114,7 @@ class ChatController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        if (! $chat->isParticipant($user) && $user->role !== UserRole::Admin) {
+        if (! $this->canAccessChat($user, $chat)) {
             throw DomainException::forbidden('CHAT_FORBIDDEN', 'Not a participant.');
         }
 
@@ -139,6 +139,18 @@ class ChatController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
+
+        // A manager replying in a lead/support chat they haven't joined yet
+        // becomes a participant so they can post (and receive notifications).
+        if (! $chat->isParticipant($user)
+            && $user->role === UserRole::Manager
+            && in_array($chat->type, [ChatType::Lead, ChatType::Support], true)) {
+            $chat->participants()->create([
+                'user_id' => $user->id,
+                'role' => \App\Enums\ChatParticipantRole::Support,
+            ]);
+            $chat->load('participants');
+        }
 
         $message = $action->execute(
             $user,
@@ -179,12 +191,30 @@ class ChatController extends Controller
         }
     }
 
+    /** Participants, plus staff (admin always; manager on lead/support chats). */
+    private function canAccessChat(User $user, Chat $chat): bool
+    {
+        if ($chat->isParticipant($user)) {
+            return true;
+        }
+        if ($user->role === UserRole::Admin) {
+            return true;
+        }
+
+        return $user->role === UserRole::Manager
+            && in_array($chat->type, [ChatType::Lead, ChatType::Support], true);
+    }
+
     public function markRead(Request $request, Chat $chat): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
-        if (! $chat->isParticipant($user)) {
+        if (! $this->canAccessChat($user, $chat)) {
             throw DomainException::forbidden('CHAT_FORBIDDEN', 'Not a participant.');
+        }
+        if (! $chat->isParticipant($user)) {
+            // Staff viewing a chat they haven't joined — nothing to mark.
+            return ApiResponse::noContent();
         }
 
         $now = now();

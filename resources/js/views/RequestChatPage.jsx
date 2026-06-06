@@ -31,13 +31,15 @@ function fmtTime(iso) {
 }
 
 function normalizeMsg(raw, myUserId) {
-  const isSupport = raw.is_support === true
-  const isMe = !isSupport && (raw.user_id === myUserId || raw.sender_id === myUserId)
+  // Side is decided ONLY by who sent it — `is_support` affects styling, never
+  // the side (otherwise a manager's own messages flip to the "them" side and
+  // duplicate against the optimistic copy).
+  const isMe = raw.user_id === myUserId || raw.sender_id === myUserId
   return {
     id: raw.id,
     clientMessageId: raw.client_message_id ?? raw.clientMessageId ?? null,
     from: isMe ? 'user' : 'them',
-    isSupport,
+    isSupport: raw.is_support === true,
     text: raw.body ?? raw.text ?? '',
     time: raw.created_at ? fmtTime(raw.created_at) : (raw.time ?? ''),
     type: raw.type ?? (raw.attachment_url ? 'image' : 'text'),
@@ -329,6 +331,16 @@ export default function RequestChatPage() {
         <div ref={messagesRef} className="absolute inset-0 overflow-y-auto">
           <div className="flex flex-col px-4 py-4 gap-0 container">
             {messages.map((msg, idx) => {
+              if (msg.type === 'system') {
+                return (
+                  <div key={msg.id} data-msg data-msg-id={msg.id} className="flex justify-center my-3">
+                    <span className="max-w-[300px] text-center text-[#8A8A8A] text-[13px]/[140%] font-medium bg-[#F2F2F5] rounded-2xl px-4 py-2.5">
+                      {msg.text}
+                    </span>
+                  </div>
+                )
+              }
+
               const isUser = msg.from === 'user'
               const prevMsg = messages[idx - 1]
               const isFirstInGroup = !prevMsg || prevMsg.from !== msg.from

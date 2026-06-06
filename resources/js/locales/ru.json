@@ -230,6 +230,7 @@
     "earningsHint": "Сводка по оплатам",
     "greeting": "Здравствуйте,",
     "statNew": "Новые заявки",
-    "statToday": "Сегодня"
+    "statToday": "Сегодня",
+    "created": "Создана"
   }
 }

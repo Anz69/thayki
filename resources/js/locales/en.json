@@ -230,6 +230,7 @@
     "earningsHint": "Payments summary",
     "greeting": "Hello,",
     "statNew": "New requests",
-    "statToday": "Today"
+    "statToday": "Today",
+    "created": "Created"
   }
 }

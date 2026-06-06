@@ -47,7 +47,7 @@ function Chips({ group, keys, value, onChange, t }) {
 }
 
 export default function RequestPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useTransitionNavigate()
 
   const [params] = useSearchParams()
@@ -116,6 +116,7 @@ export default function RequestPage() {
         model_profile_id: isModelFlow ? Number(modelId) : null,
         city: city.trim(),
         wishes: wishes.trim() || null,
+        locale: (i18n.language || 'ru').startsWith('en') ? 'en' : 'ru',
         hair_type: isModelFlow ? null : ruLabel('hair', values.hairType),
         age_range: isModelFlow ? null : ruLabel('ages', values.ageRange),
         height_range: isModelFlow ? null : ruLabel('heights', values.height),

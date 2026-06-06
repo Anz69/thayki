@@ -51,7 +51,9 @@ class AcceptLeadAction
 
         if ($chat !== null) {
             $client = $lead->user;
-            $locale = str_starts_with(strtolower((string) ($client?->language_code ?? '')), 'en') ? 'en' : 'ru';
+            $locale = in_array($lead->locale, ['ru', 'en'], true)
+                ? $lead->locale
+                : (str_starts_with(strtolower((string) ($client?->language_code ?? '')), 'en') ? 'en' : 'ru');
 
             // System note inside the chat (client + manager see it).
             $this->postMessage->execute(

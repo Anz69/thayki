@@ -43,6 +43,10 @@ class CreateLeadAction
                 $profile = ModelProfile::query()->find((int) $data['model_profile_id']);
             }
 
+            $locale = (isset($data['locale']) && in_array($data['locale'], ['ru', 'en'], true))
+                ? $data['locale']
+                : $this->localeFor($client);
+
             /** @var Lead $lead */
             $lead = Lead::query()->create([
                 'user_id' => $client->id,
@@ -53,6 +57,7 @@ class CreateLeadAction
                 'height_range' => $data['height_range'] ?? null,
                 'goal' => $data['goal'] ?? null,
                 'wishes' => isset($data['wishes']) ? trim((string) $data['wishes']) : null,
+                'locale' => $locale,
                 'status' => 'new',
             ]);
 
@@ -69,7 +74,7 @@ class CreateLeadAction
             // language (from their stored language_code), not always Russian.
             $body = (isset($data['message']) && trim((string) $data['message']) !== '')
                 ? trim((string) $data['message'])
-                : $this->formatMessage($lead, $profile, $this->localeFor($client));
+                : $this->formatMessage($lead, $profile, $locale);
 
             $this->postMessage->execute($client, $chat, $body);
 

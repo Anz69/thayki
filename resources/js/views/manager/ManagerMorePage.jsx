@@ -62,35 +62,8 @@ export default function ManagerMorePage() {
     <>
       <section ref={rootRef} className="flex flex-col min-h-screen bg-white">
         <div className="flex flex-col gap-4 container pt-[40px] pb-[120px]">
-          {auth.user && (
-            <div data-anim>
-              <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-3.5 flex items-center gap-3">
-                <div className="size-14 rounded-full overflow-hidden bg-[#EFEAEE] shrink-0 flex items-center justify-center">
-                  {auth.user.photo_url
-                    ? <img src={resolveMediaUrl(auth.user.photo_url)} alt="" className="w-full h-full object-cover" />
-                    : <span className="text-[#E2319B] text-xl font-bold">{(auth.user.first_name || '?')[0]?.toUpperCase()}</span>}
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-black text-[18px]/[120%] font-semibold truncate">
-                    {`${auth.user.first_name || ''} ${auth.user.last_name || ''}`.trim() || t('manager.title')}
-                  </span>
-                  <span className="text-[#E2319B] text-[12px]/[120%] font-medium mt-0.5">{t('manager.title')}</span>
-                </div>
-              </GradientBorder>
-            </div>
-          )}
-
           <div data-anim className="flex flex-col gap-4">
             <SectionLabel>{t('more.important')}</SectionLabel>
-            <button
-              onClick={() => navigate('/home')}
-              className="w-full flex items-center gap-2.5 bg-[#E2319B] rounded-xl px-4 py-4.5 active:opacity-90 transition-opacity"
-            >
-              <span className="flex items-center justify-center w-5 h-5">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 13h4l2 3h6l2-3h4M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </span>
-              <span className="text-white text-[16px]/[100%] font-semibold">{t('manager.title')}</span>
-            </button>
             <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-3">
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.language')}</span>
               <div className="relative flex items-center bg-white rounded-full p-0.5">
