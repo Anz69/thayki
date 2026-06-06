@@ -62,7 +62,7 @@ export default function CatalogNotice() {
 
   return (
     <div className="container">
-      <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 pt-5 pb-4 flex flex-col items-center gap-3.5">
+      <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex flex-col items-center gap-3">
         {/* Rotating text — centered, fixed height to avoid layout jumps */}
         <div
           ref={viewportRef}
@@ -82,7 +82,7 @@ export default function CatalogNotice() {
             }}
           >
             {PHRASES.map((p, i) => (
-              <div key={i} style={{ width: `${100 / N}%` }} className="shrink-0 flex items-center justify-center min-h-[72px] px-2">
+              <div key={i} style={{ width: `${100 / N}%` }} className="shrink-0 flex items-center justify-center min-h-[52px] px-2">
                 <p className="text-center text-[#5B5B5B] text-[13px]/[155%] font-medium pointer-events-none">
                   {p}
                 </p>
