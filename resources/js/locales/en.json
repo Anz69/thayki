@@ -228,6 +228,8 @@
     "statusTitle": "Request status",
     "leadsHint": "Accept and handle requests",
     "earningsHint": "Payments summary",
-    "greeting": "Hello,"
+    "greeting": "Hello,",
+    "statNew": "New requests",
+    "statToday": "Today"
   }
 }

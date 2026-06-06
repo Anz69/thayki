@@ -30,8 +30,11 @@ function getSlot(pathname, clientStatus, modelStatus, isModel) {
   return null
 }
 
-function getTabsForSlot(slot) {
-  if (slot === 'tabs') return TABS
+function getTabsForSlot(slot, isManager = false) {
+  if (slot === 'tabs') {
+    // Managers don't create leads — hide the «Подобрать» tab for them.
+    return isManager ? TABS.filter((tab) => tab.path !== '/request') : TABS
+  }
   return null
 }
 
@@ -57,6 +60,7 @@ export default function BottomNav() {
   const isHiddenPath = hiddenPaths.has(pathname) || pathname === '/'
 
   const isModel = auth.isModel()
+  const isManager = auth.isManager?.() ?? false
 
   const initialSlot = getSlot(pathname, meeting.status, modelMeeting.status, isModel)
   const [renderedSlot, setRenderedSlot] = useState(initialSlot)
@@ -70,10 +74,10 @@ export default function BottomNav() {
         : (meeting.isBootstrapping || (meeting.isLoading && !meeting.status))
     )
   const targetSlot = isMeetingBootstrapping ? renderedSlot : rawTargetSlot
-  const targetTabs = getTabsForSlot(targetSlot)
+  const targetTabs = getTabsForSlot(targetSlot, isManager)
   const activeIndex = targetTabs ? targetTabs.findIndex(t => t.match.includes(pathname)) : -1
 
-  const renderedTabs = getTabsForSlot(renderedSlot)
+  const renderedTabs = getTabsForSlot(renderedSlot, isManager)
 
   const wrapperRef   = useRef(null)
   const containerRef = useRef(null)
