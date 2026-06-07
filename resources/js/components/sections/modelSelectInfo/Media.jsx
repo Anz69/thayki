@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import usePhotoViewerStore from '@/stores/usePhotoViewerStore'
 import LazyImg from '@/components/ui/LazyImg'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import MediaLightbox, { PlayBadge } from '@/components/ui/MediaLightbox'
 
 export default function Media({ photos = [], videos = [] }) {
-  const viewer = usePhotoViewerStore()
-  const [videoIdx, setVideoIdx] = useState(null)
+  const [idx, setIdx] = useState(null)
 
   if (!photos.length && !videos.length) {
     return (
@@ -16,8 +14,11 @@ export default function Media({ photos = [], videos = [] }) {
     )
   }
 
-  const viewerPhotos = photos.map(p => ({ id: p.id, src: resolveMediaUrl(p.url), alt: '' }))
-  const videoMedia = videos.map((v) => ({ type: 'video', url: resolveMediaUrl(v.url), poster: v.poster ? resolveMediaUrl(v.poster) : undefined }))
+  // One combined, mouse-scrollable lightbox for photos + videos.
+  const media = [
+    ...photos.map((p) => ({ type: 'image', url: resolveMediaUrl(p.url) })),
+    ...videos.map((v) => ({ type: 'video', url: resolveMediaUrl(v.url), poster: v.poster ? resolveMediaUrl(v.poster) : undefined })),
+  ]
 
   return (
     <div className="flex flex-col gap-4 w-full items-center">
@@ -34,38 +35,29 @@ export default function Media({ photos = [], videos = [] }) {
       </svg>
 
       <div className="grid grid-cols-3 gap-1 w-full">
-        {viewerPhotos.map((photo, i) => (
+        {photos.map((photo, i) => (
           <button
-            key={photo.id}
+            key={`p${i}`}
             className="w-full h-[270px] relative overflow-hidden active:scale-95 transition-transform duration-150"
-            onClick={() => viewer.open(viewerPhotos, i)}
+            onClick={() => setIdx(i)}
           >
-            <LazyImg
-              src={photo.src}
-              alt={photo.alt}
-              className="w-full h-full"
-            />
+            <LazyImg src={resolveMediaUrl(photo.url)} alt="" className="w-full h-full" />
+          </button>
+        ))}
+        {videos.map((v, i) => (
+          <button
+            key={`v${i}`}
+            className="w-full h-[270px] relative overflow-hidden active:scale-95 transition-transform duration-150 bg-black"
+            onClick={() => setIdx(photos.length + i)}
+          >
+            {v.poster && <img src={resolveMediaUrl(v.poster)} alt="" className="w-full h-full object-cover" />}
+            <PlayBadge size={48} />
           </button>
         ))}
       </div>
 
-      {videoMedia.length > 0 && (
-        <div className="grid grid-cols-3 gap-1 w-full">
-          {videoMedia.map((v, i) => (
-            <button
-              key={i}
-              className="w-full h-[270px] relative overflow-hidden active:scale-95 transition-transform duration-150 bg-black"
-              onClick={() => setVideoIdx(i)}
-            >
-              {v.poster && <img src={v.poster} alt="" className="w-full h-full object-cover" />}
-              <PlayBadge size={48} />
-            </button>
-          ))}
-        </div>
-      )}
-
-      {videoIdx != null && (
-        <MediaLightbox media={videoMedia} index={videoIdx} onClose={() => setVideoIdx(null)} />
+      {idx != null && (
+        <MediaLightbox media={media} index={idx} onClose={() => setIdx(null)} />
       )}
     </div>
   )

@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Pagination, Mousewheel } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/pagination'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import ModalMiddle from '@/layout/ModalMiddle'
 import api from '@/utils/api'
@@ -9,6 +13,7 @@ import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
 import { localizeEyes } from '@/utils/modelValues'
 import { declAge } from '@/utils/datetime'
+import MediaLightbox, { PlayBadge } from '@/components/ui/MediaLightbox'
 import { STATUS, StatusChip, VerifiedMark } from './kit'
 
 const MANAGER_STATUSES = ['in_progress', 'awaiting_client', 'awaiting_payment', 'prepaid', 'completed', 'closed']
@@ -48,6 +53,7 @@ export default function ManagerLeadsPage() {
   const [statusOpen, setStatusOpen] = useState(false)
   const [modelView, setModelView] = useState(null)
   const [modelOpen, setModelOpen] = useState(false)
+  const [mediaIdx, setMediaIdx] = useState(null)
   const rootRef = useRef(null)
   const animatedOnce = useRef(false)
 
@@ -299,7 +305,10 @@ export default function ManagerLeadsPage() {
       <ModalMiddle isOpen={modelOpen} onClose={closeModelView} onAfterClose={() => setModelView(null)}>
         {modelView && (() => {
           const m = modelView
-          const photos = (m.photos ?? []).map((p) => resolveMediaUrl(p)).filter(Boolean)
+          const media = [
+            ...(m.photos ?? []).map((p) => resolveMediaUrl(p)).filter(Boolean).map((url) => ({ type: 'image', url })),
+            ...(m.videos ?? []).filter((v) => v?.url).map((v) => ({ type: 'video', url: resolveMediaUrl(v.url), poster: v.poster ? resolveMediaUrl(v.poster) : undefined })),
+          ]
           const cm = (v) => (v ? `${v} ${t('modelInfo.cm')}` : null)
           return (
             <div className="flex flex-col px-5 pt-1 pb-6 gap-4">
@@ -308,16 +317,41 @@ export default function ManagerLeadsPage() {
                 {m.age != null && <span className="text-[#9B9AA0] text-[14px] ml-auto shrink-0">{declAge(m.age)}</span>}
               </div>
 
-              {photos.length > 0 && (
-                <div
-                  className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1"
-                  style={{ scrollbarWidth: 'none' }}
-                  onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth) el.scrollLeft += (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX) }}
+              {media.length > 0 && (
+                <Swiper
+                  modules={[Pagination, Mousewheel]}
+                  slidesPerView="auto"
+                  spaceBetween={8}
+                  grabCursor
+                  mousewheel={{ forceToAxis: true }}
+                  className="w-full -mx-5 px-5"
+                  style={{ paddingLeft: 20, paddingRight: 20 }}
                 >
-                  {photos.map((src, i) => (
-                    <img key={i} src={src} alt="" className="h-[220px] w-[156px] rounded-2xl object-cover object-top shrink-0 bg-[#EFEAEE]" />
+                  {media.map((mm, i) => (
+                    <SwiperSlide key={i} style={{ width: 156 }}>
+                      <button
+                        type="button"
+                        onClick={() => setMediaIdx(i)}
+                        className="relative block h-[220px] w-[156px] rounded-2xl overflow-hidden bg-[#EFEAEE]"
+                      >
+                        {mm.type === 'video' ? (
+                          <>
+                            {mm.poster
+                              ? <img src={mm.poster} alt="" className="w-full h-full object-cover object-top" />
+                              : <div className="w-full h-full bg-black" />}
+                            <PlayBadge size={48} />
+                          </>
+                        ) : (
+                          <img src={mm.url} alt="" className="w-full h-full object-cover object-top" />
+                        )}
+                      </button>
+                    </SwiperSlide>
                   ))}
-                </div>
+                </Swiper>
+              )}
+
+              {mediaIdx != null && (
+                <MediaLightbox media={media} index={mediaIdx} onClose={() => setMediaIdx(null)} />
               )}
 
               {(m.height_cm || m.bust_cm || m.waist_cm || m.hips_cm || m.breast_size || m.eyes) && (
