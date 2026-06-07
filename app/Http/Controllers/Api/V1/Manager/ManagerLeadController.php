@@ -67,7 +67,7 @@ class ManagerLeadController extends Controller
     {
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:1'],
-            'currency' => ['nullable', 'string', 'size:3'],
+            'currency' => ['nullable', 'in:RUB,USD,EUR'],
             'method' => ['nullable', 'in:manual,crypto'],
             'requisites' => ['nullable', 'required_if:method,manual', 'string', 'max:2000'],
         ]);
