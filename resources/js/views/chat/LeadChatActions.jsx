@@ -1,17 +1,22 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import ModalMiddle from '@/layout/ModalMiddle'
-import api from '@/utils/api'
+import api, { extractErrorMessage } from '@/utils/api'
 import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
 import ClientPaymentSheet from '@/components/modals/PaymentSheet'
 
-const money = (minor, currency = 'THB') => {
+const CURRENCIES = [
+  { code: 'RUB', symbol: '₽' },
+  { code: 'USD', symbol: '$' },
+  { code: 'EUR', symbol: '€' },
+  { code: 'THB', symbol: '฿' },
+]
+const currencySymbol = (code) => CURRENCIES.find((c) => c.code === code)?.symbol ?? code
+const money = (minor, currency = 'RUB') => {
   const v = Math.round((minor || 0) / 100).toLocaleString()
-  if (currency === 'THB') return '฿ ' + v
-  if (currency === 'USD') return '$ ' + v
-  return `${v} ${currency}`
+  return `${currencySymbol(currency)} ${v}`
 }
 
 /* ── Telegram contact request (identity verification) ───────────────────── */
@@ -55,7 +60,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
         <div className="w-full max-w-[320px] rounded-2xl bg-white border border-black/[0.08] overflow-hidden">
           <div className="px-4 pt-3.5 pb-3 flex flex-col gap-1.5">
             <span className="text-[#9B9AA0] text-[12px] font-medium uppercase tracking-[0.08em]">{t('leadChat.payTitle')}</span>
-            <span className="text-black text-[24px]/[100%] font-bold">{money(p.amount_minor, p.currency)}</span>
+            <span className="text-black text-[24px] leading-tight font-bold" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif' }}>{money(p.amount_minor, p.currency)}</span>
             {p.method !== 'crypto' && p.requisites && (
               <div className="mt-1 bg-[#F5F5F7] rounded-xl px-3 py-2.5">
                 <span className="text-[#7F7F7F] text-[11px] font-medium">{t('leadChat.payRequisites')}</span>
@@ -82,6 +87,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
               isOpen={payOpen}
               onClose={() => setPayOpen(false)}
               price={(p.amount_minor || 0) / 100}
+              currency={p.currency || 'RUB'}
             />
           )}
           <div className={`px-4 py-2.5 text-center text-[13px] font-semibold ${confirmed ? 'bg-[#E6F5EA] text-[#1E9E4E]' : 'bg-[#FFF1DC] text-[#C77A12]'}`}>
@@ -111,12 +117,16 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
       <div data-msg className={`flex ${side} my-3 px-2`}>
         <div className="w-full max-w-[320px] rounded-2xl bg-white border border-black/[0.08] overflow-hidden">
           <div className="px-4 pt-3.5 pb-3 flex items-center gap-2.5">
-            <span className="size-9 rounded-full bg-[#E9F0FF] flex items-center justify-center shrink-0">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V5l-8-3Z" stroke="#2F6BD8" strokeWidth="1.7" strokeLinejoin="round" /><path d="m8.5 12 2.2 2.2L15.5 9.5" stroke="#2F6BD8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span className={`size-9 rounded-full flex items-center justify-center shrink-0 ${done ? 'bg-[#E6F5EA]' : 'bg-[#E9F0FF]'}`}>
+              {done ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V5l-8-3Z" stroke="#1E9E4E" strokeWidth="1.7" strokeLinejoin="round" /><path d="m8.5 12 2.2 2.2L15.5 9.5" stroke="#1E9E4E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V5l-8-3Z" stroke="#2F6BD8" strokeWidth="1.7" strokeLinejoin="round" /><path d="m8.5 12 2.2 2.2L15.5 9.5" stroke="#2F6BD8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              )}
             </span>
             <div className="flex flex-col">
               <span className="text-black text-[14px] font-semibold">{t('leadChat.verifyTitle')}</span>
-              <span className="text-[#9B9AA0] text-[12px]">{done ? t('leadChat.verifyDone') : t('leadChat.verifySub')}</span>
+              <span className={`text-[12px] ${done ? 'text-[#1E9E4E] font-medium' : 'text-[#9B9AA0]'}`}>{done ? t('leadChat.verifyDone') : t('leadChat.verifySub')}</span>
             </div>
           </div>
           {!done && !isManager && (
@@ -139,9 +149,6 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
             >
               {busy ? '…' : t('leadChat.verifyBtn')}
             </button>
-          )}
-          {done && (
-            <div className="px-4 py-2.5 text-center text-[13px] font-semibold bg-[#E6F5EA] text-[#1E9E4E]">✅ {t('leadChat.verifyDone')}</div>
           )}
         </div>
       </div>
@@ -308,15 +315,17 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
     setErr(null); setProgress({ done: 0, total: links.length })
     const out = []
     let failed = 0
+    let lastErr = null
     for (let i = 0; i < links.length; i++) {
       try {
         const { data } = await api.post(`/manager/leads/${leadId}/parse-model`, { url: links[i] })
         out.push({ ...data.data, photos: data.data.photos ?? [], videos: data.data.videos ?? [] })
-      } catch (e) { logError(e); failed++ }
+      } catch (e) { logError(e); failed++; lastErr = e }
       setProgress({ done: i + 1, total: links.length })
     }
     setProgress(null)
-    if (!out.length) { setErr(t('leadChat.parseError')); return }
+    // Surface the real server reason (envelope puts it under error.message).
+    if (!out.length) { setErr(extractErrorMessage(lastErr, t('leadChat.parseError'))); return }
     if (failed) setErr(t('leadChat.parseSomeFailed', { n: failed }))
     setDrafts(out); setIdx(0)
   }
@@ -362,7 +371,8 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
             <textarea
               value={urls}
               onChange={(e) => setUrls(e.target.value)}
-              rows={4}
+              onFocus={(e) => { const el = e.target; setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 320) }}
+              rows={3}
               placeholder={'https://e100.club/?p=…\nhttps://e100.club/?p=…'}
               className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[14px] outline-none resize-none"
             />
@@ -485,11 +495,12 @@ function MenuRow({ icon, label, tint = '#7F7F7F', onClick }) {
 function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const { t } = useTranslation()
   const [method, setMethod] = useState('manual') // 'manual' | 'crypto'
+  const [currency, setCurrency] = useState('RUB')
   const [amount, setAmount] = useState('')
   const [requisites, setRequisites] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const reset = () => { setMethod('manual'); setAmount(''); setRequisites('') }
+  const reset = () => { setMethod('manual'); setCurrency('RUB'); setAmount(''); setRequisites('') }
   const valid = amount && (method === 'crypto' || requisites.trim())
 
   const submit = async () => {
@@ -498,7 +509,7 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
     try {
       await api.post(`/manager/leads/${leadId}/payment-request`, {
         amount: Number(amount),
-        currency: 'THB',
+        currency,
         method,
         requisites: method === 'manual' ? requisites.trim() : null,
       })
@@ -520,9 +531,25 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
           ))}
         </div>
 
+        {/* Currency picker */}
+        <div className="flex gap-1.5">
+          {CURRENCIES.map((c) => (
+            <button key={c.code} onClick={() => setCurrency(c.code)} className={`flex-1 py-2 rounded-xl text-[13px] font-semibold transition-colors ${currency === c.code ? 'bg-[#1B1B1B] text-white' : 'bg-[#F5F5F7] text-[#7F7F7F]'}`}>
+              {c.symbol} {c.code}
+            </button>
+          ))}
+        </div>
+
         <label className="flex flex-col gap-1.5">
-          <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payAmount')}</span>
-          <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="0" className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[16px] font-semibold outline-none" />
+          <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payAmount')}, {currencySymbol(currency)}</span>
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
+            inputMode="numeric"
+            placeholder="0"
+            style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif' }}
+            className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[16px] font-semibold outline-none"
+          />
         </label>
 
         {method === 'manual' ? (

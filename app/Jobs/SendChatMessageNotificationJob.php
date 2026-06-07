@@ -36,6 +36,13 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 return;
             }
 
+            // Typed cards (payment / verification / model) and system notes send
+            // their own targeted push from their action — skip the generic
+            // "new message" notification to avoid duplicates.
+            if (! in_array((string) $message->type, ['text', 'image', ''], true)) {
+                return;
+            }
+
             Sleep::for(self::READ_DEBOUNCE_SECONDS)->seconds();
 
             $message->refresh();

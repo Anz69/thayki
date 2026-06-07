@@ -198,9 +198,15 @@ export default function RequestChatPage() {
   useEffect(() => {
     if (!chatId) return undefined
     return subscribePrivate(`chats.${chatId}`, {
-      '.message.sent': (e) => setMessages((prev) => mergeIncomingMessage(prev, e.message ?? e, myId)),
+      '.message.sent': (e) => {
+        const incoming = e.message ?? e
+        setMessages((prev) => mergeIncomingMessage(prev, incoming, myId))
+        // A system note (e.g. "identity verified") means an existing typed card
+        // changed state on the server — refetch so it flips live.
+        if (incoming?.type === 'system') setTimeout(reloadMessages, 400)
+      },
     })
-  }, [chatId, myId])
+  }, [chatId, myId, reloadMessages])
 
   // New-message pop — identical to the support chat (count-based, so the
   // optimistic→real swap never double-animates).
@@ -402,7 +408,7 @@ export default function RequestChatPage() {
                   <div data-msg data-msg-id={msg.id} className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`}>
                     {bubble}
                   </div>
-                  {idx === 0 && <ManagerNote text={t('requestChat.managerNote')} />}
+                  {idx === 0 && isLead && !isStaff && <ManagerNote text={t('requestChat.managerNote')} />}
                 </div>
               )
             })}

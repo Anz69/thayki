@@ -4,24 +4,29 @@ const ChevronRight = () => (
     <path d="M7 5L11 9L7 13" stroke="#C4C4C4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
-export default function MainStep({ price, onCrypto, onSBP }) {
-  const rubAmount = Math.round(price * THB_TO_RUB)
+const SYMBOLS = { RUB: '₽', USD: '$', EUR: '€', THB: '฿' }
+
+export default function MainStep({ price, currency = 'THB', onCrypto, onSBP }) {
+  const symbol = SYMBOLS[currency] ?? currency
+  const rubAmount = currency === 'THB' ? Math.round(price * THB_TO_RUB) : null
   return (
     <div className="flex flex-col gap-5 p-6 pt-2">
       <div className="flex flex-col items-center gap-1.5 text-center pt-1">
         <h2 className="text-black text-xl/[100%] font-semibold">Оплата</h2>
         <p className="text-[#7F7F7F] text-sm/[140%] font-medium">
-          Оплата подзаголовок. Оплата подзаголовок.
+          Выберите удобный способ оплаты счёта.
         </p>
       </div>
       <div className="bg-[#F5F5F7] rounded-2xl px-5 py-6 flex flex-col items-center gap-1.5">
         <span className="text-[#7F7F7F] text-sm/[100%] font-medium">К оплате</span>
-        <span className="text-black text-[38px]/[100%] font-semibold tracking-tight">
-          ฿ {price.toLocaleString()}
+        <span className="text-black text-[38px] leading-none font-semibold tracking-tight" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif' }}>
+          {symbol} {price.toLocaleString()}
         </span>
-        <span className="text-[#7F7F7F] text-sm/[100%] font-medium">
-          ~ {rubAmount.toLocaleString()}₽
-        </span>
+        {rubAmount != null && (
+          <span className="text-[#7F7F7F] text-sm/[100%] font-medium">
+            ~ {rubAmount.toLocaleString()}₽
+          </span>
+        )}
       </div>
       <div className="flex flex-col gap-3">
         <button

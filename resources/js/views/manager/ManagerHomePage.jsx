@@ -82,12 +82,12 @@ export default function ManagerHomePage() {
           <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex items-center">
             <div className="flex-1 flex flex-col gap-1">
               <span className="text-[#ABABAB] text-[11px]/[100%] font-medium">{t('manager.statNew')}</span>
-              <span className="text-[#E2319B] text-[26px]/[100%] font-bold">{newCount === null ? '…' : newCount}</span>
+              <span className="text-[#E2319B] text-[26px] leading-tight font-bold">{newCount == null ? '…' : newCount}</span>
             </div>
             <div className="w-px self-stretch bg-black/5 mx-3" />
             <div className="flex-1 flex flex-col gap-1">
               <span className="text-[#ABABAB] text-[11px]/[100%] font-medium">{t('manager.statToday')}</span>
-              <span className="text-black text-[26px]/[100%] font-bold">{earnToday === null ? '…' : fmtMoney(earnToday)}</span>
+              <span className="text-black text-[26px] leading-tight font-bold">{earnToday == null ? '…' : fmtMoney(earnToday)}</span>
             </div>
           </GradientBorder>
         </div>

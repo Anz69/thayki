@@ -54,11 +54,17 @@ class E100Parser
         $page = 'https://'.self::HOST.'/?p='.$token;
 
         try {
-            $res = Http::withHeaders(['User-Agent' => self::UA])
+            $res = Http::withHeaders([
+                'User-Agent' => self::UA,
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language' => 'ru-RU,ru;q=0.9,en;q=0.8',
+                'Referer' => 'https://'.self::HOST.'/',
+            ])
+                ->withOptions(['allow_redirects' => true])
                 ->timeout(20)
                 ->get($page);
         } catch (\Throwable $e) {
-            throw DomainException::invalid('FETCH_FAILED', 'Не удалось загрузить страницу модели.');
+            throw DomainException::invalid('FETCH_FAILED', 'Не удалось загрузить страницу модели: '.$e->getMessage());
         }
 
         if (! $res->successful()) {

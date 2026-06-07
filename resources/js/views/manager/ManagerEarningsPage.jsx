@@ -73,7 +73,7 @@ export default function ManagerEarningsPage() {
         <div data-anim>
           <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-5 flex flex-col gap-1.5">
             <span className="text-[#ABABAB] text-[12px]/[100%] font-medium">{t('manager.earn.total')}</span>
-            <span className="text-[#E2319B] text-[32px]/[100%] font-bold">{data === null ? '…' : fmt(data.total)}</span>
+            <span className="text-[#E2319B] text-[32px] leading-tight font-bold">{data === null ? '…' : fmt(data.total)}</span>
             {data !== null && (
               <span className="text-[#8A8A8A] text-[12px]/[120%]">{t('manager.earn.count', { n: data.count ?? 0 })}</span>
             )}
@@ -84,7 +84,7 @@ export default function ManagerEarningsPage() {
           {small.map(([key, label]) => (
             <div key={key} className="bg-[#EFEEF3] rounded-2xl px-3 py-3.5 flex flex-col gap-1.5">
               <span className="text-[#9B9AA0] text-[11px]/[100%] font-medium">{t(label)}</span>
-              <span className="text-black text-[17px]/[105%] font-bold">{data === null ? '…' : fmt(data[key])}</span>
+              <span className="text-black text-[17px] leading-tight font-bold">{data === null ? '…' : fmt(data[key])}</span>
             </div>
           ))}
         </div>

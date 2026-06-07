@@ -97,19 +97,30 @@ class CreateLeadAction
 
         $notifier = \App\Services\Telegram\Notifier::default();
         // The client's own request message (first message in the lead chat) so
-        // the manager sees what was asked straight from the push.
+        // the manager sees what was asked straight from the push. Strip the
+        // redundant leading "📩 …" title line to keep the push tidy.
         $firstMessage = $lead->chat?->messages()->orderBy('id')->value('body');
+        if (is_string($firstMessage)) {
+            $lines = preg_split('/\r?\n/', $firstMessage) ?: [];
+            if (isset($lines[0]) && str_starts_with(trim($lines[0]), '📩')) {
+                array_shift($lines);
+                while (isset($lines[0]) && trim($lines[0]) === '') {
+                    array_shift($lines);
+                }
+            }
+            $firstMessage = trim(implode("\n", $lines));
+        }
 
         foreach ($managers as $manager) {
             $locale = str_starts_with(strtolower((string) ($manager->language_code ?? '')), 'en') ? 'en' : 'ru';
             $text = trans('notifications.new_lead', ['city' => $lead->city], $locale);
-            if (is_string($firstMessage) && trim($firstMessage) !== '') {
+            if (is_string($firstMessage) && $firstMessage !== '') {
                 $text .= "\n\n".$firstMessage;
             }
             $notifier->notifyUser(
                 $manager,
                 $text,
-                "/request/chat?id={$lead->chat_id}&lead={$lead->id}&from=".rawurlencode('/manager/leads'),
+                '/manager/leads',
                 trans('notifications.open', [], $locale),
                 'new-lead:'.$lead->id,
             );

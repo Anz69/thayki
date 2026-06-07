@@ -249,7 +249,7 @@
     "payConfirmed": "Paid",
     "payConfirmBtn": "Confirm payment",
     "paySheetTitle": "Issue an invoice",
-    "payAmount": "Amount, ฿",
+    "payAmount": "Amount",
     "payRequisitesPlaceholder": "Where and how to pay…",
     "paySend": "Send invoice",
     "verifyTitle": "Identity verification",

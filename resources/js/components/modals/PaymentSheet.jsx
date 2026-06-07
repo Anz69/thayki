@@ -10,7 +10,7 @@ const CheckCircle = () => (
     <path d="M22 36l10 10 18-20" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
-export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0 }) {
+export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0, currency = 'THB' }) {
   const [lazyCrypto, setLazyCrypto] = useState(false)
   const [lazySbp, setLazySbp]       = useState(false)
   const pendingSwitchRef            = useRef(null)
@@ -159,7 +159,7 @@ export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0 }
     <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>
       <div ref={contentWrapRef} style={{ position: 'relative', overflow: 'hidden' }}>
         <div ref={(el) => { viewRefs.current.main = el }} style={{ position: 'relative' }}>
-          <MainStep price={price} onCrypto={goCrypto} onSBP={goSbp} />
+          <MainStep price={price} currency={currency} onCrypto={goCrypto} onSBP={goSbp} />
         </div>
         {lazyCrypto && (
           <div

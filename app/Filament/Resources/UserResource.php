@@ -208,7 +208,7 @@ class UserResource extends Resource
                     }),
                 Tables\Actions\EditAction::make()->label('Изменить'),
             ])
-            ->modifyQueryUsing(fn ($query) => $query->where('role', '!=', UserRole::Model->value))
+            ->modifyQueryUsing(fn ($query) => $query->where('role', UserRole::Client->value))
             ->defaultSort('created_at', 'desc');
     }
 

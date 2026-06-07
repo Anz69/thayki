@@ -73,13 +73,16 @@
 }
 
 @theme {
-  --font-sans: 'SF Pro Display', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* System fonts must come BEFORE the emoji fonts: when a glyph (e.g. a bold
+     digit) isn't drawn from 'SF Pro Display', the fallback should be the OS
+     San Francisco — not an emoji font, which renders digits invisibly. */
+  --font-sans: 'SF Pro Display', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   --font-weight-semibold: 590;
   --font-weight-medium: 400;
 }
 
 body {
-  font-family: 'SF Pro Display', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'SF Pro Display', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   @apply bg-white min-h-screen;
 }
 
