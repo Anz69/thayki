@@ -8,7 +8,7 @@ import GradientBorder from '@/components/ui/GradientBorder'
 import api from '@/utils/api'
 import { logError } from '@/utils/logger'
 
-const fmt = (minor) => '฿ ' + Math.round((minor || 0) / 100).toLocaleString()
+const fmt = (minor) => '$ ' + Math.round((minor || 0) / 100).toLocaleString()
 
 function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null

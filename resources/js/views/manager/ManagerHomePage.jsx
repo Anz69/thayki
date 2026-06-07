@@ -9,7 +9,7 @@ import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import api from '@/utils/api'
 import { SectionLabel, Chevron } from './kit'
 
-const fmtMoney = (minor) => '฿ ' + Math.round((minor || 0) / 100).toLocaleString()
+const fmtMoney = (minor) => '$ ' + Math.round((minor || 0) / 100).toLocaleString()
 
 function MenuItem({ icon, label, badge, right, onClick, disabled }) {
   return (

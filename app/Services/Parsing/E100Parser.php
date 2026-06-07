@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Parsing;
 
 use App\Exceptions\DomainException;
+use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -46,6 +48,9 @@ class E100Parser
      */
     public function parse(string $url): array
     {
+        // Downloading many remote files can exceed PHP-FPM's default 30s cap.
+        @set_time_limit(180);
+
         $token = $this->extractToken($url);
         if ($token === null) {
             throw DomainException::invalid('BAD_URL', 'Ссылка не похожа на страницу модели e100.club.');
@@ -60,8 +65,9 @@ class E100Parser
                 'Accept-Language' => 'ru-RU,ru;q=0.9,en;q=0.8',
                 'Referer' => 'https://'.self::HOST.'/',
             ])
-                ->withOptions(['allow_redirects' => true])
-                ->timeout(20)
+                ->withOptions(['allow_redirects' => true, 'verify' => false])
+                ->retry(2, 800, throw: false)
+                ->timeout(25)
                 ->get($page);
         } catch (\Throwable $e) {
             throw DomainException::invalid('FETCH_FAILED', 'Не удалось загрузить страницу модели: '.$e->getMessage());
@@ -78,32 +84,37 @@ class E100Parser
         $photoIndexes = $this->matchMediaIndexes($html, 'i');
         $videoIndexes = $this->matchMediaIndexes($html, 'v');
 
-        // Download photos into a throwaway draft folder so the card persists
-        // even if e100 later rotates the token or blocks hotlinking.
+        // Download all media concurrently (in small batches) so a model with
+        // 15+ photos and videos doesn't take ~90s sequentially.
         $draft = Str::random(24);
-        $photos = [];
+
+        // One combined concurrent pass for photos + videos + posters (fewer
+        // sequential rounds → faster overall).
+        $jobs = [];
+        $photoSrcs = [];
         foreach (array_slice($photoIndexes, 0, self::MAX_PHOTOS) as $i) {
             $src = 'https://'.self::HOST.'/img.php?p='.$token.'&i='.$i;
-            $stored = $this->download($src, "parsed-models/{$draft}/p{$i}.jpg");
-            if ($stored !== null) {
-                $photos[] = $stored;
-            }
+            $jobs[$src] = "parsed-models/{$draft}/p{$i}.jpg";
+            $photoSrcs[] = $src;
+        }
+        $videoMeta = [];
+        foreach (array_slice($videoIndexes, 0, self::MAX_VIDEOS) as $v) {
+            $vsrc = 'https://'.self::HOST.'/img.php?p='.$token.'&v='.$v;
+            $psrc = 'https://'.self::HOST.'/img.php?p='.$token.'&preview=1&v='.$v;
+            $jobs[$vsrc] = "parsed-models/{$draft}/v{$v}.mp4";
+            $jobs[$psrc] = "parsed-models/{$draft}/v{$v}.jpg";
+            $videoMeta[] = ['v' => $vsrc, 'p' => $psrc];
         }
 
-        // Download videos + their poster frames into our storage so the card
-        // is fully self-contained.
+        $r = $this->downloadBatch($jobs);
+
+        $photos = array_values(array_filter(array_map(fn ($s) => $r[$s] ?? null, $photoSrcs)));
         $videos = [];
-        foreach (array_slice($videoIndexes, 0, self::MAX_VIDEOS) as $v) {
-            $videoSrc = 'https://'.self::HOST.'/img.php?p='.$token.'&v='.$v;
-            $posterSrc = 'https://'.self::HOST.'/img.php?p='.$token.'&preview=1&v='.$v;
-            $videoUrl = $this->download($videoSrc, "parsed-models/{$draft}/v{$v}.mp4");
-            if ($videoUrl === null) {
+        foreach ($videoMeta as $m) {
+            if (($r[$m['v']] ?? null) === null) {
                 continue;
             }
-            $videos[] = [
-                'url' => $videoUrl,
-                'poster' => $this->download($posterSrc, "parsed-models/{$draft}/v{$v}.jpg"),
-            ];
+            $videos[] = ['url' => $r[$m['v']], 'poster' => $r[$m['p']] ?? null];
         }
 
         return array_merge([
@@ -184,21 +195,47 @@ class E100Parser
         return $keys;
     }
 
-    /** Download a remote image to the public disk; returns its URL or null. */
-    private function download(string $src, string $path): ?string
+    /**
+     * Download many remote files concurrently (batched, to avoid being rate
+     * limited). Returns a map of source URL → stored public URL (null on fail).
+     *
+     * @param  array<string, string>  $jobs  source URL => destination path
+     * @return array<string, string|null>
+     */
+    private function downloadBatch(array $jobs): array
     {
-        try {
-            $res = Http::withHeaders(['User-Agent' => self::UA, 'Referer' => 'https://'.self::HOST.'/'])
-                ->timeout(40)
-                ->get($src);
-            if (! $res->successful() || $res->body() === '') {
-                return null;
-            }
-            Storage::disk('public')->put($path, $res->body());
+        $out = [];
+        foreach (array_chunk($jobs, 12, true) as $chunk) {
+            $srcs = array_keys($chunk);
 
-            return Storage::disk('public')->url($path);
-        } catch (\Throwable) {
-            return null;
+            try {
+                $responses = Http::pool(fn (Pool $pool) => array_map(
+                    fn (string $src) => $pool->as($src)
+                        ->withHeaders(['User-Agent' => self::UA, 'Referer' => 'https://'.self::HOST.'/'])
+                        ->withOptions(['verify' => false])
+                        ->timeout(25)
+                        ->get($src),
+                    $srcs,
+                ));
+            } catch (\Throwable) {
+                $responses = [];
+            }
+
+            foreach ($chunk as $src => $path) {
+                $res = $responses[$src] ?? null;
+                try {
+                    if ($res instanceof Response && $res->successful() && $res->body() !== '') {
+                        Storage::disk('public')->put($path, $res->body());
+                        $out[$src] = Storage::disk('public')->url($path);
+                    } else {
+                        $out[$src] = null;
+                    }
+                } catch (\Throwable) {
+                    $out[$src] = null;
+                }
+            }
         }
+
+        return $out;
     }
 }

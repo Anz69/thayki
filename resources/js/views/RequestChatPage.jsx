@@ -353,10 +353,15 @@ export default function RequestChatPage() {
           <div className="flex flex-col px-4 py-4 gap-0 container">
             {messages.map((msg, idx) => {
               if (msg.type === 'system') {
+                const ok = typeof msg.text === 'string' && msg.text.trimStart().startsWith('✅')
+                const text = ok ? msg.text.replace(/^\s*✅\s*/, '') : msg.text
                 return (
                   <div key={msg.id} data-msg data-msg-id={msg.id} className="flex justify-center my-3">
-                    <span className="max-w-[300px] text-center text-[#8A8A8A] text-[13px]/[140%] font-medium bg-[#F2F2F5] rounded-2xl px-4 py-2.5">
-                      {msg.text}
+                    <span className="max-w-[300px] inline-flex items-center gap-1.5 text-center text-[#8A8A8A] text-[13px]/[140%] font-medium bg-[#F2F2F5] rounded-2xl px-4 py-2.5">
+                      {ok && (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0"><circle cx="12" cy="12" r="10" fill="#1E9E4E" /><path d="m7.5 12.5 3 3 6-6.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      )}
+                      <span>{text}</span>
                     </span>
                   </div>
                 )

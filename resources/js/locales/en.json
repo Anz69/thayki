@@ -282,6 +282,9 @@
     "payCryptoSheetHint": "The client gets a «Pay» button. The payment module will be connected later — confirm the payment manually.",
     "payNow": "Pay",
     "payGatewaySoon": "The payment module will be connected soon. The manager will confirm the payment.",
-    "payCryptoHint": "Crypto payment — confirm manually once funds arrive."
+    "payCryptoHint": "Crypto payment — confirm manually once funds arrive.",
+    "parseEta": "≈ {{s}} left",
+    "minShort": "min",
+    "secShort": "s"
   }
 }

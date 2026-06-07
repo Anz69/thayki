@@ -300,7 +300,11 @@ export default function ManagerLeadsPage() {
               </div>
 
               {photos.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
+                <div
+                  className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1"
+                  style={{ scrollbarWidth: 'none' }}
+                  onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth) el.scrollLeft += (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX) }}
+                >
                   {photos.map((src, i) => (
                     <img key={i} src={src} alt="" className="h-[220px] w-[156px] rounded-2xl object-cover object-top shrink-0 bg-[#EFEAEE]" />
                   ))}

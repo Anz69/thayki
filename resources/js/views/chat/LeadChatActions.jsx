@@ -303,27 +303,40 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
   const [drafts, setDrafts] = useState(null)
   const [idx, setIdx] = useState(0)
   const [progress, setProgress] = useState(null) // {done,total} while parsing
+  const [eta, setEta] = useState(null) // estimated seconds remaining
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
   const swipeX = useRef(null)
 
-  const reset = () => { setUrls(''); setDrafts(null); setIdx(0); setProgress(null); setErr(null) }
+  const reset = () => { setUrls(''); setDrafts(null); setIdx(0); setProgress(null); setEta(null); setErr(null) }
+
+  // Live countdown between server responses.
+  useEffect(() => {
+    if (!progress) return undefined
+    const id = setInterval(() => setEta((e) => (e == null ? e : Math.max(2, e - 1))), 1000)
+    return () => clearInterval(id)
+  }, [progress])
 
   const parse = async () => {
     const links = urls.split(/[\s,]+/).map((l) => l.trim()).filter((l) => l.includes('e100.club') || /\?p=/.test(l))
     if (!links.length || progress) return
-    setErr(null); setProgress({ done: 0, total: links.length })
+    const EST_PER_LINK = 30 // seconds, rough first guess
+    const startedAt = Date.now()
+    setErr(null); setProgress({ done: 0, total: links.length }); setEta(links.length * EST_PER_LINK)
     const out = []
     let failed = 0
     let lastErr = null
     for (let i = 0; i < links.length; i++) {
       try {
-        const { data } = await api.post(`/manager/leads/${leadId}/parse-model`, { url: links[i] })
+        const { data } = await api.post(`/manager/leads/${leadId}/parse-model`, { url: links[i] }, { timeout: 120000 })
         out.push({ ...data.data, photos: data.data.photos ?? [], videos: data.data.videos ?? [] })
       } catch (e) { logError(e); failed++; lastErr = e }
-      setProgress({ done: i + 1, total: links.length })
+      const done = i + 1
+      const avg = (Date.now() - startedAt) / 1000 / done
+      setProgress({ done, total: links.length })
+      setEta(done >= links.length ? null : Math.max(2, Math.round(avg * (links.length - done))))
     }
-    setProgress(null)
+    setProgress(null); setEta(null)
     // Surface the real server reason (envelope puts it under error.message).
     if (!out.length) { setErr(extractErrorMessage(lastErr, t('leadChat.parseError'))); return }
     if (failed) setErr(t('leadChat.parseSomeFailed', { n: failed }))
@@ -377,8 +390,14 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
               className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[14px] outline-none resize-none"
             />
             {err && <span className="text-[#E2314C] text-[13px]">{err}</span>}
+            {progress && (
+              <span className="text-[#9B9AA0] text-[12px] text-center -mb-1">
+                {t('leadChat.parsingN', { done: progress.done, total: progress.total })}
+                {eta != null && ` · ${t('leadChat.parseEta', { s: eta > 99 ? `~${Math.ceil(eta / 60)} ${t('leadChat.minShort')}` : `${eta} ${t('leadChat.secShort')}` })}`}
+              </span>
+            )}
             <button disabled={!!progress || !urls.trim()} onClick={parse} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
-              {progress ? t('leadChat.parsingN', { done: progress.done, total: progress.total }) : t('leadChat.parseBtn')}
+              {progress ? t('leadChat.parsing') : t('leadChat.parseBtn')}
             </button>
           </>
         ) : (
