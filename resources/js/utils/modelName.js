@@ -6,7 +6,11 @@ import i18n from '@/i18n'
  */
 export function modelName(model) {
   if (!model) return ''
+  const isEn = (i18n.language || 'ru').startsWith('en')
   const en = model.display_name_en
-  if ((i18n.language || 'ru').startsWith('en') && en) return en
-  return model.display_name || en || ''
+  if (isEn && en) return en
+  let name = model.display_name || en || ''
+  // Localize the generic "Модель №123" fallback name for English clients.
+  if (isEn && name) name = name.replace(/^Модель\s*№?\s*/i, 'Model №')
+  return name
 }

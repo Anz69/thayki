@@ -134,7 +134,7 @@ export default function ModelPage({ preview = false }) {
     const currentPhotos = modelRef.current?.photos ?? []
     animatePhotos(currentPhotos)
 
-    tl.to([ageRef.current, nameRef.current], {
+    tl.to([ageRef.current, nameRef.current].filter(Boolean), {
       y: '0%', duration: 0.52, stagger: 0.09, ease: 'expo.out',
     }, 0.4)
 
@@ -155,7 +155,7 @@ export default function ModelPage({ preview = false }) {
     gsap.set(headerRef.current,      { autoAlpha: 0, y: -44 })
     gsap.set(backBtnRef.current,     { autoAlpha: 0, x: -20 })
     gsap.set(headerTitleRef.current, { autoAlpha: 0, y: -10 })
-    gsap.set([ageRef.current, nameRef.current], { y: '-110%' })
+    gsap.set([ageRef.current, nameRef.current].filter(Boolean), { y: '-110%' })
     gsap.set(descRef.current,        { autoAlpha: 0, y: 12 })
     gsap.set(tabSectionRef.current,  { autoAlpha: 0, y: 18, willChange: 'transform, opacity' })
     gsap.set(bookBtnRef.current,     { autoAlpha: 0, scale: 0.72, willChange: 'transform, opacity' })
@@ -344,11 +344,13 @@ export default function ModelPage({ preview = false }) {
           </div>
 
           <div className="flex flex-col gap-4 text-center container">
-            <div className="overflow-hidden">
-              <h2 ref={ageRef} className="text-[#7F7F7F] text-base/[100%] font-medium">
-                {declAge(model?.age)}
-              </h2>
-            </div>
+            {!preview && (
+              <div className="overflow-hidden">
+                <h2 ref={ageRef} className="text-[#7F7F7F] text-base/[100%] font-medium">
+                  {declAge(model?.age)}
+                </h2>
+              </div>
+            )}
             <div className="overflow-hidden">
               <h1 ref={nameRef} className="text-black text-2xl/[100%] font-bold">
                 {modelName(model)}

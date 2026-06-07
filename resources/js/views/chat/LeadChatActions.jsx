@@ -177,7 +177,6 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
                   </div>
                   <div className="px-2.5 py-2 text-left">
                     <p className="text-black text-[13px] font-semibold truncate">{modelName(m)}</p>
-                    {m.age != null && <p className="text-[#9B9AA0] text-[11px]">{m.age}</p>}
                   </div>
                 </button>
               )
