@@ -51,13 +51,6 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
       const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
       sheet.style.bottom = inset + 'px'
       sheet.style.maxHeight = Math.round(vv.height - 16) + 'px'
-      // Keyboard up → bring the focused field into the visible part of the sheet.
-      if (inset > 80) {
-        const el = document.activeElement
-        if (el && sheet.contains(el)) {
-          requestAnimationFrame(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }))
-        }
-      }
     }
     update()
     vv.addEventListener('resize', update)
