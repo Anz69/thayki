@@ -140,16 +140,30 @@ class ChatController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        // A manager replying in a lead/support chat they haven't joined yet
-        // becomes a participant so they can post (and receive notifications).
-        if (! $chat->isParticipant($user)
-            && $user->role === UserRole::Manager
-            && in_array($chat->type, [ChatType::Lead, ChatType::Support], true)) {
-            $chat->participants()->create([
-                'user_id' => $user->id,
-                'role' => \App\Enums\ChatParticipantRole::Support,
-            ]);
-            $chat->load('participants');
+        // A manager replying in a chat they haven't joined yet.
+        if (! $chat->isParticipant($user) && $user->role === UserRole::Manager) {
+            if ($chat->type === ChatType::Lead) {
+                // Lead chats require accepting the lead first — only the assigned
+                // manager may write (so opening from a push can't bypass accept).
+                $lead = Lead::query()->where('chat_id', $chat->id)->first();
+                if ($lead === null || $lead->manager_id !== $user->id) {
+                    throw DomainException::forbidden(
+                        'LEAD_NOT_ACCEPTED',
+                        'Сначала примите заявку, чтобы ответить клиенту.',
+                    );
+                }
+                $chat->participants()->create([
+                    'user_id' => $user->id,
+                    'role' => \App\Enums\ChatParticipantRole::Support,
+                ]);
+                $chat->load('participants');
+            } elseif ($chat->type === ChatType::Support) {
+                $chat->participants()->create([
+                    'user_id' => $user->id,
+                    'role' => \App\Enums\ChatParticipantRole::Support,
+                ]);
+                $chat->load('participants');
+            }
         }
 
         $message = $action->execute(

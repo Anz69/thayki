@@ -206,6 +206,14 @@ export default function ManagerLeadsPage() {
             <div className="relative flex flex-col px-5 pt-1 pb-6 gap-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-black text-lg font-bold">{t('requestChat.title')} #{viewing.id}</h2>
+                {isNew ? (
+                  <StatusChip status={viewing.status} />
+                ) : (
+                  <button onClick={() => setStatusOpen((v) => !v)} className="flex items-center gap-1 active:scale-95 transition-transform">
+                    <StatusChip status={viewing.status} />
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ transform: statusOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}><path d="m6 9 6 6 6-6" stroke="#9B9AA0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </button>
+                )}
               </div>
 
               {/* Client */}

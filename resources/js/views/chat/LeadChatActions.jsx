@@ -48,7 +48,6 @@ const CURRENCIES = [
   { code: 'RUB', symbol: '₽' },
   { code: 'USD', symbol: '$' },
   { code: 'EUR', symbol: '€' },
-  { code: 'THB', symbol: '฿' },
 ]
 const currencySymbol = (code) => CURRENCIES.find((c) => c.code === code)?.symbol ?? code
 const money = (minor, currency = 'RUB') => {
