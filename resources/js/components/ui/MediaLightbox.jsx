@@ -27,7 +27,7 @@ export default function MediaLightbox({ media, index = 0, onClose }) {
   if (!media?.length) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-[100000] bg-black/95" onClick={onClose}>
+    <div className="fixed inset-0 z-[100050] bg-black/95" onClick={onClose}>
       <button
         onClick={(e) => { e.stopPropagation(); onClose() }}
         className="absolute top-4 right-4 z-10 size-10 rounded-full bg-white/15 text-white flex items-center justify-center active:bg-white/25 transition-colors"

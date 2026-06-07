@@ -324,8 +324,7 @@ export default function ManagerLeadsPage() {
                   spaceBetween={8}
                   grabCursor
                   mousewheel={{ forceToAxis: true }}
-                  className="w-full -mx-5 px-5"
-                  style={{ paddingLeft: 20, paddingRight: 20 }}
+                  className="w-full"
                 >
                   {media.map((mm, i) => (
                     <SwiperSlide key={i} style={{ width: 156 }}>

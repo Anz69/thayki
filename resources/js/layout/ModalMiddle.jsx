@@ -50,7 +50,14 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
       if (!sheet) return
       const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
       sheet.style.bottom = inset + 'px'
-      sheet.style.maxHeight = Math.round(vv.height - 24) + 'px'
+      sheet.style.maxHeight = Math.round(vv.height - 16) + 'px'
+      // Keyboard up → bring the focused field into the visible part of the sheet.
+      if (inset > 80) {
+        const el = document.activeElement
+        if (el && sheet.contains(el)) {
+          requestAnimationFrame(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }))
+        }
+      }
     }
     update()
     vv.addEventListener('resize', update)
@@ -162,6 +169,7 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
           flex-shrink: 0;
         }
         .modal-middle-handle:active { cursor: grabbing; }
+        .modal-middle-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
       `}</style>
       <div
         ref={rootRef}
@@ -178,7 +186,9 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
           <div ref={handleRef} className="modal-middle-handle">
             <div style={{ width: 48, height: 4, borderRadius: 9999, background: 'rgba(0,0,0,0.15)' }} />
           </div>
-          {children}
+          <div className="modal-middle-scroll">
+            {children}
+          </div>
         </div>
       </div>
     </>,
