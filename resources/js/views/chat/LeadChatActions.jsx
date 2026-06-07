@@ -458,10 +458,7 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   // button); repeat after the keyboard finishes opening so it lands exactly.
   const scrollToSubmit = (e) => {
     const sc = e.currentTarget.closest('.modal-middle-scroll')
-    const toBottom = () => { if (sc) sc.scrollTop = sc.scrollHeight }
-    toBottom()
-    setTimeout(toBottom, 60)
-    setTimeout(toBottom, 300)
+    setTimeout(() => { if (sc) sc.scrollTop = sc.scrollHeight + 9999 }, 300)
   }
 
   const reset = () => { setMethod('manual'); setCurrency('RUB'); setAmount(''); setRequisites('') }
