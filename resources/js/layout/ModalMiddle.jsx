@@ -48,15 +48,26 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
     const update = () => {
       const sheet = sheetRef.current
       if (!sheet) return
-      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
-      sheet.style.bottom = inset + 'px'
+      // Keyboard height (don't use offsetTop — on iOS Telegram it overshoots).
+      const kb = Math.max(0, Math.round(window.innerHeight - vv.height))
+      sheet.style.bottom = kb + 'px'
       sheet.style.maxHeight = Math.round(vv.height - 16) + 'px'
     }
+    // On the keyboard opening (resize), also pull the sheet content to the
+    // bottom so the action button / focused field is visible right away.
+    const onResize = () => {
+      update()
+      const kb = window.innerHeight - vv.height
+      if (kb > 120) {
+        const sc = sheetRef.current?.querySelector('.modal-middle-scroll')
+        if (sc) requestAnimationFrame(() => { sc.scrollTop = sc.scrollHeight + 9999 })
+      }
+    }
     update()
-    vv.addEventListener('resize', update)
+    vv.addEventListener('resize', onResize)
     vv.addEventListener('scroll', update)
     return () => {
-      vv.removeEventListener('resize', update)
+      vv.removeEventListener('resize', onResize)
       vv.removeEventListener('scroll', update)
       if (sheetRef.current) {
         sheetRef.current.style.bottom = ''
