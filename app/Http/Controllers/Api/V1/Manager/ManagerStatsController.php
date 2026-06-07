@@ -10,16 +10,17 @@ use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class ManagerStatsController extends Controller
 {
     /**
-     * Approximate conversion rate from each currency's minor unit to USD
-     * cents (1 unit of currency-minor → this many USD-minor). Since
-     * amount_minor and the result are both in minor units, the /100·×100
-     * cancels and we can multiply amount_minor directly.
+     * Fallback conversion rate from each currency's minor unit to USD minor,
+     * used when the live FX feed is unavailable. (amount_minor × rate = USD
+     * minor, since the /100·×100 cancels.)
      */
-    private const TO_USD = [
+    private const FALLBACK_TO_USD = [
         'USD' => 1.0,
         'EUR' => 1.08,
         'RUB' => 0.011,
@@ -29,13 +30,14 @@ class ManagerStatsController extends Controller
     /** Aggregate earnings across all confirmed lead payments, normalised to USD. */
     public function earnings(): JsonResponse
     {
+        $rates = $this->ratesToUsd();
         /** @var Collection<int, LeadPayment> $payments */
         $payments = LeadPayment::query()
             ->where('status', 'confirmed')
             ->get(['amount_minor', 'currency', 'confirmed_at']);
 
         $usd = fn (LeadPayment $p): int => (int) round(
-            ($p->amount_minor ?? 0) * (self::TO_USD[strtoupper((string) $p->currency)] ?? 0),
+            ($p->amount_minor ?? 0) * ($rates[strtoupper((string) $p->currency)] ?? 0),
         );
 
         $sumSince = fn (?Carbon $since): int => $payments
@@ -67,5 +69,35 @@ class ManagerStatsController extends Controller
             'count' => $payments->count(),
             'series' => $series,
         ]);
+    }
+
+    /**
+     * Live "currency-minor → USD-minor" multipliers, fetched from a free FX
+     * feed and cached for 12h. Falls back to static rates on any failure.
+     *
+     * @return array<string, float>
+     */
+    private function ratesToUsd(): array
+    {
+        return Cache::remember('fx:to_usd_minor', now()->addHours(12), function (): array {
+            try {
+                $res = Http::timeout(8)->get('https://open.er-api.com/v6/latest/USD');
+                if ($res->successful() && $res->json('result') === 'success') {
+                    $perUsd = $res->json('rates') ?? []; // 1 USD = X currency
+                    $out = [];
+                    foreach (array_keys(self::FALLBACK_TO_USD) as $code) {
+                        if (! empty($perUsd[$code])) {
+                            $out[$code] = 1 / (float) $perUsd[$code];
+                        }
+                    }
+                    if (! empty($out['USD'])) {
+                        return $out + self::FALLBACK_TO_USD; // fill any missing
+                    }
+                }
+            } catch (\Throwable) {
+            }
+
+            return self::FALLBACK_TO_USD;
+        });
     }
 }

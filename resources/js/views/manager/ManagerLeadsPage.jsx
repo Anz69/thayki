@@ -7,6 +7,7 @@ import api from '@/utils/api'
 import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
+import { localizeEyes } from '@/utils/modelValues'
 import { declAge } from '@/utils/datetime'
 import { STATUS, StatusChip, VerifiedMark } from './kit'
 
@@ -318,7 +319,7 @@ export default function ManagerLeadsPage() {
                   <InfoRow label={t('modelInfo.waist')} value={cm(m.waist_cm)} />
                   <InfoRow label={t('modelInfo.hips')} value={cm(m.hips_cm)} />
                   <InfoRow label={t('modelInfo.breastSize')} value={m.breast_size} />
-                  <InfoRow label={t('modelInfo.eyes')} value={m.eyes} />
+                  <InfoRow label={t('modelInfo.eyes')} value={localizeEyes(m.eyes, i18n.language)} />
                 </div>
               )}
 

@@ -1,11 +1,48 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Pagination } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/pagination'
 import ModalMiddle from '@/layout/ModalMiddle'
 import api, { extractErrorMessage } from '@/utils/api'
 import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
+import { localizeEyes } from '@/utils/modelValues'
 import ClientPaymentSheet from '@/components/modals/PaymentSheet'
+
+/* Stylish inline video slide: poster + glassy play button, tap to play/pause. */
+function VideoSlide({ url, poster }) {
+  const ref = useRef(null)
+  const [playing, setPlaying] = useState(false)
+  const toggle = () => {
+    const v = ref.current
+    if (!v) return
+    if (v.paused) v.play().catch(() => {})
+    else v.pause()
+  }
+  return (
+    <div className="relative w-full h-full" onClick={toggle}>
+      <video
+        ref={ref}
+        src={url}
+        poster={poster}
+        loop
+        playsInline
+        preload="metadata"
+        className="w-full h-full object-cover bg-black"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+      />
+      <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${playing ? 'opacity-0' : 'opacity-100 bg-black/15'}`}>
+        <span className="size-16 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center ring-1 ring-white/20">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z" /></svg>
+        </span>
+      </div>
+    </div>
+  )
+}
 
 const CURRENCIES = [
   { code: 'RUB', symbol: '₽' },
@@ -192,20 +229,23 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
 
 /* Lightweight model detail sheet (photos + params) reused by the cards. */
 function ModelDetailSheet({ model, onClose }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
   const [data, setData] = useState(null)
   useEffect(() => { if (model) { setData(model); setOpen(true) } }, [model])
   if (!data && !open) return null
-  const photos = (data?.photos ?? []).map((p) => resolveMediaUrl(p)).filter(Boolean)
-  const videos = (data?.videos ?? []).filter((v) => v?.url)
+  // Photos and videos in one swipeable carousel (photos first, then videos).
+  const media = [
+    ...(data?.photos ?? []).map((p) => resolveMediaUrl(p)).filter(Boolean).map((url) => ({ type: 'image', url })),
+    ...(data?.videos ?? []).filter((v) => v?.url).map((v) => ({ type: 'video', url: resolveMediaUrl(v.url), poster: v.poster ? resolveMediaUrl(v.poster) : undefined })),
+  ]
   const cm = (v) => (v ? `${v} ${t('modelInfo.cm')}` : null)
   const rows = data ? [
     [t('modelInfo.height'), cm(data.height_cm)],
     [t('modelInfo.bust'), cm(data.bust_cm)],
     [t('modelInfo.waist'), cm(data.waist_cm)],
     [t('modelInfo.hips'), cm(data.hips_cm)],
-    [t('modelInfo.eyes'), data.eyes],
+    [t('modelInfo.eyes'), localizeEyes(data.eyes, i18n.language)],
   ].filter(([, v]) => v) : []
   return (
     <ModalMiddle isOpen={open} onClose={() => { setOpen(false); onClose?.() }} onAfterClose={() => setData(null)}>
@@ -215,27 +255,26 @@ function ModelDetailSheet({ model, onClose }) {
             <h2 className="text-black text-lg font-bold truncate">{modelName(data)}</h2>
             {data.age != null && <span className="text-[#9B9AA0] text-[14px] ml-auto">{data.age}</span>}
           </div>
-          {photos.length > 0 && (
-            <div onWheel={onHWheel} className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
-              {photos.map((src, i) => (
-                <img key={i} src={src} alt="" className="h-[220px] w-[156px] rounded-2xl object-cover object-top shrink-0 bg-[#EFEAEE]" />
+          {media.length > 0 && (
+            <Swiper
+              modules={[Pagination]}
+              slidesPerView={1}
+              spaceBetween={12}
+              grabCursor
+              pagination={{ clickable: true, dynamicBullets: true }}
+              className="model-media-swiper w-full rounded-2xl"
+              style={{ '--swiper-pagination-color': '#E2319B', '--swiper-pagination-bottom': '10px' }}
+            >
+              {media.map((m, i) => (
+                <SwiperSlide key={i}>
+                  <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden bg-[#EFEAEE]">
+                    {m.type === 'video'
+                      ? <VideoSlide url={m.url} poster={m.poster} />
+                      : <img src={m.url} alt="" className="w-full h-full object-cover object-top" />}
+                  </div>
+                </SwiperSlide>
               ))}
-            </div>
-          )}
-          {videos.length > 0 && (
-            <div onWheel={onHWheel} className="flex gap-2 overflow-x-auto -mx-5 px-5 pb-1" style={{ scrollbarWidth: 'none' }}>
-              {videos.map((v, i) => (
-                <video
-                  key={i}
-                  src={resolveMediaUrl(v.url)}
-                  poster={v.poster ? resolveMediaUrl(v.poster) : undefined}
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="h-[220px] w-[156px] rounded-2xl object-cover shrink-0 bg-black"
-                />
-              ))}
-            </div>
+            </Swiper>
           )}
           {rows.length > 0 && (
             <div className="bg-[#F5F5F7] rounded-2xl px-4 py-1.5">
