@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import usePhotoViewerStore from '@/stores/usePhotoViewerStore'
 import LazyImg from '@/components/ui/LazyImg'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
+import MediaLightbox, { PlayBadge } from '@/components/ui/MediaLightbox'
 
-export default function Media({ photos = [] }) {
+export default function Media({ photos = [], videos = [] }) {
   const viewer = usePhotoViewerStore()
+  const [videoIdx, setVideoIdx] = useState(null)
 
-  if (!photos.length) {
+  if (!photos.length && !videos.length) {
     return (
       <div className="text-center text-[#7F7F7F] text-sm py-10">
         Фото ещё не добавлены
@@ -14,6 +17,7 @@ export default function Media({ photos = [] }) {
   }
 
   const viewerPhotos = photos.map(p => ({ id: p.id, src: resolveMediaUrl(p.url), alt: '' }))
+  const videoMedia = videos.map((v) => ({ type: 'video', url: resolveMediaUrl(v.url), poster: v.poster ? resolveMediaUrl(v.poster) : undefined }))
 
   return (
     <div className="flex flex-col gap-4 w-full items-center">
@@ -44,6 +48,25 @@ export default function Media({ photos = [] }) {
           </button>
         ))}
       </div>
+
+      {videoMedia.length > 0 && (
+        <div className="grid grid-cols-3 gap-1 w-full">
+          {videoMedia.map((v, i) => (
+            <button
+              key={i}
+              className="w-full h-[270px] relative overflow-hidden active:scale-95 transition-transform duration-150 bg-black"
+              onClick={() => setVideoIdx(i)}
+            >
+              {v.poster && <img src={v.poster} alt="" className="w-full h-full object-cover" />}
+              <PlayBadge size={48} />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {videoIdx != null && (
+        <MediaLightbox media={videoMedia} index={videoIdx} onClose={() => setVideoIdx(null)} />
+      )}
     </div>
   )
 }

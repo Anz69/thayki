@@ -16,15 +16,27 @@ import LazyImg from '@/components/ui/LazyImg'
 import { declAge } from '@/utils/datetime'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
+import useModelPreview from '@/stores/useModelPreview'
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'paid', 'confirmed']
 
-export default function ModelPage() {
+// Normalise an inline (chat/parsed) model into the shape ModelPage expects.
+function normalizePreview(m) {
+  if (!m) return null
+  return {
+    ...m,
+    photos: (m.photos ?? []).map((p) => (typeof p === 'string' ? { url: p } : p)),
+    videos: (m.videos ?? []).filter((v) => v?.url),
+  }
+}
+
+export default function ModelPage({ preview = false }) {
   const { t }   = useTranslation()
   const { id }  = useParams()
   const store   = useBookingStore()
   const meeting = useMeetingStore()
   const navigate = useTransitionNavigate()
+  const previewModel = useModelPreview((s) => s.model)
 
   const [model,     setModel]     = useState(null)
   const [loading,   setLoading]   = useState(true)
@@ -174,6 +186,16 @@ export default function ModelPage() {
   }, [])
 
   useEffect(() => {
+    // Preview (view-only): render an inline model from the store, no fetch.
+    if (preview) {
+      const data = normalizePreview(previewModel)
+      if (!data) { navigate('/home', { replace: true }); return }
+      modelRef.current = data
+      setModel(data)
+      setLoading(false)
+      return
+    }
+
     if (!id) return
     let cancelled = false
     setLoading(true)
@@ -196,7 +218,7 @@ export default function ModelPage() {
       })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [id, navigate])
+  }, [id, navigate, preview]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!model || !pageReadyFired.current) return
@@ -218,31 +240,43 @@ export default function ModelPage() {
           className="invisible w-full py-5 border-b border-white bg-white/90 backdrop-blur-xs sticky top-0 z-50"
         >
           <div className="container flex items-center relative">
-            <TransitionLink
-              ref={backBtnRef}
-              to="/home"
-              className="invisible px-2.5 py-3 bg-[#EFEEF3] absolute left-4 text-black text-base/[80%] font-medium hover:bg-[#E0DEDF] transition-all duration-300 cursor-pointer rounded-full"
-            >
-              {t('common.back')}
-            </TransitionLink>
+            {preview ? (
+              <button
+                ref={backBtnRef}
+                onClick={() => navigate(-1)}
+                className="invisible px-2.5 py-3 bg-[#EFEEF3] absolute left-4 text-black text-base/[80%] font-medium hover:bg-[#E0DEDF] transition-all duration-300 cursor-pointer rounded-full"
+              >
+                {t('common.back')}
+              </button>
+            ) : (
+              <TransitionLink
+                ref={backBtnRef}
+                to="/home"
+                className="invisible px-2.5 py-3 bg-[#EFEEF3] absolute left-4 text-black text-base/[80%] font-medium hover:bg-[#E0DEDF] transition-all duration-300 cursor-pointer rounded-full"
+              >
+                {t('common.back')}
+              </TransitionLink>
+            )}
             <div className="w-full flex items-center justify-center">
               <h1 ref={headerTitleRef} className="invisible text-black text-base/[100%] font-medium">
                 {t('model.headerTitle')}
               </h1>
             </div>
-            <button
-              type="button"
-              disabled={!model}
-              onClick={handleShare}
-              className="absolute right-4 px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors disabled:opacity-40"
-              aria-label={t('common.share')}
-            >
-              {t('common.share')}
-            </button>
+            {!preview && (
+              <button
+                type="button"
+                disabled={!model}
+                onClick={handleShare}
+                className="absolute right-4 px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors disabled:opacity-40"
+                aria-label={t('common.share')}
+              >
+                {t('common.share')}
+              </button>
+            )}
           </div>
         </header>
 
-        {createPortal(
+        {!preview && createPortal(
           (() => {
             const activeMeeting = ACTIVE_STATUSES.includes(meeting.meeting?.status ?? '')
               ? meeting.meeting
@@ -350,7 +384,7 @@ export default function ModelPage() {
               <Info model={model} />
             </div>
             <div ref={mediaContentRef} className="w-full">
-              <Media photos={model?.photos ?? []} />
+              <Media photos={model?.photos ?? []} videos={model?.videos ?? []} />
             </div>
           </div>
         </main>

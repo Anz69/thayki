@@ -402,6 +402,7 @@ export default function App() {
                         <Route path="/models" element={<Navigate to="/home" replace />} />
                         <Route path="/model-more" element={<Navigate to="/more" replace />} />
                         <Route path="/model/:id" element={<ModelPage />} />
+                        <Route path="/model-view" element={<ModelPage preview />} />
                         <Route path="/meeting" element={<MeetingRolePage />} />
                         <Route path="/model-meeting" element={<Navigate to="/meeting" replace />} />
                         <Route path="/chat" element={<ChatPage />} />

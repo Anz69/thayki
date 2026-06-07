@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { declAge } from '@/utils/datetime'
+import { localizeEyes } from '@/utils/modelValues'
 
 function Row({ label, value, last }) {
   return (
@@ -14,7 +15,7 @@ function Row({ label, value, last }) {
 }
 
 export default function Info({ model }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   if (!model) return null
 
   const cm = (v) => (v ? `${v} ${t('modelInfo.cm')}` : '—')
@@ -35,7 +36,7 @@ export default function Info({ model }) {
         <Row label={t('modelInfo.waist')}      value={cm(model.waist_cm)} />
         <Row label={t('modelInfo.hips')}       value={cm(model.hips_cm)} />
         <Row label={t('modelInfo.breastSize')} value={model.breast_size ?? '—'} />
-        <Row label={t('modelInfo.eyes')}       value={model.eyes ?? '—'} last />
+        <Row label={t('modelInfo.eyes')}       value={localizeEyes(model.eyes, i18n.language) ?? '—'} last />
       </div>
     </div>
   )
