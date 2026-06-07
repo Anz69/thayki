@@ -452,6 +452,13 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const [amount, setAmount] = useState('')
   const [requisites, setRequisites] = useState('')
   const [busy, setBusy] = useState(false)
+  const submitRef = useRef(null)
+
+  // Any input focus → scroll down so the "Send invoice" button stays visible
+  // above the keyboard.
+  const scrollToSubmit = () => {
+    setTimeout(() => submitRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }), 350)
+  }
 
   const reset = () => { setMethod('manual'); setCurrency('RUB'); setAmount(''); setRequisites('') }
   const valid = amount && (method === 'crypto' || requisites.trim())
@@ -473,7 +480,7 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   return (
     <ModalMiddle isOpen={open} onClose={onClose} onAfterClose={reset}>
       <style>{`@keyframes pmSwap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
-      <div className="flex flex-col px-5 pt-1 pb-6 gap-3">
+      <div className="flex flex-col px-5 pt-1 pb-6 gap-3" onFocus={scrollToSubmit}>
         <h2 className="text-black text-lg font-bold">{t('leadChat.paySheetTitle')}</h2>
 
         {/* Method toggle — sliding active pill */}
@@ -530,7 +537,7 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
           )}
         </div>
 
-        <button disabled={busy || !valid} onClick={submit} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
+        <button ref={submitRef} disabled={busy || !valid} onClick={submit} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
           {busy ? '…' : t('leadChat.paySend')}
         </button>
       </div>
