@@ -454,10 +454,14 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const [busy, setBusy] = useState(false)
   const submitRef = useRef(null)
 
-  // Any input focus → scroll down so the "Send invoice" button stays visible
-  // above the keyboard.
-  const scrollToSubmit = () => {
-    setTimeout(() => submitRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }), 350)
+  // Any input focus → instantly jump to the bottom of the sheet (the submit
+  // button); repeat after the keyboard finishes opening so it lands exactly.
+  const scrollToSubmit = (e) => {
+    const sc = e.currentTarget.closest('.modal-middle-scroll')
+    const toBottom = () => { if (sc) sc.scrollTop = sc.scrollHeight }
+    toBottom()
+    setTimeout(toBottom, 60)
+    setTimeout(toBottom, 300)
   }
 
   const reset = () => { setMethod('manual'); setCurrency('RUB'); setAmount(''); setRequisites('') }
