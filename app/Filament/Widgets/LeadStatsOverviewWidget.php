@@ -6,6 +6,7 @@ namespace App\Filament\Widgets;
 
 use App\Enums\UserRole;
 use App\Models\Lead;
+use App\Models\LeadPayment;
 use App\Models\ModelProfile;
 use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -45,6 +46,16 @@ class LeadStatsOverviewWidget extends BaseWidget
         $publishedModels = ModelProfile::where('is_published', true)->count();
         $totalModels = ModelProfile::count();
 
+        // Earnings: all confirmed lead payments, converted to USD (approx).
+        $rates = ['USD' => 1.0, 'EUR' => 1.08, 'RUB' => 0.011, 'THB' => 0.028];
+        $payments = LeadPayment::where('status', 'confirmed')->get(['amount_minor', 'currency', 'confirmed_at']);
+        $toUsd = fn ($p) => (int) round(((int) ($p->amount_minor ?? 0)) * ($rates[strtoupper((string) $p->currency)] ?? 0));
+        $earnUsd = (int) round($payments->sum($toUsd) / 100);
+        $earnTodayUsd = (int) round(
+            $payments->filter(fn ($p) => $p->confirmed_at !== null && $p->confirmed_at->gte(now()->startOfDay()))->sum($toUsd) / 100
+        );
+        $payCount = $payments->count();
+
         $leadsSparkline = $this->dailyCounts(Lead::class, 'created_at', 7);
 
         return [
@@ -70,6 +81,11 @@ class LeadStatsOverviewWidget extends BaseWidget
             Stat::make('Конверсия', "{$conversion}%")
                 ->description("{$closedLeads} закрыто из {$totalLeads}")
                 ->descriptionIcon('heroicon-m-check-badge')
+                ->color('success'),
+
+            Stat::make('Заработок', '$ '.number_format($earnUsd))
+                ->description("{$payCount} оплат · +\${$earnTodayUsd} сегодня")
+                ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),
 
             Stat::make('Интерес к типажу', (string) $withModel)

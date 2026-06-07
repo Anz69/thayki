@@ -12,8 +12,63 @@ import PhotoViewer from '@/components/ui/PhotoViewer'
 import GradientBorder from '@/components/ui/GradientBorder'
 import { logError } from '@/utils/logger'
 import { LeadActionMenu, TypedMessageCard } from '@/views/chat/LeadChatActions'
+import { STATUS, StatusChip } from '@/views/manager/kit'
 
 const TYPED = new Set(['payment_request', 'verification_request', 'model_card'])
+const MANAGER_STATUSES = ['in_progress', 'awaiting_client', 'awaiting_payment', 'prepaid', 'completed', 'closed']
+
+/* Status chip + dropdown in the chat header (manager only). */
+function HeaderLeadStatus({ leadId }) {
+  const { t } = useTranslation()
+  const [status, setStatus] = useState(null)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!leadId) return
+    api.get(`/manager/leads/${leadId}`).then((r) => setStatus(r?.data?.data?.status)).catch(logError)
+  }, [leadId])
+
+  if (!status || status === 'new') return null
+
+  const change = async (s) => {
+    setOpen(false)
+    if (s === status) return
+    setStatus(s)
+    try { await api.patch(`/manager/leads/${leadId}/status`, { status: s }) } catch (e) { logError(e) }
+  }
+
+  return (
+    <div className="absolute right-4">
+      <button onClick={() => setOpen((v) => !v)} className="flex items-center gap-1 active:scale-95 transition-transform">
+        <StatusChip status={status} />
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}><path d="m6 9 6 6 6-6" stroke="#9B9AA0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 z-50 w-[230px] rounded-2xl bg-white border border-black/[0.06] overflow-hidden shadow-[0_16px_44px_rgba(0,0,0,0.18)]">
+            {MANAGER_STATUSES.map((s, i) => {
+              const active = status === s
+              return (
+                <button
+                  key={s}
+                  onClick={() => change(s)}
+                  className={['w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors', i > 0 ? 'border-t border-black/[0.05]' : '', active ? 'bg-[#FDE8F5]' : 'active:bg-[#F7F6FA]'].join(' ')}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className="size-2 rounded-full" style={{ background: STATUS[s].dot }} />
+                    <span className={`text-[14px] ${active ? 'text-[#C01A7E] font-semibold' : 'text-black font-medium'}`}>{t(`requests.status.${STATUS[s].key}`)}</span>
+                  </span>
+                  {active && <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.5 4.5L19 7" stroke="#E2319B" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 const SendIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
@@ -336,9 +391,10 @@ export default function RequestChatPage() {
           >
             {t('common.back')}
           </button>
-          <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500] max-w-[60%] truncate">
+          <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500] max-w-[50%] truncate">
             {params.get('title') || `${t('requestChat.title')}${leadId ? ` #${leadId}` : ''}`}
           </span>
+          {isStaff && isLead && <HeaderLeadStatus leadId={leadId} />}
         </div>
       </header>
 

@@ -172,6 +172,7 @@ Route::prefix('v1')->group(function (): void {
         // --------------------------------------------------------------------
         Route::middleware('role:manager,admin')->prefix('manager')->group(function (): void {
             Route::get('/leads', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'index'])->name('manager.leads.index');
+            Route::get('/leads/{lead}', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'show'])->name('manager.leads.show');
             Route::post('/leads/{lead}/accept', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'accept'])
                 ->middleware('idempotency')->name('manager.leads.accept');
             Route::patch('/leads/{lead}/status', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'updateStatus'])->name('manager.leads.status');

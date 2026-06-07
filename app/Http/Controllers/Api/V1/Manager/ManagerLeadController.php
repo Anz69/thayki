@@ -39,6 +39,12 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($query->get()->map(fn (Lead $lead) => $this->serialize($lead)));
     }
 
+    /** Single lead (used by the chat header to show/change status). */
+    public function show(Lead $lead): JsonResponse
+    {
+        return ApiResponse::ok($this->serialize($lead->load(['user', 'manager', 'modelProfile.photos'])));
+    }
+
     public function accept(Lead $lead, AcceptLeadAction $action): JsonResponse
     {
         /** @var User $manager */
