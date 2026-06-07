@@ -35,6 +35,9 @@ export default function MediaLightbox({ media, index = 0, onClose }) {
       >
         <svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="#fff" strokeWidth="2" strokeLinecap="round" /></svg>
       </button>
+      <style>{`
+        .media-lb .swiper-pagination-bullet{ width:9px; height:9px; box-shadow:0 1px 4px rgba(0,0,0,.6); }
+      `}</style>
       <Swiper
         modules={[Pagination, Mousewheel, Keyboard]}
         initialSlide={index}
@@ -43,9 +46,14 @@ export default function MediaLightbox({ media, index = 0, onClose }) {
         grabCursor
         mousewheel={{ forceToAxis: true }}
         keyboard={{ enabled: true }}
-        className="w-full h-full"
+        className="media-lb w-full h-full"
         pagination={{ clickable: true }}
-        style={{ '--swiper-pagination-color': '#fff' }}
+        style={{
+          '--swiper-pagination-color': '#fff',
+          '--swiper-pagination-bullet-inactive-color': '#ffffff',
+          '--swiper-pagination-bullet-inactive-opacity': '0.6',
+          '--swiper-pagination-bottom': '16px',
+        }}
       >
         {media.map((m, i) => (
           <SwiperSlide key={i} className="flex items-center justify-center">
