@@ -37,6 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make()->label('Пользователи и модели'),
                 NavigationGroup::make()->label('Заявки'),
+                NavigationGroup::make()->label('Финансы'),
                 NavigationGroup::make()->label('Обратная связь'),
                 NavigationGroup::make()->label('Поддержка'),
                 NavigationGroup::make()->label('Система'),
