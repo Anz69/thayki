@@ -473,13 +473,27 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
 
   return (
     <ModalMiddle isOpen={open} onClose={onClose} onAfterClose={reset}>
+      <style>{`@keyframes pmSwap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
       <div className="flex flex-col px-5 pt-1 pb-6 gap-3">
         <h2 className="text-black text-lg font-bold">{t('leadChat.paySheetTitle')}</h2>
 
-        {/* Method toggle */}
-        <div className="flex gap-1 bg-[#EFEEF3] rounded-full p-1">
+        {/* Method toggle — sliding active pill */}
+        <div className="relative grid grid-cols-2 bg-[#EFEEF3] rounded-full p-1">
+          <span
+            className="absolute top-1 bottom-1 left-1 rounded-full bg-[#E2319B] shadow-sm"
+            style={{
+              width: 'calc(50% - 4px)',
+              transform: method === 'crypto' ? 'translateX(100%)' : 'translateX(0)',
+              transition: 'transform 0.38s cubic-bezier(0.34,1.45,0.5,1)',
+            }}
+          />
           {[['manual', t('leadChat.payMethodManual')], ['crypto', t('leadChat.payMethodCrypto')]].map(([k, label]) => (
-            <button key={k} onClick={() => setMethod(k)} className={`flex-1 py-2 rounded-full text-[13px] font-semibold transition-colors ${method === k ? 'bg-[#E2319B] text-white' : 'text-[#9B9AA0]'}`}>
+            <button
+              key={k}
+              onClick={() => setMethod(k)}
+              className="relative z-10 py-2 text-[13px] font-semibold transition-colors duration-200"
+              style={{ color: method === k ? '#fff' : '#9B9AA0' }}
+            >
               {label}
             </button>
           ))}
@@ -506,14 +520,16 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
           />
         </label>
 
-        {method === 'manual' ? (
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payRequisites')}</span>
-            <textarea value={requisites} onChange={(e) => setRequisites(e.target.value)} rows={3} placeholder={t('leadChat.payRequisitesPlaceholder')} className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[15px] outline-none resize-none" />
-          </label>
-        ) : (
-          <p className="text-[#9B9AA0] text-[13px]/[150%]">{t('leadChat.payCryptoSheetHint')}</p>
-        )}
+        <div key={method} style={{ animation: 'pmSwap 0.32s cubic-bezier(0.22,1,0.36,1)' }}>
+          {method === 'manual' ? (
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payRequisites')}</span>
+              <textarea value={requisites} onChange={(e) => setRequisites(e.target.value)} rows={3} placeholder={t('leadChat.payRequisitesPlaceholder')} className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[15px] outline-none resize-none" />
+            </label>
+          ) : (
+            <p className="text-[#9B9AA0] text-[13px]/[150%]">{t('leadChat.payCryptoSheetHint')}</p>
+          )}
+        </div>
 
         <button disabled={busy || !valid} onClick={submit} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
           {busy ? '…' : t('leadChat.paySend')}
