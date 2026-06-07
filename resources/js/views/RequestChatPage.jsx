@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -22,6 +23,8 @@ function HeaderLeadStatus({ leadId }) {
   const { t } = useTranslation()
   const [status, setStatus] = useState(null)
   const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState(null)
+  const btnRef = useRef(null)
 
   useEffect(() => {
     if (!leadId) return
@@ -29,6 +32,13 @@ function HeaderLeadStatus({ leadId }) {
   }, [leadId])
 
   if (!status || status === 'new') return null
+
+  const toggle = () => {
+    if (open) { setOpen(false); return }
+    const r = btnRef.current?.getBoundingClientRect()
+    if (r) setPos({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) })
+    setOpen(true)
+  }
 
   const change = async (s) => {
     setOpen(false)
@@ -39,14 +49,17 @@ function HeaderLeadStatus({ leadId }) {
 
   return (
     <div className="absolute right-4">
-      <button onClick={() => setOpen((v) => !v)} className="flex items-center gap-1 active:scale-95 transition-transform">
+      <button ref={btnRef} onClick={toggle} className="flex items-center gap-1 active:scale-95 transition-transform">
         <StatusChip status={status} />
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}><path d="m6 9 6 6 6-6" stroke="#9B9AA0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
-      {open && (
+      {open && pos && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 z-50 w-[230px] rounded-2xl bg-white border border-black/[0.06] overflow-hidden shadow-[0_16px_44px_rgba(0,0,0,0.18)]">
+          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-[9999] w-[230px] rounded-2xl bg-white border border-black/[0.06] overflow-hidden shadow-[0_16px_44px_rgba(0,0,0,0.18)]"
+            style={{ top: pos.top, right: pos.right }}
+          >
             {MANAGER_STATUSES.map((s, i) => {
               const active = status === s
               return (
@@ -64,7 +77,8 @@ function HeaderLeadStatus({ leadId }) {
               )
             })}
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </div>
   )
