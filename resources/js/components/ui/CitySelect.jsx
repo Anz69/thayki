@@ -264,14 +264,17 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
 
       {/* Gentle confirmation that the auto-detected city is correct. */}
       {autoDetect && autoFilled && (value || '').trim() !== '' && (
-        <div className="mt-2 flex items-center gap-2 bg-[#FDF0F8] rounded-xl px-3 py-2">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="shrink-0">
-            <path d="M12 21s-7-5.686-7-11a7 7 0 1 1 14 0c0 5.314-7 11-7 11Z" stroke="#E2319B" strokeWidth="1.8" />
-            <circle cx="12" cy="10" r="2.5" stroke="#E2319B" strokeWidth="1.8" />
-          </svg>
-          <p className="text-[12px]/[130%] text-[#B23089] font-medium">
-            <span className="text-[#E2319B] font-semibold">{t('cityDetect.askTitle')}</span> {t('cityDetect.ask')}
-          </p>
+        <div className="mt-2 flex items-center gap-2.5 rounded-xl bg-[#FBF2F8] border border-[#E2319B]/10 px-3 py-2.5">
+          <span className="shrink-0 size-7 rounded-full bg-[#E2319B] flex items-center justify-center shadow-[0_3px_8px_rgba(226,49,155,0.30)]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M12 21s-7-5.686-7-11a7 7 0 1 1 14 0c0 5.314-7 11-7 11Z" stroke="#fff" strokeWidth="2" />
+              <circle cx="12" cy="10" r="2.4" fill="#fff" />
+            </svg>
+          </span>
+          <div className="min-w-0 flex flex-col">
+            <span className="text-[12.5px]/[125%] font-semibold text-[#2A2A2E]">{t('cityDetect.askTitle')}</span>
+            <span className="text-[11.5px]/[125%] text-[#A38FA0] mt-0.5">{t('cityDetect.ask')}</span>
+          </div>
         </div>
       )}
 
