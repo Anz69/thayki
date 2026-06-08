@@ -1,6 +1,7 @@
 {
   "cityDetect": {
-    "ask": "📍 Detected from your location — is this your city? Change it if not."
+    "askTitle": "Auto-detected.",
+    "ask": "Please check — change it if it's wrong."
   },
   "common": {
     "back": "Back",
