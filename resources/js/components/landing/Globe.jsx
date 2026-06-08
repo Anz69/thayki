@@ -10,17 +10,22 @@ const PINK = '#E2319B'
 const THETA = 0.22
 const ELEVATION = 0.04
 
-// Agency cities — polaroids are pinned to these points and rotate with the
-// globe (cobe.vercel.app "Polaroids" vibe).
+// Decorative points scattered across the whole globe (NOT real locations) —
+// polaroids are pinned here and rotate with the globe (cobe "Polaroids" vibe).
 const CITIES = [
-  { id: 'moscow',  label: 'Москва',          loc: [55.7558, 37.6173] },
-  { id: 'spb',     label: 'Санкт-Петербург', loc: [59.9311, 30.3609] },
-  { id: 'sochi',   label: 'Сочи',            loc: [43.5855, 39.7231] },
-  { id: 'kazan',   label: 'Казань',          loc: [55.7963, 49.1088] },
-  { id: 'dubai',   label: 'Дубай',           loc: [25.2048, 55.2708] },
-  { id: 'phuket',  label: 'Пхукет',          loc: [7.8804, 98.3923] },
-  { id: 'tbilisi', label: 'Тбилиси',         loc: [41.7151, 44.8271] },
-  { id: 'minsk',   label: 'Минск',           loc: [53.9023, 27.5615] },
+  { id: 'p1',  loc: [55, -110] },
+  { id: 'p2',  loc: [38, -95] },
+  { id: 'p3',  loc: [8, -68] },
+  { id: 'p4',  loc: [-24, -58] },
+  { id: 'p5',  loc: [51, 6] },
+  { id: 'p6',  loc: [27, 32] },
+  { id: 'p7',  loc: [-12, 22] },
+  { id: 'p8',  loc: [-31, 26] },
+  { id: 'p9',  loc: [58, 65] },
+  { id: 'p10', loc: [32, 103] },
+  { id: 'p11', loc: [9, 112] },
+  { id: 'p12', loc: [-26, 134] },
+  { id: 'p13', loc: [37, 139] },
 ]
 
 const MARKERS = CITIES.map((c) => ({ location: c.loc, size: 0.045 }))
@@ -274,9 +279,8 @@ export default function Globe({ className = '', style }) {
                 <div className="w-full aspect-[3/4] rounded-[8px] overflow-hidden bg-[#EFEAEE]">
                   <img src={p.photo} alt="" className="w-full h-full object-cover object-top" draggable={false} loading="lazy" />
                 </div>
-                <div className="px-0.5 pt-1">
+                <div className="px-0.5 pt-1 pb-0.5">
                   <p className="text-black text-[10px] font-semibold leading-none truncate">{p.name}</p>
-                  <p className="text-[#E2319B] text-[8px] font-semibold leading-none mt-1 truncate">📍 {c.label}</p>
                 </div>
               </div>
             </div>
