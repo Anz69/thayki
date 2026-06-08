@@ -274,7 +274,7 @@ export default function Globe({ className = '', style }) {
                   <img src={p.photo} alt="" className="w-full h-full object-cover object-top" draggable={false} loading="lazy" />
                 </div>
                 <div className="px-0.5 pt-1 pb-0.5">
-                  <p className="text-black text-[10px] font-semibold leading-none truncate">📍 {c.label}</p>
+                  <p className="text-black text-[10px] font-semibold leading-none truncate">{c.label}</p>
                 </div>
               </div>
             </div>
