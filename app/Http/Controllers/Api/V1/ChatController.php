@@ -249,17 +249,19 @@ class ChatController extends Controller
         if (! $this->canAccessChat($user, $chat)) {
             throw DomainException::forbidden('CHAT_FORBIDDEN', 'Not a participant.');
         }
-        if (! $chat->isParticipant($user)) {
-            // Staff viewing a chat they haven't joined — nothing to mark.
-            return ApiResponse::noContent();
-        }
 
         $now = now();
 
-        $chat->participants()
-            ->where('user_id', $user->id)
-            ->update(['last_read_at' => $now]);
+        // Participant read cursor (only when the reader is an actual participant).
+        if ($chat->isParticipant($user)) {
+            $chat->participants()
+                ->where('user_id', $user->id)
+                ->update(['last_read_at' => $now]);
+        }
 
+        // Mark inbound messages read. This also covers staff reading support/lead
+        // chats, where they aren't listed as participants — otherwise the support
+        // inbox unread badge (counted via messages.read_at) would never clear.
         Message::query()
             ->where('chat_id', $chat->id)
             ->whereNull('read_at')

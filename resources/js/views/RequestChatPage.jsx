@@ -282,6 +282,13 @@ export default function RequestChatPage() {
     })
   }, [chatId, myId, reloadMessages])
 
+  // Mark the chat read on open and whenever new messages arrive while viewing,
+  // so support/lead unread badges clear (server sets messages.read_at).
+  useEffect(() => {
+    if (!chatId) return
+    api.post(`/chats/${chatId}/read`).catch(() => {})
+  }, [chatId, messages.length])
+
   // New-message pop — identical to the support chat (count-based, so the
   // optimistic→real swap never double-animates).
   useEffect(() => {
