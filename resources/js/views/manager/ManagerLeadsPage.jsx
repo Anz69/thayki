@@ -1,19 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import { Pagination, Mousewheel } from 'swiper/modules'
-import 'swiper/css'
-import 'swiper/css/pagination'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
+import useModelPreview from '@/stores/useModelPreview'
 import ModalMiddle from '@/layout/ModalMiddle'
 import api from '@/utils/api'
 import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
-import { localizeEyes } from '@/utils/modelValues'
-import { declAge } from '@/utils/datetime'
-import MediaLightbox, { PlayBadge } from '@/components/ui/MediaLightbox'
 import { STATUS, StatusChip, VerifiedMark } from './kit'
 
 const MANAGER_STATUSES = ['in_progress', 'awaiting_client', 'awaiting_payment', 'prepaid', 'completed', 'closed']
@@ -44,6 +38,7 @@ function InfoRow({ label, value }) {
 export default function ManagerLeadsPage() {
   const { t, i18n } = useTranslation()
   const navigate = useTransitionNavigate()
+  const setPreviewModel = useModelPreview((s) => s.setModel)
 
   const [tab, setTab] = useState('new')
   const [leads, setLeads] = useState(null)
@@ -54,9 +49,6 @@ export default function ManagerLeadsPage() {
   const [viewing, setViewing] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
-  const [modelView, setModelView] = useState(null)
-  const [modelOpen, setModelOpen] = useState(false)
-  const [mediaIdx, setMediaIdx] = useState(null)
   const rootRef = useRef(null)
   const sentinelRef = useRef(null)
   const loadingRef = useRef(false)
@@ -81,7 +73,9 @@ export default function ManagerLeadsPage() {
   const reload = useCallback(() => fetchPage(tab, 1), [tab, fetchPage])
 
   // Tab change → fresh page 1 (skeleton only when there's nothing yet).
-  useEffect(() => { setLeads(null); setHasMore(false); fetchPage(tab, 1) }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Tab switch: keep the current cards visible while the new page loads (no
+  // skeleton flash), replace them when ready. Skeleton only on first-ever load.
+  useEffect(() => { setHasMore(false); fetchPage(tab, 1) }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Infinite scroll via a bottom sentinel.
   useEffect(() => {
@@ -130,8 +124,13 @@ export default function ManagerLeadsPage() {
 
   const openModal = (lead) => { setViewing(lead); setStatusOpen(false); setModalOpen(true) }
   const closeModal = () => { setModalOpen(false); setStatusOpen(false) }
-  const openModelView = (model) => { if (model) { setModelView(model); setModelOpen(true) } }
-  const closeModelView = () => setModelOpen(false)
+  // Open the model profile as a full page (same as the chat) — no nested modal.
+  const openModelView = (model) => {
+    if (!model) return
+    setModalOpen(false)
+    setPreviewModel(model)
+    navigate('/model-view')
+  }
 
   return (
     <main ref={rootRef} className="flex flex-col min-h-screen bg-[#FAFAFB]">
@@ -329,77 +328,6 @@ export default function ManagerLeadsPage() {
                     })}
                   </div>
                 </>
-              )}
-            </div>
-          )
-        })()}
-      </ModalMiddle>
-
-      {/* Model (type) detail */}
-      <ModalMiddle isOpen={modelOpen} onClose={closeModelView} onAfterClose={() => setModelView(null)}>
-        {modelView && (() => {
-          const m = modelView
-          const media = [
-            ...(m.photos ?? []).map((p) => resolveMediaUrl(p)).filter(Boolean).map((url) => ({ type: 'image', url })),
-            ...(m.videos ?? []).filter((v) => v?.url).map((v) => ({ type: 'video', url: resolveMediaUrl(v.url), poster: v.poster ? resolveMediaUrl(v.poster) : undefined })),
-          ]
-          const cm = (v) => (v ? `${v} ${t('modelInfo.cm')}` : null)
-          return (
-            <div className="flex flex-col px-5 pt-1 pb-6 gap-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-black text-lg font-bold truncate">{modelName(m)}</h2>
-                {m.age != null && <span className="text-[#9B9AA0] text-[14px] ml-auto shrink-0">{declAge(m.age)}</span>}
-              </div>
-
-              {media.length > 0 && (
-                <Swiper
-                  modules={[Pagination, Mousewheel]}
-                  slidesPerView="auto"
-                  spaceBetween={8}
-                  grabCursor
-                  mousewheel={{ forceToAxis: true }}
-                  className="w-full"
-                >
-                  {media.map((mm, i) => (
-                    <SwiperSlide key={i} style={{ width: 156 }}>
-                      <button
-                        type="button"
-                        onClick={() => setMediaIdx(i)}
-                        className="relative block h-[220px] w-[156px] rounded-2xl overflow-hidden bg-[#EFEAEE]"
-                      >
-                        {mm.type === 'video' ? (
-                          <>
-                            {mm.poster
-                              ? <img src={mm.poster} alt="" className="w-full h-full object-cover object-top" />
-                              : <div className="w-full h-full bg-black" />}
-                            <PlayBadge size={48} />
-                          </>
-                        ) : (
-                          <img src={mm.url} alt="" className="w-full h-full object-cover object-top" />
-                        )}
-                      </button>
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
-              )}
-
-              {mediaIdx != null && (
-                <MediaLightbox media={media} index={mediaIdx} onClose={() => setMediaIdx(null)} />
-              )}
-
-              {(m.height_cm || m.bust_cm || m.waist_cm || m.hips_cm || m.breast_size || m.eyes) && (
-                <div className="bg-[#F5F5F7] rounded-2xl px-4 py-1.5">
-                  <InfoRow label={t('modelInfo.height')} value={cm(m.height_cm)} />
-                  <InfoRow label={t('modelInfo.bust')} value={cm(m.bust_cm)} />
-                  <InfoRow label={t('modelInfo.waist')} value={cm(m.waist_cm)} />
-                  <InfoRow label={t('modelInfo.hips')} value={cm(m.hips_cm)} />
-                  <InfoRow label={t('modelInfo.breastSize')} value={m.breast_size} />
-                  <InfoRow label={t('modelInfo.eyes')} value={localizeEyes(m.eyes, i18n.language)} />
-                </div>
-              )}
-
-              {m.description && (
-                <p className="text-[#7F7F7F] text-[13px]/[160%] whitespace-pre-line">{m.description}</p>
               )}
             </div>
           )
