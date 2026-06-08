@@ -33,12 +33,14 @@ const GAP = 8
  *    positioned (it overlays following content instead of pushing it).
  */
 export default function CitySelect({ value, onChange, placeholder, inline = false, overlay = false, autoDetect = false }) {
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation()
   const lang = (i18n.language || 'ru').startsWith('en') ? 'en' : 'ru'
 
-  // IP-based city is prefilled straight into the input (editable if wrong).
+  // IP-based city is prefilled straight into the input (editable if wrong); while
+  // it's still the auto-filled value we gently ask the user to confirm it.
   const detectTriedRef = useRef(false)
   const userTypedRef = useRef(false)
+  const [autoFilled, setAutoFilled] = useState(false)
 
   const [open, setOpen] = useState(false)
   const [entered, setEntered] = useState(false)
@@ -202,7 +204,10 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
     api.get('/geo/city', { params: { lang } })
       .then((r) => {
         const city = r?.data?.data?.city
-        if (city && !userTypedRef.current && (value || '').trim() === '') onChange(city)
+        if (city && !userTypedRef.current && (value || '').trim() === '') {
+          onChange(city)
+          setAutoFilled(true)
+        }
       })
       .catch(() => {})
   }, [autoDetect, lang]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -248,7 +253,7 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
         <input
           type="text"
           value={value}
-          onChange={(e) => { userTypedRef.current = true; onChange(e.target.value); setOpen(true); setHighlight(-1) }}
+          onChange={(e) => { userTypedRef.current = true; setAutoFilled(false); onChange(e.target.value); setOpen(true); setHighlight(-1) }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
@@ -256,6 +261,13 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
           className="flex-1 bg-transparent text-black text-[15px] outline-none placeholder:text-[#ABABAB]"
         />
       </div>
+
+      {/* Gentle confirmation that the auto-detected city is correct. */}
+      {autoDetect && autoFilled && (value || '').trim() !== '' && (
+        <p className="mt-1.5 px-1 text-[12px]/[140%] text-[#E2319B] font-medium">
+          {t('cityDetect.ask')}
+        </p>
+      )}
 
       {/* Inline list: in-flow (pushes content, grows the sheet) or absolute
           overlay — both animate their height smoothly. */}

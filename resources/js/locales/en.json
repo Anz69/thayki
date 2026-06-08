@@ -1,4 +1,7 @@
 {
+  "cityDetect": {
+    "ask": "📍 Detected from your location — is this your city? Change it if not."
+  },
   "common": {
     "back": "Back",
     "share": "Share",
@@ -75,6 +78,7 @@
     "submitting": "Sending…",
     "next": "Next",
     "cityRequiredHint": "Enter a city to continue",
+    "allRequiredHint": "Fill in all options to continue",
     "interested": "You're interested in",
     "change": "Change",
     "hair": {

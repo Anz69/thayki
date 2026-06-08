@@ -63,7 +63,13 @@ export default function RequestPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const rootRef = useRef(null)
-  const canSubmit = city.trim().length > 0 && !submitting
+  // In the open "подбор" form every option is required (only wishes are optional);
+  // the prototype flow has no option groups, so only the city is required.
+  const allGroupsSelected = isModelFlow || GROUPS.every(({ field }) => values[field] != null)
+  const canSubmit = city.trim().length > 0 && allGroupsSelected && !submitting
+  const formHint = city.trim().length === 0
+    ? t('request.cityRequiredHint')
+    : (!allGroupsSelected ? t('request.allRequiredHint') : '')
 
   // When opened from a prototype ("Интересует этот типаж") — load it to show
   // the selected model and attach it to the lead.
@@ -197,7 +203,9 @@ export default function RequestPage() {
         {/* Option groups — only for the open "подбор" form, not the prototype flow */}
         {!isModelFlow && GROUPS.map(({ field, group, labelKey, keys }) => (
           <div key={field} data-anim className="flex flex-col gap-3 bg-white rounded-2xl p-4 border border-black/5">
-            <p className="text-black text-[15px]/[100%] font-semibold">{t(`request.${labelKey}`)}</p>
+            <p className="text-black text-[15px]/[100%] font-semibold">
+              {t(`request.${labelKey}`)} <span className="text-[#E2319B]">*</span>
+            </p>
             <Chips group={group} keys={keys} value={values[field]} onChange={(v) => setVal(field, v)} t={t} />
           </div>
         ))}
@@ -229,12 +237,12 @@ export default function RequestPage() {
           <span
             className="text-[#ABABAB] text-xs/[100%] font-medium select-none transition-all duration-300 ease-out"
             style={{
-              opacity: !canSubmit && !submitting ? 1 : 0,
-              transform: !canSubmit && !submitting ? 'translateY(0)' : 'translateY(6px)',
+              opacity: formHint && !submitting ? 1 : 0,
+              transform: formHint && !submitting ? 'translateY(0)' : 'translateY(6px)',
               height: 12,
             }}
           >
-            {t('request.cityRequiredHint')}
+            {formHint || t('request.cityRequiredHint')}
           </span>
           <button
             onClick={handleSubmit}
