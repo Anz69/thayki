@@ -39,26 +39,28 @@ function botStartLink(botUsername, startToken = '') {
 
 const BRAND = 'Rus-Model'
 
-function buildShareText(selectedModels, botUsername, inviteToken = '') {
+// Builds the share message in the CURRENT UI language (the one the sender picked).
+function buildShareText(selectedModels, botUsername, inviteToken, t) {
   if (selectedModels.length === 0) {
     return [
-      `🤖 ${BRAND} — бот с моделями`,
-      '✨ Открой и выбери подходящую модель в боте',
+      t('share.msgBotTitle', { brand: BRAND }),
+      t('share.msgBotSub'),
     ].join('\n')
   }
 
+  const view = t('share.msgView')
   const blocks = selectedModels.map((model) => {
     const startLink = modelShareLink(model.id, botUsername, inviteToken)
     return [
       `👤 ${model.name}${model.age ? `, ${model.age}` : ''}`,
-      `🔗 посмотреть → ${startLink}`,
+      `🔗 ${view} → ${startLink}`,
     ].join('\n')
   }).join('\n\n')
 
   return [
-    '☝️ Открывай и выбирай',
+    t('share.msgHeader'),
     '',
-    `🔥 Подборка моделей в ${BRAND}`,
+    t('share.msgCollection', { brand: BRAND }),
     '',
     blocks,
   ].join('\n')
@@ -218,8 +220,8 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   const isBotFallback = selectedModels.length === 0
 
   const shareText = useMemo(
-    () => buildShareText(selectedModels, botUsername, inviteToken),
-    [selectedModels, botUsername, inviteToken],
+    () => buildShareText(selectedModels, botUsername, inviteToken, t),
+    [selectedModels, botUsername, inviteToken, t],
   )
 
   useEffect(() => {
@@ -263,11 +265,11 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   const sharePayload = useMemo(() => ({ url: botLink(botUsername), text: shareText }), [botUsername, shareText])
 
   const buildPayloadWithToken = useCallback((token = inviteToken) => {
-    const text = buildShareText(selectedModels, botUsername, token)
+    const text = buildShareText(selectedModels, botUsername, token, t)
     // По плану: home-шаринг идет через `start` (бот сначала открывается как бот, а не mini app).
     const url = botStartLink(botUsername, token)
     return { url, text }
-  }, [inviteToken, selectedModels, botUsername])
+  }, [inviteToken, selectedModels, botUsername, t])
 
   const ensureInviteToken = useCallback(async () => {
     if (inviteToken) return inviteToken

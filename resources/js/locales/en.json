@@ -114,7 +114,12 @@
     "sendTelegram": "Send in Telegram",
     "share": "Share",
     "copy": "Copy",
-    "selected": "Selected <b>{{n}}</b> of <b>{{total}}</b>"
+    "selected": "Selected <b>{{n}}</b> of <b>{{total}}</b>",
+    "msgHeader": "☝️ Tap and choose",
+    "msgCollection": "🔥 Model selection in {{brand}}",
+    "msgView": "view",
+    "msgBotTitle": "🤖 {{brand}} — a bot with models",
+    "msgBotSub": "✨ Open and pick a model in the bot"
   },
   "leadMsg": {
     "title": "📩 Model request",

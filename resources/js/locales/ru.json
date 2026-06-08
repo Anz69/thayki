@@ -114,7 +114,12 @@
     "sendTelegram": "Отправить в Telegram",
     "share": "Поделиться",
     "copy": "Скопировать",
-    "selected": "Выбрано <b>{{n}}</b> из <b>{{total}}</b>"
+    "selected": "Выбрано <b>{{n}}</b> из <b>{{total}}</b>",
+    "msgHeader": "☝️ Открывай и выбирай",
+    "msgCollection": "🔥 Подборка моделей в {{brand}}",
+    "msgView": "посмотреть",
+    "msgBotTitle": "🤖 {{brand}} — бот с моделями",
+    "msgBotSub": "✨ Открой и выбери подходящую модель в боте"
   },
   "leadMsg": {
     "title": "📩 Заявка на подбор модели",
