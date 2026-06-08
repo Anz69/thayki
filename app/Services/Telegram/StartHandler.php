@@ -33,6 +33,11 @@ class StartHandler
         return new self(TelegramBotService::fromConfig());
     }
 
+    public function bot(): TelegramBotService
+    {
+        return $this->bot;
+    }
+
     /**
      * @param  array  $tgFrom  Telegram "from" object: id, username, first_name, last_name, language_code
      */
@@ -44,6 +49,14 @@ class StartHandler
         }
 
         $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
+
+        // First contact (bare /start, language not yet chosen): ask the user
+        // which language they prefer before anything else.
+        if (($startParam === null || $startParam === '') && ! $user->language_chosen) {
+            $this->promptLanguage($chatId);
+
+            return;
+        }
 
         $locale = $this->localeFor($user);
 
@@ -102,6 +115,47 @@ class StartHandler
         }
 
         $this->sendVerifiedWelcome($chatId, $user->first_name ?? '', $locale);
+    }
+
+    /** Ask the user to pick a language (bilingual prompt + inline buttons). */
+    private function promptLanguage(int $chatId): void
+    {
+        $this->bot->sendButtons(
+            $chatId,
+            "🌐 Выберите язык\nChoose your language",
+            [[
+                ['text' => '🇷🇺 Русский', 'data' => 'lang:ru'],
+                ['text' => '🇬🇧 English', 'data' => 'lang:en'],
+            ]],
+        );
+    }
+
+    /**
+     * Handle a language choice from the inline keyboard: persist it and then
+     * continue with the normal welcome.
+     *
+     * @param  array  $tgFrom  Telegram "from" object
+     */
+    public function chooseLanguage(int $chatId, array $tgFrom, string $lang): void
+    {
+        $lang = $lang === 'en' ? 'en' : 'ru';
+        $telegramId = (int) ($tgFrom['id'] ?? 0);
+        if ($telegramId <= 0) {
+            return;
+        }
+
+        $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
+        $user->forceFill(['language_code' => $lang, 'language_chosen' => true])->save();
+
+        if (! $user->is_strange) {
+            if ($user->role === UserRole::Model) {
+                $this->sendModelWelcome($chatId, $user->first_name ?? '', $lang);
+            } else {
+                $this->sendVerifiedWelcome($chatId, $user->first_name ?? '', $lang);
+            }
+        } else {
+            $this->sendStrangeWelcome($chatId, false, $lang);
+        }
     }
 
     private function upsertUser(int $telegramId, int $chatId, array $tgFrom): User

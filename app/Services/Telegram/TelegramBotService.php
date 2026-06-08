@@ -83,6 +83,57 @@ class TelegramBotService
         }
     }
 
+    /**
+     * Send a message with a custom inline keyboard (callback_data buttons).
+     *
+     * @param  array<int, array<int, array{text: string, data: string}>>  $rows
+     */
+    public function sendButtons(int|string $chatId, string $text, array $rows): bool
+    {
+        if ($this->botToken === '') {
+            return false;
+        }
+
+        $keyboard = array_map(
+            static fn (array $row) => array_map(
+                static fn (array $btn) => ['text' => $btn['text'], 'callback_data' => $btn['data']],
+                $row,
+            ),
+            $rows,
+        );
+
+        try {
+            $response = Http::timeout(5)->post($this->endpoint('sendMessage'), [
+                'chat_id' => $chatId,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+                'disable_web_page_preview' => true,
+                'reply_markup' => json_encode(['inline_keyboard' => $keyboard], JSON_UNESCAPED_UNICODE),
+            ]);
+
+            return $response->successful();
+        } catch (\Throwable $e) {
+            Log::warning('[TelegramBotService] sendButtons threw', ['error' => $e->getMessage()]);
+
+            return false;
+        }
+    }
+
+    /** Acknowledge a callback query (stops the loading spinner on the button). */
+    public function answerCallback(string $callbackId, ?string $text = null): void
+    {
+        if ($this->botToken === '') {
+            return;
+        }
+        try {
+            Http::timeout(5)->post($this->endpoint('answerCallbackQuery'), array_filter([
+                'callback_query_id' => $callbackId,
+                'text' => $text,
+            ]));
+        } catch (\Throwable) {
+        }
+    }
+
     public function getMe(): ?array
     {
         if ($this->botToken === '') {

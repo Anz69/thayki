@@ -40,6 +40,25 @@ class WebhookController extends Controller
 
         try {
             $update = $request->all();
+
+            // Language picker buttons (callback_query with data "lang:ru|en").
+            $callback = $update['callback_query'] ?? null;
+            if (is_array($callback)) {
+                $data = (string) ($callback['data'] ?? '');
+                $cbId = (string) ($callback['id'] ?? '');
+                $cbChat = (int) ($callback['message']['chat']['id'] ?? 0);
+                $cbFrom = is_array($callback['from'] ?? null) ? $callback['from'] : [];
+                if (str_starts_with($data, 'lang:') && $cbChat > 0 && $cbFrom !== []) {
+                    $lang = substr($data, 5);
+                    $start->chooseLanguage($cbChat, $cbFrom, $lang);
+                    $start->bot()->answerCallback($cbId, $lang === 'en' ? 'English ✓' : 'Русский ✓');
+                } elseif ($cbId !== '') {
+                    $start->bot()->answerCallback($cbId);
+                }
+
+                return response()->json(['ok' => true]);
+            }
+
             $message = $update['message'] ?? null;
             if (! is_array($message)) {
                 Log::info('[Telegram webhook] non-message update ignored.', [
