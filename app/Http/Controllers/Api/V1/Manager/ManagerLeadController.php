@@ -41,8 +41,14 @@ class ManagerLeadController extends Controller
         $search = trim((string) $request->query('q', ''));
         if ($search !== '') {
             $idMatch = (int) ltrim($search, '#');
-            $query->where(function ($w) use ($search, $idMatch) {
-                $w->where('city', 'like', "%{$search}%")
+            // Match the city in either language ("Moscow" ↔ "Москва").
+            $cityTerms = \App\Support\CityAliases::expand($search);
+            $query->where(function ($w) use ($search, $idMatch, $cityTerms) {
+                $w->where(function ($cw) use ($cityTerms) {
+                    foreach ($cityTerms as $term) {
+                        $cw->orWhere('city', 'like', "%{$term}%");
+                    }
+                })
                     ->orWhereHas('user', fn ($u) => $u
                         ->where('first_name', 'like', "%{$search}%")
                         ->orWhere('last_name', 'like', "%{$search}%")
