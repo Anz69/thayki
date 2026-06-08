@@ -1,6 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import gsap from 'gsap'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import useModelPreview from '@/stores/useModelPreview'
 import ModalMiddle from '@/layout/ModalMiddle'
@@ -11,7 +10,7 @@ import { modelName } from '@/utils/modelName'
 import { STATUS, StatusChip, VerifiedMark } from './kit'
 
 const MANAGER_STATUSES = ['in_progress', 'awaiting_client', 'awaiting_payment', 'prepaid', 'completed', 'closed']
-const TABS = ['new', 'active', 'closed', 'all']
+const TABS = ['all', 'new', 'active', 'closed']
 
 function relTime(iso, lang) {
   if (!iso) return ''
@@ -40,7 +39,7 @@ export default function ManagerLeadsPage() {
   const navigate = useTransitionNavigate()
   const setPreviewModel = useModelPreview((s) => s.setModel)
 
-  const [tab, setTab] = useState('new')
+  const [tab, setTab] = useState('all')
   const [leads, setLeads] = useState(null)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
@@ -53,31 +52,67 @@ export default function ManagerLeadsPage() {
   const [pill, setPill] = useState({ left: 0, width: 0, ready: false })
   const rootRef = useRef(null)
   const sentinelRef = useRef(null)
-  const loadingRef = useRef(false)
-  const animatedTab = useRef(null)
 
-  // Paginated fetch: page 1 resets the list, later pages append (infinite scroll).
-  const fetchPage = useCallback(async (which, pageNum) => {
-    if (loadingRef.current) return
-    loadingRef.current = true
-    if (pageNum > 1) setLoadingMore(true)
+  // Race-proof loading: every first-page request takes a token; only the latest
+  // token's response is applied, so rapid tab switching never lands on the wrong
+  // tab. Per-tab cache makes switching back instant (no skeleton, no refetch).
+  const reqIdRef = useRef(0)
+  const appendingRef = useRef(false)
+  const cacheRef = useRef({})
+  const tabRef = useRef(tab)
+  tabRef.current = tab
+
+  // Load page 1 for a tab. Shows cached data instantly if we have it (so the
+  // switch is immediate), otherwise a skeleton; then reconciles with the server.
+  const loadFirst = useCallback(async (which, { refresh = false } = {}) => {
+    const token = ++reqIdRef.current
+    const cached = cacheRef.current[which]
+    if (cached && !refresh) {
+      setLeads(cached.leads); setPage(cached.page); setHasMore(cached.hasMore)
+    } else if (!cached && !refresh) {
+      setLeads(null); setPage(1); setHasMore(false)
+    }
+    // On refresh we keep whatever's on screen and just reconcile below.
     try {
-      const { data } = await api.get('/manager/leads', { params: { tab: which, page: pageNum, per_page: 20 } })
+      const { data } = await api.get('/manager/leads', { params: { tab: which, page: 1, per_page: 20 } })
+      if (token !== reqIdRef.current) return // superseded by a newer switch
       const items = Array.isArray(data?.data) ? data.data : []
       const meta = data?.meta?.pagination
-      setLeads((prev) => (pageNum === 1 ? items : [...(prev ?? []), ...items]))
-      setHasMore(meta ? meta.page < meta.last_page : false)
-      setPage(pageNum)
-    } catch (e) { logError(e); if (pageNum === 1) setLeads([]) }
-    finally { loadingRef.current = false; setLoadingMore(false) }
+      const more = meta ? meta.page < meta.last_page : false
+      cacheRef.current[which] = { leads: items, page: 1, hasMore: more }
+      setLeads(items); setPage(1); setHasMore(more)
+    } catch (e) {
+      logError(e)
+      if (token === reqIdRef.current && !cached) setLeads([])
+    }
   }, [])
 
-  const reload = useCallback(() => fetchPage(tab, 1), [tab, fetchPage])
+  // Append the next page (infinite scroll) for the tab currently in view.
+  const loadMore = useCallback(async () => {
+    const which = tabRef.current
+    const cur = cacheRef.current[which]
+    if (appendingRef.current || !cur?.hasMore) return
+    appendingRef.current = true
+    setLoadingMore(true)
+    const nextPage = cur.page + 1
+    try {
+      const { data } = await api.get('/manager/leads', { params: { tab: which, page: nextPage, per_page: 20 } })
+      if (which !== tabRef.current) return // user switched away mid-append
+      const items = Array.isArray(data?.data) ? data.data : []
+      const meta = data?.meta?.pagination
+      const more = meta ? meta.page < meta.last_page : false
+      const merged = [...cur.leads, ...items]
+      cacheRef.current[which] = { leads: merged, page: nextPage, hasMore: more }
+      setLeads(merged); setPage(nextPage); setHasMore(more)
+    } catch (e) { logError(e) }
+    finally { appendingRef.current = false; setLoadingMore(false) }
+  }, [])
 
-  // Tab change → fresh page 1 (skeleton only when there's nothing yet).
-  // Tab switch: keep the current cards visible while the new page loads (no
-  // skeleton flash), replace them when ready. Skeleton only on first-ever load.
-  useEffect(() => { setHasMore(false); fetchPage(tab, 1) }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Drop the cache and refetch the active tab (after status changes etc.).
+  const reload = useCallback(() => loadFirst(tabRef.current, { refresh: true }), [loadFirst])
+
+  // Tab change → load that tab (instant from cache, else skeleton).
+  useEffect(() => { loadFirst(tab) }, [tab, loadFirst])
 
   // Slide the active-tab pill to the selected segment (animated via CSS).
   useLayoutEffect(() => {
@@ -91,20 +126,11 @@ export default function ManagerLeadsPage() {
     const el = sentinelRef.current
     if (!el) return undefined
     const io = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore && !loadingRef.current) fetchPage(tab, page + 1)
+      if (entries[0].isIntersecting && hasMore) loadMore()
     }, { rootMargin: '400px' })
     io.observe(el)
     return () => io.disconnect()
-  }, [tab, page, hasMore, fetchPage])
-
-  // Reveal the first page once per tab (no re-animate on append / tab return).
-  useEffect(() => {
-    if (!leads?.length || animatedTab.current === tab) return
-    animatedTab.current = tab
-    const cards = rootRef.current?.querySelectorAll('[data-card]') ?? []
-    gsap.fromTo(cards, { y: 10, autoAlpha: 0 },
-      { y: 0, autoAlpha: 1, duration: 0.3, stagger: 0.03, ease: 'power2.out', clearProps: 'transform' })
-  }, [leads, tab])
+  }, [hasMore, loadMore])
 
   const openChat = (lead) => {
     if (!lead.chat_id) return
@@ -128,7 +154,11 @@ export default function ManagerLeadsPage() {
     setViewing((v) => (v ? { ...v, status } : v))
     setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, status } : l)))
     try { await api.patch(`/manager/leads/${lead.id}/status`, { status }) }
-    catch (e) { logError(e); reload() }
+    catch (e) { logError(e) }
+    // The lead may now belong to a different tab — drop all caches and refetch
+    // the active one so membership stays correct.
+    cacheRef.current = {}
+    reload()
   }
 
   const openModal = (lead) => { setViewing(lead); setStatusOpen(false); setModalOpen(true) }
@@ -140,6 +170,19 @@ export default function ManagerLeadsPage() {
     setPreviewModel(model)
     navigate('/model-view')
   }
+
+  // Quick staggered entry — runs whenever the keyed list (re)mounts, i.e. on
+  // every tab switch. Lightweight WAAPI, no GSAP race with rapid switching.
+  const listAnimRef = useCallback((el) => {
+    if (!el || typeof el.querySelectorAll !== 'function') return
+    el.querySelectorAll('[data-card]').forEach((c, i) => {
+      if (typeof c.animate !== 'function') return
+      c.animate(
+        [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }],
+        { duration: 240, delay: Math.min(i, 8) * 28, easing: 'cubic-bezier(0.22,1,0.36,1)', fill: 'backwards' },
+      )
+    })
+  }, [])
 
   return (
     <main ref={rootRef} className="flex flex-col min-h-screen bg-[#FAFAFB]">
@@ -201,7 +244,9 @@ export default function ManagerLeadsPage() {
           </div>
         )}
 
-        {leads?.map((lead) => {
+        {leads?.length > 0 && (
+        <div key={tab} ref={listAnimRef} className="flex flex-col gap-2.5">
+        {leads.map((lead) => {
           const clientPhoto = lead.client?.photo ? resolveMediaUrl(lead.client.photo) : null
           const modelPhoto = lead.model?.photo ? resolveMediaUrl(lead.model.photo) : null
           const interest = lead.model ? modelName(lead.model) : `${t('requestChat.title')} #${lead.id}`
@@ -248,6 +293,8 @@ export default function ManagerLeadsPage() {
             </div>
           )
         })}
+        </div>
+        )}
 
         {/* Infinite-scroll sentinel + loader */}
         {leads !== null && leads.length > 0 && (
