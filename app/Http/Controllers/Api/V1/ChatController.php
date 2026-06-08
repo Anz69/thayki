@@ -129,9 +129,24 @@ class ChatController extends Controller
         $messages = $query->limit($limit)->get();
         $next = $messages->last()?->id;
 
+        $meta = ['cursor' => ['next_before_id' => $next, 'limit' => $limit]];
+
+        // Surface lead status so the client can disable the composer on a
+        // closed/completed lead (it's read-only — see postMessage guard).
+        if ($chat->type === ChatType::Lead) {
+            $lead = Lead::query()->where('chat_id', $chat->id)->first();
+            if ($lead !== null) {
+                $meta['lead'] = [
+                    'id' => $lead->id,
+                    'status' => $lead->status->value,
+                    'closed' => in_array($lead->status, [LeadStatus::Closed, LeadStatus::Completed], true),
+                ];
+            }
+        }
+
         return ApiResponse::ok(
             MessageResource::collection($messages->reverse()->values())->resolve(),
-            ['cursor' => ['next_before_id' => $next, 'limit' => $limit]],
+            $meta,
         );
     }
 

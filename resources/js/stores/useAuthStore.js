@@ -1,5 +1,20 @@
 import { create } from 'zustand'
 import api, { storeToken, clearToken } from '@/utils/api'
+import i18n from '@/i18n'
+
+const SUPPORTED_LANGS = ['ru', 'en']
+
+// The bot stores the user's chosen language server-side. Treat the server as the
+// source of truth on load so the mini app opens in the language picked in the
+// bot — not the Telegram client language. (In-app changes go through
+// setLanguage, which also PATCHes /me, so the server stays in sync.)
+function syncLanguageFromUser(user) {
+  const code = (user?.language_code || '').slice(0, 2).toLowerCase()
+  if (!SUPPORTED_LANGS.includes(code)) return
+  if (i18n.language === code) return
+  i18n.changeLanguage(code)
+  try { localStorage.setItem('lang', code) } catch {}
+}
 
 async function resetDependentStores() {
   const stores = await Promise.all([
@@ -24,6 +39,7 @@ const useAuthStore = create((set, get) => ({
 
   setUser: (user, token) => {
     if (token) storeToken(token)
+    syncLanguageFromUser(user)
     set({ user, needsLogin: false, authPending: false, isBanned: false, authErrorHint: null, authErrorDetail: null })
   },
 
@@ -56,7 +72,7 @@ const useAuthStore = create((set, get) => ({
   refreshUser: async () => {
     const res = await api.get('/auth/me')
     const user = res.data?.data ?? null
-    if (user) set({ user })
+    if (user) { syncLanguageFromUser(user); set({ user }) }
     return user
   },
 

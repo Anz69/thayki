@@ -3,6 +3,7 @@ import { useTranslation, Trans } from 'react-i18next'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
 import api from '@/utils/api'
+import { modelName } from '@/utils/modelName'
 
 const MAX_SELECTED = 8
 
@@ -134,7 +135,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
         : model.hourly_rate_thb
       return {
         id: model.id,
-        name: model.display_name ?? 'Модель',
+        name: modelName(model) || 'Model',
         age: model.age ?? null,
         price: minPrice ?? null,
         photoUrl: mainPhoto?.url ?? null,

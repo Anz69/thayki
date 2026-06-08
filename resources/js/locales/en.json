@@ -134,7 +134,8 @@
   "requestChat": {
     "title": "Request",
     "managerNote": "A manager will contact you shortly. On average, replies take no more than an hour.",
-    "placeholder": "Message..."
+    "placeholder": "Message...",
+    "closedNotice": "This request is closed — messaging is unavailable."
   },
   "support": {
     "title": "Support",

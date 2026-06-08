@@ -171,6 +171,7 @@ export default function RequestChatPage() {
   const isLead   = !!leadId
 
   const [messages, setMessages]   = useState([])
+  const [leadClosed, setLeadClosed] = useState(false)
   const [inputText, setInputText] = useState('')
   const [sending, setSending]     = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -248,7 +249,10 @@ export default function RequestChatPage() {
   const reloadMessages = useCallback(() => {
     if (!chatId) return
     api.get(`/chats/${chatId}/messages`)
-      .then((res) => setMessages((res.data.data ?? []).map((m) => normalizeMsg(m, myId))))
+      .then((res) => {
+        setMessages((res.data.data ?? []).map((m) => normalizeMsg(m, myId)))
+        setLeadClosed(!!res.data.meta?.lead?.closed)
+      })
       .catch(logError)
   }, [chatId, myId])
 
@@ -259,6 +263,7 @@ export default function RequestChatPage() {
         const normalized = (res.data.data ?? []).map((m) => normalizeMsg(m, myId))
         prevMsgCount.current = normalized.length
         setMessages(normalized)
+        setLeadClosed(!!res.data.meta?.lead?.closed)
       })
       .catch(logError)
       .finally(() => { setInitialLoad(false); loadDone.current = true; tryShowContent() })
@@ -492,6 +497,14 @@ export default function RequestChatPage() {
         </div>
       </div>
 
+      {isLead && leadClosed ? (
+        <div ref={inputBarRef} className="bg-white px-4 py-4 pb-8 shrink-0 container">
+          <div className="flex items-center justify-center gap-2 text-[#9B9AA0] text-[13px]/[140%] text-center bg-[#F4F3F7] rounded-2xl px-4 py-3.5">
+            <span>🔒</span>
+            <span>{t('requestChat.closedNotice')}</span>
+          </div>
+        </div>
+      ) : (
       <div ref={inputBarRef} className="bg-white px-4 py-3 pb-8 shrink-0 container">
         <input
           ref={fileInputRef}
@@ -544,6 +557,7 @@ export default function RequestChatPage() {
           </div>
         </div>
       </div>
+      )}
     </section>
   )
 }

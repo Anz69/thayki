@@ -10,22 +10,16 @@ const PINK = '#E2319B'
 const THETA = 0.22
 const ELEVATION = 0.04
 
-// Decorative points scattered across the whole globe (NOT real locations) —
-// polaroids are pinned here and rotate with the globe (cobe "Polaroids" vibe).
+// Decorative points spread across the globe (NOT real locations) — polaroids are
+// pinned here and rotate with the globe (cobe "Polaroids" vibe). Captioned with
+// city names, not model names.
 const CITIES = [
-  { id: 'p1',  loc: [55, -110] },
-  { id: 'p2',  loc: [38, -95] },
-  { id: 'p3',  loc: [8, -68] },
-  { id: 'p4',  loc: [-24, -58] },
-  { id: 'p5',  loc: [51, 6] },
-  { id: 'p6',  loc: [27, 32] },
-  { id: 'p7',  loc: [-12, 22] },
-  { id: 'p8',  loc: [-31, 26] },
-  { id: 'p9',  loc: [58, 65] },
-  { id: 'p10', loc: [32, 103] },
-  { id: 'p11', loc: [9, 112] },
-  { id: 'p12', loc: [-26, 134] },
-  { id: 'p13', loc: [37, 139] },
+  { id: 'moscow', label: 'Moscow',   loc: [55, 37] },
+  { id: 'dubai',  label: 'Dubai',    loc: [25, 55] },
+  { id: 'paris',  label: 'Paris',    loc: [48, 2] },
+  { id: 'ny',     label: 'New York', loc: [40, -74] },
+  { id: 'tokyo',  label: 'Tokyo',    loc: [35, 139] },
+  { id: 'phuket', label: 'Phuket',   loc: [8, 98] },
 ]
 
 const MARKERS = CITIES.map((c) => ({ location: c.loc, size: 0.045 }))
@@ -280,7 +274,7 @@ export default function Globe({ className = '', style }) {
                   <img src={p.photo} alt="" className="w-full h-full object-cover object-top" draggable={false} loading="lazy" />
                 </div>
                 <div className="px-0.5 pt-1 pb-0.5">
-                  <p className="text-black text-[10px] font-semibold leading-none truncate">{p.name}</p>
+                  <p className="text-black text-[10px] font-semibold leading-none truncate">📍 {c.label}</p>
                 </div>
               </div>
             </div>

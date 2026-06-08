@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -49,6 +49,8 @@ export default function ManagerLeadsPage() {
   const [viewing, setViewing] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
+  const tabRefs = useRef({})
+  const [pill, setPill] = useState({ left: 0, width: 0, ready: false })
   const rootRef = useRef(null)
   const sentinelRef = useRef(null)
   const loadingRef = useRef(false)
@@ -76,6 +78,13 @@ export default function ManagerLeadsPage() {
   // Tab switch: keep the current cards visible while the new page loads (no
   // skeleton flash), replace them when ready. Skeleton only on first-ever load.
   useEffect(() => { setHasMore(false); fetchPage(tab, 1) }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Slide the active-tab pill to the selected segment (animated via CSS).
+  useLayoutEffect(() => {
+    const el = tabRefs.current[tab]
+    if (!el) return
+    setPill({ left: el.offsetLeft, width: el.offsetWidth, ready: true })
+  }, [tab, i18n.language])
 
   // Infinite scroll via a bottom sentinel.
   useEffect(() => {
@@ -144,19 +153,33 @@ export default function ManagerLeadsPage() {
           </button>
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500]">{t('manager.leads')}</span>
         </div>
-        <div className="container mt-2 flex gap-1 overflow-x-auto no-scrollbar">
-          {TABS.map((x) => (
-            <button
-              key={x}
-              onClick={() => setTab(x)}
-              className={[
-                'px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all active:scale-95',
-                tab === x ? 'bg-[#E2319B] text-white' : 'text-[#9B9AA0]',
-              ].join(' ')}
-            >
-              {t(`manager.tab.${x}`)}
-            </button>
-          ))}
+        <div className="container mt-3">
+          <div className="relative flex p-1 bg-[#EFEEF3] rounded-full">
+            {/* Sliding active background */}
+            <span
+              aria-hidden
+              className="absolute top-1 bottom-1 rounded-full bg-[#E2319B] shadow-[0_2px_10px_rgba(226,49,155,0.35)]"
+              style={{
+                left: pill.left,
+                width: pill.width,
+                opacity: pill.ready ? 1 : 0,
+                transition: 'left 0.32s cubic-bezier(0.34,1.3,0.5,1), width 0.32s cubic-bezier(0.34,1.3,0.5,1), opacity 0.2s',
+              }}
+            />
+            {TABS.map((x) => (
+              <button
+                key={x}
+                ref={(el) => { tabRefs.current[x] = el }}
+                onClick={() => setTab(x)}
+                className={[
+                  'relative z-10 flex-1 px-2 py-2 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors duration-200',
+                  tab === x ? 'text-white' : 'text-[#8B8A92] active:text-[#5B5A62]',
+                ].join(' ')}
+              >
+                {t(`manager.tab.${x}`)}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -181,7 +204,7 @@ export default function ManagerLeadsPage() {
         {leads?.map((lead) => {
           const clientPhoto = lead.client?.photo ? resolveMediaUrl(lead.client.photo) : null
           const modelPhoto = lead.model?.photo ? resolveMediaUrl(lead.model.photo) : null
-          const interest = lead.model ? modelName(lead.model) : t('requests.viaForm')
+          const interest = lead.model ? modelName(lead.model) : `${t('requestChat.title')} #${lead.id}`
           const isNew = lead.status === 'new'
           return (
             <div
@@ -239,7 +262,7 @@ export default function ManagerLeadsPage() {
         {viewing && (() => {
           const clientPhoto = viewing.client?.photo ? resolveMediaUrl(viewing.client.photo) : null
           const modelPhoto = viewing.model?.photo ? resolveMediaUrl(viewing.model.photo) : null
-          const interest = viewing.model ? modelName(viewing.model) : t('requests.viaForm')
+          const interest = viewing.model ? modelName(viewing.model) : `${t('requestChat.title')} #${viewing.id}`
           const isNew = viewing.status === 'new'
           return (
             <div className="relative flex flex-col px-5 pt-1 pb-6 gap-4">

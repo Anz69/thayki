@@ -206,7 +206,7 @@ class StartHandler
         $this->bot->sendMessage(
             $chatId,
             trans('start.verified', ['greeting' => $this->greeting($firstName, $locale)], $locale),
-            openPath: '/home',
+            openPath: '/',
             buttonLabel: trans('start.open_app', [], $locale),
         );
     }
@@ -216,7 +216,7 @@ class StartHandler
         $this->bot->sendMessage(
             $chatId,
             trans('start.model', ['greeting' => $this->greeting($firstName, $locale)], $locale),
-            openPath: '/home',
+            openPath: '/',
             buttonLabel: trans('start.open_app', [], $locale),
         );
     }
