@@ -50,6 +50,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
+        // Geo — best-effort city detection by IP (pre-fills the request city).
+        Route::get('/geo/city', [\App\Http\Controllers\Api\V1\GeoController::class, 'city'])->name('geo.city');
+
         // Me / profile
         Route::get('/me', [MeController::class, 'profile'])->name('me.profile');
         Route::patch('/me', [MeController::class, 'updateProfile'])->name('me.update');

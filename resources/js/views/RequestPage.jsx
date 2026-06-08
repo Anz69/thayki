@@ -191,7 +191,7 @@ export default function RequestPage() {
           <p className="text-black text-[15px]/[100%] font-semibold">
             {t('request.city')} <span className="text-[#E2319B]">*</span>
           </p>
-          <CitySelect value={city} onChange={setCity} placeholder={t('request.cityPlaceholder')} inline overlay />
+          <CitySelect value={city} onChange={setCity} placeholder={t('request.cityPlaceholder')} inline overlay autoDetect />
         </div>
 
         {/* Option groups — only for the open "подбор" form, not the prototype flow */}

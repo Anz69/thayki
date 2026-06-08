@@ -117,6 +117,7 @@ export default function RequestModal({ isOpen, onClose, model }) {
             placeholder={t('request.cityPlaceholder')}
             inline
             overlay={step === 2}
+            autoDetect
           />
         </div>
 

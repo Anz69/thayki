@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { useTranslation } from 'react-i18next'
 import { searchCities } from '@/data/cities'
+import api from '@/utils/api'
 
 const PinIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0">
@@ -31,9 +32,15 @@ const GAP = 8
  *    its height smoothly. Pass `overlay` to make that inline list absolutely
  *    positioned (it overlays following content instead of pushing it).
  */
-export default function CitySelect({ value, onChange, placeholder, inline = false, overlay = false }) {
-  const { i18n } = useTranslation()
+export default function CitySelect({ value, onChange, placeholder, inline = false, overlay = false, autoDetect = false }) {
+  const { i18n, t } = useTranslation()
   const lang = (i18n.language || 'ru').startsWith('en') ? 'en' : 'ru'
+
+  // IP-based city suggestion ("Looks like your city is …" → Correct / Change).
+  const [detected, setDetected] = useState(null)
+  const [detectDismissed, setDetectDismissed] = useState(false)
+  const detectTriedRef = useRef(false)
+  const inputRef = useRef(null)
 
   const [open, setOpen] = useState(false)
   const [entered, setEntered] = useState(false)
@@ -188,6 +195,30 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
     abortRef.current?.abort()
   }, [])
 
+  // Detect the city by IP once, only if enabled and the field is still empty.
+  useEffect(() => {
+    if (!autoDetect || detectTriedRef.current) return
+    if ((value || '').trim() !== '') return
+    detectTriedRef.current = true
+    api.get('/geo/city', { params: { lang } })
+      .then((r) => {
+        const city = r?.data?.data?.city
+        if (city && (value || '').trim() === '') setDetected(city)
+      })
+      .catch(() => {})
+  }, [autoDetect, lang]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const acceptDetected = () => {
+    if (detected) onChange(detected)
+    setDetected(null)
+  }
+  const rejectDetected = () => {
+    setDetected(null)
+    setDetectDismissed(true)
+    requestAnimationFrame(() => inputRef.current?.focus())
+  }
+  const showDetect = autoDetect && detected && !detectDismissed && (value || '').trim() === ''
+
   const pick = (item) => {
     onChange(item.name)
     setOpen(false)
@@ -227,6 +258,7 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
       <div className="flex items-center gap-2.5 bg-[#F5F5F7] rounded-xl px-4 py-3.5 focus-within:ring-2 focus-within:ring-[#E2319B]/30 transition-shadow">
         <PinIcon />
         <input
+          ref={inputRef}
           type="text"
           value={value}
           onChange={(e) => { onChange(e.target.value); setOpen(true); setHighlight(-1) }}
@@ -237,6 +269,30 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
           className="flex-1 bg-transparent text-black text-[15px] outline-none placeholder:text-[#ABABAB]"
         />
       </div>
+
+      {/* IP-detected city confirmation */}
+      {showDetect && (
+        <div className="mt-2 flex items-center gap-2 bg-[#FDF0F8] border border-[#E2319B]/20 rounded-xl px-3 py-2.5">
+          <span className="text-[14px]">📍</span>
+          <span className="flex-1 min-w-0 text-[#5B5A62] text-[13px]/[130%] truncate">
+            {t('cityDetect.looksLike', { city: detected })}
+          </span>
+          <button
+            type="button"
+            onClick={acceptDetected}
+            className="shrink-0 px-3 py-1.5 rounded-full bg-[#E2319B] text-white text-[12px] font-semibold active:opacity-80 transition-opacity"
+          >
+            {t('cityDetect.correct')}
+          </button>
+          <button
+            type="button"
+            onClick={rejectDetected}
+            className="shrink-0 px-3 py-1.5 rounded-full bg-white text-[#6B6B75] text-[12px] font-semibold border border-black/10 active:bg-[#F3F2F6] transition-colors"
+          >
+            {t('cityDetect.change')}
+          </button>
+        </div>
+      )}
 
       {/* Inline list: in-flow (pushes content, grows the sheet) or absolute
           overlay — both animate their height smoothly. */}
