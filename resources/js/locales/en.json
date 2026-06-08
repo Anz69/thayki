@@ -1,9 +1,4 @@
 {
-  "cityDetect": {
-    "looksLike": "Looks like your city is {{city}}",
-    "correct": "Correct",
-    "change": "Change"
-  },
   "common": {
     "back": "Back",
     "share": "Share",

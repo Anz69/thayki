@@ -1,9 +1,4 @@
 {
-  "cityDetect": {
-    "looksLike": "Похоже, ваш город — {{city}}",
-    "correct": "Верно",
-    "change": "Изменить"
-  },
   "common": {
     "back": "Назад",
     "share": "Поделиться",
