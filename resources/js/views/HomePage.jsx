@@ -112,7 +112,7 @@ export default function HomePage() {
     prevCountRef.current  = 0
     isFetchingRef.current = false
 
-    api.get('/catalog/models', { params: { per_page: PER_PAGE, page: 1 } })
+    api.get('/catalog/models', { params: { per_page: PER_PAGE, page: 1, sort: 'name' } })
       .then((r) => {
         if (cancelled) return
         const list       = Array.isArray(r?.data?.data) ? r.data.data : []
@@ -136,7 +136,7 @@ export default function HomePage() {
     setLoadingMore(true)
 
     const nextPage = page + 1
-    api.get('/catalog/models', { params: { per_page: PER_PAGE, page: nextPage } })
+    api.get('/catalog/models', { params: { per_page: PER_PAGE, page: nextPage, sort: 'name' } })
       .then((r) => {
         const newItems   = Array.isArray(r?.data?.data) ? r.data.data : []
         const pagination = r?.data?.meta?.pagination

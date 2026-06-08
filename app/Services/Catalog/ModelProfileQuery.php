@@ -83,10 +83,17 @@ class ModelProfileQuery
             '-price' => $query->orderByDesc('hourly_rate_thb'),
             'age' => $query->orderBy('age'),
             '-age' => $query->orderByDesc('age'),
+            'name' => $query->orderBy('display_name'),
+            '-name' => $query->orderByDesc('display_name'),
             'newest' => $query->orderBy('published_at'),
             default => $query->orderByDesc('published_at'),
         };
 
-        $query->orderByDesc('id');
+        // Alphabetical sort: tie-break by name then id for a stable order.
+        if ($sort === 'name' || $sort === '-name') {
+            $query->orderBy('id');
+        } else {
+            $query->orderByDesc('id');
+        }
     }
 }

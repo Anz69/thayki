@@ -33,13 +33,18 @@ class InviteController extends Controller
 
         $token = rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
 
+        // A shared selection is meant to be forwarded to MANY clients (and carries
+        // several model links sharing one token), so it must grant access to many
+        // people — not be single-use. High cap acts as effectively unlimited.
+        $expiresAt = now()->addDays(30);
+
         StartInvite::query()->create([
             'token'              => $token,
             'kind'               => StartInvite::KIND_VERIFY,
             'label'              => "Поделиться от user #{$user->id}",
             'created_by_user_id' => $user->id,
-            'max_uses'           => 1,
-            'expires_at'         => now()->addDays(7),
+            'max_uses'           => 100000,
+            'expires_at'         => $expiresAt,
         ]);
 
         $miniAppUrl = (string) config('telegram.miniapp_url', '');
@@ -56,7 +61,7 @@ class InviteController extends Controller
         return ApiResponse::created([
             'token' => $token,
             'url'   => $url,
-            'expires_at' => now()->addDays(7)->toIso8601String(),
+            'expires_at' => $expiresAt->toIso8601String(),
         ]);
     }
 }

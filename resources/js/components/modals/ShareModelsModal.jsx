@@ -37,10 +37,12 @@ function botStartLink(botUsername, startToken = '') {
   return `https://t.me/${botUsername}?start=${encodeURIComponent(startToken)}`
 }
 
+const BRAND = 'Rus-Model'
+
 function buildShareText(selectedModels, botUsername, inviteToken = '') {
   if (selectedModels.length === 0) {
     return [
-      '🤖 Thaiky — бот с моделями',
+      `🤖 ${BRAND} — бот с моделями`,
       '✨ Открой и выбери подходящую модель в боте',
     ].join('\n')
   }
@@ -56,7 +58,7 @@ function buildShareText(selectedModels, botUsername, inviteToken = '') {
   return [
     '☝️ Открывай и выбирай',
     '',
-    '🔥 Подборка моделей в Thaiky',
+    `🔥 Подборка моделей в ${BRAND}`,
     '',
     blocks,
   ].join('\n')
@@ -329,7 +331,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     }
     try {
       await navigator.share({
-        title: 'Thaiky',
+        title: BRAND,
         text: payload.url ? `${payload.url}\n${payload.text}` : payload.text,
       })
       setStatus(isBotFallback ? 'Ссылка на бота отправлена' : 'Сообщение отправлено')

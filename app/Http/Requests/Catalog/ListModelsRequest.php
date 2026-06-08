@@ -31,6 +31,7 @@ class ListModelsRequest extends FormRequest
             'sort' => ['sometimes', 'string', Rule::in([
                 'price', '-price',
                 'age', '-age',
+                'name', '-name',
                 'newest', '-newest',
             ])],
             'page' => ['sometimes', 'integer', 'min:1', 'max:10000'],
