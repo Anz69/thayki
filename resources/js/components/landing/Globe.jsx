@@ -112,7 +112,7 @@ export default function Globe({ className = '', style }) {
       dark: 0,
       diffuse: 1.2,
       scale: 1,
-      mapSamples: 8000,
+      mapSamples: isMobile ? 4000 : 8000,
       mapBrightness: 5.6,
       baseColor: [0.92, 0.92, 0.95],
       markerColor: PINK_VEC,
@@ -128,21 +128,18 @@ export default function Globe({ className = '', style }) {
     const STEP = (2 * Math.PI) / RING_N
     let ringW = -1
     const ringLastOp = new Float32Array(RING_N).fill(-1)
-    // Cache per-polaroid writes (skip identical frames).
+    // Per-polaroid write. We keep SUB-PIXEL precision on the transform — rounding
+    // to whole pixels made the cards jump 1px every few frames at the globe's slow
+    // spin, which read as ~10fps. Only 7 elements, so writing each frame is cheap
+    // and GPU-composited (translate3d). Opacity still has a tiny dead-band.
     const polCache = new Map()
     const writePol = (el, id, op, px, py, scale) => {
       let c = polCache.get(id)
-      if (!c) { c = { op: -1, x: NaN, y: NaN, s: -1 }; polCache.set(id, c) }
-      const ro = Math.round(op * 100) / 100
-      if (Math.abs(ro - c.op) >= 0.02) { el.style.opacity = ro; c.op = ro }
+      if (!c) { c = { op: -1 }; polCache.set(id, c) }
+      const ro = Math.round(op * 1000) / 1000
+      if (Math.abs(ro - c.op) >= 0.01) { el.style.opacity = ro; c.op = ro }
       if (ro <= 0) return
-      const x = Math.round(px)
-      const y = Math.round(py)
-      const s = Math.round(scale * 100) / 100
-      if (x !== c.x || y !== c.y || s !== c.s) {
-        el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${s})`
-        c.x = x; c.y = y; c.s = s
-      }
+      el.style.transform = `translate3d(${px.toFixed(2)}px, ${py.toFixed(2)}px, 0) translate(-50%, -50%) scale(${scale.toFixed(3)})`
     }
 
     const render = (t) => {
@@ -181,7 +178,8 @@ export default function Globe({ className = '', style }) {
         const eff = ringAngle - i * STEP
         const tt = (1 + Math.cos(eff)) / 2
         const op = Math.round((0.1 + 0.9 * Math.pow(tt, 0.85)) * 1000) / 1000
-        if (Math.abs(op - ringLastOp[i]) >= 0.003) { el.style.opacity = op; ringLastOp[i] = op }
+        // Wider dead-band on mobile → far fewer style writes per frame.
+        if (Math.abs(op - ringLastOp[i]) >= (isMobile ? 0.02 : 0.004)) { el.style.opacity = op; ringLastOp[i] = op }
       }
 
       // Pin polaroids to their cities (depth → fade + perspective scale).
@@ -262,7 +260,6 @@ export default function Globe({ className = '', style }) {
                     letterSpacing: '1.5px',
                     lineHeight: 1,
                     whiteSpace: 'pre',
-                    textShadow: '0 1px 6px rgba(226,49,155,0.18)',
                     willChange: 'opacity',
                   }}
                 >

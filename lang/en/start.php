@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 return [
-    'strange_welcome' => "Hello! 👋\n\nYou can join our chat @ThaikyChat and start chatting!",
-    'strange_expired' => "This link has expired or is no longer valid.\n\nYou can join our chat @ThaikyChat and start chatting!",
+    'strange_welcome' => "Hello! 👋\n\nYou can join our chat :chat and start chatting!",
+    'strange_expired' => "This link has expired or is no longer valid.\n\nYou can join our chat :chat and start chatting!",
 
     'greeting_named' => 'Hi, :name! ',
     'greeting' => 'Hi! ',

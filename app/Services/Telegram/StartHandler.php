@@ -214,7 +214,11 @@ class StartHandler
 
     private function sendStrangeWelcome(int $chatId, bool $expired = false, string $locale = 'ru'): void
     {
-        $text = trans($expired ? 'start.strange_expired' : 'start.strange_welcome', [], $locale);
+        $text = trans(
+            $expired ? 'start.strange_expired' : 'start.strange_welcome',
+            ['chat' => (string) config('telegram.public_chat', '@RusModelChat')],
+            $locale,
+        );
 
         $this->bot->sendMessage($chatId, $text);
     }

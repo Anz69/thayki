@@ -65,4 +65,10 @@ return [
      * value via hash_equals to drop spoofed traffic.
      */
     'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET', ''),
+
+    /*
+     * Public chat/channel handle shown to not-yet-verified users in the bot's
+     * welcome ("join our chat @..."). Set TELEGRAM_PUBLIC_CHAT in .env.
+     */
+    'public_chat' => env('TELEGRAM_PUBLIC_CHAT', '@RusModelChat'),
 ];
