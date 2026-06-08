@@ -156,11 +156,11 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 // Each recipient is notified in their own UI language.
                 $locale = $this->localeFor($recipient);
 
-                // Lead chat → "new message in request #N"; support → "from support";
-                // meeting → "from <name>" (staff is shown generically, never by name).
+                // Lead chat → "new message in request #N" (no body — the client
+                // only needs to know there's a new message and tap to open it);
+                // support → "from support"; meeting → "from <name>".
                 if ($isLead) {
-                    $text = trans('notifications.new_message_lead', ['id' => $leadId], $locale)
-                        .($preview !== '' ? "\n\n".$preview : '');
+                    $text = trans('notifications.new_message_lead', ['id' => $leadId], $locale);
                 } elseif ($isSupport) {
                     $text = trans('notifications.new_message_support', [], $locale);
                 } else {

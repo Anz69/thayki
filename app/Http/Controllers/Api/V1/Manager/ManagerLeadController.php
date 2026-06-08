@@ -147,8 +147,23 @@ class ManagerLeadController extends Controller
         $manager = $request->user();
         $locale = $this->leadLocale($lead);
 
-        $req = Message::query()->where('chat_id', $lead->chat_id)
-            ->where('type', 'payment_request')->orderByDesc('id')->first();
+        // Confirm the EXACT card the manager tapped (message_id), not just the
+        // latest payment request — otherwise tapping an older invoice confirmed
+        // the newest one.
+        $messageId = (int) $request->input('message_id', 0);
+        $base = Message::query()->where('chat_id', $lead->chat_id)->where('type', 'payment_request');
+        $req = $messageId > 0
+            ? (clone $base)->whereKey($messageId)->first()
+            : (clone $base)->orderByDesc('id')->first();
+
+        if ($req === null) {
+            throw DomainException::invalid('PAYMENT_NOT_FOUND', 'Платёжный запрос не найден.');
+        }
+
+        // Idempotent: if this card is already confirmed, just return current state.
+        if (($req->payload['status'] ?? null) === 'confirmed') {
+            return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
+        }
 
         $amountMinor = (int) ($req?->payload['amount_minor'] ?? 0);
         $currency = (string) ($req?->payload['currency'] ?? 'THB');

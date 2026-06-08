@@ -108,7 +108,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
               disabled={busy}
               onClick={async () => {
                 setBusy(true)
-                try { await api.post(`/manager/leads/${leadId}/payment-confirm`, {}, { headers: { 'Idempotency-Key': `payconf-${leadId}-${msg.id}` } }); onPosted?.() }
+                try { await api.post(`/manager/leads/${leadId}/payment-confirm`, { message_id: msg.id }, { headers: { 'Idempotency-Key': `payconf-${leadId}-${msg.id}` } }); onPosted?.() }
                 catch (e) { logError(e) } finally { setBusy(false) }
               }}
               className="w-full py-3 bg-[#E2319B] text-white text-[14px] font-semibold active:opacity-80 transition-opacity disabled:opacity-50"

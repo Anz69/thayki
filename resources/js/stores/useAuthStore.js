@@ -10,10 +10,24 @@ const SUPPORTED_LANGS = ['ru', 'en']
 // setLanguage, which also PATCHes /me, so the server stays in sync.)
 function syncLanguageFromUser(user) {
   const code = (user?.language_code || '').slice(0, 2).toLowerCase()
-  if (!SUPPORTED_LANGS.includes(code)) return
-  if (i18n.language === code) return
-  i18n.changeLanguage(code)
-  try { localStorage.setItem('lang', code) } catch {}
+
+  // Server already knows the user's language → adopt it (source of truth) so the
+  // mini app AND Telegram notifications speak the same language.
+  if (SUPPORTED_LANGS.includes(code)) {
+    if (i18n.language !== code) {
+      i18n.changeLanguage(code)
+      try { localStorage.setItem('lang', code) } catch {}
+    }
+    return
+  }
+
+  // Server has NO language stored yet → push the client's current UI language so
+  // notifications (built server-side) match what the user actually sees.
+  const current = (i18n.language || 'ru').slice(0, 2).toLowerCase()
+  const lang = SUPPORTED_LANGS.includes(current) ? current : 'ru'
+  import('@/utils/api')
+    .then(({ default: api }) => api.patch('/me', { language_code: lang }))
+    .catch(() => {})
 }
 
 async function resetDependentStores() {
