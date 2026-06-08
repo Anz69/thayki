@@ -20,7 +20,7 @@ class ManagerSupportController extends Controller
     {
         $chats = Chat::query()
             ->where('type', ChatType::Support)
-            ->with(['participants.user', 'lastMessage'])
+            ->with(['participants.user', 'lastMessage.sender'])
             ->orderByDesc('last_message_at')
             ->get();
 
@@ -48,6 +48,11 @@ class ManagerSupportController extends Controller
             $user = $participant?->user;
             $last = $chat->lastMessage;
 
+            // "Awaiting reply" = the last message is from the client (not staff),
+            // so a manager still needs to answer it.
+            $awaiting = $last !== null
+                && ! in_array($last->sender?->role, [UserRole::Admin, UserRole::Manager], true);
+
             return [
                 'chat_id' => $chat->id,
                 'client' => $user ? [
@@ -60,6 +65,7 @@ class ManagerSupportController extends Controller
                     'at' => $last->created_at?->toIso8601String(),
                 ] : null,
                 'unread' => $unread[$chat->id] ?? 0,
+                'awaiting' => $awaiting,
             ];
         })->values());
     }

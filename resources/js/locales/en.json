@@ -241,7 +241,12 @@
     "supportEmpty": "No conversations yet",
     "searchPlaceholder": "Search: name, city, #id, model",
     "searchSupportPlaceholder": "Search by name or message",
-    "searchEmpty": "Nothing found"
+    "searchEmpty": "Nothing found",
+    "supportAllAnswered": "All conversations answered 🎉",
+    "supportTab": {
+      "unanswered": "Unanswered",
+      "all": "All"
+    }
   },
   "leadChat": {
     "actions": "Actions",

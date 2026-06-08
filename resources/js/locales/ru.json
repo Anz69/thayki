@@ -241,7 +241,12 @@
     "supportEmpty": "Обращений пока нет",
     "searchPlaceholder": "Поиск: имя, город, #id, модель",
     "searchSupportPlaceholder": "Поиск по имени или сообщению",
-    "searchEmpty": "Ничего не найдено"
+    "searchEmpty": "Ничего не найдено",
+    "supportAllAnswered": "Все обращения отвечены 🎉",
+    "supportTab": {
+      "unanswered": "Неотвеченные",
+      "all": "Все"
+    }
   },
   "leadChat": {
     "actions": "Действия",
