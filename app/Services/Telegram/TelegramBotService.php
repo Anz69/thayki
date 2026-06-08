@@ -148,6 +148,45 @@ class TelegramBotService
         }
     }
 
+    /**
+     * Register the webhook. Crucially passes `allowed_updates` INCLUDING
+     * `callback_query` — without it Telegram never delivers inline-button
+     * presses (e.g. the language picker), so they appear to "do nothing".
+     *
+     * @return array{ok: bool, body: string}
+     */
+    public function setWebhook(string $url): array
+    {
+        if ($this->botToken === '') {
+            return ['ok' => false, 'body' => 'bot token is empty'];
+        }
+        try {
+            $response = Http::timeout(10)->asJson()->post($this->endpoint('setWebhook'), [
+                'url' => $url,
+                'allowed_updates' => ['message', 'callback_query'],
+                'drop_pending_updates' => false,
+            ]);
+
+            return ['ok' => $response->successful() && (bool) $response->json('ok'), 'body' => $response->body()];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'body' => $e->getMessage()];
+        }
+    }
+
+    public function getWebhookInfo(): ?array
+    {
+        if ($this->botToken === '') {
+            return null;
+        }
+        try {
+            $response = Http::timeout(5)->get($this->endpoint('getWebhookInfo'));
+            if (! $response->successful()) return null;
+            return $response->json('result');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     private function endpoint(string $method): string
     {
         return self::API_BASE.'/bot'.$this->botToken.'/'.$method;

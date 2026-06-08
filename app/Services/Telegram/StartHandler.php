@@ -10,6 +10,8 @@ use App\Models\StartInvite;
 use App\Models\StartInviteUse;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Encapsulates the bot's /start logic.
@@ -147,7 +149,23 @@ class StartHandler
         }
 
         $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
-        $user->forceFill(['language_code' => $lang, 'language_chosen' => true])->save();
+
+        // Persist the choice. Guard `language_chosen` so a server that hasn't run
+        // the migration yet still saves the language_code (the part that actually
+        // drives localization) instead of throwing and saving nothing.
+        $attrs = ['language_code' => $lang];
+        if (Schema::hasColumn('users', 'language_chosen')) {
+            $attrs['language_chosen'] = true;
+        }
+        try {
+            $user->forceFill($attrs)->save();
+        } catch (\Throwable $e) {
+            Log::error('[StartHandler] failed to save language choice', [
+                'telegram_id' => $telegramId,
+                'lang' => $lang,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         if (! $user->is_strange) {
             if ($user->role === UserRole::Model) {
