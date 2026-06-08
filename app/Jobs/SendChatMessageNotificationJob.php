@@ -75,6 +75,17 @@ class SendChatMessageNotificationJob implements ShouldQueue
 
             $senderIsStaff = in_array($sender?->role, [UserRole::Manager, UserRole::Admin], true);
 
+            // The message text to show inline (plain messages only; typed cards
+            // like payment/verification have no body).
+            $preview = ($message->type === null || $message->type === 'text')
+                ? trim((string) $message->body)
+                : '';
+            $preview = $preview !== '' ? e(mb_substr($preview, 0, 200)) : '';
+
+            // Track who's already been notified so a manager who is BOTH staff
+            // and a chat participant doesn't get the same push twice.
+            $notified = [];
+
             // A user wrote to support/lead → notify staff (admins + managers).
             if ($isSupport && ! $senderIsSupport && ! $senderIsStaff) {
                 $notifier->notifyAdmins(
@@ -97,6 +108,9 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     $mText = $isLead
                         ? trans('notifications.new_message_lead', ['id' => $leadId], $mLocale)
                         : trans('notifications.new_message_support', [], $mLocale);
+                    if ($isLead && $preview !== '') {
+                        $mText .= "\n\n".$preview;
+                    }
                     $notifier->notifyUser(
                         $manager,
                         $mText,
@@ -104,6 +118,7 @@ class SendChatMessageNotificationJob implements ShouldQueue
                         trans('notifications.open_chat', [], $mLocale),
                         $dedupToken.':m'.$manager->id,
                     );
+                    $notified[$manager->id] = true;
                 }
             }
 
@@ -115,6 +130,10 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     continue;
                 }
                 if ($this->isSameUser($sender, $recipient)) {
+                    continue;
+                }
+                // Already pinged in the staff loop above — don't double-notify.
+                if (isset($notified[$recipient->id])) {
                     continue;
                 }
 
@@ -130,7 +149,8 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 // Lead chat → "new message in request #N"; support → "from support";
                 // meeting → "from <name>" (staff is shown generically, never by name).
                 if ($isLead) {
-                    $text = trans('notifications.new_message_lead', ['id' => $leadId], $locale);
+                    $text = trans('notifications.new_message_lead', ['id' => $leadId], $locale)
+                        .($preview !== '' ? "\n\n".$preview : '');
                 } elseif ($isSupport) {
                     $text = trans('notifications.new_message_support', [], $locale);
                 } else {

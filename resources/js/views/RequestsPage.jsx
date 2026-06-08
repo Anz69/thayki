@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -31,20 +31,45 @@ export default function RequestsPage() {
   const navigate = useTransitionNavigate()
 
   const [leads, setLeads] = useState(null) // null = loading
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const rootRef = useRef(null)
+  const sentinelRef = useRef(null)
+  const loadingRef = useRef(false)
+  const animatedRef = useRef(false)
 
-  useEffect(() => {
-    let cancelled = false
-    api.get('/leads')
-      .then((r) => { if (!cancelled) setLeads(Array.isArray(r?.data?.data) ? r.data.data : []) })
-      .catch((e) => { if (!cancelled) { logError(e); setLeads([]) } })
-    return () => { cancelled = true }
+  const fetchPage = useCallback(async (pageNum) => {
+    if (loadingRef.current) return
+    loadingRef.current = true
+    if (pageNum > 1) setLoadingMore(true)
+    try {
+      const { data } = await api.get('/leads', { params: { page: pageNum, per_page: 20 } })
+      const items = Array.isArray(data?.data) ? data.data : []
+      const meta = data?.meta?.pagination
+      setLeads((prev) => (pageNum === 1 ? items : [...(prev ?? []), ...items]))
+      setHasMore(meta ? meta.page < meta.last_page : false)
+      setPage(pageNum)
+    } catch (e) { logError(e); if (pageNum === 1) setLeads([]) }
+    finally { loadingRef.current = false; setLoadingMore(false) }
   }, [])
 
-  // Single, gentle reveal once data arrives (no second/competing animation, so
-  // the screen never looks like it "lags" or double-animates on open).
+  useEffect(() => { fetchPage(1) }, [fetchPage])
+
   useEffect(() => {
-    if (leads === null) return
+    const el = sentinelRef.current
+    if (!el) return undefined
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !loadingRef.current) fetchPage(page + 1)
+    }, { rootMargin: '400px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [page, hasMore, fetchPage])
+
+  // Single, gentle reveal once data first arrives (no re-animate on append).
+  useEffect(() => {
+    if (leads === null || animatedRef.current) return
+    animatedRef.current = true
     const items = rootRef.current?.querySelectorAll('[data-item]') ?? []
     if (items.length) {
       gsap.fromTo(items,
@@ -157,6 +182,12 @@ export default function RequestsPage() {
             </button>
           )
         })}
+
+        {leads !== null && leads.length > 0 && (
+          <div ref={sentinelRef} className="flex items-center justify-center py-4">
+            {loadingMore && <div className="w-5 h-5 rounded-full border-2 border-[#E2319B] border-t-transparent animate-spin" />}
+          </div>
+        )}
       </div>
     </main>
   )
