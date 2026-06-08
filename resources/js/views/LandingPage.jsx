@@ -6,7 +6,6 @@ import TransitionLink from '@/components/TransitionLink'
 import { useCompactMode } from '@/composables/useCompactMode'
 import Globe from '@/components/landing/Globe'
 import GlobeOverlay from '@/components/landing/GlobeOverlay'
-import Polaroids from '@/components/landing/Polaroids'
 
 export default function LandingPage() {
   const { t } = useTranslation()
@@ -90,7 +89,6 @@ export default function LandingPage() {
         >
           <Globe className="absolute inset-0" />
           <GlobeOverlay ref={overlayRef} />
-          <Polaroids />
         </div>
 
         {/* ── Text + button (sit right under the globe) ── */}
