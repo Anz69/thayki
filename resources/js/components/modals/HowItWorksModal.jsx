@@ -4,10 +4,11 @@ import ModalSheet from '@/layout/ModalSheet'
 import HowItWorksStep1 from '@/components/sections/howItWorks/Step1'
 import HowItWorksStep2 from '@/components/sections/howItWorks/Step2'
 import HowItWorksStep3 from '@/components/sections/howItWorks/Step3'
+import HowItWorksStep4 from '@/components/sections/howItWorks/Step4'
 import { useCompactMode } from '@/composables/useCompactMode'
 import { useTranslation } from 'react-i18next'
-const STEPS = ['s1', 's2', 's3']
-const STEP_CONTENT = [HowItWorksStep1, HowItWorksStep2, HowItWorksStep3]
+const STEPS = ['s1', 's2', 's3', 's4']
+const STEP_CONTENT = [HowItWorksStep1, HowItWorksStep2, HowItWorksStep3, HowItWorksStep4]
 const DUR_OUT = 0.20   // уходящий слайд исчезает быстро
 const DUR_IN  = 0.46   // входящий плавно тормозит
 export default function HowItWorksModal({ isOpen, onClose }) {
