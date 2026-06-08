@@ -1,7 +1,8 @@
 {
   "cityDetect": {
     "askTitle": "City detected by location",
-    "ask": "Please check and change it if it's wrong"
+    "ask": "Please check and change it if it's wrong",
+    "reset": "Reset"
   },
   "common": {
     "back": "Back",
