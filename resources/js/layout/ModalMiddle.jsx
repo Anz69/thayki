@@ -91,6 +91,23 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
       .to(kids, { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.08, ease: 'power3.out', clearProps: 'opacity,transform' }, 0.14)
   }, [isVisible])
 
+  // Safety net: if the entrance tween ever gets interrupted (navigation race,
+  // late-rendered children, tab switch), force the sheet + content to their
+  // final visible state so the modal can never be left as a blank white sheet.
+  useEffect(() => {
+    if (!isVisible) return undefined
+    const id = setTimeout(() => {
+      const sheet = sheetRef.current
+      const root = rootRef.current
+      if (root) gsap.set(root, { opacity: 1 })
+      if (sheet) {
+        gsap.set(sheet, { y: '0%' })
+        gsap.set(Array.from(sheet.children), { clearProps: 'opacity,transform' })
+      }
+    }, 900)
+    return () => clearTimeout(id)
+  }, [isVisible])
+
   useEffect(() => {
     const el = handleRef.current
     if (!el || !isVisible) return
