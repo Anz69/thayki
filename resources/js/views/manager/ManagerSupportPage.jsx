@@ -22,8 +22,20 @@ export default function ManagerSupportPage() {
   const { t, i18n } = useTranslation()
   const navigate = useTransitionNavigate()
   const [items, setItems] = useState(null)
+  const [search, setSearch] = useState('')
   const rootRef = useRef(null)
   const animatedOnce = useRef(false)
+
+  // Client-side filter (the inbox is loaded in full) by name, @username or the
+  // last-message preview.
+  const q = search.trim().toLowerCase()
+  const visible = !q || items === null
+    ? items
+    : items.filter((it) => {
+      const hay = [it.client?.name, it.client?.username, it.last_message?.preview]
+        .filter(Boolean).join(' ').toLowerCase()
+      return hay.includes(q)
+    })
 
   const load = useCallback(() => {
     api.get('/manager/support')
@@ -59,6 +71,32 @@ export default function ManagerSupportPage() {
           </button>
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500]">{t('manager.support')}</span>
         </div>
+        <div className="container mt-3">
+          <div className="flex items-center gap-2 bg-white border border-black/[0.07] rounded-full px-4 h-11 focus-within:border-[#E2319B]/60 transition-colors">
+            <svg className="w-4 h-4 text-[#B7B6BC] shrink-0" viewBox="0 0 20 20" fill="none">
+              <circle cx="9" cy="9" r="6.25" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M14 14l3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('manager.searchSupportPlaceholder')}
+              className="flex-1 min-w-0 bg-transparent text-black text-[14px] outline-none placeholder:text-[#B7B6BC]"
+              autoComplete="off"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="shrink-0 size-5 rounded-full bg-[#ECEAF0] text-[#8B8A92] flex items-center justify-center active:scale-90 transition-transform"
+                aria-label="clear"
+              >
+                <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
       <div className="container flex flex-col gap-2.5 pt-3 pb-24">
@@ -72,14 +110,14 @@ export default function ManagerSupportPage() {
           </div>
         ))}
 
-        {items !== null && items.length === 0 && (
+        {items !== null && visible.length === 0 && (
           <div className="flex flex-col items-center text-center gap-3 pt-24">
-            <div className="size-16 rounded-full bg-[#E9F0FF] flex items-center justify-center text-3xl">💬</div>
-            <p className="text-[#9B9AA0] text-sm">{t('manager.supportEmpty')}</p>
+            <div className="size-16 rounded-full bg-[#E9F0FF] flex items-center justify-center text-3xl">{q ? '🔍' : '💬'}</div>
+            <p className="text-[#9B9AA0] text-sm">{q ? t('manager.searchEmpty') : t('manager.supportEmpty')}</p>
           </div>
         )}
 
-        {items?.map((it) => {
+        {visible?.map((it) => {
           const photo = it.client?.photo ? resolveMediaUrl(it.client.photo) : null
           return (
             <button

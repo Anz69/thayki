@@ -238,7 +238,10 @@
     "statToday": "Today",
     "created": "Created",
     "interested": "Requested type",
-    "supportEmpty": "No conversations yet"
+    "supportEmpty": "No conversations yet",
+    "searchPlaceholder": "Search: name, city, #id, model",
+    "searchSupportPlaceholder": "Search by name or message",
+    "searchEmpty": "Nothing found"
   },
   "leadChat": {
     "actions": "Actions",

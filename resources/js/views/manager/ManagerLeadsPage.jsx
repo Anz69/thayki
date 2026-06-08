@@ -40,6 +40,8 @@ export default function ManagerLeadsPage() {
   const setPreviewModel = useModelPreview((s) => s.setModel)
 
   const [tab, setTab] = useState('all')
+  const [search, setSearch] = useState('')
+  const [query, setQuery] = useState('') // debounced search term
   const [leads, setLeads] = useState(null)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
@@ -61,12 +63,24 @@ export default function ManagerLeadsPage() {
   const cacheRef = useRef({})
   const tabRef = useRef(tab)
   tabRef.current = tab
+  const queryRef = useRef(query)
+  queryRef.current = query
 
-  // Load page 1 for a tab. Shows cached data instantly if we have it (so the
-  // switch is immediate), otherwise a skeleton; then reconciles with the server.
+  // Cache key combines tab + search term so each view caches independently.
+  const keyFor = (which, q) => `${which}|${q}`
+  const reqParams = (which, q, pageNum) => {
+    const p = { tab: which, page: pageNum, per_page: 20 }
+    if (q) p.q = q
+    return p
+  }
+
+  // Load page 1 for the current (tab, query). Shows cached data instantly if we
+  // have it, otherwise a skeleton; then reconciles with the server.
   const loadFirst = useCallback(async (which, { refresh = false } = {}) => {
     const token = ++reqIdRef.current
-    const cached = cacheRef.current[which]
+    const q = queryRef.current
+    const key = keyFor(which, q)
+    const cached = cacheRef.current[key]
     if (cached && !refresh) {
       setLeads(cached.leads); setPage(cached.page); setHasMore(cached.hasMore)
     } else if (!cached && !refresh) {
@@ -74,12 +88,12 @@ export default function ManagerLeadsPage() {
     }
     // On refresh we keep whatever's on screen and just reconcile below.
     try {
-      const { data } = await api.get('/manager/leads', { params: { tab: which, page: 1, per_page: 20 } })
-      if (token !== reqIdRef.current) return // superseded by a newer switch
+      const { data } = await api.get('/manager/leads', { params: reqParams(which, q, 1) })
+      if (token !== reqIdRef.current) return // superseded by a newer tab/search
       const items = Array.isArray(data?.data) ? data.data : []
       const meta = data?.meta?.pagination
       const more = meta ? meta.page < meta.last_page : false
-      cacheRef.current[which] = { leads: items, page: 1, hasMore: more }
+      cacheRef.current[key] = { leads: items, page: 1, hasMore: more }
       setLeads(items); setPage(1); setHasMore(more)
     } catch (e) {
       logError(e)
@@ -87,32 +101,40 @@ export default function ManagerLeadsPage() {
     }
   }, [])
 
-  // Append the next page (infinite scroll) for the tab currently in view.
+  // Append the next page (infinite scroll) for the view currently in front.
   const loadMore = useCallback(async () => {
     const which = tabRef.current
-    const cur = cacheRef.current[which]
+    const q = queryRef.current
+    const key = keyFor(which, q)
+    const cur = cacheRef.current[key]
     if (appendingRef.current || !cur?.hasMore) return
     appendingRef.current = true
     setLoadingMore(true)
     const nextPage = cur.page + 1
     try {
-      const { data } = await api.get('/manager/leads', { params: { tab: which, page: nextPage, per_page: 20 } })
-      if (which !== tabRef.current) return // user switched away mid-append
+      const { data } = await api.get('/manager/leads', { params: reqParams(which, q, nextPage) })
+      if (which !== tabRef.current || q !== queryRef.current) return // view changed mid-append
       const items = Array.isArray(data?.data) ? data.data : []
       const meta = data?.meta?.pagination
       const more = meta ? meta.page < meta.last_page : false
       const merged = [...cur.leads, ...items]
-      cacheRef.current[which] = { leads: merged, page: nextPage, hasMore: more }
+      cacheRef.current[key] = { leads: merged, page: nextPage, hasMore: more }
       setLeads(merged); setPage(nextPage); setHasMore(more)
     } catch (e) { logError(e) }
     finally { appendingRef.current = false; setLoadingMore(false) }
   }, [])
 
-  // Drop the cache and refetch the active tab (after status changes etc.).
+  // Drop the cache and refetch the active view (after status changes etc.).
   const reload = useCallback(() => loadFirst(tabRef.current, { refresh: true }), [loadFirst])
 
-  // Tab change → load that tab (instant from cache, else skeleton).
-  useEffect(() => { loadFirst(tab) }, [tab, loadFirst])
+  // Debounce the search box into `query`.
+  useEffect(() => {
+    const id = setTimeout(() => setQuery(search.trim()), 280)
+    return () => clearTimeout(id)
+  }, [search])
+
+  // Tab or search change → load that view (instant from cache, else skeleton).
+  useEffect(() => { loadFirst(tab) }, [tab, query, loadFirst])
 
   // Slide the active-tab pill to the selected segment (animated via CSS).
   useLayoutEffect(() => {
@@ -224,6 +246,34 @@ export default function ManagerLeadsPage() {
             ))}
           </div>
         </div>
+
+        {/* Search */}
+        <div className="container mt-2.5">
+          <div className="flex items-center gap-2 bg-white border border-black/[0.07] rounded-full px-4 h-11 focus-within:border-[#E2319B]/60 transition-colors">
+            <svg className="w-4 h-4 text-[#B7B6BC] shrink-0" viewBox="0 0 20 20" fill="none">
+              <circle cx="9" cy="9" r="6.25" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M14 14l3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('manager.searchPlaceholder')}
+              className="flex-1 min-w-0 bg-transparent text-black text-[14px] outline-none placeholder:text-[#B7B6BC]"
+              autoComplete="off"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="shrink-0 size-5 rounded-full bg-[#ECEAF0] text-[#8B8A92] flex items-center justify-center active:scale-90 transition-transform"
+                aria-label="clear"
+              >
+                <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
       <div className="container flex flex-col gap-2.5 pt-3 pb-24">
@@ -239,13 +289,13 @@ export default function ManagerLeadsPage() {
 
         {leads !== null && leads.length === 0 && (
           <div className="flex flex-col items-center text-center gap-3 pt-24">
-            <div className="size-16 rounded-full bg-[#FDE8F5] flex items-center justify-center text-3xl">📭</div>
-            <p className="text-[#9B9AA0] text-sm">{t('manager.empty')}</p>
+            <div className="size-16 rounded-full bg-[#FDE8F5] flex items-center justify-center text-3xl">{query ? '🔍' : '📭'}</div>
+            <p className="text-[#9B9AA0] text-sm">{query ? t('manager.searchEmpty') : t('manager.empty')}</p>
           </div>
         )}
 
         {leads?.length > 0 && (
-        <div key={tab} ref={listAnimRef} className="flex flex-col gap-2.5">
+        <div key={`${tab}|${query}`} ref={listAnimRef} className="flex flex-col gap-2.5">
         {leads.map((lead) => {
           const clientPhoto = lead.client?.photo ? resolveMediaUrl(lead.client.photo) : null
           const modelPhoto = lead.model?.photo ? resolveMediaUrl(lead.model.photo) : null

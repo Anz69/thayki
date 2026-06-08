@@ -37,6 +37,25 @@ class ManagerLeadController extends Controller
                 LeadStatus::New->value, LeadStatus::Closed->value, LeadStatus::Completed->value,
             ]));
 
+        // Free-text search across client name/username, city, lead #id and model name.
+        $search = trim((string) $request->query('q', ''));
+        if ($search !== '') {
+            $idMatch = (int) ltrim($search, '#');
+            $query->where(function ($w) use ($search, $idMatch) {
+                $w->where('city', 'like', "%{$search}%")
+                    ->orWhereHas('user', fn ($u) => $u
+                        ->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%"))
+                    ->orWhereHas('modelProfile', fn ($m) => $m
+                        ->where('display_name', 'like', "%{$search}%")
+                        ->orWhere('display_name_en', 'like', "%{$search}%"));
+                if ($idMatch > 0) {
+                    $w->orWhere('id', $idMatch);
+                }
+            });
+        }
+
         $paginator = $query->paginate($perPage);
 
         return ApiResponse::ok(

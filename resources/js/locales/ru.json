@@ -238,7 +238,10 @@
     "statToday": "Сегодня",
     "created": "Создана",
     "interested": "Интересующий типаж",
-    "supportEmpty": "Обращений пока нет"
+    "supportEmpty": "Обращений пока нет",
+    "searchPlaceholder": "Поиск: имя, город, #id, модель",
+    "searchSupportPlaceholder": "Поиск по имени или сообщению",
+    "searchEmpty": "Ничего не найдено"
   },
   "leadChat": {
     "actions": "Действия",
