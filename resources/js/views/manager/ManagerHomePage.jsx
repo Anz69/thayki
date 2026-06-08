@@ -45,8 +45,9 @@ export default function ManagerHomePage() {
   const rootRef = useRef(null)
 
   useEffect(() => {
-    api.get('/manager/leads', { params: { tab: 'new' } })
-      .then((r) => setNewCount(Array.isArray(r?.data?.data) ? r.data.data.length : 0)).catch(() => setNewCount(0))
+    api.get('/manager/leads', { params: { tab: 'new', per_page: 1 } })
+      .then((r) => setNewCount(r?.data?.meta?.pagination?.total ?? (Array.isArray(r?.data?.data) ? r.data.data.length : 0)))
+      .catch(() => setNewCount(0))
     api.get('/manager/earnings')
       .then((r) => setEarnToday(r?.data?.data?.today ?? 0)).catch(() => setEarnToday(0))
   }, [])

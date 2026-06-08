@@ -26,35 +26,45 @@ class LeadController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $leads = Lead::query()
+        $perPage = min(50, max(5, (int) $request->query('per_page', 20)));
+
+        $paginator = Lead::query()
             ->where('user_id', $user->id)
             ->with(['modelProfile.photos'])
             // Active leads first, finished (completed/closed) last; newest within each.
             ->orderByRaw("CASE WHEN status IN ('closed','completed') THEN 1 ELSE 0 END asc")
             ->latest()
-            ->get()
-            ->map(function (Lead $lead): array {
-                $profile = $lead->modelProfile;
-                $main = $profile
-                    ? ($profile->photos->firstWhere('is_main', true) ?? $profile->photos->first())
-                    : null;
+            ->paginate($perPage);
 
-                return [
-                    'id' => $lead->id,
-                    'chat_id' => $lead->chat_id,
-                    'city' => $lead->city,
-                    'status' => $lead->status->value,
-                    'wishes' => $lead->wishes,
-                    'created_at' => $lead->created_at?->toIso8601String(),
-                    'model' => $profile ? [
-                        'display_name' => $profile->display_name,
-                        'display_name_en' => $profile->display_name_en,
-                        'photo' => $main?->getUrl(),
-                    ] : null,
-                ];
-            });
+        $leads = $paginator->getCollection()->map(function (Lead $lead): array {
+            $profile = $lead->modelProfile;
+            $main = $profile
+                ? ($profile->photos->firstWhere('is_main', true) ?? $profile->photos->first())
+                : null;
 
-        return ApiResponse::ok($leads);
+            return [
+                'id' => $lead->id,
+                'chat_id' => $lead->chat_id,
+                'city' => $lead->city,
+                'status' => $lead->status->value,
+                'wishes' => $lead->wishes,
+                'created_at' => $lead->created_at?->toIso8601String(),
+                'model' => $profile ? [
+                    'display_name' => $profile->display_name,
+                    'display_name_en' => $profile->display_name_en,
+                    'photo' => $main?->getUrl(),
+                ] : null,
+            ];
+        });
+
+        return ApiResponse::ok($leads, [
+            'pagination' => [
+                'page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+            ],
+        ]);
     }
 
     public function store(StoreLeadRequest $request, CreateLeadAction $action): JsonResponse

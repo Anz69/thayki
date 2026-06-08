@@ -23,10 +23,11 @@ use Illuminate\Http\Request;
 
 class ManagerLeadController extends Controller
 {
-    /** All leads, optionally filtered by tab (new|active|closed|all). */
+    /** Paginated leads, filtered by tab (new|active|closed|all). */
     public function index(Request $request): JsonResponse
     {
         $tab = (string) $request->query('tab', 'all');
+        $perPage = min(50, max(5, (int) $request->query('per_page', 20)));
 
         $query = Lead::query()->with(['user', 'manager', 'modelProfile.photos'])->latest();
 
@@ -36,7 +37,19 @@ class ManagerLeadController extends Controller
                 LeadStatus::New->value, LeadStatus::Closed->value, LeadStatus::Completed->value,
             ]));
 
-        return ApiResponse::ok($query->get()->map(fn (Lead $lead) => $this->serialize($lead)));
+        $paginator = $query->paginate($perPage);
+
+        return ApiResponse::ok(
+            $paginator->getCollection()->map(fn (Lead $lead) => $this->serialize($lead)),
+            [
+                'pagination' => [
+                    'page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ],
+        );
     }
 
     /** Single lead (used by the chat header to show/change status). */

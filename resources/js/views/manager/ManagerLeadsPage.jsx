@@ -47,6 +47,9 @@ export default function ManagerLeadsPage() {
 
   const [tab, setTab] = useState('new')
   const [leads, setLeads] = useState(null)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [busy, setBusy] = useState(null)
   const [viewing, setViewing] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -55,26 +58,50 @@ export default function ManagerLeadsPage() {
   const [modelOpen, setModelOpen] = useState(false)
   const [mediaIdx, setMediaIdx] = useState(null)
   const rootRef = useRef(null)
-  const animatedOnce = useRef(false)
+  const sentinelRef = useRef(null)
+  const loadingRef = useRef(false)
+  const animatedTab = useRef(null)
 
-  const load = useCallback((which, withSkeleton) => {
-    if (withSkeleton) setLeads(null)
-    api.get('/manager/leads', { params: { tab: which } })
-      .then((r) => setLeads(Array.isArray(r?.data?.data) ? r.data.data : []))
-      .catch((e) => { logError(e); setLeads([]) })
+  // Paginated fetch: page 1 resets the list, later pages append (infinite scroll).
+  const fetchPage = useCallback(async (which, pageNum) => {
+    if (loadingRef.current) return
+    loadingRef.current = true
+    if (pageNum > 1) setLoadingMore(true)
+    try {
+      const { data } = await api.get('/manager/leads', { params: { tab: which, page: pageNum, per_page: 20 } })
+      const items = Array.isArray(data?.data) ? data.data : []
+      const meta = data?.meta?.pagination
+      setLeads((prev) => (pageNum === 1 ? items : [...(prev ?? []), ...items]))
+      setHasMore(meta ? meta.page < meta.last_page : false)
+      setPage(pageNum)
+    } catch (e) { logError(e); if (pageNum === 1) setLeads([]) }
+    finally { loadingRef.current = false; setLoadingMore(false) }
   }, [])
 
-  // Skeleton only on the very first load; tab switches swap in place (no flash).
-  useEffect(() => { load(tab, leads === null) }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+  const reload = useCallback(() => fetchPage(tab, 1), [tab, fetchPage])
 
-  // Subtle one-time reveal; tab switches don't re-animate (avoids the jank).
+  // Tab change → fresh page 1 (skeleton only when there's nothing yet).
+  useEffect(() => { setLeads(null); setHasMore(false); fetchPage(tab, 1) }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Infinite scroll via a bottom sentinel.
   useEffect(() => {
-    if (!leads?.length || animatedOnce.current) return
-    animatedOnce.current = true
+    const el = sentinelRef.current
+    if (!el) return undefined
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !loadingRef.current) fetchPage(tab, page + 1)
+    }, { rootMargin: '400px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [tab, page, hasMore, fetchPage])
+
+  // Reveal the first page once per tab (no re-animate on append / tab return).
+  useEffect(() => {
+    if (!leads?.length || animatedTab.current === tab) return
+    animatedTab.current = tab
     const cards = rootRef.current?.querySelectorAll('[data-card]') ?? []
     gsap.fromTo(cards, { y: 10, autoAlpha: 0 },
-      { y: 0, autoAlpha: 1, duration: 0.32, stagger: 0.035, ease: 'power2.out', clearProps: 'transform' })
-  }, [leads])
+      { y: 0, autoAlpha: 1, duration: 0.3, stagger: 0.03, ease: 'power2.out', clearProps: 'transform' })
+  }, [leads, tab])
 
   const openChat = (lead) => {
     if (!lead.chat_id) return
@@ -98,7 +125,7 @@ export default function ManagerLeadsPage() {
     setViewing((v) => (v ? { ...v, status } : v))
     setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, status } : l)))
     try { await api.patch(`/manager/leads/${lead.id}/status`, { status }) }
-    catch (e) { logError(e); load(tab) }
+    catch (e) { logError(e); reload() }
   }
 
   const openModal = (lead) => { setViewing(lead); setStatusOpen(false); setModalOpen(true) }
@@ -199,6 +226,13 @@ export default function ManagerLeadsPage() {
             </div>
           )
         })}
+
+        {/* Infinite-scroll sentinel + loader */}
+        {leads !== null && leads.length > 0 && (
+          <div ref={sentinelRef} className="flex items-center justify-center py-4">
+            {loadingMore && <div className="w-5 h-5 rounded-full border-2 border-[#E2319B] border-t-transparent animate-spin" />}
+          </div>
+        )}
       </div>
 
       {/* Lead review */}

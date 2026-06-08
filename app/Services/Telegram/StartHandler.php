@@ -122,7 +122,7 @@ class StartHandler
     {
         $this->bot->sendButtons(
             $chatId,
-            "🌐 Выберите язык\nChoose your language",
+            "🌐 Выберите язык\n🌐 Choose your language",
             [[
                 ['text' => '🇷🇺 Русский', 'data' => 'lang:ru'],
                 ['text' => '🇬🇧 English', 'data' => 'lang:en'],
