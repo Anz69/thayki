@@ -125,6 +125,14 @@ class CreateLeadAction
                 'new-lead:'.$lead->id,
             );
         }
+
+        // Admins get the same single new-lead push (the generic per-message
+        // notification is suppressed for the lead's first message).
+        $adminText = trans('notifications.new_lead', ['city' => $lead->city], 'ru');
+        if (is_string($firstMessage) && $firstMessage !== '') {
+            $adminText .= "\n\n".$firstMessage;
+        }
+        $notifier->notifyAdmins($adminText, null, null, 'new-lead:'.$lead->id);
     }
 
     private function formatMessage(Lead $lead, ?ModelProfile $profile, string $locale = 'ru'): string

@@ -68,6 +68,16 @@ class SendChatMessageNotificationJob implements ShouldQueue
             $lead = $isLead ? Lead::query()->where('chat_id', $chat->id)->first() : null;
             $leadId = $lead?->id;
 
+            // The lead's very first message IS the auto-generated request itself.
+            // CreateLeadAction already pushed a "new lead" notification for it, so
+            // skip here to avoid a duplicate (see screenshot: two pushes per lead).
+            if ($isLead) {
+                $firstId = (int) Message::query()->where('chat_id', $chat->id)->min('id');
+                if ($firstId === (int) $message->id) {
+                    return;
+                }
+            }
+
             // Support bot is identified by telegram_id = 0 (see SupportChats::getSupportUser).
             $senderIsSupport = $isSupport
                 && $sender !== null

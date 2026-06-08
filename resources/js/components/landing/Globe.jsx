@@ -273,9 +273,9 @@ export default function Globe({ className = '', style }) {
           </div>
         </div>
 
-        {/* Polaroid photo cards pinned to cities */}
+        {/* Polaroid photo cards pinned to cities (1:1, no repeats) */}
         {CITIES.map((c, i) => {
-          const p = photos.length ? photos[i % photos.length] : null
+          const p = photos[i] || null
           if (!p) return null
           return (
             <div
