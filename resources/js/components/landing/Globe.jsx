@@ -14,13 +14,18 @@ const ELEVATION = 0.04
 // pinned here and rotate with the globe (cobe "Polaroids" vibe). Captioned with
 // city names, not model names.
 const CITIES = [
-  { id: 'moscow', label: 'Moscow',   loc: [55, 37] },
-  { id: 'dubai',  label: 'Dubai',    loc: [25, 55] },
-  { id: 'paris',  label: 'Paris',    loc: [48, 2] },
-  { id: 'ny',     label: 'New York', loc: [40, -74] },
-  { id: 'tokyo',  label: 'Tokyo',    loc: [35, 139] },
-  { id: 'phuket', label: 'Phuket',   loc: [8, 98] },
+  { id: 'moscow',  label: 'Moscow',   loc: [55, 37] },
+  { id: 'dubai',   label: 'Dubai',    loc: [25, 55] },
+  { id: 'paris',   label: 'Paris',    loc: [48, 2] },
+  { id: 'ny',      label: 'New York', loc: [40, -74] },
+  { id: 'tokyo',   label: 'Tokyo',    loc: [35, 139] },
+  { id: 'phuket',  label: 'Phuket',   loc: [8, 98] },
+  { id: 'tbilisi', label: 'Tbilisi',  loc: [41, 44] },
 ]
+
+// The exact models the agency wants featured on the landing globe (by name).
+const FEATURED_NAMES = ['элина', 'рузанна', 'даша', 'ангелина', 'адрианна', 'александра', 'ева']
+const normName = (s) => (s || '').toString().trim().toLowerCase().replace(/ё/g, 'е')
 
 const MARKERS = CITIES.map((c) => ({ location: c.loc, size: 0.045 }))
 
@@ -53,12 +58,22 @@ export default function Globe({ className = '', style }) {
 
   useEffect(() => {
     let cancelled = false
-    api.get('/catalog/models', { params: { per_page: 24 } })
+    api.get('/catalog/models', { params: { per_page: 100 } })
       .then((r) => {
         if (cancelled) return
-        const list = (r?.data?.data ?? [])
-          .filter((m) => m.photos?.[0]?.url)
-          .map((m) => ({ photo: resolveMediaUrl(m.photos[0].url), name: modelName(m) }))
+        const all = (r?.data?.data ?? []).filter((m) => m.photos?.[0]?.url)
+        const toCard = (m) => ({ photo: resolveMediaUrl(m.photos[0].url), name: modelName(m) })
+
+        // Pick exactly the agency-featured models, in the requested order.
+        const byName = new Map()
+        all.forEach((m) => {
+          const key = normName(m.display_name)
+          if (key && !byName.has(key)) byName.set(key, m)
+        })
+        const featured = FEATURED_NAMES.map((n) => byName.get(n)).filter(Boolean).map(toCard)
+
+        // Fallback so the globe never goes blank if names ever change/are hidden.
+        const list = featured.length ? featured : all.slice(0, CITIES.length).map(toCard)
         setPhotos(list)
       })
       .catch(() => {})
