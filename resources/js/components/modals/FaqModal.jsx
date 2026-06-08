@@ -94,10 +94,7 @@ export default function FaqModal({ isOpen, onClose }) {
           {t('faqModal.done')}
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto px-5 pb-8">
-        <h3 className="text-2xl/[100%] font-[500] text-black mb-6">
-          {t('faqModal.notFound')}
-        </h3>
+      <div className="flex-1 overflow-y-auto px-5 pb-8 pt-1">
         {items.length === 0 ? (
           <p className="text-[#7F7F7F] text-sm text-center py-8">{t('faqModal.loading')}</p>
         ) : (
