@@ -17,6 +17,9 @@ class ComplaintResource extends Resource
 {
     protected static ?string $model = Complaint::class;
 
+    // Complaints are not part of the lead-gen product — hidden from navigation.
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';
 
     protected static ?string $navigationGroup = 'Обратная связь';

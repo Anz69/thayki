@@ -140,6 +140,14 @@ class ChatController extends Controller
         /** @var User $user */
         $user = $request->user();
 
+        // Closed / completed leads are read-only — nobody can keep writing in them.
+        if ($chat->type === ChatType::Lead) {
+            $leadStatus = Lead::query()->where('chat_id', $chat->id)->value('status');
+            if (in_array($leadStatus, [LeadStatus::Closed->value, LeadStatus::Completed->value], true)) {
+                throw DomainException::forbidden('LEAD_CLOSED', 'Заявка закрыта — переписка недоступна.');
+            }
+        }
+
         // A manager replying in a chat they haven't joined yet.
         if (! $chat->isParticipant($user) && $user->role === UserRole::Manager) {
             if ($chat->type === ChatType::Lead) {

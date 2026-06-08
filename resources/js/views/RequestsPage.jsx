@@ -135,7 +135,7 @@ export default function RequestsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-black text-[15px] font-semibold truncate">
-                    {interest || t('requests.viaForm')}
+                    {interest || `${t('requestChat.title')} #${lead.id}`}
                   </span>
                   <span
                     className="shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full"

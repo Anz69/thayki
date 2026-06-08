@@ -60,10 +60,11 @@ function AccordionItem({ item, isOpen, onToggle }) {
 }
 
 export default function FaqModal({ isOpen, onClose }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [openId, setOpenId] = useState(null)
   const [items, setItems]   = useState([])
-  const fetchedRef          = useRef(false)
+  const fetchedRef          = useRef(null)
+  const lang = (i18n.language || 'ru').startsWith('en') ? 'en' : 'ru'
 
   const toggle = useCallback((id) => {
     setOpenId((prev) => (prev === id ? null : id))
@@ -71,10 +72,10 @@ export default function FaqModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (!isOpen) { setOpenId(null); return }
-    if (fetchedRef.current) return
-    fetchedRef.current = true
-    api.get('/faq').then(r => setItems(r.data.data ?? [])).catch(() => {})
-  }, [isOpen])
+    if (fetchedRef.current === lang) return
+    fetchedRef.current = lang
+    api.get('/faq', { params: { lang } }).then(r => setItems(r.data.data ?? [])).catch(() => {})
+  }, [isOpen, lang])
 
   return (
     <ModalSheet isOpen={isOpen} onClose={onClose} height="95dvh">

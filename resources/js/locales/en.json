@@ -98,6 +98,7 @@
     },
     "goals": {
       "date": "Date",
+      "pastime": "Pastime",
       "leisure": "Leisure together",
       "travel": "Travel",
       "events": "Attending events",
@@ -112,7 +113,8 @@
     "reset": "Reset",
     "sendTelegram": "Send in Telegram",
     "share": "Share",
-    "copy": "Copy"
+    "copy": "Copy",
+    "selected": "Selected <b>{{n}}</b> of <b>{{total}}</b>"
   },
   "leadMsg": {
     "title": "📩 Model request",
@@ -207,7 +209,7 @@
     "title": "Manager panel",
     "leads": "Requests",
     "support": "Support",
-    "earnings": "Earnings",
+    "earnings": "Turnover",
     "soon": "Soon",
     "accept": "Accept request",
     "openChat": "Open chat",

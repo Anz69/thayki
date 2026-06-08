@@ -18,7 +18,7 @@ const GROUPS = [
   { field: 'hairType', group: 'hair',    labelKey: 'hairType', keys: ['any', 'blonde', 'brunette', 'brown', 'red'] },
   { field: 'ageRange', group: 'ages',    labelKey: 'age',      keys: ['a1', 'a2', 'a3', 'a4'] },
   { field: 'height',   group: 'heights', labelKey: 'height',   keys: ['any', 'upTo165', 'h165_175', 'over175'] },
-  { field: 'goal',     group: 'goals',   labelKey: 'goal',     keys: ['date', 'leisure', 'travel', 'events', 'wife', 'undecided'] },
+  { field: 'goal',     group: 'goals',   labelKey: 'goal',     keys: ['date', 'pastime', 'leisure', 'travel', 'events', 'wife', 'undecided'] },
 ]
 
 function Chips({ group, keys, value, onChange, t }) {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
 import api from '@/utils/api'
@@ -381,7 +381,11 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
 
         <div ref={counterRef} className="flex items-center justify-between bg-[#F6F5F9] rounded-2xl px-3 py-2.5">
           <p className="text-xs text-[#7F7F7F]">
-            Выбрано <span className="text-black font-[500]">{selectedIds.length}</span> из <span className="text-black font-[500]">{totalModels}</span>
+            <Trans
+              i18nKey="share.selected"
+              values={{ n: selectedIds.length, total: totalModels }}
+              components={{ b: <span className="text-black font-[500]" /> }}
+            />
           </p>
           <div className="flex items-center gap-1.5">
             {!isSingleModel && (

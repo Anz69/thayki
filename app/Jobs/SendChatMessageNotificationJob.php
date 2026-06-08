@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Enums\ChatType;
 use App\Enums\UserRole;
 use App\Models\Chat;
+use App\Models\Lead;
 use App\Models\Message;
 use App\Models\User;
 use App\Services\Telegram\Notifier;
@@ -64,15 +65,18 @@ class SendChatMessageNotificationJob implements ShouldQueue
             $isLead = $chat->type === ChatType::Lead;
             $notifier = Notifier::default();
 
+            $lead = $isLead ? Lead::query()->where('chat_id', $chat->id)->first() : null;
+            $leadId = $lead?->id;
+
             // Support bot is identified by telegram_id = 0 (see SupportChats::getSupportUser).
             $senderIsSupport = $isSupport
                 && $sender !== null
                 && (int) ($sender->telegram_id ?? -1) === 0;
 
-            if ($isSupport && ! $senderIsSupport) {
-                // User wrote to support/lead — participants only contain the user,
-                // so admins would never be reached via the loop below.
-                // Ping all Filament admins directly (admins read Russian).
+            $senderIsStaff = in_array($sender?->role, [UserRole::Manager, UserRole::Admin], true);
+
+            // A user wrote to support/lead → notify staff (admins + managers).
+            if ($isSupport && ! $senderIsSupport && ! $senderIsStaff) {
                 $notifier->notifyAdmins(
                     ($isLead ? '📩 Новое сообщение по заявке от <b>' : '💬 Новое сообщение в поддержке от <b>')
                         .$this->senderDisplayName($sender, 'ru').'</b>',
@@ -80,9 +84,30 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     null,
                     $dedupToken,
                 );
+
+                // Managers: for support — all of them; for a lead — its assigned manager.
+                $managers = User::query()
+                    ->where('role', UserRole::Manager->value)
+                    ->whereNotNull('tg_chat_id')
+                    ->where('notifications_enabled', true)
+                    ->when($isLead && $lead?->manager_id, fn ($q) => $q->where('id', $lead->manager_id))
+                    ->get();
+                foreach ($managers as $manager) {
+                    $mLocale = $this->localeFor($manager);
+                    $mText = $isLead
+                        ? trans('notifications.new_message_lead', ['id' => $leadId], $mLocale)
+                        : trans('notifications.new_message_support', [], $mLocale);
+                    $notifier->notifyUser(
+                        $manager,
+                        $mText,
+                        $isLead ? "/request/chat?id={$chat->id}&lead={$leadId}&from=".rawurlencode('/manager/leads') : '/manager/support',
+                        trans('notifications.open_chat', [], $mLocale),
+                        $dedupToken.':m'.$manager->id,
+                    );
+                }
             }
 
-            $openPath = $isLead ? "/request/chat?id={$chat->id}" : ($isSupport ? '/support' : "/chat?id={$chat->id}");
+            $openPath = $isLead ? "/request/chat?id={$chat->id}".($leadId ? "&lead={$leadId}" : '') : ($isSupport ? '/support' : "/chat?id={$chat->id}");
 
             foreach ($chat->participants as $participant) {
                 $recipient = $participant->user;
@@ -101,14 +126,19 @@ class SendChatMessageNotificationJob implements ShouldQueue
 
                 // Each recipient is notified in their own UI language.
                 $locale = $this->localeFor($recipient);
-                // Staff (manager/admin) is shown generically as "Менеджер",
-                // never by personal name.
-                $title = $senderIsSupport
-                    ? trans('notifications.support', [], $locale)
-                    : (in_array($sender?->role, [UserRole::Manager, UserRole::Admin], true)
+
+                // Lead chat → "new message in request #N"; support → "from support";
+                // meeting → "from <name>" (staff is shown generically, never by name).
+                if ($isLead) {
+                    $text = trans('notifications.new_message_lead', ['id' => $leadId], $locale);
+                } elseif ($isSupport) {
+                    $text = trans('notifications.new_message_support', [], $locale);
+                } else {
+                    $title = $senderIsStaff
                         ? trans('notifications.manager_name', [], $locale)
-                        : $this->senderDisplayName($sender, $locale));
-                $text = trans('notifications.new_message', ['name' => $title], $locale);
+                        : $this->senderDisplayName($sender, $locale);
+                    $text = trans('notifications.new_message', ['name' => $title], $locale);
+                }
                 $button = trans('notifications.open_chat', [], $locale);
 
                 $notifier->notifyUser($recipient, $text, $openPath, $button, $dedupToken);

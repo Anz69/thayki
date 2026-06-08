@@ -26,11 +26,11 @@ class LeadPaymentResource extends Resource
 
     protected static ?string $navigationGroup = 'Финансы';
 
-    protected static ?string $navigationLabel = 'Заработок менеджеров';
+    protected static ?string $navigationLabel = 'Платежи';
 
-    protected static ?string $modelLabel = 'Оплата';
+    protected static ?string $modelLabel = 'Платёж';
 
-    protected static ?string $pluralModelLabel = 'Заработок менеджеров';
+    protected static ?string $pluralModelLabel = 'Платежи';
 
     protected static ?int $navigationSort = 0;
 

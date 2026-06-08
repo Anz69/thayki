@@ -29,6 +29,8 @@ class LeadController extends Controller
         $leads = Lead::query()
             ->where('user_id', $user->id)
             ->with(['modelProfile.photos'])
+            // Active leads first, finished (completed/closed) last; newest within each.
+            ->orderByRaw("CASE WHEN status IN ('closed','completed') THEN 1 ELSE 0 END asc")
             ->latest()
             ->get()
             ->map(function (Lead $lead): array {

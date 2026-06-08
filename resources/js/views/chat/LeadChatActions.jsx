@@ -53,6 +53,11 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
   const [payOpen, setPayOpen] = useState(false)
   const p = msg.payload || {}
 
+  // Warm the model-profile chunk so tapping a sent model opens instantly.
+  useEffect(() => {
+    if (msg.type === 'model_card') import('@/views/ModelPage').catch(() => {})
+  }, [msg.type])
+
   // Open a sent model exactly like the catalog profile page (view-only).
   const openModel = (m) => { setPreviewModel(m); navigate('/model-view') }
   // Typed cards sit on the sender's side, like normal messages.
