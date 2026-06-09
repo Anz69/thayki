@@ -80,12 +80,18 @@ return Application::configure(basePath: dirname(__DIR__))
         // the webhook). The URL is already protected by the secret-in-path
         // pattern (see TelegramBotWebhookController + telegram.webhook_secret).
         //
-        // Telegram Mini App API login is also public and validated by init_data,
-        // so requiring CSRF here causes sporadic false 419s when session/meta
-        // token drift happens on first app open.
+        // The whole `api/*` surface is stateless, Bearer-token auth (Sanctum
+        // personal access tokens issued to the Mini App). Token auth is immune
+        // to CSRF by construction — a browser never auto-attaches the
+        // Authorization header cross-site — so CSRF here adds no protection and
+        // actively breaks things: when the session cookie / <meta> csrf token
+        // drift (long-lived webview, language change, app re-open), any non-GET
+        // call (POST /leads, PATCH /me) returns a false 419, which the client
+        // interceptor escalates to a forced re-login → "sign-in error" and a
+        // wiped form. Exempting api/* removes that whole failure class.
         $middleware->validateCsrfTokens(except: [
             'telegram/webhook/*',
-            'api/v1/auth/telegram',
+            'api/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
