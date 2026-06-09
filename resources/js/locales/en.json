@@ -146,7 +146,8 @@
     "title": "Request",
     "managerNote": "A manager will contact you shortly. On average, replies take no more than an hour.",
     "placeholder": "Message...",
-    "closedNotice": "This request is closed — messaging is unavailable."
+    "closedNotice": "This request is closed — messaging is unavailable.",
+    "acceptToReply": "Accept the request to reply to the client."
   },
   "support": {
     "title": "Support",
@@ -185,7 +186,7 @@
     "s1t": "V.I.P models",
     "s1s": "An exclusive selection of elite models by individual request",
     "s2t": "Exclusive profiles",
-    "s2s": "Profiles unavailable in the public catalog — by personal request only",
+    "s2s": "Divine magazine-cover models, for a separate fee",
     "s3t": "Confidentiality",
     "s3s": "Complete privacy and a selection tailored to your wishes",
     "s4t": "Personal manager",

@@ -172,6 +172,11 @@ export default function RequestChatPage() {
 
   const [messages, setMessages]   = useState([])
   const [leadClosed, setLeadClosed] = useState(false)
+  // Manager-side: the lead must be ACCEPTED before the manager can reply. Until
+  // then (status === 'new') we gate the composer with an "accept" bar — opening
+  // the chat via a notification deep-link no longer lets them message unassigned.
+  const [leadStatus, setLeadStatus] = useState(null)
+  const [accepting, setAccepting]   = useState(false)
   const [inputText, setInputText] = useState('')
   const [sending, setSending]     = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -255,6 +260,34 @@ export default function RequestChatPage() {
       })
       .catch(logError)
   }, [chatId, myId])
+
+  // Manager: load the lead status so we know whether it still needs accepting.
+  useEffect(() => {
+    if (!isStaff || !leadId) return undefined
+    let cancelled = false
+    api.get(`/manager/leads/${leadId}`)
+      .then((r) => { if (!cancelled) setLeadStatus(r?.data?.data?.status ?? null) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [isStaff, leadId])
+
+  const acceptLead = useCallback(async () => {
+    if (accepting || !leadId) return
+    setAccepting(true)
+    try {
+      const { data } = await api.post(`/manager/leads/${leadId}/accept`, {}, {
+        headers: { 'Idempotency-Key': `accept-${leadId}` },
+      })
+      setLeadStatus(data?.data?.status ?? 'in_progress')
+      reloadMessages()
+    } catch (e) {
+      logError(e)
+    } finally {
+      setAccepting(false)
+    }
+  }, [accepting, leadId, reloadMessages])
+
+  const mustAccept = isStaff && isLead && leadStatus === 'new'
 
   useEffect(() => {
     if (!chatId) { navigate('/home', { replace: true }); return }
@@ -510,6 +543,17 @@ export default function RequestChatPage() {
             <span>🔒</span>
             <span>{t('requestChat.closedNotice')}</span>
           </div>
+        </div>
+      ) : mustAccept ? (
+        <div ref={inputBarRef} className="bg-white px-4 py-4 pb-8 shrink-0 container flex flex-col gap-2.5">
+          <p className="text-[#9B9AA0] text-[13px]/[140%] text-center">{t('requestChat.acceptToReply')}</p>
+          <button
+            onClick={acceptLead}
+            disabled={accepting}
+            className="w-full py-4 rounded-full bg-[#E2319B] text-white text-base font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+          >
+            {accepting ? '…' : t('manager.accept')}
+          </button>
         </div>
       ) : (
       <div ref={inputBarRef} className="bg-white px-4 py-3 pb-8 shrink-0 container">
