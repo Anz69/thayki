@@ -119,6 +119,21 @@ class TelegramBotService
         }
     }
 
+    /** Delete a message the bot sent (e.g. the language picker after a choice). */
+    public function deleteMessage(int|string $chatId, int $messageId): void
+    {
+        if ($this->botToken === '' || $messageId <= 0) {
+            return;
+        }
+        try {
+            Http::timeout(5)->post($this->endpoint('deleteMessage'), [
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+            ]);
+        } catch (\Throwable) {
+        }
+    }
+
     /** Acknowledge a callback query (stops the loading spinner on the button). */
     public function answerCallback(string $callbackId, ?string $text = null): void
     {

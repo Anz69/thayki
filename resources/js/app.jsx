@@ -99,6 +99,23 @@ try {
   window.Telegram?.WebApp?.onEvent?.('viewportChanged', () => applyDeepLink('warm'))
 } catch {}
 
+// Users who open the app via a friend's deep link skip /start, so the bot has no
+// permission to message them. Ask for write access once on launch (Telegram shows
+// a native prompt); remember once granted so we don't nag.
+try {
+  const tg = window.Telegram?.WebApp
+  const KEY = '__tg_write_access_granted__'
+  if (tg?.requestWriteAccess && localStorage.getItem(KEY) !== '1') {
+    setTimeout(() => {
+      try {
+        tg.requestWriteAccess((granted) => {
+          if (granted) { try { localStorage.setItem(KEY, '1') } catch {} }
+        })
+      } catch {}
+    }, 900)
+  }
+} catch {}
+
 createInertiaApp({
   resolve: (name) => {
     const pages = import.meta.glob('./Pages/**/*.jsx', { eager: true })

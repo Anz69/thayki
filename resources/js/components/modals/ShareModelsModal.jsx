@@ -18,13 +18,17 @@ function encodeStartPath(path) {
   }
 }
 
+// Mini App short name (the "/app" in https://t.me/Bot/app). A startapp link MUST
+// include it — `t.me/Bot?startapp=…` (no short name) just opens the bot chat.
+const MINIAPP_NAME = (import.meta.env.VITE_TELEGRAM_MINIAPP_NAME ?? 'app').trim().replace(/^\/+|\/+$/g, '')
+
 function modelShareLink(modelId, botUsername, inviteToken = '') {
   const path = inviteToken
     ? `/model/${modelId}?invite_token=${encodeURIComponent(inviteToken)}`
     : `/model/${modelId}`
   if (!botUsername) return `${window.location.origin}${path}`
   const startApp = encodeStartPath(path)
-  return `https://t.me/${botUsername}?startapp=${startApp}`
+  return `https://t.me/${botUsername}/${MINIAPP_NAME}?startapp=${startApp}`
 }
 
 function botLink(botUsername) {

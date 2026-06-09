@@ -50,8 +50,13 @@ class WebhookController extends Controller
                 $cbFrom = is_array($callback['from'] ?? null) ? $callback['from'] : [];
                 if (str_starts_with($data, 'lang:') && $cbChat > 0 && $cbFrom !== []) {
                     $lang = substr($data, 5);
-                    $start->chooseLanguage($cbChat, $cbFrom, $lang);
                     $start->bot()->answerCallback($cbId, $lang === 'en' ? 'English ✓' : 'Русский ✓');
+                    // Remove the language-picker message after the choice.
+                    $cbMsgId = (int) ($callback['message']['message_id'] ?? 0);
+                    if ($cbMsgId > 0) {
+                        $start->bot()->deleteMessage($cbChat, $cbMsgId);
+                    }
+                    $start->chooseLanguage($cbChat, $cbFrom, $lang);
                 } elseif ($cbId !== '') {
                     $start->bot()->answerCallback($cbId);
                 }
