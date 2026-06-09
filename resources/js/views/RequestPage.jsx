@@ -66,6 +66,10 @@ export default function RequestPage() {
   const [vipMode, setVipMode] = useState(false)
 
   const rootRef = useRef(null)
+  const vipBtnRef = useRef(null)
+  const vipShineRef = useRef(null)
+  const vipBadgeRef = useRef(null)
+  const vipGemRef = useRef(null)
   // In the open "подбор" form every option is required (only wishes are optional);
   // the prototype flow has no option groups, so only the city is required. In
   // V.I.P mode the goal is predetermined, so its group is hidden & not required.
@@ -108,6 +112,40 @@ export default function RequestPage() {
         onComplete: () => gsap.set(els, { clearProps: 'transform,willChange' }),
       })
   })
+
+  // Premium header VIP button: a looping light sweep + a soft glow pulse.
+  useEffect(() => {
+    if (isModelFlow) return undefined
+    const shine = vipShineRef.current
+    const btn = vipBtnRef.current
+    if (!shine || !btn) return undefined
+    const sweep = gsap.timeline({ repeat: -1, repeatDelay: 2.4 })
+    sweep.fromTo(shine, { xPercent: -180 }, { xPercent: 320, duration: 0.95, ease: 'power2.inOut' })
+    const glow = gsap.to(btn, {
+      boxShadow: '0 6px 22px rgba(226,49,155,0.55)',
+      duration: 1.7, ease: 'sine.inOut', yoyo: true, repeat: -1,
+    })
+    return () => { sweep.kill(); glow.kill() }
+  }, [isModelFlow])
+
+  // V.I.P badge appears when the form enters VIP mode — animate it in + float gem.
+  useEffect(() => {
+    if (!vipMode) return undefined
+    const badge = vipBadgeRef.current
+    const gem = vipGemRef.current
+    if (!badge) return undefined
+    gsap.killTweensOf([badge, gem])
+    gsap.fromTo(badge,
+      { y: -12, autoAlpha: 0, scale: 0.96 },
+      { y: 0, autoAlpha: 1, scale: 1, duration: 0.55, ease: 'back.out(1.6)' })
+    let float
+    if (gem) {
+      gsap.fromTo(gem, { scale: 0.3, rotate: -18 },
+        { scale: 1, rotate: 0, duration: 0.6, ease: 'back.out(2.6)', delay: 0.12 })
+      float = gsap.to(gem, { y: -3, duration: 1.7, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 0.7 })
+    }
+    return () => { gsap.killTweensOf([badge, gem]); float?.kill() }
+  }, [vipMode])
 
   const setVal = (field, v) => setValues((p) => ({ ...p, [field]: v }))
 
@@ -169,10 +207,19 @@ export default function RequestPage() {
           </span>
           {!isModelFlow && (
             <button
+              ref={vipBtnRef}
               onClick={() => setVipOpen(true)}
-              className="ml-auto flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[#E2319B] text-white text-sm/[100%] font-semibold active:opacity-85 transition-opacity shadow-[0_4px_14px_rgba(226,49,155,0.30)]"
+              className="ml-auto relative overflow-hidden flex items-center gap-1.5 px-4 py-2.5 rounded-full text-white text-sm/[100%] font-bold tracking-wide active:scale-95 transition-transform"
+              style={{ background: 'linear-gradient(120deg, #F7C948 0%, #E2319B 52%, #C01A7E 100%)', boxShadow: '0 4px 16px rgba(226,49,155,0.35)' }}
             >
-              <span className="text-[13px]">💎</span> VIP
+              <span
+                ref={vipShineRef}
+                aria-hidden
+                className="absolute inset-y-0 left-0 w-1/3 -skew-x-12 pointer-events-none"
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent)' }}
+              />
+              <span className="relative z-10 text-[13px]">💎</span>
+              <span className="relative z-10">VIP</span>
             </button>
           )}
         </div>
@@ -207,11 +254,26 @@ export default function RequestPage() {
 
         {/* V.I.P mode badge (after the explainer's «Continue») */}
         {!isModelFlow && vipMode && (
-          <div data-anim className="flex items-center gap-3 rounded-2xl p-3.5 bg-[#FDF0F8] border-[1.5px] border-[#E2319B]/30">
-            <span className="shrink-0 size-10 rounded-xl bg-[#FDE8F5] flex items-center justify-center text-xl">💎</span>
-            <div className="flex-1 min-w-0 flex flex-col">
-              <span className="text-[#C01A7E] text-[11px]/[100%] font-bold uppercase tracking-[0.04em]">{t('vip.button')}</span>
-              <span className="text-[#7F7F7F] text-[13px]/[130%] mt-1">{t('vip.teaser')}</span>
+          <div
+            ref={vipBadgeRef}
+            className="relative overflow-hidden flex items-center gap-3.5 rounded-2xl p-4 bg-white border border-[#E2319B]/20"
+            style={{ boxShadow: '0 10px 28px rgba(226,49,155,0.12)' }}
+          >
+            <span
+              aria-hidden
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: 'linear-gradient(120deg, rgba(247,201,72,0.12) 0%, rgba(226,49,155,0.08) 100%)' }}
+            />
+            <span
+              ref={vipGemRef}
+              className="relative shrink-0 size-11 rounded-xl flex items-center justify-center text-xl"
+              style={{ background: 'linear-gradient(135deg, #F7C948 0%, #E2319B 70%)', boxShadow: '0 6px 16px rgba(226,49,155,0.30)' }}
+            >
+              💎
+            </span>
+            <div className="relative flex-1 min-w-0 flex flex-col">
+              <span className="text-[#C01A7E] text-[12px]/[100%] font-bold uppercase tracking-[0.06em]">{t('vip.button')}</span>
+              <span className="text-[#7F7F7F] text-[13px]/[135%] mt-1">{t('vip.teaser')}</span>
             </div>
           </div>
         )}
