@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import gsap from 'gsap'
-import FacetedDiamond from './FacetedDiamond'
 
 const SPARKS = [
   { x: 196, y: 30, s: 22 },
@@ -12,6 +11,7 @@ const SPARKS = [
 export default function VipGemHero({ isActive }) {
   const gemRef = useRef(null)
   const haloRef = useRef(null)
+  const videoRef = useRef(null)
   const sparkRefs = useRef([])
 
   useLayoutEffect(() => {
@@ -26,6 +26,11 @@ export default function VipGemHero({ isActive }) {
     const halo = haloRef.current
     const sparks = sparkRefs.current.filter(Boolean)
     const all = [gem, halo, ...sparks]
+
+    // Restart the clip from the top each time the step becomes active.
+    const v = videoRef.current
+    if (v) { try { v.currentTime = 0; const p = v.play(); if (p?.catch) p.catch(() => {}) } catch {} }
+
     gsap.killTweensOf(all)
     gsap.set(halo, { autoAlpha: 0, scale: 0.7 })
     gsap.set(gem, { autoAlpha: 0, scale: 0.5, y: 12 })
@@ -60,10 +65,24 @@ export default function VipGemHero({ isActive }) {
             </svg>
           </span>
         ))}
-        {/* Crisp vector gem — transparent & sharp on every Telegram client
-            (transparent video showed a black box on some webviews). */}
-        <div ref={gemRef} className="absolute flex items-center justify-center" style={{ left: 30, top: 34, width: 180, height: 180, filter: 'drop-shadow(0 18px 34px rgba(226,49,155,0.40))' }}>
-          <FacetedDiamond size={172} />
+        {/* The clip is a bright diamond on a SOLID BLACK background (no alpha —
+            alpha codecs render as a black box in many Telegram webviews).
+            mix-blend-mode:screen drops every black pixel to transparent against
+            the white modal and keeps the bright gem at full quality, working on
+            every client without relying on a transparent-video codec. */}
+        <div ref={gemRef} className="absolute" style={{ left: 24, top: 28, width: 192, height: 192, filter: 'drop-shadow(0 18px 34px rgba(226,49,155,0.40))' }}>
+          <video
+            ref={videoRef}
+            src="/img/blir.webm"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            aria-hidden
+            className="w-full h-full object-contain pointer-events-none"
+            style={{ mixBlendMode: 'screen' }}
+          />
         </div>
       </div>
     </div>
