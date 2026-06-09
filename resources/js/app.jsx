@@ -100,42 +100,60 @@ try {
 } catch {}
 
 // Users who open the app via a friend's deep link skip /start, so the bot has no
-// permission to message them. Telegram exposes `allows_write_to_pm` — if it's NOT
-// already true (i.e. the bot can't reach them yet), ask for write access on launch.
-// Users who came through /start (or already granted) are left alone.
-try {
-  const tg = window.Telegram?.WebApp
-  if (tg) {
-    try { tg.ready() } catch {}
-    const u = tg.initDataUnsafe?.user
-    const KEY = '__tg_write_access_granted__'
-    const canAlreadyMessage = u?.allows_write_to_pm === true
-    if (tg.requestWriteAccess && u && !canAlreadyMessage && localStorage.getItem(KEY) !== '1') {
-      setTimeout(() => {
-        try {
-          tg.requestWriteAccess((granted) => {
-            // Only remember a success — if declined, ask again next launch.
-            if (!granted) return
-            try { localStorage.setItem(KEY, '1') } catch {}
-            // Tell the backend so the bot sends the appropriate welcome now that
-            // it can message this user (strange stub vs full welcome — the server
-            // decides). Wait for the auth token to be stored, then ping once.
-            const ping = (attempt = 0) => {
-              let token = null
-              try { token = localStorage.getItem('_tg_auth_token') } catch {}
-              if (!token) { if (attempt < 12) setTimeout(() => ping(attempt + 1), 600); return }
-              fetch('/api/v1/auth/write-access', {
-                method: 'POST',
-                headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-              }).catch(() => {})
-            }
-            ping()
-          })
-        } catch { /* older client without requestWriteAccess */ }
-      }, 1200)
-    }
+// permission to message them. On launch we ask Telegram for write access unless
+// the bot can already reach them (allows_write_to_pm) or we've already gotten a
+// grant on this device.
+//
+// IMPORTANT: this must survive the SDK race — `window.Telegram.WebApp` (and
+// especially `initDataUnsafe.user`) may not be populated the instant this bundle
+// runs. The old one-shot check silently did nothing in that window and never
+// retried, so the prompt never appeared. Poll until the SDK is ready, then ask.
+function requestTelegramWriteAccess() {
+  const KEY = '__tg_write_access_granted__'
+
+  // Notify the backend so the bot sends the right welcome (strange stub vs full
+  // welcome) now that it can message this user. Waits for the auth token.
+  const pingBackend = (attempt = 0) => {
+    let token = null
+    try { token = localStorage.getItem('_tg_auth_token') } catch {}
+    if (!token) { if (attempt < 20) setTimeout(() => pingBackend(attempt + 1), 600); return }
+    fetch('/api/v1/auth/write-access', {
+      method: 'POST',
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    }).catch(() => {})
   }
-} catch {}
+
+  let tries = 0
+  const attempt = () => {
+    const tg = window.Telegram?.WebApp
+    const u = tg?.initDataUnsafe?.user
+    // Wait (up to ~9s) for the Telegram SDK + user payload to be available.
+    if (!tg || !u) {
+      if (tries++ < 30) setTimeout(attempt, 300)
+      return
+    }
+    try { tg.ready() } catch {}
+
+    // Bot can already message them (came via /start or previously allowed) →
+    // nothing to ask. Already granted on this device → don't nag again.
+    if (u.allows_write_to_pm === true) return
+    if (localStorage.getItem(KEY) === '1') return
+    if (typeof tg.requestWriteAccess !== 'function') return // old Telegram client
+
+    try {
+      tg.requestWriteAccess((granted) => {
+        if (!granted) return // declined → ask again next launch
+        try { localStorage.setItem(KEY, '1') } catch {}
+        pingBackend()
+      })
+    } catch { /* older client without requestWriteAccess */ }
+  }
+
+  // Small initial delay so we don't collide with the app's own ready()/expand.
+  setTimeout(attempt, 800)
+}
+
+try { requestTelegramWriteAccess() } catch {}
 
 createInertiaApp({
   resolve: (name) => {
