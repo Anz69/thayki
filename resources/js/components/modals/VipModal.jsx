@@ -27,6 +27,7 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
   const pillRef = useRef(null)
   const titleRef = useRef(null)
   const subtitleRef = useRef(null)
+  const actionsRef = useRef(null)
   const prevFooterH = useRef(null)
   const skipFooterAnim = useRef(true)
   const isForwardRef = useRef(true)
@@ -50,7 +51,7 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
   }, [isOpen])
 
   useLayoutEffect(() => {
-    const els = [pillRef.current, titleRef.current, subtitleRef.current].filter(Boolean)
+    const els = [pillRef.current, titleRef.current, subtitleRef.current, actionsRef.current].filter(Boolean)
     if (!els.length || !footerWrapRef.current) return
     if (skipFooterAnim.current) {
       skipFooterAnim.current = false
@@ -162,7 +163,7 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
           </p>
 
           {/* Actions — sit right under the text */}
-          <div className="w-full mt-5">
+          <div ref={actionsRef} className="w-full mt-5">
             {isLast ? (
               <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
                 <button

@@ -316,6 +316,7 @@ export default function RequestPage() {
                 <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="black" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
               </svg>
             </span>
+            
             <div className="flex-1 min-w-0 flex flex-col">
               <span className="flex items-center gap-1.5">
                 <span className="text-black text-[15px]/[110%] font-bold">{t('vip.button')}</span>
