@@ -100,19 +100,26 @@ try {
 } catch {}
 
 // Users who open the app via a friend's deep link skip /start, so the bot has no
-// permission to message them. Ask for write access once on launch (Telegram shows
-// a native prompt); remember once granted so we don't nag.
+// permission to message them. Telegram exposes `allows_write_to_pm` — if it's NOT
+// already true (i.e. the bot can't reach them yet), ask for write access on launch.
+// Users who came through /start (or already granted) are left alone.
 try {
   const tg = window.Telegram?.WebApp
-  const KEY = '__tg_write_access_granted__'
-  if (tg?.requestWriteAccess && localStorage.getItem(KEY) !== '1') {
-    setTimeout(() => {
-      try {
-        tg.requestWriteAccess((granted) => {
-          if (granted) { try { localStorage.setItem(KEY, '1') } catch {} }
-        })
-      } catch {}
-    }, 900)
+  if (tg) {
+    try { tg.ready() } catch {}
+    const u = tg.initDataUnsafe?.user
+    const KEY = '__tg_write_access_granted__'
+    const canAlreadyMessage = u?.allows_write_to_pm === true
+    if (tg.requestWriteAccess && u && !canAlreadyMessage && localStorage.getItem(KEY) !== '1') {
+      setTimeout(() => {
+        try {
+          tg.requestWriteAccess((granted) => {
+            // Only remember a success — if declined, ask again next launch.
+            if (granted) { try { localStorage.setItem(KEY, '1') } catch {} }
+          })
+        } catch { /* older client without requestWriteAccess */ }
+      }, 1200)
+    }
   }
 } catch {}
 
