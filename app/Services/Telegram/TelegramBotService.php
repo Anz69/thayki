@@ -19,8 +19,18 @@ class TelegramBotService
 {
     private const API_BASE = 'https://api.telegram.org';
 
-    public function __construct(private readonly string $botToken)
+    private readonly string $botToken;
+
+    /**
+     * $botToken defaults to the configured token so the container can ALWAYS
+     * build this service via auto-resolution — without this default, any DI
+     * path (or a stale queue worker that missed the explicit binding) throws
+     * "Unresolvable dependency ... string $botToken" and the bot/notifications
+     * silently fail.
+     */
+    public function __construct(?string $botToken = null)
     {
+        $this->botToken = $botToken ?? (string) config('telegram.bot_token', '');
     }
 
     public static function fromConfig(): self
