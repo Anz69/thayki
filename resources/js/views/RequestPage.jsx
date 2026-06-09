@@ -206,20 +206,27 @@ export default function RequestPage() {
             <button
               ref={vipBtnRef}
               onClick={() => setVipOpen(true)}
-              className="ml-auto relative overflow-hidden flex items-center gap-2 pl-3.5 pr-4 py-2.5 rounded-full text-white active:scale-95 transition-transform"
-              style={{ background: '#161616', boxShadow: '0 6px 18px rgba(0,0,0,0.22)' }}
+              className="ml-auto relative flex items-center gap-2 pl-3.5 pr-4 py-2.5 rounded-full text-white active:scale-95 transition-transform"
+              style={{ background: '#161616', boxShadow: '0 8px 22px rgba(226,49,155,0.45)' }}
             >
-              <span
-                ref={vipShineRef}
-                aria-hidden
-                className="absolute inset-y-0 left-0 w-1/4 -skew-x-[20deg] pointer-events-none"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)', opacity: 0 }}
-              />
+              {/* clipped light sweep */}
+              <span className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+                <span
+                  ref={vipShineRef}
+                  aria-hidden
+                  className="absolute inset-y-0 left-0 w-1/4 -skew-x-[20deg]"
+                  style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent)', opacity: 0 }}
+                />
+              </span>
               <svg className="relative z-10 w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
                 <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="#fff" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
               </svg>
               <span className="relative z-10 text-[13px] font-bold" style={{ letterSpacing: '0.14em' }}>VIP</span>
+              {/* sparkle accent */}
+              <svg className="absolute -top-1.5 -right-1 w-3.5 h-3.5 z-10" viewBox="0 0 24 24" fill="#E2319B" aria-hidden>
+                <path d="M12 2.5l1.7 5.1a3 3 0 0 0 1.9 1.9L20.5 11l-4.9 1.5a3 3 0 0 0-1.9 1.9L12 19.5l-1.7-5.1a3 3 0 0 0-1.9-1.9L3.5 11l4.9-1.5a3 3 0 0 0 1.9-1.9L12 2.5Z" />
+              </svg>
             </button>
           )}
         </div>
