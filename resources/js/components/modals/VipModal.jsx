@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import gsap from 'gsap'
 import ModalSheet from '@/layout/ModalSheet'
-import VipCard from '@/components/sections/vip/VipCard'
-import VipProfiles from '@/components/sections/vip/VipProfiles'
+import VipPhoneProfile from '@/components/sections/vip/VipPhoneProfile'
+import VipPhoneLocked from '@/components/sections/vip/VipPhoneLocked'
 import { useCompactMode } from '@/composables/useCompactMode'
 import { useTranslation } from 'react-i18next'
 
 const STEPS = ['s1', 's2']
-const STEP_CONTENT = [VipCard, VipProfiles]
+const STEP_CONTENT = [VipPhoneProfile, VipPhoneLocked]
 const DUR_OUT = 0.20
 const DUR_IN = 0.46
 
