@@ -54,7 +54,7 @@ const STYLES = `
     opacity:   1                      !important;
   }
 `
-export default function ModelCardCarousel({ className = '', isActive }) {
+export default function ModelCardCarousel({ className = '', isActive, blur = false }) {
   const wrapRef  = useRef(null)
   const swiperRef = useRef(null)
   const [models, setModels] = useState(FALLBACK)
@@ -141,7 +141,7 @@ export default function ModelCardCarousel({ className = '', isActive }) {
           >
             {models.map((m) => (
               <SwiperSlide key={m.id}>
-                <ModelCard m={m} />
+                <ModelCard m={m} blur={blur} />
               </SwiperSlide>
             ))}
           </Swiper>
@@ -150,7 +150,7 @@ export default function ModelCardCarousel({ className = '', isActive }) {
     </>
   )
 }
-function ModelCard({ m }) {
+function ModelCard({ m, blur = false }) {
   return (
     <div
       className="w-full h-full bg-white flex flex-col relative border border-black/10"
@@ -159,7 +159,10 @@ function ModelCard({ m }) {
         overflow: 'hidden',
       }}
     >
-      <div className="absolute inset-0 bg-[#EDE8E8] ">
+      <div
+        className="absolute inset-0 bg-[#EDE8E8] "
+        style={blur ? { filter: 'blur(10px)', transform: 'scale(1.12)' } : undefined}
+      >
         <OptimizedImage
           src={m.photo}
           alt={m.name}
@@ -176,7 +179,10 @@ function ModelCard({ m }) {
           }}
         />
       </div>
-      <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center px-5 pb-6 z-10">
+      <div
+        className="absolute bottom-0 left-0 right-0 flex flex-col items-center px-5 pb-6 z-10"
+        style={blur ? { filter: 'blur(6px)' } : undefined}
+      >
         <div className="flex gap-2.5 mb-1">
           {m.emojis.map((e, j) => (
             <div
