@@ -119,6 +119,37 @@ class StartHandler
         $this->sendVerifiedWelcome($chatId, $user->first_name ?? '', $locale);
     }
 
+    /**
+     * Send the same welcome the bot would send on /start, picked by the user's
+     * current state. Used when a Mini App user grants write access (they opened
+     * via a deep link and skipped /start, so the bot couldn't message them until
+     * now) — strange users get the "join the chat" stub, verified users get the
+     * full welcome, models get the model welcome.
+     */
+    public function sendWelcomeFor(User $user): void
+    {
+        $chatId = $user->tg_chat_id;
+        if ($chatId === null) {
+            return;
+        }
+
+        $locale = $this->localeFor($user);
+
+        if ($user->is_strange) {
+            $this->sendStrangeWelcome((int) $chatId, false, $locale);
+
+            return;
+        }
+
+        if ($user->role === UserRole::Model) {
+            $this->sendModelWelcome((int) $chatId, $user->first_name ?? '', $locale);
+
+            return;
+        }
+
+        $this->sendVerifiedWelcome((int) $chatId, $user->first_name ?? '', $locale);
+    }
+
     /** Ask the user to pick a language (bilingual prompt + inline buttons). */
     private function promptLanguage(int $chatId): void
     {

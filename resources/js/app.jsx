@@ -115,7 +115,21 @@ try {
         try {
           tg.requestWriteAccess((granted) => {
             // Only remember a success — if declined, ask again next launch.
-            if (granted) { try { localStorage.setItem(KEY, '1') } catch {} }
+            if (!granted) return
+            try { localStorage.setItem(KEY, '1') } catch {}
+            // Tell the backend so the bot sends the appropriate welcome now that
+            // it can message this user (strange stub vs full welcome — the server
+            // decides). Wait for the auth token to be stored, then ping once.
+            const ping = (attempt = 0) => {
+              let token = null
+              try { token = localStorage.getItem('_tg_auth_token') } catch {}
+              if (!token) { if (attempt < 12) setTimeout(() => ping(attempt + 1), 600); return }
+              fetch('/api/v1/auth/write-access', {
+                method: 'POST',
+                headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+              }).catch(() => {})
+            }
+            ping()
           })
         } catch { /* older client without requestWriteAccess */ }
       }, 1200)

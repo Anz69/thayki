@@ -49,6 +49,9 @@ Route::prefix('v1')->group(function (): void {
         // Auth / session
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+        // Mini App calls this after the user grants Telegram write access so the
+        // bot sends the right welcome (strange stub vs full welcome).
+        Route::post('/auth/write-access', [AuthController::class, 'writeAccessGranted'])->name('auth.write-access');
 
         // Geo — best-effort city detection by IP (pre-fills the request city).
         Route::get('/geo/city', [\App\Http\Controllers\Api\V1\GeoController::class, 'city'])->name('geo.city');

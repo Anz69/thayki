@@ -13,6 +13,7 @@ use App\Models\StartInvite;
 use App\Models\StartInviteUse;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
+use App\Services\Telegram\StartHandler;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -108,6 +109,35 @@ class AuthController extends Controller
         $user = $request->user();
 
         return ApiResponse::ok(new UserResource($user->loadMissing('modelProfile', 'wallet')));
+    }
+
+    /**
+     * Called by the Mini App right after the user grants write access
+     * (Telegram requestWriteAccess). The bot can now message them, so send the
+     * appropriate welcome — strange users get the strange stub, verified users
+     * the full welcome. Deduped so repeated pings don't spam the user.
+     */
+    public function writeAccessGranted(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        if (! Cache::add('write_access_welcome:'.$user->id, 1, now()->addHours(24))) {
+            return ApiResponse::ok(['sent' => false]);
+        }
+
+        try {
+            StartHandler::default()->sendWelcomeFor($user);
+        } catch (\Throwable $e) {
+            Log::warning('[AuthController@writeAccessGranted] failed to send welcome', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ApiResponse::ok(['sent' => false]);
+        }
+
+        return ApiResponse::ok(['sent' => true]);
     }
 
     public function logout(Request $request, AuditLogger $audit): JsonResponse
