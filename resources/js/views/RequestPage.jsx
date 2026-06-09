@@ -309,12 +309,23 @@ export default function RequestPage() {
           >
             <span
               ref={vipGemRef}
-              className="shrink-0 size-11 rounded-xl flex items-center justify-center"
+              className="shrink-0 size-11 rounded-xl flex items-center justify-center overflow-hidden"
+              style={{ background: 'linear-gradient(150deg,#2a2a2e,#101012)' }}
             >
-              <svg className="size-10" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="black" strokeWidth="1.5" strokeLinejoin="round" />
-                <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="black" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
-              </svg>
+              {/* Same diamond clip as the modal, but grayscale (ч/б). The clip is
+                  a bright gem on solid black — mixBlendMode:screen drops the black
+                  against the dark chip and the silver gem glints on top. */}
+              <video
+                src="/img/blir.webm"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                aria-hidden
+                className="w-[150%] h-[150%] object-contain pointer-events-none"
+                style={{ mixBlendMode: 'screen', filter: 'grayscale(1) contrast(1.05) brightness(1.08)' }}
+              />
             </span>
             
             <div className="flex-1 min-w-0 flex flex-col">

@@ -81,7 +81,9 @@ export default function VipGemHero({ isActive }) {
             preload="auto"
             aria-hidden
             className="w-full h-full object-contain pointer-events-none"
-            style={{ mixBlendMode: 'screen' }}
+            /* The source clip is a bluish gem — hue-rotate shifts it to the
+               brand magenta/pink while keeping the white facet highlights. */
+            style={{ mixBlendMode: 'screen', filter: 'hue-rotate(125deg) saturate(1.35)' }}
           />
         </div>
       </div>
