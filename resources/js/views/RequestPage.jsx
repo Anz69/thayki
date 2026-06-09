@@ -235,19 +235,20 @@ export default function RequestPage() {
             {t('request.title')}
           </span>
           {!isModelFlow && (
-            <button
-              ref={vipBtnRef}
-              onClick={() => setVipOpen(true)}
-              className="ml-auto relative flex items-center gap-1.5 pl-3.5 pr-4 py-2.5 rounded-full text-white active:scale-95 transition-transform"
-              style={{ background: '#161616', boxShadow: '0 6px 14px rgba(0,0,0,0.18)' }}
-            >
-              {/* soft pink glow under the pill */}
+            <span className="ml-auto relative inline-flex">
+              {/* soft pink glow BEHIND the pill (fades up + breathes) */}
               <span
                 ref={vipGlowRef}
                 aria-hidden
-                className="absolute left-1/2 -translate-x-1/2 -bottom-3 rounded-full pointer-events-none"
-                style={{ width: '88%', height: 26, zIndex: 0, background: 'radial-gradient(ellipse at center, rgba(226,49,155,0.75), rgba(226,49,155,0) 70%)', filter: 'blur(8px)' }}
+                className="absolute left-1/2 -translate-x-1/2 -bottom-2 rounded-full pointer-events-none -z-10"
+                style={{ width: '94%', height: 30, background: 'radial-gradient(ellipse at center, rgba(226,49,155,0.85), rgba(226,49,155,0) 70%)', filter: 'blur(9px)' }}
               />
+            <button
+              ref={vipBtnRef}
+              onClick={() => setVipOpen(true)}
+              className="relative flex items-center gap-1.5 pl-3.5 pr-4 py-2.5 rounded-full text-white active:scale-95 transition-transform"
+              style={{ background: '#161616', boxShadow: '0 6px 14px rgba(0,0,0,0.18)' }}
+            >
               {/* clipped light sweep */}
               <span className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
                 <span
@@ -267,6 +268,7 @@ export default function RequestPage() {
                 <path d="M12 2.5l1.7 5.1a3 3 0 0 0 1.9 1.9L20.5 11l-4.9 1.5a3 3 0 0 0-1.9 1.9L12 19.5l-1.7-5.1a3 3 0 0 0-1.9-1.9L3.5 11l4.9-1.5a3 3 0 0 0 1.9-1.9L12 2.5Z" />
               </svg>
             </button>
+            </span>
           )}
         </div>
       </header>
