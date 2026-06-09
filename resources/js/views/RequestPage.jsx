@@ -265,7 +265,7 @@ export default function RequestPage() {
                 alt=""
                 aria-hidden
                 className="relative z-10 size-5 object-contain pointer-events-none"
-                style={{ filter: 'grayscale(1) brightness(1) contrast(1.05)' }}
+                style={{ filter: 'grayscale(1) brightness(1.2) contrast(1.05)' }}
               />
               <span className="relative z-10 text-sm/[80%] font-[500]">VIP</span>
               {/* sparkle accent */}
@@ -330,7 +330,6 @@ export default function RequestPage() {
             <div className="flex-1 min-w-0 flex flex-col">
               <span className="flex items-center gap-1.5">
                 <span className="text-black text-[15px]/[110%] font-bold">{t('vip.button')}</span>
-                <span className="w-1 h-1 rounded-full bg-[#E2319B]" />
               </span>
               <span className="text-[#9A9AA0] text-[13px]/[135%] mt-1">{t('vip.teaser')}</span>
             </div>

@@ -70,7 +70,7 @@ export default function VipGemHero({ isActive }) {
             alt=""
             aria-hidden
             className="w-full h-full object-contain pointer-events-none"
-            style={{ filter: 'hue-rotate(120deg) saturate(1.55) brightness(1.04)' }}
+            style={{ filter: 'sepia(1) hue-rotate(280deg) saturate(3) brightness(1.05) contrast(1.05)' }}
           />
         </div>
       </div>
