@@ -70,10 +70,18 @@ export default function VipCard({ isActive }) {
         <div ref={cardRef} className="absolute" style={{ left: 45, top: 46, width: 190, height: 120 }}>
           <div
             className="w-full h-full rounded-[18px] relative overflow-hidden"
-            style={{ background: 'linear-gradient(150deg, #34343A 0%, #1B1B1F 55%, #0D0D0F 100%)', boxShadow: '0 22px 50px rgba(226,49,155,0.40)' }}
+            style={{
+              background: 'linear-gradient(150deg, #3A3A42 0%, #202024 48%, #0C0C0E 100%)',
+              boxShadow: '0 26px 56px rgba(226,49,155,0.40), inset 0 1px 0 rgba(255,255,255,0.10)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
           >
-            {/* sheen highlight */}
-            <span className="absolute -right-8 -top-10 w-28 h-28 rounded-full" style={{ background: 'radial-gradient(circle, rgba(226,49,155,0.45), rgba(226,49,155,0) 70%)' }} />
+            {/* magenta corner glow */}
+            <span className="absolute -right-10 -top-12 w-32 h-32 rounded-full" style={{ background: 'radial-gradient(circle, rgba(226,49,155,0.55), rgba(226,49,155,0) 70%)' }} />
+            {/* top glass highlight */}
+            <span className="absolute inset-x-0 top-0 h-1/2 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0))' }} />
+            {/* diagonal glass streak */}
+            <span className="absolute -left-6 top-0 h-full w-16 -skew-x-[18deg] pointer-events-none" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.07), rgba(255,255,255,0))' }} />
             {/* diamond watermark */}
             <svg className="absolute right-2 bottom-1 w-20 h-20" viewBox="0 0 24 24" fill="none" aria-hidden style={{ opacity: 0.12 }}>
               <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="#fff" strokeWidth="1.3" strokeLinejoin="round" />

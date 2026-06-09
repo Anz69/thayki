@@ -278,9 +278,20 @@ export default function RequestPage() {
             <div className="flex-1 min-w-0 flex flex-col">
               <span className="flex items-center gap-1.5">
                 <span className="text-black text-[15px]/[110%] font-bold">{t('vip.button')}</span>
+                <span className="w-1 h-1 rounded-full bg-[#E2319B]" />
               </span>
               <span className="text-[#9A9AA0] text-[13px]/[135%] mt-1">{t('vip.teaser')}</span>
             </div>
+            <button
+              type="button"
+              onClick={() => setVipMode(false)}
+              aria-label={t('vip.cancel')}
+              className="shrink-0 size-7 rounded-full bg-[#F2F0F5] text-[#8B8A92] flex items-center justify-center active:scale-90 transition-transform"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none">
+                <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
         )}
 

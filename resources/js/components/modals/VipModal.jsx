@@ -104,44 +104,26 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
     goTo(stepRef.current - 1)
   }, [goTo, onClose])
 
-  const handleNext = useCallback(() => {
-    if (stepRef.current === STEPS.length - 1) { onContinue?.(); return }
-    goTo(stepRef.current + 1)
-  }, [goTo, onContinue])
-
   const stepKey = STEPS[stepIdx]
   const isLast = stepIdx === STEPS.length - 1
 
   return (
     <ModalSheet isOpen={isOpen} onClose={onClose} height="95dvh">
       <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between px-5 pt-5 pb-2 shrink-0">
+        <div className="relative flex items-center justify-center px-5 pt-5 pb-2 shrink-0">
           <button
             onClick={handleBack}
-            className="px-2.5 py-3 rounded-full bg-[#F5F5F7] text-black text-sm/[100%] font-medium active:bg-[#EBEBEB] transition-colors"
+            className="absolute left-5 px-3.5 py-2.5 rounded-full bg-[#F5F5F7] text-black text-sm/[100%] font-medium active:bg-[#EBEBEB] transition-colors"
           >
             {t('common.back')}
           </button>
           <span className="flex items-center gap-1.5 text-black text-base/[100%] font-medium">
-          <svg className="size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"></path><path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="currentColor" stroke-width="0.9" stroke-linejoin="round" opacity="0.5"></path></svg>
+            <svg className="size-4" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+              <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="currentColor" strokeWidth="0.9" strokeLinejoin="round" opacity="0.5" />
+            </svg>
             {t('vip.title')}
           </span>
-          {isLast ? (
-            <button
-              onClick={handleNext}
-              className="px-3.5 py-3 rounded-full text-white text-sm/[100%] font-semibold active:scale-95 transition-transform"
-              style={{ background: 'linear-gradient(120deg, #C01A7E 0%, #E2319B 100%)', boxShadow: '0 4px 14px rgba(226,49,155,0.4)' }}
-            >
-              {t('vip.continue')}
-            </button>
-          ) : (
-            <button
-              onClick={handleNext}
-              className="px-2.5 py-3 rounded-full bg-[#F5F5F7] text-black text-sm/[100%] font-medium active:bg-[#EBEBEB] transition-colors"
-            >
-              {t('hiw.next')}
-            </button>
-          )}
         </div>
 
         <div className="relative flex-1 min-h-0 overflow-hidden">
@@ -176,6 +158,35 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
               {t(`vip.${stepKey}s`)}
             </p>
           </div>
+        </div>
+
+        {/* Bottom actions */}
+        <div className="shrink-0 px-5 pt-1" style={{ paddingBottom: 'max(20px, calc(env(safe-area-inset-bottom) + 12px))' }}>
+          {isLast ? (
+            <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+              <button
+                onClick={onClose}
+                className="py-4 rounded-full bg-[#F0F0F3] text-black text-[15px] font-semibold active:bg-[#E6E4EB] transition-colors"
+              >
+                {t('vip.decline')}
+              </button>
+              <button
+                onClick={onContinue}
+                className="py-4 rounded-full text-white text-[15px] font-semibold active:scale-[0.98] transition-transform"
+                style={{ background: 'linear-gradient(120deg, #C01A7E 0%, #E2319B 100%)', boxShadow: '0 10px 26px rgba(226,49,155,0.42)' }}
+              >
+                {t('vip.continue')}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => goTo(stepRef.current + 1)}
+              className="w-full py-4 rounded-full text-white text-[15px] font-semibold active:scale-[0.98] transition-transform"
+              style={{ background: 'linear-gradient(120deg, #C01A7E 0%, #E2319B 100%)', boxShadow: '0 10px 26px rgba(226,49,155,0.42)' }}
+            >
+              {t('hiw.next')}
+            </button>
+          )}
         </div>
       </div>
     </ModalSheet>
