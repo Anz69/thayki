@@ -135,10 +135,15 @@ function requestTelegramWriteAccess() {
     if (!tg || !u) return false // SDK/user not ready yet — keep waiting
     try { tg.ready() } catch {}
 
-    // Bot can already message them (came via /start or previously allowed) →
-    // nothing to ask. Already granted on this device → don't nag again.
-    if (u.allows_write_to_pm === true) { asked = true; return true }
-    if (localStorage.getItem(KEY) === '1') { asked = true; return true }
+    // Bot can ALREADY message them — opened via a link that pre-grants write
+    // access (allows_write_to_pm), or we already got a grant on this device.
+    // No popup needed, but still trigger the welcome (backend dedupes), otherwise
+    // a deep-link user who arrives pre-granted never gets the welcome message.
+    if (u.allows_write_to_pm === true || localStorage.getItem(KEY) === '1') {
+      asked = true
+      pingBackend()
+      return true
+    }
     if (typeof tg.requestWriteAccess !== 'function') { asked = true; return true }
 
     asked = true // mark BEFORE showing so a gesture + the poll can't double-fire

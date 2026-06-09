@@ -9,6 +9,7 @@ use App\Enums\UserStatus;
 use App\Models\StartInvite;
 use App\Models\StartInviteUse;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -59,6 +60,10 @@ class StartHandler
 
             return;
         }
+
+        // Past this point a welcome WILL be sent — mark it so the Mini App's
+        // write-access ping (which also sends a welcome) doesn't duplicate it.
+        $this->markWelcomed($user);
 
         $locale = $this->localeFor($user);
 
@@ -152,6 +157,20 @@ class StartHandler
         return true;
     }
 
+    /**
+     * Mark that this user has been welcomed by the bot, so the Mini App's
+     * write-access welcome (AuthController@writeAccessGranted) won't send a
+     * duplicate. Shares the same cache key.
+     */
+    private function markWelcomed(User $user): void
+    {
+        try {
+            Cache::put('write_access_welcome:'.$user->id, 1, now()->addDays(30));
+        } catch (\Throwable) {
+            // Cache unavailable — worst case is one duplicate welcome; ignore.
+        }
+    }
+
     /** Ask the user to pick a language (bilingual prompt + inline buttons). */
     private function promptLanguage(int $chatId): void
     {
@@ -199,6 +218,8 @@ class StartHandler
                 'error' => $e->getMessage(),
             ]);
         }
+
+        $this->markWelcomed($user);
 
         if (! $user->is_strange) {
             if ($user->role === UserRole::Model) {
