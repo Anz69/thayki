@@ -113,19 +113,16 @@ export default function RequestPage() {
       })
   })
 
-  // Premium header VIP button: a looping light sweep + a soft glow pulse.
+  // Header VIP button: a slow, subtle light sweep (premium sheen, not flashy).
   useEffect(() => {
     if (isModelFlow) return undefined
     const shine = vipShineRef.current
-    const btn = vipBtnRef.current
-    if (!shine || !btn) return undefined
-    const sweep = gsap.timeline({ repeat: -1, repeatDelay: 2.4 })
-    sweep.fromTo(shine, { xPercent: -180 }, { xPercent: 320, duration: 0.95, ease: 'power2.inOut' })
-    const glow = gsap.to(btn, {
-      boxShadow: '0 6px 22px rgba(226,49,155,0.55)',
-      duration: 1.7, ease: 'sine.inOut', yoyo: true, repeat: -1,
-    })
-    return () => { sweep.kill(); glow.kill() }
+    if (!shine) return undefined
+    const sweep = gsap.timeline({ repeat: -1, repeatDelay: 3.6 })
+    sweep.fromTo(shine, { xPercent: -220, opacity: 0 },
+      { xPercent: 360, opacity: 1, duration: 1.1, ease: 'power2.inOut' })
+      .to(shine, { opacity: 0, duration: 0.2 }, '-=0.2')
+    return () => sweep.kill()
   }, [isModelFlow])
 
   // V.I.P badge appears when the form enters VIP mode — animate it in + float gem.
@@ -209,17 +206,20 @@ export default function RequestPage() {
             <button
               ref={vipBtnRef}
               onClick={() => setVipOpen(true)}
-              className="ml-auto relative overflow-hidden flex items-center gap-1.5 px-4 py-2.5 rounded-full text-white text-sm/[100%] font-bold tracking-wide active:scale-95 transition-transform"
-              style={{ background: 'linear-gradient(120deg, #F7C948 0%, #E2319B 52%, #C01A7E 100%)', boxShadow: '0 4px 16px rgba(226,49,155,0.35)' }}
+              className="ml-auto relative overflow-hidden flex items-center gap-2 pl-3.5 pr-4 py-2.5 rounded-full text-white active:scale-95 transition-transform"
+              style={{ background: '#161616', boxShadow: '0 6px 18px rgba(0,0,0,0.22)' }}
             >
               <span
                 ref={vipShineRef}
                 aria-hidden
-                className="absolute inset-y-0 left-0 w-1/3 -skew-x-12 pointer-events-none"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent)' }}
+                className="absolute inset-y-0 left-0 w-1/4 -skew-x-[20deg] pointer-events-none"
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)', opacity: 0 }}
               />
-              <span className="relative z-10 text-[13px]">💎</span>
-              <span className="relative z-10">VIP</span>
+              <svg className="relative z-10 w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
+                <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="#fff" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
+              </svg>
+              <span className="relative z-10 text-[13px] font-bold" style={{ letterSpacing: '0.14em' }}>VIP</span>
             </button>
           )}
         </div>
@@ -256,24 +256,25 @@ export default function RequestPage() {
         {!isModelFlow && vipMode && (
           <div
             ref={vipBadgeRef}
-            className="relative overflow-hidden flex items-center gap-3.5 rounded-2xl p-4 bg-white border border-[#E2319B]/20"
-            style={{ boxShadow: '0 10px 28px rgba(226,49,155,0.12)' }}
+            className="relative flex items-center gap-3.5 rounded-2xl p-4 bg-white border border-black/[0.06]"
+            style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}
           >
             <span
-              aria-hidden
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: 'linear-gradient(120deg, rgba(247,201,72,0.12) 0%, rgba(226,49,155,0.08) 100%)' }}
-            />
-            <span
               ref={vipGemRef}
-              className="relative shrink-0 size-11 rounded-xl flex items-center justify-center text-xl"
-              style={{ background: 'linear-gradient(135deg, #F7C948 0%, #E2319B 70%)', boxShadow: '0 6px 16px rgba(226,49,155,0.30)' }}
+              className="shrink-0 size-11 rounded-xl flex items-center justify-center"
+              style={{ background: '#161616', boxShadow: '0 6px 16px rgba(0,0,0,0.20)' }}
             >
-              💎
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
+                <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="#fff" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
+              </svg>
             </span>
-            <div className="relative flex-1 min-w-0 flex flex-col">
-              <span className="text-[#C01A7E] text-[12px]/[100%] font-bold uppercase tracking-[0.06em]">{t('vip.button')}</span>
-              <span className="text-[#7F7F7F] text-[13px]/[135%] mt-1">{t('vip.teaser')}</span>
+            <div className="flex-1 min-w-0 flex flex-col">
+              <span className="flex items-center gap-1.5">
+                <span className="text-black text-[15px]/[110%] font-bold">{t('vip.button')}</span>
+                <span className="w-1 h-1 rounded-full bg-[#E2319B]" />
+              </span>
+              <span className="text-[#9A9AA0] text-[13px]/[135%] mt-1">{t('vip.teaser')}</span>
             </div>
           </div>
         )}

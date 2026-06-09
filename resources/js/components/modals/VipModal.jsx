@@ -19,7 +19,15 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
     <ModalMiddle isOpen={isOpen} onClose={onClose}>
       <div className="px-5 pt-1 pb-6 flex flex-col gap-5">
         <div className="flex flex-col items-center text-center gap-2.5">
-          <div className="size-14 rounded-2xl bg-[#FDE8F5] flex items-center justify-center text-3xl">💎</div>
+          <div
+            className="size-16 rounded-2xl flex items-center justify-center"
+            style={{ background: '#161616', boxShadow: '0 10px 26px rgba(0,0,0,0.22)' }}
+          >
+            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="#fff" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
+            </svg>
+          </div>
           <h2 className="text-black text-xl/[110%] font-bold">{t('vip.title')}</h2>
           <p className="text-[#7F7F7F] text-sm/[140%] font-medium max-w-[300px]">{t('vip.subtitle')}</p>
         </div>
