@@ -192,6 +192,7 @@ class StartHandler
                     'role' => UserRole::Client,
                     'status' => UserStatus::Active,
                     'tg_chat_id' => $chatId,
+                    'is_strange' => true, // unverified until an invite flips it
                 ],
             );
 

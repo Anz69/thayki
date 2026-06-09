@@ -94,6 +94,11 @@ class AuthenticateTelegramUserAction
                     'role' => UserRole::Client,
                     'status' => UserStatus::Active,
                     'tg_chat_id' => $telegramId,
+                    // New users start "strange" (unverified). Without setting it
+                    // explicitly the in-memory value is null on a fresh create
+                    // (only the DB default applies), so the API/guards would treat
+                    // a deep-link opener who skipped /start as already verified.
+                    'is_strange' => true,
                 ],
             );
 
