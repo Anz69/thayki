@@ -90,6 +90,17 @@ class LeadResource extends Resource
                     ->icon('heroicon-o-chat-bubble-left-right')
                     ->visible(fn (Lead $r) => $r->chat_id !== null)
                     ->url(fn (Lead $r) => SupportChats::getUrl(['chat' => $r->chat_id])),
+                Tables\Actions\DeleteAction::make()
+                    ->label('Удалить')
+                    ->requiresConfirmation()
+                    // Also remove the lead's chat (cascades its messages); lead
+                    // payments cascade via the FK.
+                    ->before(fn (Lead $r) => $r->chat?->delete()),
+            ])
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make()
+                    ->label('Удалить выбранные')
+                    ->before(fn ($records) => $records->each(fn (Lead $r) => $r->chat?->delete())),
             ])
             ->defaultSort('created_at', 'desc');
     }

@@ -11,6 +11,7 @@ use App\Exceptions\DomainException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Lead\StoreLeadRequest;
 use App\Models\Lead;
+use App\Events\MessageSent;
 use App\Models\Message;
 use App\Models\User;
 use App\Services\Telegram\Notifier;
@@ -118,10 +119,17 @@ class LeadController extends Controller
                     'role' => ChatParticipantRole::Client,
                 ]);
             }
-            // Flip any pending verification_request card to "done".
-            Message::query()->where('chat_id', $chat->id)
+            // Flip any pending verification_request card to "done" AND broadcast
+            // the updated card so the manager's open chat flips it live (the
+            // client receives the same MessageSent and updates the card in place
+            // by id — no full reload needed).
+            $card = Message::query()->where('chat_id', $chat->id)
                 ->where('type', 'verification_request')
-                ->latest('id')->first()?->update(['payload' => ['status' => 'done']]);
+                ->latest('id')->first();
+            if ($card !== null) {
+                $card->update(['payload' => ['status' => 'done']]);
+                try { event(new MessageSent($card->fresh())); } catch (\Throwable) {}
+            }
 
             $post->execute($user, $chat->fresh(['participants']),
                 trans('lead.verification_done', [], $locale), null, null, 'system');
