@@ -159,16 +159,24 @@ function ModelCard({ m, blur = false }) {
         overflow: 'hidden',
       }}
     >
-      <div
-        className="absolute inset-0 bg-[#EDE8E8] "
-        style={blur ? { filter: 'blur(10px)', transform: 'scale(1.12)' } : undefined}
-      >
-        <OptimizedImage
-          src={m.photo}
-          alt={m.name}
-          className="w-full h-full object-cover object-top"
-          draggable={false}
-        />
+      <div className="absolute inset-0 bg-[#EDE8E8]">
+        {/* Photo: cleanly blurred (scaled up so blurred edges don't bleed). */}
+        <div
+          className="absolute inset-0"
+          style={blur ? { filter: 'blur(14px)', transform: 'scale(1.18)' } : undefined}
+        >
+          <OptimizedImage
+            src={m.photo}
+            alt={m.name}
+            className="w-full h-full object-cover object-top"
+            draggable={false}
+          />
+        </div>
+        {/* Frosted tint over a hidden profile (soft, premium — not muddy). */}
+        {blur && (
+          <div aria-hidden className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 45%, rgba(255,255,255,0.18) 100%)' }} />
+        )}
         <div
           aria-hidden="true"
           className="absolute bottom-0 left-0 right-0 pointer-events-none"
@@ -179,33 +187,49 @@ function ModelCard({ m, blur = false }) {
           }}
         />
       </div>
-      <div
-        className="absolute bottom-0 left-0 right-0 flex flex-col items-center px-5 pb-6 z-10"
-        style={blur ? { filter: 'blur(6px)' } : undefined}
-      >
-        <div className="flex gap-2.5 mb-1">
-          {m.emojis.map((e, j) => (
-            <div
-              key={`${e}-${j}`}
-              className={
-                "size-7 bg-white rounded-full flex items-center justify-center " +
-                (j === 1 ? "-translate-y-1.5 " : "")
-              }
-              style={{
-                boxShadow: '0 2px 12px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.05)',
-              }}
-            >
-              <img src={getEmojiUrl(e)} alt={e} width={18} height={18} draggable={false} />
+
+      <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center px-5 pb-6 z-10">
+        {blur ? (
+          /* Redacted placeholders instead of blurred text — reads as intentional. */
+          <>
+            <div className="flex gap-2.5 mb-2.5">
+              {[0, 1, 2].map((j) => (
+                <span
+                  key={j}
+                  className={'size-7 rounded-full bg-white ' + (j === 1 ? '-translate-y-1.5 ' : '')}
+                  style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.05)' }}
+                />
+              ))}
             </div>
-          ))}
-        </div>
-        <span className="text-black text-[31px]/[110%] font-semibold tracking-[-0.02em]">
-          {m.name}
-        </span>
-        {m.desc && (
-          <span className="text-[#777779] text-[13px]/[145%] font-medium text-center mt-1.5 px-3">
-            {m.desc}
-          </span>
+            <span className="h-5 w-[58%] rounded-full bg-white/80" style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }} />
+          </>
+        ) : (
+          <>
+            <div className="flex gap-2.5 mb-1">
+              {m.emojis.map((e, j) => (
+                <div
+                  key={`${e}-${j}`}
+                  className={
+                    "size-7 bg-white rounded-full flex items-center justify-center " +
+                    (j === 1 ? "-translate-y-1.5 " : "")
+                  }
+                  style={{
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.05)',
+                  }}
+                >
+                  <img src={getEmojiUrl(e)} alt={e} width={18} height={18} draggable={false} />
+                </div>
+              ))}
+            </div>
+            <span className="text-black text-[31px]/[110%] font-semibold tracking-[-0.02em]">
+              {m.name}
+            </span>
+            {m.desc && (
+              <span className="text-[#777779] text-[13px]/[145%] font-medium text-center mt-1.5 px-3">
+                {m.desc}
+              </span>
+            )}
+          </>
         )}
       </div>
     </div>
