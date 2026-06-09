@@ -122,12 +122,15 @@ class AuthController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        if (! Cache::add('write_access_welcome:'.$user->id, 1, now()->addHours(24))) {
+        $key = 'write_access_welcome:'.$user->id;
+        // Already welcomed → skip. (Only set AFTER a successful send below, so a
+        // ping that arrives before tg_chat_id is populated doesn't lock us out.)
+        if (Cache::has($key)) {
             return ApiResponse::ok(['sent' => false]);
         }
 
         try {
-            StartHandler::default()->sendWelcomeFor($user);
+            $sent = StartHandler::default()->sendWelcomeFor($user);
         } catch (\Throwable $e) {
             Log::warning('[AuthController@writeAccessGranted] failed to send welcome', [
                 'user_id' => $user->id,
@@ -137,7 +140,11 @@ class AuthController extends Controller
             return ApiResponse::ok(['sent' => false]);
         }
 
-        return ApiResponse::ok(['sent' => true]);
+        if ($sent) {
+            Cache::put($key, 1, now()->addHours(24));
+        }
+
+        return ApiResponse::ok(['sent' => $sent]);
     }
 
     public function logout(Request $request, AuditLogger $audit): JsonResponse

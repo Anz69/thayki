@@ -126,11 +126,11 @@ class StartHandler
      * now) — strange users get the "join the chat" stub, verified users get the
      * full welcome, models get the model welcome.
      */
-    public function sendWelcomeFor(User $user): void
+    public function sendWelcomeFor(User $user): bool
     {
         $chatId = $user->tg_chat_id;
         if ($chatId === null) {
-            return;
+            return false; // no chat yet — caller should NOT mark this as done
         }
 
         $locale = $this->localeFor($user);
@@ -138,16 +138,18 @@ class StartHandler
         if ($user->is_strange) {
             $this->sendStrangeWelcome((int) $chatId, false, $locale);
 
-            return;
+            return true;
         }
 
         if ($user->role === UserRole::Model) {
             $this->sendModelWelcome((int) $chatId, $user->first_name ?? '', $locale);
 
-            return;
+            return true;
         }
 
         $this->sendVerifiedWelcome((int) $chatId, $user->first_name ?? '', $locale);
+
+        return true;
     }
 
     /** Ask the user to pick a language (bilingual prompt + inline buttons). */
