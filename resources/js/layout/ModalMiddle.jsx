@@ -34,6 +34,9 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
 
   useEffect(() => {
     if (!isVisible) return
+    // Make sure the mini app is full-height so the keyboard/viewport math below
+    // is sane (a half-expanded webview is what threw the sheet off-screen).
+    try { window.Telegram?.WebApp?.expand?.() } catch { /* noop */ }
     lockTelegramVerticalSwipes()
     return () => unlockTelegramVerticalSwipes()
   }, [isVisible])
@@ -45,11 +48,19 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
     if (!isVisible) return undefined
     const vv = window.visualViewport
     if (!vv) return undefined
+    const keyboardInset = () => {
+      // Raw inset between the layout and visual viewport. In the Telegram mini
+      // app this can be wildly larger than a real keyboard (the webview isn't
+      // fully expanded), which previously launched the sheet off the top of the
+      // screen. Clamp to a plausible keyboard height so the sheet stays on-screen.
+      const raw = Math.max(0, Math.round(window.innerHeight - vv.height))
+      const cap = Math.round(window.innerHeight * 0.5)
+      return raw > cap ? 0 : raw
+    }
     const update = () => {
       const sheet = sheetRef.current
       if (!sheet) return
-      // Keyboard height (don't use offsetTop — on iOS Telegram it overshoots).
-      const kb = Math.max(0, Math.round(window.innerHeight - vv.height))
+      const kb = keyboardInset()
       sheet.style.bottom = kb + 'px'
       sheet.style.maxHeight = Math.round(vv.height - 16) + 'px'
     }
@@ -57,8 +68,7 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
     // bottom so the action button / focused field is visible right away.
     const onResize = () => {
       update()
-      const kb = window.innerHeight - vv.height
-      if (kb > 120) {
+      if (keyboardInset() > 120) {
         const sc = sheetRef.current?.querySelector('.modal-middle-scroll')
         if (sc) requestAnimationFrame(() => { sc.scrollTop = sc.scrollHeight + 9999 })
       }
