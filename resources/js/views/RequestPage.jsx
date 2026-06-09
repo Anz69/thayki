@@ -63,11 +63,14 @@ export default function RequestPage() {
   const [wishes, setWishes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [vipOpen, setVipOpen] = useState(false)
+  const [vipMode, setVipMode] = useState(false)
 
   const rootRef = useRef(null)
   // In the open "подбор" form every option is required (only wishes are optional);
-  // the prototype flow has no option groups, so only the city is required.
-  const allGroupsSelected = isModelFlow || GROUPS.every(({ field }) => values[field] != null)
+  // the prototype flow has no option groups, so only the city is required. In
+  // V.I.P mode the goal is predetermined, so its group is hidden & not required.
+  const visibleGroups = vipMode ? GROUPS.filter((g) => g.field !== 'goal') : GROUPS
+  const allGroupsSelected = isModelFlow || visibleGroups.every(({ field }) => values[field] != null)
   const canSubmit = city.trim().length > 0 && allGroupsSelected && !submitting
   const formHint = city.trim().length === 0
     ? t('request.cityRequiredHint')
@@ -120,6 +123,17 @@ export default function RequestPage() {
     if (!canSubmit) return
     setSubmitting(true)
     try {
+      // V.I.P request → goal is fixed to "V.I.P модели" (the typaj the manager sees).
+      const goalLabel = isModelFlow ? null : (vipMode ? 'V.I.P модели' : ruLabel('goals', values.goal))
+      let message = buildLeadMessage({
+        t,
+        modelName: model ? modelName(model) : undefined,
+        city: city.trim(),
+        wishes,
+        options: isModelFlow ? {} : { hair: values.hairType, ages: values.ageRange, heights: values.height, goals: vipMode ? null : values.goal },
+      })
+      if (vipMode) message = `🌟 ${t('vip.title')}\n${message}`
+
       const { data } = await api.post('/leads', {
         model_profile_id: isModelFlow ? Number(modelId) : null,
         city: city.trim(),
@@ -128,15 +142,9 @@ export default function RequestPage() {
         hair_type: isModelFlow ? null : ruLabel('hair', values.hairType),
         age_range: isModelFlow ? null : ruLabel('ages', values.ageRange),
         height_range: isModelFlow ? null : ruLabel('heights', values.height),
-        goal: isModelFlow ? null : ruLabel('goals', values.goal),
+        goal: goalLabel,
         // First chat message in the user's selected language (RU/EN).
-        message: buildLeadMessage({
-          t,
-          modelName: model ? modelName(model) : undefined,
-          city: city.trim(),
-          wishes,
-          options: isModelFlow ? {} : { hair: values.hairType, ages: values.ageRange, heights: values.height, goals: values.goal },
-        }),
+        message,
       }, { headers: { 'Idempotency-Key': `lead-${Date.now()}` } })
       const from = encodeURIComponent(isModelFlow ? `/model/${modelId}` : '/home')
       navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}&from=${from}`, { replace: true })
@@ -159,6 +167,14 @@ export default function RequestPage() {
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500]">
             {t('request.title')}
           </span>
+          {!isModelFlow && (
+            <button
+              onClick={() => setVipOpen(true)}
+              className="ml-auto flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[#E2319B] text-white text-sm/[100%] font-semibold active:opacity-85 transition-opacity shadow-[0_4px_14px_rgba(226,49,155,0.30)]"
+            >
+              <span className="text-[13px]">💎</span> VIP
+            </button>
+          )}
         </div>
       </header>
 
@@ -189,29 +205,15 @@ export default function RequestPage() {
           </div>
         )}
 
-        {/* V.I.P — elite request (open form only) */}
-        {!isModelFlow && (
-          <button
-            data-anim
-            type="button"
-            onClick={() => setVipOpen(true)}
-            className="relative overflow-hidden flex items-center gap-3 rounded-2xl p-4 text-left active:scale-[0.99] transition-transform"
-            style={{ background: 'linear-gradient(120deg, #2A1622 0%, #5A1E45 55%, #E2319B 130%)' }}
-          >
-            <span
-              className="shrink-0 size-11 rounded-xl flex items-center justify-center text-2xl"
-              style={{ background: 'linear-gradient(135deg, #F7C948 0%, #E2319B 70%)' }}
-            >
-              💎
-            </span>
-            <span className="flex-1 min-w-0 flex flex-col">
-              <span className="text-white text-[16px]/[110%] font-bold tracking-wide">{t('vip.button')}</span>
-              <span className="text-white/70 text-[12.5px]/[130%] mt-0.5">{t('vip.teaser')}</span>
-            </span>
-            <svg className="w-5 h-5 text-white/80 shrink-0" viewBox="0 0 16 16" fill="none">
-              <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+        {/* V.I.P mode badge (after the explainer's «Continue») */}
+        {!isModelFlow && vipMode && (
+          <div data-anim className="flex items-center gap-3 rounded-2xl p-3.5 bg-[#FDF0F8] border-[1.5px] border-[#E2319B]/30">
+            <span className="shrink-0 size-10 rounded-xl bg-[#FDE8F5] flex items-center justify-center text-xl">💎</span>
+            <div className="flex-1 min-w-0 flex flex-col">
+              <span className="text-[#C01A7E] text-[11px]/[100%] font-bold uppercase tracking-[0.04em]">{t('vip.button')}</span>
+              <span className="text-[#7F7F7F] text-[13px]/[130%] mt-1">{t('vip.teaser')}</span>
+            </div>
+          </div>
         )}
 
         {/* City — required, prominent */}
@@ -228,7 +230,7 @@ export default function RequestPage() {
         </div>
 
         {/* Option groups — only for the open "подбор" form, not the prototype flow */}
-        {!isModelFlow && GROUPS.map(({ field, group, labelKey, keys }) => (
+        {!isModelFlow && visibleGroups.map(({ field, group, labelKey, keys }) => (
           <div key={field} data-anim className="flex flex-col gap-3 bg-white rounded-2xl p-4 border border-black/5">
             <p className="text-black text-[15px]/[100%] font-semibold">
               {t(`request.${labelKey}`)} <span className="text-[#E2319B]">*</span>
@@ -286,7 +288,11 @@ export default function RequestPage() {
         </div>
       </div>
 
-      <VipModal isOpen={vipOpen} onClose={() => setVipOpen(false)} city={city} />
+      <VipModal
+        isOpen={vipOpen}
+        onClose={() => setVipOpen(false)}
+        onContinue={() => { setVipMode(true); setVipOpen(false) }}
+      />
     </main>
   )
 }
