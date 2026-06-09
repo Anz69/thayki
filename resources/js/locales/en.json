@@ -169,6 +169,17 @@
     "language": "Language",
     "myRequests": "My requests"
   },
+  "vip": {
+    "button": "V.I.P models",
+    "teaser": "Elite private selection on request",
+    "title": "V.I.P models",
+    "subtitle": "An exclusive selection of elite models by individual request",
+    "b1": "Exclusive profiles beyond the public catalog",
+    "b2": "Full confidentiality and a tailored selection",
+    "b3": "A personal manager handles your order",
+    "back": "Back",
+    "order": "Order"
+  },
   "hiw": {
     "title": "How it works?",
     "next": "Next",

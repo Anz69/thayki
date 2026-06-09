@@ -10,6 +10,7 @@ import { buildLeadMessage } from '@/utils/leadMessage'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
 import CitySelect from '@/components/ui/CitySelect'
+import VipModal from '@/components/modals/VipModal'
 import ru from '@/locales/ru.json'
 
 // field → { group (locale ns), labelKey, option keys }. The Russian label is
@@ -61,6 +62,7 @@ export default function RequestPage() {
   const [values, setValues] = useState({ hairType: null, ageRange: null, height: null, goal: null })
   const [wishes, setWishes] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [vipOpen, setVipOpen] = useState(false)
 
   const rootRef = useRef(null)
   // In the open "подбор" form every option is required (only wishes are optional);
@@ -187,6 +189,31 @@ export default function RequestPage() {
           </div>
         )}
 
+        {/* V.I.P — elite request (open form only) */}
+        {!isModelFlow && (
+          <button
+            data-anim
+            type="button"
+            onClick={() => setVipOpen(true)}
+            className="relative overflow-hidden flex items-center gap-3 rounded-2xl p-4 text-left active:scale-[0.99] transition-transform"
+            style={{ background: 'linear-gradient(120deg, #2A1622 0%, #5A1E45 55%, #E2319B 130%)' }}
+          >
+            <span
+              className="shrink-0 size-11 rounded-xl flex items-center justify-center text-2xl"
+              style={{ background: 'linear-gradient(135deg, #F7C948 0%, #E2319B 70%)' }}
+            >
+              💎
+            </span>
+            <span className="flex-1 min-w-0 flex flex-col">
+              <span className="text-white text-[16px]/[110%] font-bold tracking-wide">{t('vip.button')}</span>
+              <span className="text-white/70 text-[12.5px]/[130%] mt-0.5">{t('vip.teaser')}</span>
+            </span>
+            <svg className="w-5 h-5 text-white/80 shrink-0" viewBox="0 0 16 16" fill="none">
+              <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
+
         {/* City — required, prominent */}
         <div
           data-anim
@@ -258,6 +285,8 @@ export default function RequestPage() {
           </button>
         </div>
       </div>
+
+      <VipModal isOpen={vipOpen} onClose={() => setVipOpen(false)} city={city} />
     </main>
   )
 }
