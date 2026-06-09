@@ -179,7 +179,15 @@
     "b3": "A personal manager handles your order",
     "back": "Back",
     "order": "Order",
-    "continue": "Continue"
+    "continue": "Continue",
+    "s1t": "V.I.P models",
+    "s1s": "An exclusive selection of elite models by individual request",
+    "s2t": "Exclusive profiles",
+    "s2s": "Profiles unavailable in the public catalog — by personal request only",
+    "s3t": "Confidentiality",
+    "s3s": "Complete privacy and a selection tailored to your wishes",
+    "s4t": "Personal manager",
+    "s4s": "Handles your order from selection to the meeting"
   },
   "hiw": {
     "title": "How it works?",

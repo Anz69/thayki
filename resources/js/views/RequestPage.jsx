@@ -206,7 +206,7 @@ export default function RequestPage() {
             <button
               ref={vipBtnRef}
               onClick={() => setVipOpen(true)}
-              className="ml-auto relative flex items-center gap-2 pl-3.5 pr-4 py-2.5 rounded-full text-white active:scale-95 transition-transform"
+              className="ml-auto relative flex items-center gap-1.5 pl-3.5 pr-4 py-2.5 rounded-full text-white active:scale-95 transition-transform"
               style={{ background: '#161616', boxShadow: '0 8px 22px rgba(226,49,155,0.45)' }}
             >
               {/* clipped light sweep */}
@@ -222,7 +222,7 @@ export default function RequestPage() {
                 <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
                 <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="#fff" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
               </svg>
-              <span className="relative z-10 text-base font-[500]" style={{ letterSpacing: '0.14em' }}>VIP</span>
+              <span className="relative z-10 text-sm/[80%] font-[500]">VIP</span>
               {/* sparkle accent */}
               <svg className="absolute -top-1.5 -right-1 w-3.5 h-3.5 z-10" viewBox="0 0 24 24" fill="#E2319B" aria-hidden>
                 <path d="M12 2.5l1.7 5.1a3 3 0 0 0 1.9 1.9L20.5 11l-4.9 1.5a3 3 0 0 0-1.9 1.9L12 19.5l-1.7-5.1a3 3 0 0 0-1.9-1.9L3.5 11l4.9-1.5a3 3 0 0 0 1.9-1.9L12 2.5Z" />
