@@ -236,7 +236,7 @@ export default function HomePage() {
     <main className="flex flex-col gap-3.5 pt-4 pb-28">
       <header
         ref={headerRef}
-        className="invisible w-full py-3 border-b border-white bg-white/90 backdrop-blur-xs sticky top-0 z-[999999999]"
+        className="invisible w-full py-3 border-b border-white bg-white/90 backdrop-blur-xs sticky top-0 z-[51]"
       >
         <div className="container flex items-center justify-between">
           <h1 ref={titleRef} className="invisible text-black text-2xl/[100%] font-[500]">
