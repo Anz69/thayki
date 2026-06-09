@@ -52,16 +52,19 @@ export default function VipLockedCards({ isActive }) {
   }, [isActive])
 
   return (
-    <div className="flex-1 relative overflow-hidden">
-      {/* The real catalog carousel — the cards themselves are blurred (faces
-          stay private), the white card frames stay crisp. */}
-      <div className="absolute inset-0 px-10 pt-4 pb-2" style={{ pointerEvents: 'none' }}>
-        <ModelCardCarousel isActive={isActive} blur />
-      </div>
+    <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+      {/* Constrained, centred stage so the portrait cards stay card-sized
+          (the carousel is full-height by default — that made them too long). */}
+      <div className="relative w-full" style={{ height: 300, maxWidth: 360 }}>
+        {/* The real catalog carousel — the cards themselves are blurred (faces
+            stay private), the white card frames stay crisp. */}
+        <div className="absolute inset-0" style={{ pointerEvents: 'none' }}>
+          <ModelCardCarousel isActive={isActive} blur />
+        </div>
 
-      {/* glow + sparkles + lock */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="relative" style={{ width: 240, height: 240 }}>
+        {/* glow + sparkles + lock, centred over the stage */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="relative" style={{ width: 240, height: 240 }}>
           <span ref={haloRef} aria-hidden className="absolute rounded-full"
             style={{ left: 45, top: 45, width: 150, height: 150, background: 'radial-gradient(circle, rgba(226,49,155,0.45) 0%, rgba(226,49,155,0) 70%)' }} />
           {SPARKS.map((p, i) => (
@@ -81,6 +84,7 @@ export default function VipLockedCards({ isActive }) {
               <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
               <circle cx="12" cy="15" r="1.5" fill="#fff" />
             </svg>
+            </div>
           </div>
         </div>
       </div>
