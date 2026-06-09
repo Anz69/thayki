@@ -2,12 +2,12 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react
 import gsap from 'gsap'
 import ModalSheet from '@/layout/ModalSheet'
 import VipGemHero from '@/components/sections/vip/VipGemHero'
-import VipGemLocked from '@/components/sections/vip/VipGemLocked'
+import VipLockedCards from '@/components/sections/vip/VipLockedCards'
 import { useCompactMode } from '@/composables/useCompactMode'
 import { useTranslation } from 'react-i18next'
 
 const STEPS = ['s1', 's2']
-const STEP_CONTENT = [VipGemHero, VipGemLocked]
+const STEP_CONTENT = [VipGemHero, VipLockedCards]
 const DUR_OUT = 0.20
 const DUR_IN = 0.46
 
@@ -167,14 +167,13 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
               <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
                 <button
                   onClick={onClose}
-                  className="py-3 rounded-full bg-[#F0F0F3] text-black text-[14px] font-semibold active:bg-[#E6E4EB] transition-colors"
+                  className="py-3 rounded-full bg-[#F0F0F3] text-black text-[14px] font-[500] active:bg-[#E6E4EB] transition-colors"
                 >
                   {t('vip.decline')}
                 </button>
                 <button
                   onClick={onContinue}
-                  className="py-3 rounded-full text-white text-[14px] font-semibold active:scale-[0.98] transition-transform"
-                  style={{ background: 'linear-gradient(120deg, #C01A7E 0%, #E2319B 100%)', boxShadow: '0 8px 22px rgba(226,49,155,0.40)' }}
+                  className="py-3 rounded-full text-white text-[14px] font-[500] active:scale-[0.98] transition-transform bg-[#E2319B]"
                 >
                   {t('vip.continue')}
                 </button>
