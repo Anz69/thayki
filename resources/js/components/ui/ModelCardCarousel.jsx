@@ -193,50 +193,58 @@ function ModelCard({ m, blur = false }) {
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center px-5 pb-6 z-10">
-        {blur ? (
-          /* Redacted placeholders instead of blurred text — reads as intentional. */
-          <>
-            <div className="flex gap-2.5 mb-2.5">
-              {[0, 1, 2].map((j) => (
-                <span
-                  key={j}
-                  className={'size-7 rounded-full bg-white ' + (j === 1 ? '-translate-y-1.5 ' : '')}
-                  style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.05)' }}
-                />
-              ))}
-            </div>
-            <span className="h-5 w-[58%] rounded-full bg-white/80" style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }} />
-          </>
-        ) : (
-          <>
-            <div className="flex gap-2.5 mb-1">
-              {m.emojis.map((e, j) => (
-                <div
-                  key={`${e}-${j}`}
-                  className={
-                    "size-7 bg-white rounded-full flex items-center justify-center " +
-                    (j === 1 ? "-translate-y-1.5 " : "")
-                  }
-                  style={{
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.05)',
-                  }}
-                >
-                  <img src={getEmojiUrl(e)} alt={e} width={18} height={18} draggable={false} />
-                </div>
-              ))}
-            </div>
-            <span className="text-black text-[31px]/[110%] font-semibold tracking-[-0.02em]">
-              {m.name}
+      {blur ? (
+        /* Frosted "hidden profile" footer — a glass strip with a lock + redacted
+           lines, so the bottom reads as real (locked) content, not empty white. */
+        <div
+          className="absolute inset-x-2.5 bottom-2.5 z-10 rounded-2xl px-3.5 py-3 flex items-center gap-3"
+          style={{
+            background: 'rgba(22,9,18,0.42)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            border: '1px solid rgba(255,255,255,0.16)',
+          }}
+        >
+          <span className="shrink-0 size-9 rounded-full flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #F857B0, #C01A7E)', boxShadow: '0 4px 12px rgba(226,49,155,0.4)' }}>
+            <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <rect x="5" y="10.5" width="14" height="9.5" rx="2.4" stroke="#fff" strokeWidth="1.7" />
+              <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+          </span>
+          <span className="flex-1 flex flex-col gap-1.5">
+            <span className="h-2.5 rounded-full bg-white/85" style={{ width: '72%' }} />
+            <span className="h-2 rounded-full bg-white/45" style={{ width: '46%' }} />
+          </span>
+        </div>
+      ) : (
+        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center px-5 pb-6 z-10">
+          <div className="flex gap-2.5 mb-1">
+            {m.emojis.map((e, j) => (
+              <div
+                key={`${e}-${j}`}
+                className={
+                  "size-7 bg-white rounded-full flex items-center justify-center " +
+                  (j === 1 ? "-translate-y-1.5 " : "")
+                }
+                style={{
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.05)',
+                }}
+              >
+                <img src={getEmojiUrl(e)} alt={e} width={18} height={18} draggable={false} />
+              </div>
+            ))}
+          </div>
+          <span className="text-black text-[31px]/[110%] font-semibold tracking-[-0.02em]">
+            {m.name}
+          </span>
+          {m.desc && (
+            <span className="text-[#777779] text-[13px]/[145%] font-medium text-center mt-1.5 px-3">
+              {m.desc}
             </span>
-            {m.desc && (
-              <span className="text-[#777779] text-[13px]/[145%] font-medium text-center mt-1.5 px-3">
-                {m.desc}
-              </span>
-            )}
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
