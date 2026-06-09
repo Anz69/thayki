@@ -160,10 +160,10 @@ function ModelCard({ m, blur = false }) {
       }}
     >
       <div className="absolute inset-0 bg-[#EDE8E8]">
-        {/* Photo: cleanly blurred (scaled up so blurred edges don't bleed). */}
+        {/* Photo: softly blurred (scaled up so blurred edges don't bleed). */}
         <div
           className="absolute inset-0"
-          style={blur ? { filter: 'blur(14px)', transform: 'scale(1.18)' } : undefined}
+          style={blur ? { filter: 'blur(8px)', transform: 'scale(1.12)' } : undefined}
         >
           <OptimizedImage
             src={m.photo}
@@ -172,20 +172,25 @@ function ModelCard({ m, blur = false }) {
             draggable={false}
           />
         </div>
-        {/* Frosted tint over a hidden profile (soft, premium — not muddy). */}
-        {blur && (
-          <div aria-hidden className="absolute inset-0 pointer-events-none"
-            style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 45%, rgba(255,255,255,0.18) 100%)' }} />
+        {blur ? (
+          /* Hidden profile: keep the photo rich (no washing out) — a refined
+             dark→pink scrim at the bottom for depth + contrast under the label. */
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(to bottom, rgba(20,8,18,0.10) 0%, rgba(20,8,18,0) 30%, rgba(34,10,28,0.42) 66%, rgba(28,8,24,0.74) 100%)' }}
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className="absolute bottom-0 left-0 right-0 pointer-events-none"
+            style={{
+              height: 170,
+              background:
+                'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.55) 40%, #fff 80%)',
+            }}
+          />
         )}
-        <div
-          aria-hidden="true"
-          className="absolute bottom-0 left-0 right-0 pointer-events-none"
-          style={{
-            height: 170,
-            background:
-              'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.55) 40%, #fff 80%)',
-          }}
-        />
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center px-5 pb-6 z-10">
