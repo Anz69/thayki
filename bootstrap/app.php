@@ -35,12 +35,19 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api',
     )
     // The mini app authenticates the /broadcasting/auth request with a Sanctum
-    // Bearer token (not a session cookie), so the channel-auth route must use the
-    // sanctum guard — otherwise private channel subscriptions are denied and chat
-    // messages never arrive in real time.
+    // Bearer token, so the channel-auth route must use the sanctum guard —
+    // otherwise private channel subscriptions are denied (401) and chat messages
+    // never arrive in real time.
+    //
+    // EnsureFrontendRequestsAreStateful gives this route the SAME auth resolution
+    // as the api/* group (which works in prod): on the stateful domain it loads
+    // the session and lets Sanctum resolve the user via session-or-token, instead
+    // of token-only. Without it, broadcasting/auth was the odd one out and 401'd
+    // behind the prod proxy while api/* kept working. CSRF for it is disabled
+    // below (same as api/*) so the added stateful layer can't introduce a 419.
     ->withBroadcasting(
         __DIR__.'/../routes/channels.php',
-        attributes: ['middleware' => ['auth:sanctum']],
+        attributes: ['middleware' => [EnsureFrontendRequestsAreStateful::class, 'auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
@@ -92,6 +99,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'telegram/webhook/*',
             'api/*',
+            // Bearer-token channel auth (Sanctum). See withBroadcasting above —
+            // it now runs the stateful middleware for parity with api/*, which
+            // would otherwise enforce CSRF and intermittently 419 the handshake.
+            'broadcasting/auth',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
