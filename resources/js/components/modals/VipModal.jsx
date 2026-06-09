@@ -5,8 +5,8 @@ import VipStep from '@/components/sections/vip/VipStep'
 import { useCompactMode } from '@/composables/useCompactMode'
 import { useTranslation } from 'react-i18next'
 
-const STEPS = ['s1', 's2', 's3', 's4']
-const VARIANTS = ['gem', 'lock', 'shield', 'person']
+const STEPS = ['s1', 's2']
+const VARIANTS = ['gem', 'lock']
 const DUR_OUT = 0.20
 const DUR_IN = 0.46
 
@@ -18,6 +18,7 @@ const DUR_IN = 0.46
 export default function VipModal({ isOpen, onClose, onContinue }) {
   const { t } = useTranslation()
   const [stepIdx, setStepIdx] = useState(0)
+  const [design, setDesign] = useState('glow') // 'glow' | 'lux' — temporary chooser
   const isCompact = useCompactMode()
   const slidesRef = useRef([])
   const stepRef = useRef(0)
@@ -145,6 +146,24 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
           )}
         </div>
 
+        {/* TEMP: style chooser — pick one and tell me, I'll remove this. */}
+        <div className="flex justify-center pt-1 pb-2 shrink-0">
+          <div className="inline-flex bg-[#F0F0F3] rounded-full p-0.5">
+            {[['glow', 'Стиль 1'], ['lux', 'Стиль 2']].map(([d, label]) => (
+              <button
+                key={d}
+                onClick={() => setDesign(d)}
+                className={[
+                  'px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-colors',
+                  design === d ? 'bg-white text-black shadow-sm' : 'text-[#8B8A92]',
+                ].join(' ')}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="relative flex-1 min-h-0 overflow-hidden">
           {STEPS.map((s, i) => (
             <div
@@ -160,7 +179,7 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
                 pointerEvents: i === 0 ? 'auto' : 'none',
               }}
             >
-              <VipStep isActive={stepIdx === i} variant={VARIANTS[i]} />
+              <VipStep isActive={stepIdx === i} variant={VARIANTS[i]} design={design} />
             </div>
           ))}
         </div>
