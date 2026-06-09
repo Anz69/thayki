@@ -305,14 +305,19 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     }
   }, [inviteLoading, inviteToken])
 
+  // Always share an INVITE link — with or without selected models. Without it
+  // (no selection) we used to send the bare bot link, which doesn't credit the
+  // inviter or pre-verify the recipient. Falls back to the plain bot link only
+  // if the invite API genuinely fails, so sharing never hard-blocks.
+  const resolvePayload = useCallback(async () => {
+    const token = await ensureInviteToken()
+    if (!token) return sharePayload
+    return buildPayloadWithToken(token)
+  }, [ensureInviteToken, buildPayloadWithToken, sharePayload])
+
   const shareToTelegram = async () => {
-    let payload = sharePayload
-    if (selectedModels.length > 0) {
-      const token = await ensureInviteToken()
-      if (!token) return
-      payload = buildPayloadWithToken(token)
-    }
-  
+    const payload = await resolvePayload()
+
     // Важно: Telegram ожидает `url=`. Иначе иногда происходит редирект/неверный результат.
     const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(payload.url)}&text=${encodeURIComponent(payload.text)}`
     const tg = window.Telegram?.WebApp
@@ -321,16 +326,11 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     } else {
       window.open(tgUrl, '_blank', 'noopener,noreferrer')
     }
-    setStatus(isBotFallback ? 'Отправлена ссылка на бота' : 'Сообщение с моделями отправлено')
+    setStatus(isBotFallback ? 'Инвайт-ссылка отправлена' : 'Сообщение с моделями отправлено')
   }
 
   const shareNative = async () => {
-    let payload = sharePayload
-    if (selectedModels.length > 0) {
-      const token = await ensureInviteToken()
-      if (!token) return
-      payload = buildPayloadWithToken(token)
-    }
+    const payload = await resolvePayload()
     if (!navigator.share) {
       setStatus('Системный способ «Поделиться» недоступен, используйте копирование')
       return
@@ -340,7 +340,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
         title: BRAND,
         text: payload.url ? `${payload.url}\n${payload.text}` : payload.text,
       })
-      setStatus(isBotFallback ? 'Ссылка на бота отправлена' : 'Сообщение отправлено')
+      setStatus(isBotFallback ? 'Инвайт-ссылка отправлена' : 'Сообщение отправлено')
     } catch {
       setStatus('Отправка отменена')
     }
@@ -348,12 +348,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
 
   const copyText = async () => {
     try {
-      let payload = sharePayload
-      if (selectedModels.length > 0) {
-        const token = await ensureInviteToken()
-        if (!token) return
-        payload = buildPayloadWithToken(token)
-      }
+      const payload = await resolvePayload()
       const fullText = payload.url ? `${payload.url}\n${payload.text}` : payload.text
       const ok = await copyToClipboard(fullText)
       if (!ok) throw new Error('copy failed')
