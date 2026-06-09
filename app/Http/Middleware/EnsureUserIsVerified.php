@@ -36,6 +36,10 @@ class EnsureUserIsVerified
         'auth.telegram',
         'auth.me',
         'auth.logout',
+        // Strange users are exactly who needs this — on granting write access
+        // the bot sends them the strange welcome. Without it the ping 403'd and
+        // no message was ever sent.
+        'auth.write-access',
         'me.profile',
         'me.update',
     ];
