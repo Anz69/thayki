@@ -146,6 +146,19 @@ export default function RequestPage() {
 
   const setVal = (field, v) => setValues((p) => ({ ...p, [field]: v }))
 
+  // Smoothly collapse + fade the V.I.P badge before leaving VIP mode.
+  const cancelVip = () => {
+    const el = vipBadgeRef.current
+    if (!el) { setVipMode(false); return }
+    gsap.killTweensOf(el)
+    el.style.overflow = 'hidden'
+    gsap.to(el, {
+      autoAlpha: 0, height: 0, marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, scale: 0.97, y: -6,
+      duration: 0.34, ease: 'power2.inOut',
+      onComplete: () => setVipMode(false),
+    })
+  }
+
   // On focus, lift the active field to the top of the scroll area so it (and the
   // next field below it) stay visible above the on-screen keyboard.
   const scrollFieldIntoView = (e) => {
@@ -284,7 +297,7 @@ export default function RequestPage() {
             </div>
             <button
               type="button"
-              onClick={() => setVipMode(false)}
+              onClick={cancelVip}
               aria-label={t('vip.cancel')}
               className="shrink-0 size-7 rounded-full bg-[#F2F0F5] text-[#8B8A92] flex items-center justify-center active:scale-90 transition-transform"
             >

@@ -146,47 +146,49 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
           ))}
         </div>
 
-        <div ref={footerWrapRef} className={`shrink-0 overflow-hidden flex items-start justify-start ${isCompact ? 'min-h-[180px] pt-2' : 'min-h-[224px] pt-3'}`}>
-          <div className="flex flex-col items-center w-full text-center px-6">
-            <div ref={pillRef} className={`px-4 py-1.5 rounded-full bg-[#F5F5F7] inline-block ${isCompact ? 'mb-3' : 'mb-4'}`}>
-              <span className="text-black text-sm/[100%] font-medium">{t('hiw.step', { n: stepIdx + 1, total: STEPS.length })}</span>
-            </div>
-            <h2 ref={titleRef} className={`font-medium text-black mb-2.5 ${isCompact ? 'text-[20px]/[116%]' : 'text-[24px]/[116%]'}`}>
-              {t(`vip.${stepKey}t`)}
-            </h2>
-            <p ref={subtitleRef} className="max-w-[300px] text-[14px]/[130%] font-medium text-[#8A8A8A] line-clamp-2">
-              {t(`vip.${stepKey}s`)}
-            </p>
+        <div
+          ref={footerWrapRef}
+          className="shrink-0 flex flex-col items-center text-center px-6 pt-2"
+          style={{ paddingBottom: 'max(18px, calc(env(safe-area-inset-bottom) + 10px))' }}
+        >
+          <div ref={pillRef} className="px-4 py-1.5 rounded-full bg-[#F5F5F7] inline-block mb-3">
+            <span className="text-black text-sm/[100%] font-medium">{t('hiw.step', { n: stepIdx + 1, total: STEPS.length })}</span>
           </div>
-        </div>
+          <h2 ref={titleRef} className={`font-medium text-black mb-2 ${isCompact ? 'text-[20px]/[116%]' : 'text-[23px]/[116%]'}`}>
+            {t(`vip.${stepKey}t`)}
+          </h2>
+          <p ref={subtitleRef} className="max-w-[300px] text-[13.5px]/[130%] font-medium text-[#8A8A8A] line-clamp-2">
+            {t(`vip.${stepKey}s`)}
+          </p>
 
-        {/* Bottom actions */}
-        <div className="shrink-0 px-5 pt-1" style={{ paddingBottom: 'max(20px, calc(env(safe-area-inset-bottom) + 12px))' }}>
-          {isLast ? (
-            <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+          {/* Actions — sit right under the text */}
+          <div className="w-full mt-5">
+            {isLast ? (
+              <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+                <button
+                  onClick={onClose}
+                  className="py-3 rounded-full bg-[#F0F0F3] text-black text-[14px] font-semibold active:bg-[#E6E4EB] transition-colors"
+                >
+                  {t('vip.decline')}
+                </button>
+                <button
+                  onClick={onContinue}
+                  className="py-3 rounded-full text-white text-[14px] font-semibold active:scale-[0.98] transition-transform"
+                  style={{ background: 'linear-gradient(120deg, #C01A7E 0%, #E2319B 100%)', boxShadow: '0 8px 22px rgba(226,49,155,0.40)' }}
+                >
+                  {t('vip.continue')}
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={onClose}
-                className="py-4 rounded-full bg-[#F0F0F3] text-black text-[15px] font-semibold active:bg-[#E6E4EB] transition-colors"
+                onClick={() => goTo(stepRef.current + 1)}
+                className="w-full py-3 rounded-full text-white text-[14px] font-semibold active:scale-[0.98] transition-transform"
+                style={{ background: 'linear-gradient(120deg, #C01A7E 0%, #E2319B 100%)', boxShadow: '0 8px 22px rgba(226,49,155,0.40)' }}
               >
-                {t('vip.decline')}
+                {t('hiw.next')}
               </button>
-              <button
-                onClick={onContinue}
-                className="py-4 rounded-full text-white text-[15px] font-semibold active:scale-[0.98] transition-transform"
-                style={{ background: 'linear-gradient(120deg, #C01A7E 0%, #E2319B 100%)', boxShadow: '0 10px 26px rgba(226,49,155,0.42)' }}
-              >
-                {t('vip.continue')}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => goTo(stepRef.current + 1)}
-              className="w-full py-4 rounded-full text-white text-[15px] font-semibold active:scale-[0.98] transition-transform"
-              style={{ background: 'linear-gradient(120deg, #C01A7E 0%, #E2319B 100%)', boxShadow: '0 10px 26px rgba(226,49,155,0.42)' }}
-            >
-              {t('hiw.next')}
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </ModalSheet>
