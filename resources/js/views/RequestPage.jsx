@@ -218,11 +218,11 @@ export default function RequestPage() {
                   style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent)', opacity: 0 }}
                 />
               </span>
-              <svg className="relative z-10 w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <svg className="relative z-10 size-4" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
                 <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="#fff" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
               </svg>
-              <span className="relative z-10 text-[13px] font-bold" style={{ letterSpacing: '0.14em' }}>VIP</span>
+              <span className="relative z-10 text-base font-[500]" style={{ letterSpacing: '0.14em' }}>VIP</span>
               {/* sparkle accent */}
               <svg className="absolute -top-1.5 -right-1 w-3.5 h-3.5 z-10" viewBox="0 0 24 24" fill="#E2319B" aria-hidden>
                 <path d="M12 2.5l1.7 5.1a3 3 0 0 0 1.9 1.9L20.5 11l-4.9 1.5a3 3 0 0 0-1.9 1.9L12 19.5l-1.7-5.1a3 3 0 0 0-1.9-1.9L3.5 11l4.9-1.5a3 3 0 0 0 1.9-1.9L12 2.5Z" />
@@ -264,22 +264,20 @@ export default function RequestPage() {
           <div
             ref={vipBadgeRef}
             className="relative flex items-center gap-3.5 rounded-2xl p-4 bg-white border border-black/[0.06]"
-            style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}
+
           >
             <span
               ref={vipGemRef}
               className="shrink-0 size-11 rounded-xl flex items-center justify-center"
-              style={{ background: '#161616', boxShadow: '0 6px 16px rgba(0,0,0,0.20)' }}
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
-                <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="#fff" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
+              <svg className="size-10" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="black" strokeWidth="1.5" strokeLinejoin="round" />
+                <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="black" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
               </svg>
             </span>
             <div className="flex-1 min-w-0 flex flex-col">
               <span className="flex items-center gap-1.5">
                 <span className="text-black text-[15px]/[110%] font-bold">{t('vip.button')}</span>
-                <span className="w-1 h-1 rounded-full bg-[#E2319B]" />
               </span>
               <span className="text-[#9A9AA0] text-[13px]/[135%] mt-1">{t('vip.teaser')}</span>
             </div>
