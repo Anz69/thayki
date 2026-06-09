@@ -11,7 +11,6 @@ const SPARKS = [
 export default function VipGemHero({ isActive }) {
   const gemRef = useRef(null)
   const haloRef = useRef(null)
-  const videoRef = useRef(null)
   const sparkRefs = useRef([])
 
   useLayoutEffect(() => {
@@ -26,10 +25,6 @@ export default function VipGemHero({ isActive }) {
     const halo = haloRef.current
     const sparks = sparkRefs.current.filter(Boolean)
     const all = [gem, halo, ...sparks]
-
-    // Restart the clip from the top each time the step becomes active.
-    const v = videoRef.current
-    if (v) { try { v.currentTime = 0; const p = v.play(); if (p?.catch) p.catch(() => {}) } catch {} }
 
     gsap.killTweensOf(all)
     gsap.set(halo, { autoAlpha: 0, scale: 0.7 })
@@ -65,25 +60,17 @@ export default function VipGemHero({ isActive }) {
             </svg>
           </span>
         ))}
-        {/* The clip is a bright diamond on a SOLID BLACK background (no alpha —
-            alpha codecs render as a black box in many Telegram webviews).
-            mix-blend-mode:screen drops every black pixel to transparent against
-            the white modal and keeps the bright gem at full quality, working on
-            every client without relying on a transparent-video codec. */}
-        <div ref={gemRef} className="absolute" style={{ left: 24, top: 28, width: 192, height: 192, filter: 'drop-shadow(0 18px 34px rgba(226,49,155,0.40))' }}>
-          <video
-            ref={videoRef}
-            src="/img/blir.webm"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
+        {/* Transparent animated WebP (real alpha) — renders cleanly on ANY
+            background in every browser/webview, no black box, no blend-mode
+            backdrop dependence. The source gem is bluish; hue-rotate shifts it
+            to a vivid brand pink while keeping the white facet highlights. */}
+        <div ref={gemRef} className="absolute" style={{ left: 24, top: 28, width: 192, height: 192, filter: 'drop-shadow(0 18px 34px rgba(226,49,155,0.45))' }}>
+          <img
+            src="/img/blir-alpha-anim.webp"
+            alt=""
             aria-hidden
             className="w-full h-full object-contain pointer-events-none"
-            /* The source clip is a bluish gem — hue-rotate shifts it to the
-               brand magenta/pink while keeping the white facet highlights. */
-            style={{ mixBlendMode: 'screen', filter: 'hue-rotate(125deg) saturate(1.35)' }}
+            style={{ filter: 'hue-rotate(120deg) saturate(1.55) brightness(1.04)' }}
           />
         </div>
       </div>

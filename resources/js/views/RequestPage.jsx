@@ -258,10 +258,15 @@ export default function RequestPage() {
                   style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent)', opacity: 0 }}
                 />
               </span>
-              <svg className="relative z-10 size-4" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
-                <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="#fff" strokeWidth="1" strokeLinejoin="round" opacity="0.55" />
-              </svg>
+              {/* Transparent animated diamond — silver/ч-б so it reads on the
+                  black pill next to the white VIP label. */}
+              <img
+                src="/img/blir-alpha-anim.webp"
+                alt=""
+                aria-hidden
+                className="relative z-10 size-5 object-contain pointer-events-none"
+                style={{ filter: 'grayscale(1) brightness(1) contrast(1.05)' }}
+              />
               <span className="relative z-10 text-sm/[80%] font-[500]">VIP</span>
               {/* sparkle accent */}
               <svg ref={vipSparkRef} className="absolute -top-1.5 -right-1.5 w-4 h-4 z-10" viewBox="0 0 24 24" fill="#E2319B" aria-hidden>
@@ -309,22 +314,16 @@ export default function RequestPage() {
           >
             <span
               ref={vipGemRef}
-              className="shrink-0 size-11 rounded-xl flex items-center justify-center overflow-hidden"
-              style={{ background: 'linear-gradient(150deg,#2a2a2e,#101012)' }}
+              className="shrink-0 size-11 flex items-center justify-center"
             >
-              {/* Same diamond clip as the modal, but grayscale (ч/б). The clip is
-                  a bright gem on solid black — mixBlendMode:screen drops the black
-                  against the dark chip and the silver gem glints on top. */}
-              <video
-                src="/img/blir.webm"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
+              {/* Transparent animated WebP — no background box, reads on the
+                  white card. Grayscale + darkened into a sleek graphite gem. */}
+              <img
+                src="/img/blir-alpha-anim.webp"
+                alt=""
                 aria-hidden
-                className="w-[150%] h-[150%] object-contain pointer-events-none"
-                style={{ mixBlendMode: 'screen', filter: 'grayscale(1) contrast(1.05) brightness(1.08)' }}
+                className="w-full h-full object-contain pointer-events-none"
+                style={{ filter: 'grayscale(1) brightness(0.62) contrast(1.45)' }}
               />
             </span>
             
