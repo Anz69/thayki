@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import gsap from 'gsap'
+import FacetedDiamond from './FacetedDiamond'
 
 const SPARKS = [
   { x: 196, y: 30, s: 22 },
@@ -59,20 +60,10 @@ export default function VipGemHero({ isActive }) {
             </svg>
           </span>
         ))}
-        <div ref={gemRef} className="absolute" style={{ left: 30, top: 30, width: 180, height: 180, filter: 'drop-shadow(0 18px 34px rgba(226,49,155,0.40))' }}>
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-contain"
-            style={{ pointerEvents: 'none', filter: 'sepia(1) hue-rotate(280deg) saturate(3) brightness(1.05)' }}
-          >
-            {/* iOS (WKWebView) renders HEVC-alpha .mov; others render VP9-alpha .webm.
-                Both have the black background keyed out to transparency. */}
-            <source src="/img/blir-alpha.mov" type='video/quicktime; codecs="hvc1"' />
-            <source src="/img/blir-alpha.webm" type="video/webm" />
-          </video>
+        {/* Crisp vector gem — transparent & sharp on every Telegram client
+            (transparent video showed a black box on some webviews). */}
+        <div ref={gemRef} className="absolute flex items-center justify-center" style={{ left: 30, top: 34, width: 180, height: 180, filter: 'drop-shadow(0 18px 34px rgba(226,49,155,0.40))' }}>
+          <FacetedDiamond size={172} />
         </div>
       </div>
     </div>
