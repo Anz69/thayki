@@ -323,7 +323,7 @@ export default function RequestPage() {
                 alt=""
                 aria-hidden
                 className="w-full h-full object-contain pointer-events-none"
-                style={{ filter: 'grayscale(1) brightness(0.62) contrast(1.45)' }}
+                style={{ filter: 'grayscale(1) brightness(0.9) contrast(1.45)' }}
               />
             </span>
             
