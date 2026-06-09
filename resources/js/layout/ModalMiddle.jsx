@@ -67,31 +67,41 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
         return Math.max(12, Math.round(inset) + 8)
       } catch { return 56 }
     }
-    const update = () => {
+    // `animate`: on the keyboard opening/closing the sheet quickly flies to its
+    // new spot above the keyboard (instead of jumping / looking crooked). On
+    // scroll we just set it instantly.
+    const update = (animate) => {
       const sheet = sheetRef.current
       if (!sheet) return
       const kb = keyboardInset()
-      sheet.style.bottom = kb + 'px'
       // Cap to the area between the keyboard and the Telegram header so the top
       // never clips behind it.
       sheet.style.maxHeight = Math.max(160, Math.round(vv.height - topGap())) + 'px'
+      if (animate) {
+        gsap.to(sheet, { bottom: kb, duration: 0.18, ease: 'power3.out', overwrite: 'auto' })
+      } else {
+        gsap.killTweensOf(sheet, 'bottom')
+        sheet.style.bottom = kb + 'px'
+      }
     }
-    // On the keyboard opening (resize), also pull the sheet content to the
-    // bottom so the action button / focused field is visible right away.
+    // On the keyboard opening (resize), fly the sheet up and pull the content to
+    // the bottom so the action button / focused field is visible right away.
     const onResize = () => {
-      update()
+      update(true)
       if (keyboardInset() > 120) {
         const sc = sheetRef.current?.querySelector('.modal-middle-scroll')
         if (sc) requestAnimationFrame(() => { sc.scrollTop = sc.scrollHeight + 9999 })
       }
     }
-    update()
+    const onScroll = () => update(false)
+    update(false)
     vv.addEventListener('resize', onResize)
-    vv.addEventListener('scroll', update)
+    vv.addEventListener('scroll', onScroll)
     return () => {
       vv.removeEventListener('resize', onResize)
-      vv.removeEventListener('scroll', update)
+      vv.removeEventListener('scroll', onScroll)
       if (sheetRef.current) {
+        gsap.killTweensOf(sheetRef.current, 'bottom')
         sheetRef.current.style.bottom = ''
         sheetRef.current.style.maxHeight = ''
       }
