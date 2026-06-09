@@ -77,8 +77,15 @@ class LeadPaymentResource extends Resource
                     'RUB' => 'RUB', 'USD' => 'USD', 'EUR' => 'EUR', 'THB' => 'THB',
                 ]),
             ])
-            ->actions([])
-            ->bulkActions([]);
+            ->actions([
+                Tables\Actions\DeleteAction::make()
+                    ->label('Удалить')
+                    ->requiresConfirmation(),
+            ])
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make()
+                    ->label('Удалить выбранные'),
+            ]);
     }
 
     public static function getPages(): array

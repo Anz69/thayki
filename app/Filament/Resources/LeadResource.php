@@ -92,15 +92,15 @@ class LeadResource extends Resource
                     ->url(fn (Lead $r) => SupportChats::getUrl(['chat' => $r->chat_id])),
                 Tables\Actions\DeleteAction::make()
                     ->label('Удалить')
-                    ->requiresConfirmation()
-                    // Also remove the lead's chat (cascades its messages); lead
-                    // payments cascade via the FK.
-                    ->before(fn (Lead $r) => $r->chat?->delete()),
+                    ->requiresConfirmation(),
+                // NB: we deliberately do NOT delete the lead's chat here — that
+                // cascade hit a constraint and 500'd on bulk delete. The lead
+                // deletes on its own (lead_payments cascade via FK); the chat is
+                // just left in place (harmless).
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()
-                    ->label('Удалить выбранные')
-                    ->before(fn ($records) => $records->each(fn (Lead $r) => $r->chat?->delete())),
+                    ->label('Удалить выбранные'),
             ])
             ->defaultSort('created_at', 'desc');
     }

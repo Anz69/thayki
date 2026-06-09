@@ -9,7 +9,6 @@ use App\Enums\UserStatus;
 use App\Models\StartInvite;
 use App\Models\StartInviteUse;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -164,10 +163,14 @@ class StartHandler
      */
     private function markWelcomed(User $user): void
     {
+        if ($user->bot_welcomed) {
+            return;
+        }
         try {
-            Cache::put('write_access_welcome:'.$user->id, 1, now()->addDays(30));
+            $user->forceFill(['bot_welcomed' => true])->save();
         } catch (\Throwable) {
-            // Cache unavailable — worst case is one duplicate welcome; ignore.
+            // Column missing (migration not run yet) — ignore; worst case is one
+            // duplicate welcome.
         }
     }
 

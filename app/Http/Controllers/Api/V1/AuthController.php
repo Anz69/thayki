@@ -122,10 +122,10 @@ class AuthController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $key = 'write_access_welcome:'.$user->id;
-        // Already welcomed → skip. (Only set AFTER a successful send below, so a
-        // ping that arrives before tg_chat_id is populated doesn't lock us out.)
-        if (Cache::has($key)) {
+        // Welcome exactly once per user, ever. Persistent DB flag (not cache) so
+        // existing users — who all have bot_welcomed=true from the backfill — are
+        // never spammed on app open, and a new user gets it a single time.
+        if ($user->bot_welcomed) {
             return ApiResponse::ok(['sent' => false]);
         }
 
@@ -141,7 +141,7 @@ class AuthController extends Controller
         }
 
         if ($sent) {
-            Cache::put($key, 1, now()->addHours(24));
+            $user->forceFill(['bot_welcomed' => true])->save();
         }
 
         return ApiResponse::ok(['sent' => $sent]);
