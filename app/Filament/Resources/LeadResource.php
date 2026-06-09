@@ -42,6 +42,13 @@ class LeadResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
+                Tables\Columns\TextColumn::make('vip')
+                    ->label('VIP')
+                    ->state(fn (Lead $r): ?string => $r->isVip() ? 'VIP' : null)
+                    ->badge()
+                    ->color('danger')
+                    ->icon('heroicon-s-sparkles')
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('user.first_name')
                     ->label('Клиент')
                     ->formatStateUsing(fn ($state, Lead $r) => trim(($r->user?->first_name ?? '').' '.($r->user?->last_name ?? '')) ?: ($r->user?->username ?? '—'))
@@ -65,6 +72,9 @@ class LeadResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Статус')
                     ->options(collect(LeadStatus::cases())->mapWithKeys(fn (LeadStatus $s) => [$s->value => $s->label()])->all()),
+                Tables\Filters\Filter::make('vip')
+                    ->label('Только VIP')
+                    ->query(fn ($query) => $query->where('goal', Lead::VIP_GOAL)),
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
@@ -87,6 +97,14 @@ class LeadResource extends Resource
     public static function leadInfolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([
+            Infolists\Components\TextEntry::make('vip')
+                ->hiddenLabel()
+                ->state(fn (Lead $r): ?string => $r->isVip() ? 'V.I.P заявка' : null)
+                ->badge()
+                ->color('danger')
+                ->icon('heroicon-s-sparkles')
+                ->visible(fn (Lead $r): bool => $r->isVip()),
+
             Infolists\Components\Section::make('Клиент')
                 ->icon('heroicon-o-user')
                 ->schema([

@@ -27,7 +27,20 @@ use Illuminate\Support\Carbon;
  */
 class Lead extends Model
 {
+    /**
+     * The goal value written for a V.I.P request (see the Mini App's
+     * RequestPage VIP flow). It's the marker that flags a lead as VIP — there
+     * is no separate column, so keep this the single source of truth.
+     */
+    public const VIP_GOAL = 'V.I.P модели';
+
     protected $guarded = ['id'];
+
+    /** Whether this lead came through the V.I.P flow. */
+    public function isVip(): bool
+    {
+        return $this->goal === self::VIP_GOAL;
+    }
 
     protected function casts(): array
     {

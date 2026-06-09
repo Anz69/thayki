@@ -396,6 +396,7 @@ class ManagerLeadController extends Controller
             'age_range' => $lead->age_range,
             'height_range' => $lead->height_range,
             'goal' => $lead->goal,
+            'is_vip' => $lead->isVip(),
             'wishes' => $lead->wishes,
             'created_at' => $lead->created_at?->toIso8601String(),
             'manager_id' => $lead->manager_id,

@@ -34,6 +34,22 @@ function InfoRow({ label, value }) {
   )
 }
 
+// V.I.P marker — leads created through the VIP flow (lead.is_vip from the API).
+function VipTag({ size = 'sm' }) {
+  const dim = size === 'lg' ? 'text-[12px] px-2.5 py-1 gap-1' : 'text-[10px] px-2 py-0.5 gap-1'
+  return (
+    <span
+      className={`inline-flex items-center ${dim} rounded-full font-bold text-white shrink-0 tracking-wide`}
+      style={{ background: 'linear-gradient(135deg,#E2319B,#B0167A)', boxShadow: '0 2px 8px rgba(226,49,155,0.35)' }}
+    >
+      <svg viewBox="0 0 24 24" fill="currentColor" className={size === 'lg' ? 'w-3 h-3' : 'w-2.5 h-2.5'} aria-hidden>
+        <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" />
+      </svg>
+      VIP
+    </span>
+  )
+}
+
 export default function ManagerLeadsPage() {
   const { t, i18n } = useTranslation()
   const navigate = useTransitionNavigate()
@@ -318,6 +334,7 @@ export default function ManagerLeadsPage() {
                   <div className="flex items-center gap-1.5">
                     <span className="text-black text-[15px] font-semibold truncate">{lead.client?.name ?? '—'}</span>
                     {lead.identity_verified && <VerifiedMark />}
+                    {lead.is_vip && <VipTag />}
                     <span className="ml-auto shrink-0 text-[#B7B6BC] text-[11px] font-medium">{relTime(lead.created_at, i18n.language)}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-[#9B9AA0] text-[13px] mt-1 min-w-0">
@@ -364,7 +381,10 @@ export default function ManagerLeadsPage() {
           return (
             <div className="relative flex flex-col px-5 pt-1 pb-6 gap-4">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-black text-lg font-bold">{t('requestChat.title')} #{viewing.id}</h2>
+                <h2 className="flex items-center gap-2 text-black text-lg font-bold">
+                  {t('requestChat.title')} #{viewing.id}
+                  {viewing.is_vip && <VipTag size="lg" />}
+                </h2>
                 {isNew ? (
                   <StatusChip status={viewing.status} />
                 ) : (
