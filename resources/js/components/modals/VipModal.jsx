@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import gsap from 'gsap'
 import ModalSheet from '@/layout/ModalSheet'
-import VipStep from '@/components/sections/vip/VipStep'
+import VipCard from '@/components/sections/vip/VipCard'
+import VipProfiles from '@/components/sections/vip/VipProfiles'
 import { useCompactMode } from '@/composables/useCompactMode'
 import { useTranslation } from 'react-i18next'
 
 const STEPS = ['s1', 's2']
-const VARIANTS = ['gem', 'lock']
+const STEP_CONTENT = [VipCard, VipProfiles]
 const DUR_OUT = 0.20
 const DUR_IN = 0.46
 
@@ -18,7 +19,6 @@ const DUR_IN = 0.46
 export default function VipModal({ isOpen, onClose, onContinue }) {
   const { t } = useTranslation()
   const [stepIdx, setStepIdx] = useState(0)
-  const [design, setDesign] = useState('glow') // 'glow' | 'lux' — temporary chooser
   const isCompact = useCompactMode()
   const slidesRef = useRef([])
   const stepRef = useRef(0)
@@ -123,9 +123,7 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
             {t('common.back')}
           </button>
           <span className="flex items-center gap-1.5 text-black text-base/[100%] font-medium">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="#161616" strokeWidth="1.6" strokeLinejoin="round" />
-            </svg>
+          <svg className="size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"></path><path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="currentColor" stroke-width="0.9" stroke-linejoin="round" opacity="0.5"></path></svg>
             {t('vip.title')}
           </span>
           {isLast ? (
@@ -146,26 +144,8 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
           )}
         </div>
 
-        {/* TEMP: style chooser — pick one and tell me, I'll remove this. */}
-        <div className="flex justify-center pt-1 pb-2 shrink-0">
-          <div className="inline-flex bg-[#F0F0F3] rounded-full p-0.5">
-            {[['glow', 'Стиль 1'], ['lux', 'Стиль 2']].map(([d, label]) => (
-              <button
-                key={d}
-                onClick={() => setDesign(d)}
-                className={[
-                  'px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-colors',
-                  design === d ? 'bg-white text-black shadow-sm' : 'text-[#8B8A92]',
-                ].join(' ')}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="relative flex-1 min-h-0 overflow-hidden">
-          {STEPS.map((s, i) => (
+          {STEP_CONTENT.map((StepComp, i) => (
             <div
               key={`slide-${i}`}
               ref={(el) => { slidesRef.current[i] = el }}
@@ -179,7 +159,7 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
                 pointerEvents: i === 0 ? 'auto' : 'none',
               }}
             >
-              <VipStep isActive={stepIdx === i} variant={VARIANTS[i]} design={design} />
+              <StepComp isActive={stepIdx === i} />
             </div>
           ))}
         </div>
