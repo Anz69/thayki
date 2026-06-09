@@ -19,28 +19,53 @@ import StrangeWelcomePage from '@/views/StrangeWelcomePage'
 import BannedPage from '@/views/BannedPage'
 import ModalMiddle from '@/layout/ModalMiddle'
 
-const HomePage = lazy(() => import('@/views/HomePage'))
-const ModelPage = lazy(() => import('@/views/ModelPage'))
-const MeetingPage = lazy(() => import('@/views/MeetingPage'))
-const ModelMeetingPage = lazy(() => import('@/views/ModelMeetingPage'))
-const ChatPage = lazy(() => import('@/views/ChatPage'))
-const RoadmapPage = lazy(() => import('@/views/RoadmapPage'))
-const MorePage = lazy(() => import('@/views/MorePage'))
-const ModelMorePage = lazy(() => import('@/views/ModelMorePage'))
-const ProfilePage = lazy(() => import('@/views/ProfilePage'))
-const ClientPage = lazy(() => import('@/views/ClientPage'))
-const BecomeModelPage = lazy(() => import('@/views/BecomeModelPage'))
-const ApplicationPendingPage = lazy(() => import('@/views/ApplicationPendingPage'))
-const SupportPage = lazy(() => import('@/views/SupportPage'))
-const FeedbackPage = lazy(() => import('@/views/FeedbackPage'))
-const RequestPage = lazy(() => import('@/views/RequestPage'))
-const RequestChatPage = lazy(() => import('@/views/RequestChatPage'))
-const RequestsPage = lazy(() => import('@/views/RequestsPage'))
-const ManagerHomePage = lazy(() => import('@/views/manager/ManagerHomePage'))
-const ManagerMorePage = lazy(() => import('@/views/manager/ManagerMorePage'))
-const ManagerLeadsPage = lazy(() => import('@/views/manager/ManagerLeadsPage'))
-const ManagerEarningsPage = lazy(() => import('@/views/manager/ManagerEarningsPage'))
-const ManagerSupportPage = lazy(() => import('@/views/manager/ManagerSupportPage'))
+// Each route is code-split. The chunk only downloads the first time the route
+// is visited — over a slow mobile / Telegram-webview connection that on-demand
+// fetch is the ~1s "tap a tab and it doesn't open for a second" stall (locally
+// the chunk loads in a few ms, so it's purely network latency on first hit).
+// `route()` wraps lazy() AND records the importer so we can warm the hot tabs
+// in the background after first paint — then the first tap finds the module
+// already in memory and navigation is instant. (React.lazy caches the resolved
+// module, so repeat visits were never the problem — only the first fetch.)
+const PREFETCH = []
+function route(importer, { prefetch = false } = {}) {
+  if (prefetch) PREFETCH.push(importer)
+  return lazy(importer)
+}
+
+const HomePage = route(() => import('@/views/HomePage'), { prefetch: true })
+const ModelPage = route(() => import('@/views/ModelPage'))
+const MeetingPage = route(() => import('@/views/MeetingPage'), { prefetch: true })
+const ModelMeetingPage = route(() => import('@/views/ModelMeetingPage'))
+const ChatPage = route(() => import('@/views/ChatPage'), { prefetch: true })
+const RoadmapPage = route(() => import('@/views/RoadmapPage'))
+const MorePage = route(() => import('@/views/MorePage'), { prefetch: true })
+const ModelMorePage = route(() => import('@/views/ModelMorePage'))
+const ProfilePage = route(() => import('@/views/ProfilePage'))
+const ClientPage = route(() => import('@/views/ClientPage'))
+const BecomeModelPage = route(() => import('@/views/BecomeModelPage'))
+const ApplicationPendingPage = route(() => import('@/views/ApplicationPendingPage'))
+const SupportPage = route(() => import('@/views/SupportPage'))
+const FeedbackPage = route(() => import('@/views/FeedbackPage'))
+const RequestPage = route(() => import('@/views/RequestPage'), { prefetch: true })
+const RequestChatPage = route(() => import('@/views/RequestChatPage'))
+const RequestsPage = route(() => import('@/views/RequestsPage'))
+const ManagerHomePage = route(() => import('@/views/manager/ManagerHomePage'))
+const ManagerMorePage = route(() => import('@/views/manager/ManagerMorePage'))
+const ManagerLeadsPage = route(() => import('@/views/manager/ManagerLeadsPage'))
+const ManagerEarningsPage = route(() => import('@/views/manager/ManagerEarningsPage'))
+const ManagerSupportPage = route(() => import('@/views/manager/ManagerSupportPage'))
+
+let _prefetchedRoutes = false
+/** Warm the hot bottom-nav route chunks once, during idle after first paint. */
+function prefetchHotRoutes() {
+  if (_prefetchedRoutes) return
+  _prefetchedRoutes = true
+  const run = () => PREFETCH.forEach((importer) => { try { importer() } catch {} })
+  const ric = window.requestIdleCallback
+  if (typeof ric === 'function') ric(run, { timeout: 2500 })
+  else setTimeout(run, 1200)
+}
 
 function LandingRoute() {
   const { user } = useAuthStore()
@@ -372,6 +397,9 @@ export default function App() {
   useEffect(() => {
     registerOverlay(overlayRef.current)
     registerPageRoot(pageRootRef.current)
+    // Warm the hot bottom-nav route chunks in the background so the first tap
+    // on a tab opens instantly instead of waiting on an on-demand chunk fetch.
+    prefetchHotRoutes()
   }, [])
 
   useEffect(() => {
