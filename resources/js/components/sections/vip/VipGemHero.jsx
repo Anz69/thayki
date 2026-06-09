@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import gsap from 'gsap'
-import FacetedDiamond from './FacetedDiamond'
 
 const SPARKS = [
   { x: 198, y: 28, s: 24 },
@@ -68,8 +67,16 @@ export default function VipGemHero({ isActive }) {
             </svg>
           </span>
         ))}
-        <div ref={gemRef} className="absolute" style={{ left: 36, top: 42, filter: 'drop-shadow(0 20px 38px rgba(226,49,155,0.45))' }}>
-          <FacetedDiamond size={168} />
+        <div ref={gemRef} className="absolute" style={{ left: 30, top: 30, width: 180, height: 180, filter: 'drop-shadow(0 20px 38px rgba(226,49,155,0.45))' }}>
+          <video
+            src="/img/blir.webm"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-contain"
+            style={{ pointerEvents: 'none' }}
+          />
         </div>
       </div>
     </div>

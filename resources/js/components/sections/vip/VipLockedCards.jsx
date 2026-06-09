@@ -62,31 +62,7 @@ export default function VipLockedCards({ isActive }) {
           <ModelCardCarousel isActive={isActive} blur />
         </div>
 
-        {/* glow + sparkles + lock, centred over the stage */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative" style={{ width: 240, height: 240 }}>
-          <span ref={haloRef} aria-hidden className="absolute rounded-full"
-            style={{ left: 45, top: 45, width: 150, height: 150, background: 'radial-gradient(circle, rgba(226,49,155,0.45) 0%, rgba(226,49,155,0) 70%)' }} />
-          {SPARKS.map((p, i) => (
-            <span key={i} ref={(el) => { sparkRefs.current[i] = el }} className="absolute" style={{ left: p.x, top: p.y }}>
-              <svg width={p.s} height={p.s} viewBox="0 0 24 24" fill="#E2319B" aria-hidden>
-                <path d="M12 2.5l1.7 5.1a3 3 0 0 0 1.9 1.9L20.5 11l-4.9 1.5a3 3 0 0 0-1.9 1.9L12 19.5l-1.7-5.1a3 3 0 0 0-1.9-1.9L3.5 11l4.9-1.5a3 3 0 0 0 1.9-1.9L12 2.5Z" />
-              </svg>
-            </span>
-          ))}
-          <div
-            ref={lockRef}
-            className="absolute rounded-full flex items-center justify-center"
-            style={{ left: 91, top: 91, width: 58, height: 58, background: 'linear-gradient(135deg, #F857B0, #C01A7E)', boxShadow: '0 14px 30px rgba(226,49,155,0.55)', border: '3px solid #fff' }}
-          >
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect x="5" y="10.5" width="14" height="9.5" rx="2.4" stroke="#fff" strokeWidth="1.8" />
-              <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
-              <circle cx="12" cy="15" r="1.5" fill="#fff" />
-            </svg>
-            </div>
-          </div>
-        </div>
+ 
       </div>
     </div>
   )
