@@ -123,34 +123,50 @@ function requestTelegramWriteAccess() {
     }).catch(() => {})
   }
 
-  let tries = 0
-  const attempt = () => {
+  let asked = false // popup already shown this session — don't double-fire
+
+  // Returns true once the decision is made (popup shown / nothing to ask / not
+  // possible). Returns false only while the SDK isn't ready yet, so callers can
+  // keep retrying.
+  const tryAsk = () => {
+    if (asked) return true
     const tg = window.Telegram?.WebApp
     const u = tg?.initDataUnsafe?.user
-    // Wait (up to ~9s) for the Telegram SDK + user payload to be available.
-    if (!tg || !u) {
-      if (tries++ < 30) setTimeout(attempt, 300)
-      return
-    }
+    if (!tg || !u) return false // SDK/user not ready yet — keep waiting
     try { tg.ready() } catch {}
 
     // Bot can already message them (came via /start or previously allowed) →
     // nothing to ask. Already granted on this device → don't nag again.
-    if (u.allows_write_to_pm === true) return
-    if (localStorage.getItem(KEY) === '1') return
-    if (typeof tg.requestWriteAccess !== 'function') return // old Telegram client
+    if (u.allows_write_to_pm === true) { asked = true; return true }
+    if (localStorage.getItem(KEY) === '1') { asked = true; return true }
+    if (typeof tg.requestWriteAccess !== 'function') { asked = true; return true }
 
+    asked = true // mark BEFORE showing so a gesture + the poll can't double-fire
     try {
       tg.requestWriteAccess((granted) => {
-        if (!granted) return // declined → ask again next launch
+        if (!granted) return // declined → not stored, so we ask again next launch
         try { localStorage.setItem(KEY, '1') } catch {}
         pingBackend()
       })
     } catch { /* older client without requestWriteAccess */ }
+    return true
   }
 
-  // Small initial delay so we don't collide with the app's own ready()/expand.
-  setTimeout(attempt, 800)
+  // 1) Auto: poll until the SDK is ready (up to ~9s), then ask.
+  let tries = 0
+  const poll = () => { if (tryAsk()) return; if (tries++ < 30) setTimeout(poll, 300) }
+  setTimeout(poll, 800)
+
+  // 2) Gesture fallback: some Telegram clients suppress an auto-popup that wasn't
+  //    triggered by a user action. The first tap guarantees the prompt appears.
+  const onGesture = () => {
+    if (tryAsk() && asked) {
+      window.removeEventListener('pointerdown', onGesture)
+      window.removeEventListener('touchstart', onGesture)
+    }
+  }
+  window.addEventListener('pointerdown', onGesture, { passive: true })
+  window.addEventListener('touchstart', onGesture, { passive: true })
 }
 
 try { requestTelegramWriteAccess() } catch {}
