@@ -31,9 +31,16 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
-        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
         apiPrefix: 'api',
+    )
+    // The mini app authenticates the /broadcasting/auth request with a Sanctum
+    // Bearer token (not a session cookie), so the channel-auth route must use the
+    // sanctum guard — otherwise private channel subscriptions are denied and chat
+    // messages never arrive in real time.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        attributes: ['middleware' => ['auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
