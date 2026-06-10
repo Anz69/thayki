@@ -287,6 +287,20 @@
       "all": "全部"
     }
   },
+  "payment": {
+    "title": "支付",
+    "subtitle": "请选择方便的账单支付方式。",
+    "toPay": "应付金额",
+    "crypto": "加密货币",
+    "sbp": "SBP",
+    "cryptoTitle": "选择加密货币",
+    "cryptoSubtitle": "请按以下信息完成付款。",
+    "transferTo": "转账到地址",
+    "afterPay": "付款完成后，您的会面将被确认。",
+    "back": "返回",
+    "success": "已收到付款",
+    "successSub": "款项已成功入账"
+  },
   "leadChat": {
     "actions": "操作",
     "media": "发送媒体",

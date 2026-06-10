@@ -287,6 +287,20 @@
       "all": "All"
     }
   },
+  "payment": {
+    "title": "Payment",
+    "subtitle": "Choose a convenient way to pay the invoice.",
+    "toPay": "Amount due",
+    "crypto": "Cryptocurrency",
+    "sbp": "SBP",
+    "cryptoTitle": "Choose a cryptocurrency",
+    "cryptoSubtitle": "Make the payment to the details below.",
+    "transferTo": "Transfer to the address",
+    "afterPay": "Once the payment is complete, your meeting will be confirmed.",
+    "back": "Go back",
+    "success": "Payment received",
+    "successSub": "Funds credited successfully"
+  },
   "leadChat": {
     "actions": "Actions",
     "media": "Send media",

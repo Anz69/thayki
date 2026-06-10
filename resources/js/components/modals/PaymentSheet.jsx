@@ -1,4 +1,5 @@
 import { useRef, useCallback, useState, useLayoutEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
 import MainStep   from '@/components/sections/modalPayment/MainStep'
@@ -11,6 +12,7 @@ const CheckCircle = () => (
   </svg>
 )
 export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0, currency = 'THB' }) {
+  const { t } = useTranslation()
   const [lazyCrypto, setLazyCrypto] = useState(false)
   const [lazySbp, setLazySbp]       = useState(false)
   const pendingSwitchRef            = useRef(null)
@@ -186,8 +188,8 @@ export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0, 
             <CheckCircle />
           </div>
           <div ref={successTextRef} className="flex flex-col items-center gap-1.5 text-center">
-            <p className="text-black text-xl/[100%] font-semibold">Оплата получена</p>
-            <p className="text-[#7F7F7F] text-sm/[140%]">Средства успешно зачислены</p>
+            <p className="text-black text-xl/[100%] font-semibold">{t('payment.success')}</p>
+            <p className="text-[#7F7F7F] text-sm/[140%]">{t('payment.successSub')}</p>
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { THB_TO_RUB, CRYPTOS } from '@/constants/payments'
 import { freezeHeight, animateHeightToContent } from '@/utils/gsapHeight'
@@ -14,6 +15,7 @@ const IconCheck = () => (
   </svg>
 )
 export default function CryptoStep({ price, onBack, wrapRef, onPaymentConfirmed }) {
+  const { t } = useTranslation()
   const [selectedIdx, setSelectedIdx] = useState(null)
   const detailsRef        = useRef(null)
   const copyIconRef       = useRef(null)
@@ -99,9 +101,9 @@ export default function CryptoStep({ price, onBack, wrapRef, onPaymentConfirmed 
   return (
     <div className="flex flex-col gap-5 p-6 pt-2">
       <div className="flex flex-col items-center gap-1.5 text-center pt-1">
-        <h2 className="text-black text-xl/[100%] font-semibold">Выберите криптовалюту</h2>
+        <h2 className="text-black text-xl/[100%] font-semibold">{t('payment.cryptoTitle')}</h2>
         <p className="text-[#7F7F7F] text-sm/[140%] font-medium">
-          Оплата подзаголовок. Оплата подзаголовок.
+          {t('payment.cryptoSubtitle')}
         </p>
       </div>
       <div className="grid grid-cols-6 gap-2">
@@ -128,7 +130,7 @@ export default function CryptoStep({ price, onBack, wrapRef, onPaymentConfirmed 
         <div ref={detailsRef} className="flex flex-col gap-3">
           <div className="flex flex-col items-center gap-1 text-center">
             <div className="flex items-center gap-1.5">
-              <span className="text-[#7F7F7F] text-sm/[100%] font-medium">Переведите на адрес</span>
+              <span className="text-[#7F7F7F] text-sm/[100%] font-medium">{t('payment.transferTo')}</span>
               <img src={selectedCrypto.icon} alt="" className="w-4 h-4 rounded-full object-cover" />
               <span className="text-[#7F7F7F] text-sm/[100%] font-medium">{selectedCrypto.fullName}</span>
             </div>
@@ -156,7 +158,7 @@ export default function CryptoStep({ price, onBack, wrapRef, onPaymentConfirmed 
             </button>
           </div>
           <p className="text-[#7F7F7F] text-xs/[150%] font-medium text-center">
-            После завершения оплаты ваша встреча будет подтверждена.
+            {t('payment.afterPay')}
           </p>
         </div>
       )}
@@ -164,7 +166,7 @@ export default function CryptoStep({ price, onBack, wrapRef, onPaymentConfirmed 
         onClick={onBack}
         className="w-full py-4 rounded-full bg-[#E2319B] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity"
       >
-        Вернуться назад
+        {t('payment.back')}
       </button>
     </div>
   )
