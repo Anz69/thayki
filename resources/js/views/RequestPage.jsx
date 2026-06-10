@@ -346,7 +346,7 @@ export default function RequestPage() {
           </span>
           <div className="flex flex-col gap-1 min-w-0">
             <p className="text-black text-[15px]/[110%] font-semibold">{t('request.priceTitle')}</p>
-            <p className="text-[#7C7C82] text-[13px]/[140%]">{t('request.priceInfo')}</p>
+            <p className="text-[#7C7C82] text-[13px]/[140%] whitespace-pre-line">{t(vipMode ? 'request.priceInfoVip' : 'request.priceInfo')}</p>
           </div>
         </div>
 

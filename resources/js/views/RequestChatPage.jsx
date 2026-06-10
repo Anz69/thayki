@@ -382,8 +382,9 @@ export default function RequestChatPage() {
   }, [chatId, myId, reloadMessages])
 
   // "Typing…" indicator via client events (whispers) — no backend needed. We
-  // whisper 'typing' as the user types and show the bubble when the other side
-  // whispers (auto-hides after 3s of silence).
+  // whisper 'typing' on each keystroke; the bubble shows on the other side and
+  // auto-hides after ~6s of silence OR immediately on an explicit 'typing-stop'
+  // (sent when the composer loses focus). It is NOT shown on mere focus.
   useEffect(() => {
     if (!chatId) return undefined
     const ch = privateChannel(`chats.${chatId}`)
@@ -391,31 +392,36 @@ export default function RequestChatPage() {
     const onTyping = () => {
       setOthersTyping(true)
       clearTimeout(typingHideRef.current)
-      typingHideRef.current = setTimeout(() => setOthersTyping(false), 3000)
+      typingHideRef.current = setTimeout(() => setOthersTyping(false), 6000)
     }
+    const onStop = () => { clearTimeout(typingHideRef.current); setOthersTyping(false) }
     try { ch.listenForWhisper('typing', onTyping) } catch {}
+    try { ch.listenForWhisper('typing-stop', onStop) } catch {}
     return () => {
       clearTimeout(typingHideRef.current)
       try { ch.stopListeningForWhisper('typing') } catch {}
+      try { ch.stopListeningForWhisper('typing-stop') } catch {}
     }
   }, [chatId])
 
+  // Sent on every keystroke (throttled). If the user goes idle for 15s, stop
+  // claiming we're typing so the other side's bubble clears.
   const sendTyping = useCallback(() => {
     const now = Date.now()
     if (now - lastTypingSentRef.current < 1500) return // throttle whispers
     lastTypingSentRef.current = now
     try { privateChannel(`chats.${chatId}`)?.whisper?.('typing', { from: myId }) } catch {}
+    clearTimeout(typingPingRef.current)
+    typingPingRef.current = setTimeout(() => sendStopTyping(), 15000)
+  }, [chatId, myId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tell the other side we stopped — on blur or after the idle timeout.
+  const sendStopTyping = useCallback(() => {
+    clearTimeout(typingPingRef.current)
+    try { privateChannel(`chats.${chatId}`)?.whisper?.('typing-stop', { from: myId }) } catch {}
   }, [chatId, myId])
 
-  // While the composer is focused (active), keep telling the other side we're
-  // typing so their indicator stays up; stop on blur (it auto-hides after 3s).
-  const onInputFocus = useCallback(() => {
-    sendTyping()
-    clearInterval(typingPingRef.current)
-    typingPingRef.current = setInterval(sendTyping, 2000)
-  }, [sendTyping])
-  const onInputBlur = useCallback(() => { clearInterval(typingPingRef.current) }, [])
-  useEffect(() => () => clearInterval(typingPingRef.current), [])
+  useEffect(() => () => clearTimeout(typingPingRef.current), [])
 
   // Catch-up after a connection gap. The websocket silently DROPS any messages
   // sent while the client was offline / backgrounded (internet dropped, screen
@@ -808,8 +814,7 @@ export default function RequestChatPage() {
               rows={1}
               value={inputText}
               onChange={(e) => { setInputText(e.target.value); autoResize(); sendTyping() }}
-              onFocus={onInputFocus}
-              onBlur={onInputBlur}
+              onBlur={sendStopTyping}
               onKeyDown={handleKeyDown}
               placeholder={t('requestChat.placeholder')}
               className="w-full bg-transparent text-black text-[15px]/[145%] font-normal outline-none placeholder:text-[#ABABAB] resize-none"
