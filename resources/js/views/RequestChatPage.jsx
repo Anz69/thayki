@@ -12,6 +12,7 @@ import ChatLoadingSkeleton from '@/components/ui/ChatLoadingSkeleton'
 import PhotoViewer from '@/components/ui/PhotoViewer'
 import GradientBorder from '@/components/ui/GradientBorder'
 import { logError } from '@/utils/logger'
+import { prepareImageFileForUpload } from '@/utils/prepareImageForUpload'
 import { LeadActionMenu, TypedMessageCard } from '@/views/chat/LeadChatActions'
 import { STATUS, StatusChip } from '@/views/manager/kit'
 
@@ -434,9 +435,21 @@ export default function RequestChatPage() {
 
     uploadingRef.current = true
     setUploading(true)
+
+    // Convert/downscale before upload — iPhone HEIC/HEIF and oversized photos
+    // are rejected by the server (mimes:jpg,png,webp + 10MB), so without this
+    // the manager saw their own optimistic copy but the client never got the
+    // image. prepareImageFileForUpload turns HEIC into JPEG and shrinks big
+    // files; non-images (pdf/video) pass through unchanged.
+    const isImage = (file.type || '').startsWith('image/') || /\.(heic|heif|jpe?g|png|webp)$/i.test(file.name || '')
+    let upload = file
+    if (isImage) {
+      try { upload = await prepareImageFileForUpload(file) } catch { upload = file }
+    }
+
     const clientMessageId = `cmsg-att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const optimisticId = `opt-${clientMessageId}`
-    const previewUrl = URL.createObjectURL(file)
+    const previewUrl = URL.createObjectURL(upload)
     setMessages((prev) => [...prev, {
       id: optimisticId,
       clientMessageId,
@@ -450,7 +463,7 @@ export default function RequestChatPage() {
 
     try {
       const fd = new FormData()
-      fd.append('attachment', file)
+      fd.append('attachment', upload)
       fd.append('client_message_id', clientMessageId)
       const { data } = await api.post(`/chats/${chatId}/messages`, fd, {
         headers: { 'Idempotency-Key': `att-${attachmentKey}` },

@@ -59,6 +59,10 @@ class CreateLeadAction
                 'wishes' => isset($data['wishes']) ? trim((string) $data['wishes']) : null,
                 'locale' => $locale,
                 'status' => 'new',
+                // Identity is verified once PER USER (phone_verified_at), not per
+                // lead — so a client who already verified is shown as verified on
+                // every subsequent lead instead of being asked again.
+                'identity_verified_at' => $client->phone_verified_at !== null ? now() : null,
             ]);
 
             $chat = Chat::query()->create(['type' => ChatType::Lead]);
