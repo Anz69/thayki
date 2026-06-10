@@ -38,6 +38,8 @@ export default function ManagerSupportPage() {
 
   const q = search.trim().toLowerCase()
   const visible = items === null ? null : items.filter((it) => {
+    const hasClient = !!(it.client?.name || it.client?.username || it.client?.id)
+    if (!hasClient && !it.last_message) return false
     if (tab === 'unanswered' && !it.awaiting) return false
     if (!q) return true
     const hay = [it.client?.name, it.client?.username, it.last_message?.preview]

@@ -31,6 +31,15 @@ import ManagerHomePage from '@/views/manager/ManagerHomePage'
 import ManagerMorePage from '@/views/manager/ManagerMorePage'
 import ManagerLeadsPage from '@/views/manager/ManagerLeadsPage'
 import ManagerSupportPage from '@/views/manager/ManagerSupportPage'
+import ModelMeetingPage from '@/views/ModelMeetingPage'
+import RoadmapPage from '@/views/RoadmapPage'
+import ModelMorePage from '@/views/ModelMorePage'
+import ProfilePage from '@/views/ProfilePage'
+import ClientPage from '@/views/ClientPage'
+import BecomeModelPage from '@/views/BecomeModelPage'
+import ApplicationPendingPage from '@/views/ApplicationPendingPage'
+import SupportPage from '@/views/SupportPage'
+import FeedbackPage from '@/views/FeedbackPage'
 
 function importWithRetry(importer, attempt = 0) {
   return importer().catch((err) => {
@@ -57,15 +66,6 @@ function route(importer, { prefetch = false } = {}) {
   return lazy(() => importWithRetry(importer))
 }
 
-const ModelMeetingPage = route(() => import('@/views/ModelMeetingPage'))
-const RoadmapPage = route(() => import('@/views/RoadmapPage'))
-const ModelMorePage = route(() => import('@/views/ModelMorePage'))
-const ProfilePage = route(() => import('@/views/ProfilePage'))
-const ClientPage = route(() => import('@/views/ClientPage'))
-const BecomeModelPage = route(() => import('@/views/BecomeModelPage'))
-const ApplicationPendingPage = route(() => import('@/views/ApplicationPendingPage'))
-const SupportPage = route(() => import('@/views/SupportPage'))
-const FeedbackPage = route(() => import('@/views/FeedbackPage'))
 const ManagerEarningsPage = route(() => import('@/views/manager/ManagerEarningsPage'), { prefetch: true })
 
 let _prefetchedRoutes = false
