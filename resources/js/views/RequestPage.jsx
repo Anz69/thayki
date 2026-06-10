@@ -10,6 +10,7 @@ import { buildLeadMessage } from '@/utils/leadMessage'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
 import CitySelect from '@/components/ui/CitySelect'
+import LottieDiamond from '@/components/ui/LottieDiamond'
 import VipModal from '@/components/modals/VipModal'
 import ru from '@/locales/ru.json'
 
@@ -258,15 +259,10 @@ export default function RequestPage() {
                   style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent)', opacity: 0 }}
                 />
               </span>
-              {/* Transparent animated diamond — silver/ч-б so it reads on the
-                  black pill next to the white VIP label. */}
-              <img
-                src="/img/blir-alpha-anim.webp"
-                alt=""
-                aria-hidden
-                className="relative z-10 size-5 object-contain pointer-events-none"
-                style={{ filter: 'grayscale(1) brightness(1.2) contrast(1.05)' }}
-              />
+              {/* Lottie crystal — silver/ч-б so it reads on the black pill. */}
+              <span className="relative z-10 inline-flex shrink-0">
+                <LottieDiamond size={20} style={{ filter: 'grayscale(1) brightness(1.2) contrast(1.05)' }} />
+              </span>
               <span className="relative z-10 text-sm/[80%] font-[500]">VIP</span>
               {/* sparkle accent */}
               <svg ref={vipSparkRef} className="absolute -top-1.5 -right-1.5 w-4 h-4 z-10" viewBox="0 0 24 24" fill="#E2319B" aria-hidden>
@@ -316,15 +312,8 @@ export default function RequestPage() {
               ref={vipGemRef}
               className="shrink-0 size-11 flex items-center justify-center"
             >
-              {/* Transparent animated WebP — no background box, reads on the
-                  white card. Grayscale + darkened into a sleek graphite gem. */}
-              <img
-                src="/img/blir-alpha-anim.webp"
-                alt=""
-                aria-hidden
-                className="w-full h-full object-contain pointer-events-none"
-                style={{ filter: 'grayscale(1) brightness(0.9) contrast(1.45)' }}
-              />
+              {/* Lottie crystal — grayscale graphite gem on the white card. */}
+              <LottieDiamond size={44} style={{ filter: 'grayscale(1) brightness(0.9) contrast(1.45)' }} />
             </span>
             
             <div className="flex-1 min-w-0 flex flex-col">
