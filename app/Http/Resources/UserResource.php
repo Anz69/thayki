@@ -19,6 +19,7 @@ class UserResource extends JsonResource
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'language_code' => $this->language_code,
+            'language_chosen' => (bool) $this->language_chosen,
             'photo_url' => $this->photo_url,
             'photo_customized' => $this->photo_customized,
             'is_strange' => (bool) $this->is_strange,

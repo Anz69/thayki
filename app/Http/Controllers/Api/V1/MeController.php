@@ -36,7 +36,11 @@ class MeController extends Controller
     {
 
         $user = $request->user();
-        $user->fill($request->validated())->save();
+        $data = $request->validated();
+        if (array_key_exists('language_code', $data) && filled($data['language_code'])) {
+            $data['language_chosen'] = true;
+        }
+        $user->fill($data)->save();
 
         return ApiResponse::ok(new UserResource($user));
     }

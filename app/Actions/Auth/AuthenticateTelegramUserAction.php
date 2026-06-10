@@ -84,7 +84,9 @@ class AuthenticateTelegramUserAction
                 'first_name' => (string) $payload['first_name'],
                 'last_name' => isset($payload['last_name']) ? (string) $payload['last_name'] : $user->last_name,
                 'username' => isset($payload['username']) ? (string) $payload['username'] : $user->username,
-                'language_code' => isset($payload['language_code']) ? (string) $payload['language_code'] : $user->language_code,
+                'language_code' => $user->language_chosen
+                    ? $user->language_code
+                    : (isset($payload['language_code']) ? (string) $payload['language_code'] : $user->language_code),
                 'photo_url' => $user->photo_customized
                     ? $user->photo_url
                     : (isset($payload['photo_url']) ? (string) $payload['photo_url'] : $user->photo_url),
