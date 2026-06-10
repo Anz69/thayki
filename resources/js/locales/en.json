@@ -67,6 +67,8 @@
   },
   "request": {
     "title": "Request a model",
+    "priceTitle": "Pricing",
+    "priceInfo": "The price depends on the chosen model and services. The manager will tell you the exact cost after you submit the request.",
     "city": "City",
     "cityPlaceholder": "e.g. Moscow",
     "hairType": "Hair type",

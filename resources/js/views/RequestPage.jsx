@@ -346,6 +346,21 @@ export default function RequestPage() {
           </div>
         )}
 
+        {/* Base pricing info — text lives in locale (request.priceTitle/priceInfo),
+            edit there to set real numbers/ranges. */}
+        <div data-anim className="flex items-start gap-3 rounded-2xl p-4 bg-[#FBF2F8] border border-[#E2319B]/15">
+          <span className="shrink-0 mt-0.5 flex items-center justify-center size-9 rounded-full bg-[#E2319B]/10">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <circle cx="12" cy="12" r="9" stroke="#E2319B" strokeWidth="1.6" />
+              <path d="M12 7v.5M11.2 10.5h1.1v6M10.6 16.5h2.8" stroke="#E2319B" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <div className="flex flex-col gap-1 min-w-0">
+            <p className="text-black text-[15px]/[110%] font-semibold">{t('request.priceTitle')}</p>
+            <p className="text-[#7C7C82] text-[13px]/[140%]">{t('request.priceInfo')}</p>
+          </div>
+        </div>
+
         {/* City — required, prominent */}
         <div
           data-anim
