@@ -258,7 +258,7 @@ export default function RequestChatPage() {
 
   const reloadMessages = useCallback(() => {
     if (!chatId) return
-    api.get(`/chats/${chatId}/messages`)
+    api.get(`/chats/${chatId}/messages`, { params: { limit: 100 } })
       .then((res) => {
         setMessages((res.data.data ?? []).map((m) => normalizeMsg(m, myId)))
         setLeadClosed(!!res.data.meta?.lead?.closed)
@@ -296,7 +296,7 @@ export default function RequestChatPage() {
 
   useEffect(() => {
     if (!chatId) { navigate('/home', { replace: true }); return }
-    api.get(`/chats/${chatId}/messages`)
+    api.get(`/chats/${chatId}/messages`, { params: { limit: 100 } })
       .then((res) => {
         const normalized = (res.data.data ?? []).map((m) => normalizeMsg(m, myId))
         prevMsgCount.current = normalized.length
@@ -429,30 +429,50 @@ export default function RequestChatPage() {
     el.style.height = Math.min(el.scrollHeight, 120) + 'px'
   }
 
-  const handleSend = async () => {
-    const text = inputText.trim()
-    if (!text || sendingRef.current || !chatId) return
-    sendingRef.current = true
-    setSending(true)
-
-    const optimisticId = `opt-${Date.now()}`
-    setMessages((prev) => [...prev, { id: optimisticId, from: 'user', text, type: 'text', time: fmtTime(new Date().toISOString()) }])
-    setInputText('')
-    if (textareaRef.current) textareaRef.current.style.height = 'auto'
-
-    const clientMessageId = `cmsg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  // Post one text message. On failure (e.g. internet dropped mid-send) the
+  // optimistic message is KEPT and flagged `failed` instead of vanishing — it
+  // stays visible with a retry and is auto-resent when the connection returns.
+  // client_message_id + Idempotency-Key make resends safe (no duplicates).
+  const postMessageBody = useCallback(async (text, optimisticId, clientMessageId) => {
     try {
       const { data } = await api.post(`/chats/${chatId}/messages`, { body: text, client_message_id: clientMessageId }, {
-        headers: { 'Idempotency-Key': `msg-${chatId}-${optimisticId}` },
+        headers: { 'Idempotency-Key': `msg-${chatId}-${clientMessageId}` },
       })
       setMessages((prev) => mergeIncomingMessage(prev, data.data, myId))
     } catch {
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
-    } finally {
-      sendingRef.current = false
-      setSending(false)
+      setMessages((prev) => prev.map((m) => (m.id === optimisticId ? { ...m, failed: true } : m)))
     }
+  }, [chatId, myId])
+
+  const handleSend = () => {
+    const text = inputText.trim()
+    if (!text || !chatId) return
+    setInputText('')
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
+    const clientMessageId = `cmsg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const optimisticId = `opt-${clientMessageId}`
+    setMessages((prev) => [...prev, { id: optimisticId, clientMessageId, from: 'user', text, type: 'text', time: fmtTime(new Date().toISOString()), failed: false }])
+    postMessageBody(text, optimisticId, clientMessageId)
   }
+
+  const retryMessage = useCallback((m) => {
+    if (!m?.failed) return
+    setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, failed: false } : x)))
+    postMessageBody(m.text, m.id, m.clientMessageId)
+  }, [postMessageBody])
+
+  // Auto-resend any messages that failed while offline, once the connection
+  // returns (network 'online' or Telegram 'activated').
+  useEffect(() => {
+    const resend = () => setMessages((prev) => {
+      const failed = prev.filter((x) => x.failed && x.type === 'text' && x.clientMessageId)
+      if (!failed.length) return prev
+      failed.forEach((x) => postMessageBody(x.text, x.id, x.clientMessageId))
+      return prev.map((x) => (x.failed ? { ...x, failed: false } : x))
+    })
+    window.addEventListener('online', resend)
+    return () => window.removeEventListener('online', resend)
+  }, [postMessageBody])
 
   const handleAttachmentChange = async (e) => {
     const file = e.target.files?.[0]
@@ -593,15 +613,19 @@ export default function RequestChatPage() {
                   </div>
                   <span className="text-[#ABABAB] text-xs font-medium px-1 inline-flex items-center gap-1">
                     {msg.time}
-                    {/* Delivery/read ticks on MY outgoing messages (both sides):
-                        single grey ✓ = sent, double pink ✓✓ = read by the other. */}
-                    {isUser && !msg.uploading && !String(msg.id).startsWith('opt-') && (
+                    {/* Outgoing status: red ! = failed (tap to resend, auto-resends
+                        when back online); single grey ✓ = sent; double pink ✓✓ = read. */}
+                    {isUser && msg.failed ? (
+                      <button type="button" onClick={() => retryMessage(msg)} className="inline-flex items-center text-[#E5484D] active:scale-90 transition-transform" aria-label="retry">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
+                      </button>
+                    ) : isUser && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
                       <svg width="16" height="15" viewBox="0 0 24 24" fill="none" className={msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'} aria-hidden>
                         {msg.readAt
                           ? <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                           : <path d="M5 12.5l4.5 4.5L20 6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
                       </svg>
-                    )}
+                    ) : null}
                   </span>
                 </div>
               ) : (
@@ -611,15 +635,19 @@ export default function RequestChatPage() {
                   </div>
                   <span className="text-[#ABABAB] text-xs font-medium px-1 inline-flex items-center gap-1">
                     {msg.time}
-                    {/* Delivery/read ticks on MY outgoing messages (both sides):
-                        single grey ✓ = sent, double pink ✓✓ = read by the other. */}
-                    {isUser && !msg.uploading && !String(msg.id).startsWith('opt-') && (
+                    {/* Outgoing status: red ! = failed (tap to resend, auto-resends
+                        when back online); single grey ✓ = sent; double pink ✓✓ = read. */}
+                    {isUser && msg.failed ? (
+                      <button type="button" onClick={() => retryMessage(msg)} className="inline-flex items-center text-[#E5484D] active:scale-90 transition-transform" aria-label="retry">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
+                      </button>
+                    ) : isUser && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
                       <svg width="16" height="15" viewBox="0 0 24 24" fill="none" className={msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'} aria-hidden>
                         {msg.readAt
                           ? <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                           : <path d="M5 12.5l4.5 4.5L20 6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
                       </svg>
-                    )}
+                    ) : null}
                   </span>
                 </div>
               )
