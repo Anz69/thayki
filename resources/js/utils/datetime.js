@@ -121,6 +121,7 @@ export function declAge(n) {
   let lang = 'ru'
   try { lang = (i18n.language || 'ru').slice(0, 2) } catch {}
   if (lang === 'en') return `${n} y.o.`
+  if (lang === 'zh') return `${n} 岁`
   return `${n} ${pluralRu(n, ['год', 'года', 'лет'])}`
 }
 
