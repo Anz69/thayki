@@ -349,6 +349,7 @@
     "payGatewaySoon": "支付模块即将接入。经理会确认付款。",
     "payCryptoHint": "加密货币付款 — 到账后请手动确认。",
     "parseEta": "≈ 剩余 {{s}}",
+    "parseAlmost": "快好了，再等几秒…",
     "minShort": "分",
     "secShort": "秒"
   }

@@ -244,23 +244,30 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
   const [idx, setIdx] = useState(0)
   const [progress, setProgress] = useState(null) // {done,total} while parsing
   const [eta, setEta] = useState(null) // estimated seconds remaining
+  const [overtime, setOvertime] = useState(false) // estimate elapsed, still working
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
   const swipeX = useRef(null)
 
-  const reset = () => { setUrls(''); setDrafts(null); setIdx(0); setProgress(null); setEta(null); setErr(null) }
+  const reset = () => { setUrls(''); setDrafts(null); setIdx(0); setProgress(null); setEta(null); setOvertime(false); setErr(null) }
 
-  // Live countdown between server responses.
+  // Live countdown between server responses. When the estimate runs out but the
+  // request is still in flight, switch to an "almost done" state instead of
+  // freezing on a misleading number.
   useEffect(() => {
-    if (!progress) return undefined
-    const id = setInterval(() => setEta((e) => (e == null ? e : Math.max(2, e - 1))), 1000)
+    if (!progress) { setOvertime(false); return undefined }
+    const id = setInterval(() => setEta((e) => {
+      if (e == null) return e
+      if (e <= 1) { setOvertime(true); return 0 }
+      return e - 1
+    }), 1000)
     return () => clearInterval(id)
   }, [progress])
 
   const parse = async () => {
     const links = urls.split(/[\s,]+/).map((l) => l.trim()).filter((l) => l.includes('e100.club') || /\?p=/.test(l))
     if (!links.length || progress) return
-    const EST_PER_LINK = 30 // seconds, rough first guess
+    const EST_PER_LINK = 30
     const startedAt = Date.now()
     setErr(null); setProgress({ done: 0, total: links.length }); setEta(links.length * EST_PER_LINK)
     const out = []
@@ -274,9 +281,11 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
       const done = i + 1
       const avg = (Date.now() - startedAt) / 1000 / done
       setProgress({ done, total: links.length })
-      setEta(done >= links.length ? null : Math.max(2, Math.round(avg * (links.length - done))))
+      const nextEta = done >= links.length ? null : Math.max(2, Math.round(avg * (links.length - done)))
+      setEta(nextEta)
+      if (nextEta != null) setOvertime(false)
     }
-    setProgress(null); setEta(null)
+    setProgress(null); setEta(null); setOvertime(false)
     // Surface the real server reason (envelope puts it under error.message).
     if (!out.length) { setErr(extractErrorMessage(lastErr, t('leadChat.parseError'))); return }
     if (failed) setErr(t('leadChat.parseSomeFailed', { n: failed }))
@@ -333,7 +342,9 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
             {progress && (
               <span className="text-[#9B9AA0] text-[12px] text-center -mb-1">
                 {t('leadChat.parsingN', { done: progress.done, total: progress.total })}
-                {eta != null && ` · ${t('leadChat.parseEta', { s: eta > 99 ? `~${Math.ceil(eta / 60)} ${t('leadChat.minShort')}` : `${eta} ${t('leadChat.secShort')}` })}`}
+                {overtime
+                  ? ` · ${t('leadChat.parseAlmost')}`
+                  : (eta != null && eta > 0 ? ` · ${t('leadChat.parseEta', { s: eta > 99 ? `~${Math.ceil(eta / 60)} ${t('leadChat.minShort')}` : `${eta} ${t('leadChat.secShort')}` })}` : '')}
               </span>
             )}
             <button disabled={!!progress || !urls.trim()} onClick={parse} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
