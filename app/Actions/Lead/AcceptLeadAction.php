@@ -65,15 +65,27 @@ class AcceptLeadAction
                 'system',
             );
 
-            // Telegram push to the client.
+            // Telegram push to the client — DEFERRED to after the HTTP response.
+            // The bot API call can take up to 5s; running it inline made the
+            // manager's "Accept" spin for seconds. afterResponse() sends it once
+            // the manager already has their response and is in the chat.
             if ($client !== null) {
-                Notifier::default()->notifyUser(
-                    $client,
-                    trans('lead.manager_joined_push', [], $locale),
-                    "/request/chat?id={$chat->id}&lead={$lead->id}",
-                    trans('notifications.open_chat', [], $locale),
-                    'lead-accepted:'.$lead->id,
-                );
+                $clientId = $client->id;
+                $chatId = $chat->id;
+                $leadId = $lead->id;
+                dispatch(function () use ($clientId, $chatId, $leadId, $locale): void {
+                    $client = User::query()->find($clientId);
+                    if ($client === null) {
+                        return;
+                    }
+                    Notifier::default()->notifyUser(
+                        $client,
+                        trans('lead.manager_joined_push', [], $locale),
+                        "/request/chat?id={$chatId}&lead={$leadId}",
+                        trans('notifications.open_chat', [], $locale),
+                        'lead-accepted:'.$leadId,
+                    );
+                })->afterResponse();
             }
         }
 
