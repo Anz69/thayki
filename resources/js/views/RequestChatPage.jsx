@@ -466,6 +466,12 @@ export default function RequestChatPage() {
     }
   }, [messages])
 
+  // Scroll to the bottom when the other side starts typing, so the «печатает…»
+  // indicator (rendered at the very end of the list) is actually visible.
+  useEffect(() => {
+    if (othersTyping) requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }))
+  }, [othersTyping])
+
   useEffect(() => {
     const el = sendWrapRef.current
     if (!el) return
