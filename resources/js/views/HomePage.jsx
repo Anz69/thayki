@@ -8,8 +8,10 @@ import CatalogNotice from '@/components/CatalogNotice'
 import api, { extractErrorMessage } from '@/utils/api'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
+import { catalogCache } from '@/stores/catalogCache'
 
 const PER_PAGE = 20
+const CATALOG_TTL = 5 * 60 * 1000
 const RETRY_DELAYS = [800, 2000, 4000]
 
 function ModelCard({ model }) {
@@ -85,13 +87,13 @@ export default function HomePage() {
   const prevCountRef  = useRef(0)
   const { t } = useTranslation()
 
-  const [models,      setModels]      = useState([])
-  const [loading,     setLoading]     = useState(true)
+  const [models,      setModels]      = useState(catalogCache.models)
+  const [loading,     setLoading]     = useState(catalogCache.models.length === 0)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error,       setError]       = useState(null)
   const [reloadKey,   setReloadKey]   = useState(0)
-  const [page,        setPage]        = useState(1)
-  const [hasMore,     setHasMore]     = useState(false)
+  const [page,        setPage]        = useState(catalogCache.page)
+  const [hasMore,     setHasMore]     = useState(catalogCache.hasMore)
   const [isShareOpen, setIsShareOpen] = useState(false)
 
   const safeModels = useMemo(() => (
@@ -101,12 +103,17 @@ export default function HomePage() {
   ), [models])
 
   useEffect(() => {
+    const cacheFresh = reloadKey === 0
+      && catalogCache.models.length > 0
+      && (Date.now() - catalogCache.ts < CATALOG_TTL)
+    if (cacheFresh) {
+      setLoading(false)
+      return
+    }
+
     let cancelled = false
-    setLoading(true)
+    setLoading(catalogCache.models.length === 0)
     setError(null)
-    setModels([])
-    setPage(1)
-    setHasMore(false)
     prevCountRef.current  = 0
     isFetchingRef.current = false
 
@@ -115,12 +122,18 @@ export default function HomePage() {
         if (cancelled) return
         const list       = Array.isArray(r?.data?.data) ? r.data.data : []
         const pagination = r?.data?.meta?.pagination
+        const more       = pagination ? pagination.page < pagination.last_page : false
         setModels(list)
-        setHasMore(pagination ? pagination.page < pagination.last_page : false)
+        setPage(1)
+        setHasMore(more)
+        catalogCache.models = list
+        catalogCache.page = 1
+        catalogCache.hasMore = more
+        catalogCache.ts = Date.now()
       })
       .catch((err) => {
         if (cancelled) return
-        setError(extractErrorMessage(err, t('home.error')))
+        if (catalogCache.models.length === 0) setError(extractErrorMessage(err, t('home.error')))
       })
       .finally(() => { if (!cancelled) setLoading(false) })
 
@@ -137,9 +150,16 @@ export default function HomePage() {
       .then((r) => {
         const newItems   = Array.isArray(r?.data?.data) ? r.data.data : []
         const pagination = r?.data?.meta?.pagination
-        setModels((prev) => [...prev, ...newItems])
+        const more       = pagination ? nextPage < pagination.last_page : false
+        setModels((prev) => {
+          const merged = [...prev, ...newItems]
+          catalogCache.models = merged
+          return merged
+        })
         setPage(nextPage)
-        setHasMore(pagination ? nextPage < pagination.last_page : false)
+        setHasMore(more)
+        catalogCache.page = nextPage
+        catalogCache.hasMore = more
       })
       .catch(() => { })
       .finally(() => {
