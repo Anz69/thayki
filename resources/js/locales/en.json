@@ -352,5 +352,15 @@
     "parseAlmost": "almost done, a few more seconds…",
     "minShort": "min",
     "secShort": "s"
+  },
+  "chat": {
+    "back": "Back",
+    "support": "Support",
+    "online": "online",
+    "retry": "Try again",
+    "loadError": "Failed to load chat",
+    "title": "Chat",
+    "meetingClosed": "Meeting ended — chat closed",
+    "placeholder": "Message..."
   }
 }

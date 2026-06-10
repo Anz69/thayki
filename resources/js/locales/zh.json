@@ -352,5 +352,15 @@
     "parseAlmost": "快好了，再等几秒…",
     "minShort": "分",
     "secShort": "秒"
+  },
+  "chat": {
+    "back": "返回",
+    "support": "客服",
+    "online": "在线",
+    "retry": "重试",
+    "loadError": "无法加载聊天",
+    "title": "聊天",
+    "meetingClosed": "会面已结束 — 聊天已关闭",
+    "placeholder": "消息…"
   }
 }

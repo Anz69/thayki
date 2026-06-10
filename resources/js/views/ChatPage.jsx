@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, Fragment } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
@@ -151,6 +152,7 @@ function AvatarImg({ src, name, size, className = '' }) {
 }
 
 export default function ChatPage() {
+  const { t }       = useTranslation()
   const navigate    = useTransitionNavigate()
   const [params]    = useSearchParams()
   const chatId      = params.get('id')
@@ -220,7 +222,7 @@ export default function ChatPage() {
       if (info) setChatInfo(info)
     }).catch((err) => {
       if (cancelled || !isMountedRef.current) return
-      setLoadError(extractErrorMessage(err, 'Не удалось загрузить чат'))
+      setLoadError(extractErrorMessage(err, t('chat.loadError')))
     }).finally(() => {
       if (cancelled || !isMountedRef.current) return
       setLoading(false)
@@ -495,7 +497,7 @@ export default function ChatPage() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
-  const contactName   = chatInfo?.other_user?.name ?? chatInfo?.name ?? messages.find(m => m.from === 'them')?.senderName ?? 'Чат'
+  const contactName   = chatInfo?.other_user?.name ?? chatInfo?.name ?? messages.find(m => m.from === 'them')?.senderName ?? t('chat.title')
   const contactAvatar = chatInfo?.other_user?.avatar ?? chatInfo?.avatar ?? messages.find(m => m.from === 'them')?.senderAvatar ?? null
 
   return (
@@ -507,7 +509,7 @@ export default function ChatPage() {
             onClick={() => navigate(-1) ? navigate('/home') : null}
             className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-base/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
           >
-            Назад
+            {t('chat.back')}
           </button>
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-medium truncate max-w-[140px]">
             {contactName}
@@ -516,7 +518,7 @@ export default function ChatPage() {
             onClick={() => navigate('/support')}
             className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-base/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
           >
-            Поддержка
+            {t('chat.support')}
           </button>
         </div>
       </header>
@@ -531,7 +533,7 @@ export default function ChatPage() {
                 <span className="text-[#7F7F7F] text-sm font-medium leading-normal text-center">
                   {chatInfo?.other_user?.last_seen_at
                     ? isOnlineNow(chatInfo.other_user.last_seen_at)
-                      ? 'в сети'
+                      ? t('chat.online')
                       : formatRussianRelative(chatInfo.other_user.last_seen_at, { feminine: true })
                     : contactName}
                 </span>
@@ -547,7 +549,7 @@ export default function ChatPage() {
                   onClick={() => setReloadKey((k) => k + 1)}
                   className="px-4 py-2.5 bg-[#EFEEF3] text-black text-sm font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
                 >
-                  Попробовать снова
+                  {t('chat.retry')}
                 </button>
               </div>
             )}
@@ -653,7 +655,7 @@ export default function ChatPage() {
       <div ref={inputBarRef} className="bg-white px-4 py-3 pb-8 shrink-0 container">
         {['completed', 'cancelled', 'rejected', 'expired'].includes(chatInfo?.meeting_status) ? (
           <div className="w-full py-3 px-4 bg-[#F5F5F7] rounded-2xl text-center text-sm text-[#7F7F7F] font-medium">
-            Встреча завершена — чат закрыт
+            {t('chat.meetingClosed')}
           </div>
         ) : (
           <>
@@ -685,7 +687,7 @@ export default function ChatPage() {
                   value={inputText}
                   onChange={(e) => { setInputText(e.target.value); autoResize() }}
                   onKeyDown={handleKeyDown}
-                  placeholder="Сообщение..."
+                  placeholder={t('chat.placeholder')}
                   className="w-full bg-transparent text-black text-[16px]/[145%] font-normal outline-none placeholder:text-[#ABABAB] resize-none"
                   style={{ maxHeight: 120, display: 'block', overflowY: 'auto', wordBreak: 'break-word', overflowWrap: 'break-word' }}
                 />

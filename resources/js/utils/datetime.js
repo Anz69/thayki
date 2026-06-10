@@ -6,6 +6,15 @@ const MONTHS_GENITIVE = [
   'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
 ]
 
+const MONTHS_EN = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+]
+
+function lang() {
+  try { return (i18n.language || 'ru').slice(0, 2) } catch { return 'ru' }
+}
+
 function pad2(n) {
   return String(n).padStart(2, '0')
 }
@@ -41,25 +50,48 @@ export function formatRussianRelative(iso, { feminine = true } = {}) {
   const now = new Date()
   const diffMs = Math.max(0, now.getTime() - d.getTime())
   const diffSec = Math.round(diffMs / 1000)
-  const verb = feminine ? 'была' : 'был'
-
-  if (diffSec < 60) return `${verb} в сети только что`
   const diffMin = Math.round(diffSec / 60)
+  const diffH = Math.round(diffMin / 60)
+  const diffDays = Math.round((startOfDay(now) - startOfDay(d)) / 86400000)
+  const day = d.getDate()
+  const sameYear = d.getFullYear() === now.getFullYear()
+  const l = lang()
+
+  if (l === 'en') {
+    if (diffSec < 60) return 'last seen just now'
+    if (diffMin < 60) return `last seen ${diffMin} ${diffMin === 1 ? 'minute' : 'minutes'} ago`
+    if (diffH < 24) return `last seen ${diffH} ${diffH === 1 ? 'hour' : 'hours'} ago`
+    if (diffDays === 1) return 'last seen yesterday'
+    if (diffDays < 7) return `last seen ${diffDays} days ago`
+    return sameYear
+      ? `last seen ${MONTHS_EN[d.getMonth()]} ${day}`
+      : `last seen ${MONTHS_EN[d.getMonth()]} ${day}, ${d.getFullYear()}`
+  }
+
+  if (l === 'zh') {
+    if (diffSec < 60) return '刚刚在线'
+    if (diffMin < 60) return `${diffMin} 分钟前在线`
+    if (diffH < 24) return `${diffH} 小时前在线`
+    if (diffDays === 1) return '昨天在线'
+    if (diffDays < 7) return `${diffDays} 天前在线`
+    return sameYear
+      ? `${d.getMonth() + 1}月${day}日在线`
+      : `${d.getFullYear()}年${d.getMonth() + 1}月${day}日在线`
+  }
+
+  const verb = feminine ? 'была' : 'был'
+  if (diffSec < 60) return `${verb} в сети только что`
   if (diffMin < 60) {
     return `${verb} в сети: ${diffMin} ${pluralRu(diffMin, ['минуту', 'минуты', 'минут'])} назад`
   }
-  const diffH = Math.round(diffMin / 60)
   if (diffH < 24) {
     return `${verb} в сети: ${diffH} ${pluralRu(diffH, ['час', 'часа', 'часов'])} назад`
   }
-  const diffDays = Math.round((startOfDay(now) - startOfDay(d)) / 86400000)
   if (diffDays === 1) return `${verb} в сети вчера`
   if (diffDays < 7) {
     return `${verb} в сети: ${diffDays} ${pluralRu(diffDays, ['день', 'дня', 'дней'])} назад`
   }
-  const day = d.getDate()
   const month = MONTHS_GENITIVE[d.getMonth()]
-  const sameYear = d.getFullYear() === now.getFullYear()
   return sameYear
     ? `${verb} в сети ${day} ${month}`
     : `${verb} в сети ${day} ${month} ${d.getFullYear()}`
@@ -75,14 +107,32 @@ export function formatRussianDaySeparator(iso) {
   const yesterday = new Date(today.getTime() - 86400000)
   const that = startOfDay(d)
   const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-
-  if (that.getTime() === today.getTime())     return `Сегодня, ${time}`
-  if (that.getTime() === yesterday.getTime()) return `Вчера, ${time}`
-
-  const day   = d.getDate()
-  const month = MONTHS_GENITIVE[d.getMonth()]
-  const year  = d.getFullYear()
+  const day = d.getDate()
+  const year = d.getFullYear()
   const sameYear = year === now.getFullYear()
+  const isToday = that.getTime() === today.getTime()
+  const isYesterday = that.getTime() === yesterday.getTime()
+  const l = lang()
+
+  if (l === 'en') {
+    if (isToday) return `Today, ${time}`
+    if (isYesterday) return `Yesterday, ${time}`
+    return sameYear
+      ? `${MONTHS_EN[d.getMonth()]} ${day}, ${time}`
+      : `${MONTHS_EN[d.getMonth()]} ${day} ${year}, ${time}`
+  }
+
+  if (l === 'zh') {
+    if (isToday) return `今天 ${time}`
+    if (isYesterday) return `昨天 ${time}`
+    return sameYear
+      ? `${d.getMonth() + 1}月${day}日 ${time}`
+      : `${year}年${d.getMonth() + 1}月${day}日 ${time}`
+  }
+
+  if (isToday) return `Сегодня, ${time}`
+  if (isYesterday) return `Вчера, ${time}`
+  const month = MONTHS_GENITIVE[d.getMonth()]
   return sameYear
     ? `${day} ${month}, ${time}`
     : `${day} ${month} ${year}, ${time}`
@@ -90,10 +140,9 @@ export function formatRussianDaySeparator(iso) {
 
 export function declAge(n) {
   if (!n) return '—'
-  let lang = 'ru'
-  try { lang = (i18n.language || 'ru').slice(0, 2) } catch {}
-  if (lang === 'en') return `${n} y.o.`
-  if (lang === 'zh') return `${n} 岁`
+  const l = lang()
+  if (l === 'en') return `${n} y.o.`
+  if (l === 'zh') return `${n} 岁`
   return `${n} ${pluralRu(n, ['год', 'года', 'лет'])}`
 }
 
