@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import useBookingStore from '@/stores/useBookingStore'
 import { useCompactMode } from '@/composables/useCompactMode'
 
@@ -7,9 +8,9 @@ const SMOOTH_SYNC_MS = 220
 const hours = Array.from({ length: 24 }, (_, i) => i)
 const minutes = Array.from({ length: 60 }, (_, i) => i)
 
-const SCHEDULE_LABELS = {
-  day: '☀️ Дневной — с 7:00 до 20:00',
-  night: '🌙 Ночной — с 20:00 до 7:00',
+const SCHEDULE_KEY = {
+  day: 'booking.shiftDay',
+  night: 'booking.shiftNight',
   any: null,
 }
 
@@ -24,6 +25,7 @@ function clamp(value, min, max) {
 }
 
 export default function TimeStep() {
+  const { t } = useTranslation()
   const store = useBookingStore()
   const isCompact = useCompactMode()
 
@@ -48,7 +50,7 @@ export default function TimeStep() {
   itemHeightRef.current = ITEM_HEIGHT
 
   const timeValid = store.isTimeValid()
-  const scheduleHint = SCHEDULE_LABELS[store.schedule] ?? null
+  const scheduleHint = SCHEDULE_KEY[store.schedule] ? t(SCHEDULE_KEY[store.schedule]) : null
 
   const takenHourSet = useMemo(() => {
     const taken = new Set()
@@ -254,11 +256,11 @@ export default function TimeStep() {
       `}</style>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-xl/[100%] font-semibold text-[#111]">Время встречи</h2>
-        <p className="text-sm/[100%] font-medium text-[#8A8A8F]">Во сколько вам будет удобно?</p>
+        <h2 className="text-xl/[100%] font-semibold text-[#111]">{t('booking.timeTitle')}</h2>
+        <p className="text-sm/[100%] font-medium text-[#8A8A8F]">{t('booking.timeSub')}</p>
         {conflictWithCurrentSelection && (
           <p className="text-[#E2319B] text-sm/[140%] font-medium">
-            Это время уже занято. Выберите другое — занятые часы зачёркнуты.
+            {t('booking.timeTaken')}
           </p>
         )}
       </div>
@@ -297,7 +299,7 @@ export default function TimeStep() {
                     allowed && taken ? ' drum-item--taken' : '',
                   ].join('')}
                   onClick={() => selectHour(hour)}
-                  title={taken ? 'Этот час уже занят' : ''}
+                  title={taken ? t('booking.hourTaken') : ''}
                 >
                   {String(hour).padStart(2, '0')}
                 </button>

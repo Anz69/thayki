@@ -1,12 +1,13 @@
 import { useMemo, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import useBookingStore from '@/stores/useBookingStore'
 import { useCompactMode } from '@/composables/useCompactMode'
 
-const WEEKDAYS = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
-
 export default function DateStep() {
+  const { t } = useTranslation()
+  const weekdays = t('weekdaysShort', { returnObjects: true })
   const store = useBookingStore()
   const isCompact = useCompactMode()
   const cardSize = isCompact ? 114 : 114
@@ -21,13 +22,13 @@ export default function DateStep() {
       d.setDate(today.getDate() + i)
       result.push({
         key: d.toDateString(),
-        weekday: WEEKDAYS[d.getDay()],
+        weekday: Array.isArray(weekdays) ? weekdays[d.getDay()] : '',
         day: d.getDate(),
         date: d,
       })
     }
     return result
-  }, [])
+  }, [weekdays])
 
   const annotated = useMemo(() => {
     return days.map((d) => {
@@ -91,8 +92,8 @@ export default function DateStep() {
         }
       `}</style>
       <div className="flex flex-col gap-2">
-        <h1 className="text-xl/[100%] font-semibold text-[#111]">Выбор даты</h1>
-        <p className="text-sm/[100%] font-medium text-[#8A8A8F]">В какой день планируете встречу?</p>
+        <h1 className="text-xl/[100%] font-semibold text-[#111]">{t('booking.dateTitle')}</h1>
+        <p className="text-sm/[100%] font-medium text-[#8A8A8F]">{t('booking.dateSub')}</p>
       </div>
       <Swiper slidesPerView="auto" spaceBetween={16} className="date-swiper">
         {annotated.map((day) => {
@@ -105,7 +106,7 @@ export default function DateStep() {
                 type="button"
                 className={`date-card ${baseClass}${fullClass}`}
                 onClick={() => store.setState({ selectedDate: day })}
-                title={day.fullyBooked ? 'Этот день полностью занят' : (day.hasAnyConflict ? 'Есть занятые часы' : '')}
+                title={day.fullyBooked ? t('booking.dayFull') : (day.hasAnyConflict ? t('booking.dayConflict') : '')}
               >
                 <span
                   className="text-[26px] font-normal tracking-[-0.03em]"
@@ -123,7 +124,7 @@ export default function DateStep() {
                   <span className="date-card__busy-dot" aria-hidden="true" />
                 )}
                 {day.fullyBooked && (
-                  <span className="date-card__full-pill">занято</span>
+                  <span className="date-card__full-pill">{t('booking.booked')}</span>
                 )}
               </button>
             </SwiperSlide>
