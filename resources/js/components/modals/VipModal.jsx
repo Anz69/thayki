@@ -11,6 +11,30 @@ const STEP_CONTENT = [VipGemHero, VipLockedCards]
 const DUR_OUT = 0.20
 const DUR_IN = 0.46
 
+// ⚫️/⚪️ Single switch for the whole VIP modal theme.
+// Set to false to instantly go back to the original white modal.
+const DARK = true
+
+const UI = DARK
+  ? {
+      back: 'bg-white/[0.08] text-white active:bg-white/[0.16]',
+      title: 'text-white',
+      pill: 'bg-white/[0.08]',
+      pillText: 'text-white',
+      h2: 'text-white',
+      sub: 'text-[#9B9AA0]',
+      decline: 'bg-white/[0.08] text-white active:bg-white/[0.16]',
+    }
+  : {
+      back: 'bg-[#F5F5F7] text-black active:bg-[#EBEBEB]',
+      title: 'text-black',
+      pill: 'bg-[#F5F5F7]',
+      pillText: 'text-black',
+      h2: 'text-black',
+      sub: 'text-[#8A8A8A]',
+      decline: 'bg-[#F0F0F3] text-black active:bg-[#E6E4EB]',
+    }
+
 /**
  * V.I.P explainer — same stepped, animated format as HowItWorksModal. The final
  * step's button is "Continue", which hands control back to the request page to
@@ -109,16 +133,16 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
   const isLast = stepIdx === STEPS.length - 1
 
   return (
-    <ModalSheet isOpen={isOpen} onClose={onClose} height="95dvh">
+    <ModalSheet isOpen={isOpen} onClose={onClose} height="95dvh" dark={DARK}>
       <div className="flex h-full flex-col">
         <div className="relative flex items-center justify-center px-5 pt-5 pb-2 shrink-0">
           <button
             onClick={handleBack}
-            className="absolute left-5 px-3.5 py-2.5 rounded-full bg-[#F5F5F7] text-black text-sm/[100%] font-medium active:bg-[#EBEBEB] transition-colors"
+            className={`absolute left-5 px-3.5 py-2.5 rounded-full text-sm/[100%] font-medium transition-colors ${UI.back}`}
           >
             {t('common.back')}
           </button>
-          <span className="flex items-center gap-1.5 text-black text-base/[100%] font-medium">
+          <span className={`flex items-center gap-1.5 text-base/[100%] font-medium ${UI.title}`}>
             <svg className="size-4" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path d="M6 3.5h12l3.5 5.2L12 21 2.5 8.7 6 3.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
               <path d="M2.5 8.7h19M9 3.5 7.5 8.7 12 21M15 3.5l1.5 5.2L12 21" stroke="currentColor" strokeWidth="0.9" strokeLinejoin="round" opacity="0.5" />
@@ -152,13 +176,13 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
           className="shrink-0 flex flex-col items-center text-center px-6 pt-2"
           style={{ paddingBottom: 'max(18px, calc(env(safe-area-inset-bottom) + 10px))' }}
         >
-          <div ref={pillRef} className="px-4 py-1.5 rounded-full bg-[#F5F5F7] inline-block mb-3">
-            <span className="text-black text-sm/[100%] font-medium">{t('hiw.step', { n: stepIdx + 1, total: STEPS.length })}</span>
+          <div ref={pillRef} className={`px-4 py-1.5 rounded-full inline-block mb-3 ${UI.pill}`}>
+            <span className={`text-sm/[100%] font-medium ${UI.pillText}`}>{t('hiw.step', { n: stepIdx + 1, total: STEPS.length })}</span>
           </div>
-          <h2 ref={titleRef} className={`font-medium text-black mb-2 ${isCompact ? 'text-[20px]/[116%]' : 'text-[23px]/[116%]'}`}>
+          <h2 ref={titleRef} className={`font-medium mb-2 ${UI.h2} ${isCompact ? 'text-[20px]/[116%]' : 'text-[23px]/[116%]'}`}>
             {t(`vip.${stepKey}t`)}
           </h2>
-          <p ref={subtitleRef} className="max-w-[300px] text-[13.5px]/[130%] font-medium text-[#8A8A8A] line-clamp-2">
+          <p ref={subtitleRef} className={`max-w-[300px] text-[13.5px]/[130%] font-medium line-clamp-2 ${UI.sub}`}>
             {t(`vip.${stepKey}s`)}
           </p>
 
@@ -168,7 +192,7 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
               <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
                 <button
                   onClick={onClose}
-                  className="py-3 rounded-full bg-[#F0F0F3] text-black text-[14px] font-[500] active:bg-[#E6E4EB] transition-colors"
+                  className={`py-3 rounded-full text-[14px] font-[500] transition-colors ${UI.decline}`}
                 >
                   {t('vip.decline')}
                 </button>

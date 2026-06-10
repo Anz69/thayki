@@ -9,7 +9,7 @@ import {
   unlockTelegramVerticalSwipes,
 } from '@/utils/modalLocks'
 
-export default function ModalSheet({ isOpen, onClose, height = '95dvh', children }) {
+export default function ModalSheet({ isOpen, onClose, height = '95dvh', dark = false, children }) {
   const [isVisible, setIsVisible] = useState(false)
   const rootRef   = useRef(null)
   const sheetRef  = useRef(null)
@@ -194,9 +194,9 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', children
         onPointerDown={onRootPointerDown}
         onClick={onRootClick}
       >
-        <div ref={sheetRef} className="modal-layout-sheet" style={{ height }}>
+        <div ref={sheetRef} className="modal-layout-sheet" style={{ height, ...(dark ? { background: '#0B0B0D' } : null) }}>
           <div ref={handleRef} className="modal-layout-handle">
-            <div style={{ width: 48, height: 4, borderRadius: 9999, background: 'rgba(0,0,0,0.15)' }} />
+            <div style={{ width: 48, height: 4, borderRadius: 9999, background: dark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.15)' }} />
           </div>
           {children}
         </div>
