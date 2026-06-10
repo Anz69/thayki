@@ -55,8 +55,9 @@ export default function ManagerMorePage() {
     } catch { setNotifications((v) => !v) }
   }, [auth])
 
-  const langs = ['ru', 'en']
-  const active = (i18n.language || 'ru').startsWith('en') ? 'en' : 'ru'
+  const langs = ['ru', 'en', 'zh']
+  const code = (i18n.language || 'ru').slice(0, 2).toLowerCase()
+  const active = langs.includes(code) ? code : 'ru'
   const idx = langs.indexOf(active)
 
   return (
