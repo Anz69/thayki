@@ -14,7 +14,11 @@
     "hoursShort": "h",
     "user": "User",
     "support": "Support",
-    "somethingWrong": "Something went wrong"
+    "somethingWrong": "Something went wrong",
+    "yes": "Yes",
+    "no": "No",
+    "cancel": "Cancel",
+    "done": "Done"
   },
   "orderStatus": {
     "pending": "Awaiting confirmation",
@@ -419,5 +423,45 @@
     "toHome": "Returning home…",
     "title": "Application under review",
     "desc": "We are reviewing your application. This usually takes a few minutes."
+  },
+  "booking": {
+    "submitting": "Submitting...",
+    "book": "Book",
+    "selectDuration": "Select duration",
+    "selectTime": "Select an available time",
+    "nextStep": "Next step →",
+    "errorRetry": "Error. Please try again",
+    "dateTitle": "Pick a date",
+    "dateSub": "What day are you planning the meeting?",
+    "dayFull": "This day is fully booked",
+    "dayConflict": "Some hours are taken",
+    "booked": "booked",
+    "shiftDay": "☀️ Day — 7:00 to 20:00",
+    "shiftNight": "🌙 Night — 20:00 to 7:00",
+    "timeTitle": "Meeting time",
+    "timeSub": "What time works for you?",
+    "timeTaken": "This time is taken. Pick another — busy hours are crossed out.",
+    "hourTaken": "This hour is taken",
+    "durationTitle": "Duration",
+    "durationSub": "How much time will you spend together?",
+    "youPay": "You will pay:",
+    "finishTitle": "Review meeting details",
+    "finishSub": "Almost done! Double-check everything",
+    "model": "Model",
+    "date": "Meeting date",
+    "time": "Meeting time",
+    "duration": "Duration",
+    "youPayLabel": "You will pay"
+  },
+  "cancelMeeting": {
+    "title": "Cancel meeting",
+    "confirm": "Are you sure you want to cancel the meeting?"
+  },
+  "finishMeeting": {
+    "title": "Finish meeting",
+    "confirm": "Are you sure you want to finish the meeting?"
+  },
+  "ageModal": {
+    "done": "Done"
   }
 }

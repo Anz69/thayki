@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import ModalSheet from '@/layout/ModalSheet'
 import useProfileStore from '@/stores/useProfileStore'
 const ITEM_H         = 88
@@ -139,6 +140,7 @@ function AgeDrum({ value, onChange }) {
   )
 }
 export default function AgeModal({ isOpen, onClose, onSavePatch }) {
+  const { t } = useTranslation()
   const profile = useProfileStore()
   const [draft, setDraft] = useState(profile.age ?? 18)
   useEffect(() => {
@@ -155,13 +157,13 @@ export default function AgeModal({ isOpen, onClose, onSavePatch }) {
           onClick={onClose}
           className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
         >
-          Отмена
+          {t('common.cancel')}
         </button>
         <button
           onClick={handleDone}
           className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
         >
-          Готово
+          {t('common.done')}
         </button>
       </div>
       <div className="flex flex-col flex-1 min-h-0 pb-8">

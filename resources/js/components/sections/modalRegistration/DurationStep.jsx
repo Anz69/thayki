@@ -1,7 +1,9 @@
 import { useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import useBookingStore from '@/stores/useBookingStore'
 export default function DurationStep() {
+  const { t } = useTranslation()
   const store = useBookingStore()
   const priceRowRef = useRef(null)
   const prevDuration = useRef(store.selectedDuration)
@@ -40,8 +42,8 @@ export default function DurationStep() {
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-col gap-2">
-        <h2 className="text-xl/[100%] font-semibold text-[#111]">Длительность</h2>
-        <p className="text-sm/[1.12] font-medium text-[#8A8A8F]">Сколько времени вы проведете вместе?</p>
+        <h2 className="text-xl/[100%] font-semibold text-[#111]">{t('booking.durationTitle')}</h2>
+        <p className="text-sm/[1.12] font-medium text-[#8A8A8F]">{t('booking.durationSub')}</p>
       </div>
       <div className="flex flex-col gap-2.5">
         <div className="flex gap-2.5 ">
@@ -65,7 +67,7 @@ export default function DurationStep() {
           className="flex items-center justify-between"
           style={{ height: 0, overflow: 'hidden', opacity: 0 }}
         >
-          <span className="text-sm font-medium text-[#9B9B9B]">Вы заплатите:</span>
+          <span className="text-sm font-medium text-[#9B9B9B]">{t('booking.youPay')}</span>
           <span className="text-base font-semibold text-[#111]">
             {store.selectedDuration
               ? `${store.selectedDuration.price.toLocaleString('ru-RU')} ฿`

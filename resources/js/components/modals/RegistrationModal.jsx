@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
@@ -10,6 +11,7 @@ import DurationStep from '@/components/sections/modalRegistration/DurationStep'
 import FinishStep from '@/components/sections/modalRegistration/FinishStep'
 const STEPS = [DateStep, TimeStep, DurationStep, FinishStep]
 export default function RegistrationModal() {
+  const { t } = useTranslation()
   const navigate = useTransitionNavigate()
   const store = useBookingStore()
   const meetingStore = useMeetingStore()
@@ -210,14 +212,14 @@ export default function RegistrationModal() {
       : store.step === 3 ? !store.selectedDuration
       : false)
   const buttonLabel = submitting
-    ? 'Отправляем...'
+    ? t('booking.submitting')
     : store.step === 4
-      ? 'Забронировать'
+      ? t('booking.book')
       : store.step === 3 && !store.selectedDuration
-        ? 'Выберите длительность'
+        ? t('booking.selectDuration')
         : store.step === 2 && !store.isTimeValid()
-          ? 'Выберите время по расписанию'
-          : 'Следующий шаг →'
+          ? t('booking.selectTime')
+          : t('booking.nextStep')
   const handleNext = async () => {
     if (isButtonDisabled) return
     if (store.step === 4) {
@@ -233,7 +235,7 @@ export default function RegistrationModal() {
         const apiMsg  = err?.response?.data?.error?.message
         const msg = details
           ? Object.values(details).flat().join(' ')
-          : apiMsg ?? err?.message ?? 'Ошибка. Попробуйте ещё раз'
+          : apiMsg ?? err?.message ?? t('booking.errorRetry')
         setSubmitError(msg)
       } finally {
         setSubmitting(false)

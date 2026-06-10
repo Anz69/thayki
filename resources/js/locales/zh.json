@@ -14,7 +14,11 @@
     "hoursShort": "小时",
     "user": "用户",
     "support": "客服",
-    "somethingWrong": "出错了"
+    "somethingWrong": "出错了",
+    "yes": "是",
+    "no": "否",
+    "cancel": "取消",
+    "done": "完成"
   },
   "orderStatus": {
     "pending": "等待确认",
@@ -419,5 +423,45 @@
     "toHome": "正在返回首页…",
     "title": "申请审核中",
     "desc": "我们正在审核您的资料，通常需要几分钟。"
+  },
+  "booking": {
+    "submitting": "提交中…",
+    "book": "预约",
+    "selectDuration": "请选择时长",
+    "selectTime": "请按排期选择时间",
+    "nextStep": "下一步 →",
+    "errorRetry": "出错了，请重试",
+    "dateTitle": "选择日期",
+    "dateSub": "您计划哪天会面？",
+    "dayFull": "当天已约满",
+    "dayConflict": "部分时段已被预约",
+    "booked": "已约",
+    "shiftDay": "☀️ 日间 — 7:00 至 20:00",
+    "shiftNight": "🌙 夜间 — 20:00 至 7:00",
+    "timeTitle": "会面时间",
+    "timeSub": "您几点方便？",
+    "timeTaken": "该时间已被预约。请另选——已占用时段以删除线标出。",
+    "hourTaken": "该时段已被预约",
+    "durationTitle": "时长",
+    "durationSub": "你们将共度多长时间？",
+    "youPay": "您将支付：",
+    "finishTitle": "请核对会面信息",
+    "finishSub": "就快好了！请核对一遍",
+    "model": "模特",
+    "date": "会面日期",
+    "time": "会面时间",
+    "duration": "时长",
+    "youPayLabel": "您将支付"
+  },
+  "cancelMeeting": {
+    "title": "取消会面",
+    "confirm": "确定要取消会面吗？"
+  },
+  "finishMeeting": {
+    "title": "结束会面",
+    "confirm": "确定要结束会面吗？"
+  },
+  "ageModal": {
+    "done": "完成"
   }
 }
