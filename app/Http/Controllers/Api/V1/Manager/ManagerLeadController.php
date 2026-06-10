@@ -323,10 +323,14 @@ class ManagerLeadController extends Controller
 
     private function leadLocale(Lead $lead): string
     {
-        if (in_array($lead->locale, ['ru', 'en'], true)) {
+        if (in_array($lead->locale, ['ru', 'en', 'zh'], true)) {
             return $lead->locale;
         }
         $code = strtolower((string) ($lead->user?->language_code ?? ''));
+
+        if (str_starts_with($code, 'zh')) {
+            return 'zh';
+        }
 
         return str_starts_with($code, 'en') ? 'en' : 'ru';
     }

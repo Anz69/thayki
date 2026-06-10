@@ -105,7 +105,9 @@ class LeadController extends Controller
             $lead->update(['identity_verified_at' => now()]);
         }
 
-        $locale = in_array($lead->locale, ['ru', 'en'], true) ? $lead->locale : 'ru';
+        $locale = in_array($lead->locale, ['ru', 'en', 'zh'], true)
+            ? $lead->locale
+            : (str_starts_with(strtolower((string) ($lead->user?->language_code ?? '')), 'zh') ? 'zh' : 'ru');
         $chat = $lead->chat;
         if ($chat !== null) {
             if (! $chat->participants()->where('user_id', $user->id)->exists()) {

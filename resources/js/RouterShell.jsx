@@ -19,6 +19,15 @@ import StrangeWelcomePage from '@/views/StrangeWelcomePage'
 import BannedPage from '@/views/BannedPage'
 import ModalMiddle from '@/layout/ModalMiddle'
 
+import HomePage from '@/views/HomePage'
+import ModelPage from '@/views/ModelPage'
+import MeetingPage from '@/views/MeetingPage'
+import ChatPage from '@/views/ChatPage'
+import MorePage from '@/views/MorePage'
+import RequestPage from '@/views/RequestPage'
+import RequestChatPage from '@/views/RequestChatPage'
+import RequestsPage from '@/views/RequestsPage'
+
 function importWithRetry(importer, attempt = 0) {
   return importer().catch((err) => {
     if (attempt < 2) {
@@ -44,13 +53,8 @@ function route(importer, { prefetch = false } = {}) {
   return lazy(() => importWithRetry(importer))
 }
 
-const HomePage = route(() => import('@/views/HomePage'), { prefetch: true })
-const ModelPage = route(() => import('@/views/ModelPage'))
-const MeetingPage = route(() => import('@/views/MeetingPage'), { prefetch: true })
 const ModelMeetingPage = route(() => import('@/views/ModelMeetingPage'))
-const ChatPage = route(() => import('@/views/ChatPage'), { prefetch: true })
 const RoadmapPage = route(() => import('@/views/RoadmapPage'))
-const MorePage = route(() => import('@/views/MorePage'), { prefetch: true })
 const ModelMorePage = route(() => import('@/views/ModelMorePage'))
 const ProfilePage = route(() => import('@/views/ProfilePage'))
 const ClientPage = route(() => import('@/views/ClientPage'))
@@ -58,9 +62,6 @@ const BecomeModelPage = route(() => import('@/views/BecomeModelPage'))
 const ApplicationPendingPage = route(() => import('@/views/ApplicationPendingPage'))
 const SupportPage = route(() => import('@/views/SupportPage'))
 const FeedbackPage = route(() => import('@/views/FeedbackPage'))
-const RequestPage = route(() => import('@/views/RequestPage'), { prefetch: true })
-const RequestChatPage = route(() => import('@/views/RequestChatPage'), { prefetch: true })
-const RequestsPage = route(() => import('@/views/RequestsPage'))
 const ManagerHomePage = route(() => import('@/views/manager/ManagerHomePage'))
 const ManagerMorePage = route(() => import('@/views/manager/ManagerMorePage'))
 const ManagerLeadsPage = route(() => import('@/views/manager/ManagerLeadsPage'))

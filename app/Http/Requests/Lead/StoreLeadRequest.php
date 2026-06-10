@@ -27,7 +27,7 @@ class StoreLeadRequest extends FormRequest
             'goal' => ['nullable', 'string', 'max:64'],
             'wishes' => ['nullable', 'string', 'max:4096'],
             'message' => ['nullable', 'string', 'max:4096'],
-            'locale' => ['nullable', 'string', 'in:ru,en'],
+            'locale' => ['nullable', 'string', 'in:ru,en,zh'],
         ];
     }
 }

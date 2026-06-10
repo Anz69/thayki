@@ -195,6 +195,10 @@ class SendChatMessageNotificationJob implements ShouldQueue
     {
         $code = strtolower((string) ($user->language_code ?? ''));
 
+        if (str_starts_with($code, 'zh')) {
+            return 'zh';
+        }
+
         return str_starts_with($code, 'en') ? 'en' : 'ru';
     }
 }

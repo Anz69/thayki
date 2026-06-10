@@ -25,7 +25,7 @@ class CreateLeadAction
                 $profile = ModelProfile::query()->find((int) $data['model_profile_id']);
             }
 
-            $locale = (isset($data['locale']) && in_array($data['locale'], ['ru', 'en'], true))
+            $locale = (isset($data['locale']) && in_array($data['locale'], ['ru', 'en', 'zh'], true))
                 ? $data['locale']
                 : $this->localeFor($client);
 
@@ -143,6 +143,10 @@ class CreateLeadAction
     private function localeFor(User $client): string
     {
         $code = strtolower((string) ($client->language_code ?? ''));
+
+        if (str_starts_with($code, 'zh')) {
+            return 'zh';
+        }
 
         return str_starts_with($code, 'en') ? 'en' : 'ru';
     }
