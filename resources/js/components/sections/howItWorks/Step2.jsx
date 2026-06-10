@@ -37,7 +37,7 @@ const SUGGESTIONS = {
  */
 export default function HowItWorksStep2({ isActive }) {
   const { t, i18n } = useTranslation()
-  const lang = i18n.language?.startsWith('en') ? 'en' : 'ru'
+  const lang = (i18n.language || 'ru').toLowerCase().startsWith('ru') ? 'ru' : 'en'
   const suggestions = SUGGESTIONS[lang]
   const demoCity = suggestions[0]
 
