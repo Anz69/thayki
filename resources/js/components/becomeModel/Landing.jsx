@@ -36,6 +36,7 @@ export default function BecomeModelLanding({ isActive, onStart }) {
   return (
     <div className="flex flex-col h-full justify-between">
 
+
       <div className="flex-1 min-h-0 flex flex-col justify-center items-center pt-8 h-full ">
         <ModelCardCarousel isActive={isActive} />
       </div>

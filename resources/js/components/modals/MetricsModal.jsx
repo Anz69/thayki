@@ -82,7 +82,7 @@ export default function MetricsModal({ isOpen, onClose, profile = {}, onSave }) 
       })
       setPrices(init)
     }
-  }, [isOpen])
+  }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const heightErr = validateHeight(height)
   const weightErr = validateWeight(weight)

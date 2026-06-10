@@ -34,6 +34,7 @@ function InfoRow({ label, value }) {
   )
 }
 
+// V.I.P marker — leads created through the VIP flow (lead.is_vip from the API).
 function VipTag({ size = 'sm' }) {
   const dim = size === 'lg' ? 'text-[12px] px-2.5 py-1 gap-1' : 'text-[10px] px-2 py-0.5 gap-1'
   return (
@@ -56,7 +57,7 @@ export default function ManagerLeadsPage() {
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState('') // debounced search term
   const [leads, setLeads] = useState(null)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
@@ -70,6 +71,9 @@ export default function ManagerLeadsPage() {
   const rootRef = useRef(null)
   const sentinelRef = useRef(null)
 
+  // Race-proof loading: every first-page request takes a token; only the latest
+  // token's response is applied, so rapid tab switching never lands on the wrong
+  // tab. Per-tab cache makes switching back instant (no skeleton, no refetch).
   const reqIdRef = useRef(0)
   const appendingRef = useRef(false)
   const cacheRef = useRef({})
@@ -78,6 +82,7 @@ export default function ManagerLeadsPage() {
   const queryRef = useRef(query)
   queryRef.current = query
 
+  // Cache key combines tab + search term so each view caches independently.
   const keyFor = (which, q) => `${which}|${q}`
   const reqParams = (which, q, pageNum) => {
     const p = { tab: which, page: pageNum, per_page: 20 }
@@ -85,6 +90,8 @@ export default function ManagerLeadsPage() {
     return p
   }
 
+  // Load page 1 for the current (tab, query). Shows cached data instantly if we
+  // have it, otherwise a skeleton; then reconciles with the server.
   const loadFirst = useCallback(async (which, { refresh = false } = {}) => {
     const token = ++reqIdRef.current
     const q = queryRef.current
@@ -95,9 +102,10 @@ export default function ManagerLeadsPage() {
     } else if (!cached && !refresh) {
       setLeads(null); setPage(1); setHasMore(false)
     }
+    // On refresh we keep whatever's on screen and just reconcile below.
     try {
       const { data } = await api.get('/manager/leads', { params: reqParams(which, q, 1) })
-      if (token !== reqIdRef.current) return
+      if (token !== reqIdRef.current) return // superseded by a newer tab/search
       const items = Array.isArray(data?.data) ? data.data : []
       const meta = data?.meta?.pagination
       const more = meta ? meta.page < meta.last_page : false
@@ -109,6 +117,7 @@ export default function ManagerLeadsPage() {
     }
   }, [])
 
+  // Append the next page (infinite scroll) for the view currently in front.
   const loadMore = useCallback(async () => {
     const which = tabRef.current
     const q = queryRef.current
@@ -120,7 +129,7 @@ export default function ManagerLeadsPage() {
     const nextPage = cur.page + 1
     try {
       const { data } = await api.get('/manager/leads', { params: reqParams(which, q, nextPage) })
-      if (which !== tabRef.current || q !== queryRef.current) return
+      if (which !== tabRef.current || q !== queryRef.current) return // view changed mid-append
       const items = Array.isArray(data?.data) ? data.data : []
       const meta = data?.meta?.pagination
       const more = meta ? meta.page < meta.last_page : false
@@ -131,21 +140,26 @@ export default function ManagerLeadsPage() {
     finally { appendingRef.current = false; setLoadingMore(false) }
   }, [])
 
+  // Drop the cache and refetch the active view (after status changes etc.).
   const reload = useCallback(() => loadFirst(tabRef.current, { refresh: true }), [loadFirst])
 
+  // Debounce the search box into `query`.
   useEffect(() => {
     const id = setTimeout(() => setQuery(search.trim()), 280)
     return () => clearTimeout(id)
   }, [search])
 
+  // Tab or search change → load that view (instant from cache, else skeleton).
   useEffect(() => { loadFirst(tab) }, [tab, query, loadFirst])
 
+  // Slide the active-tab pill to the selected segment (animated via CSS).
   useLayoutEffect(() => {
     const el = tabRefs.current[tab]
     if (!el) return
     setPill({ left: el.offsetLeft, width: el.offsetWidth, ready: true })
   }, [tab, i18n.language])
 
+  // Infinite scroll via a bottom sentinel.
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return undefined
@@ -179,12 +193,15 @@ export default function ManagerLeadsPage() {
     setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, status } : l)))
     try { await api.patch(`/manager/leads/${lead.id}/status`, { status }) }
     catch (e) { logError(e) }
+    // The lead may now belong to a different tab — drop all caches and refetch
+    // the active one so membership stays correct.
     cacheRef.current = {}
     reload()
   }
 
   const openModal = (lead) => { setViewing(lead); setStatusOpen(false); setModalOpen(true) }
   const closeModal = () => { setModalOpen(false); setStatusOpen(false) }
+  // Open the model profile as a full page (same as the chat) — no nested modal.
   const openModelView = (model) => {
     if (!model) return
     setModalOpen(false)
@@ -192,6 +209,8 @@ export default function ManagerLeadsPage() {
     navigate('/model-view')
   }
 
+  // Quick staggered entry — runs whenever the keyed list (re)mounts, i.e. on
+  // every tab switch. Lightweight WAAPI, no GSAP race with rapid switching.
   const listAnimRef = useCallback((el) => {
     if (!el || typeof el.querySelectorAll !== 'function') return
     el.querySelectorAll('[data-card]').forEach((c, i) => {
@@ -217,7 +236,7 @@ export default function ManagerLeadsPage() {
         </div>
         <div className="container mt-3">
           <div className="relative flex p-1 bg-[#EFEEF3] rounded-full">
-            
+            {/* Sliding active background */}
             <span
               aria-hidden
               className="absolute top-1 bottom-1 rounded-full bg-[#E2319B] shadow-[0_2px_10px_rgba(226,49,155,0.35)]"
@@ -244,7 +263,7 @@ export default function ManagerLeadsPage() {
           </div>
         </div>
 
-        
+        {/* Search */}
         <div className="container mt-2.5">
           <div className="flex items-center gap-2 bg-white border border-black/[0.07] rounded-full px-4 h-11 focus-within:border-[#E2319B]/60 transition-colors">
             <svg className="w-4 h-4 text-[#B7B6BC] shrink-0" viewBox="0 0 20 20" fill="none">
@@ -344,7 +363,7 @@ export default function ManagerLeadsPage() {
         </div>
         )}
 
-        
+        {/* Infinite-scroll sentinel + loader */}
         {leads !== null && leads.length > 0 && (
           <div ref={sentinelRef} className="flex items-center justify-center py-4">
             {loadingMore && <div className="w-5 h-5 rounded-full border-2 border-[#E2319B] border-t-transparent animate-spin" />}
@@ -352,7 +371,7 @@ export default function ManagerLeadsPage() {
         )}
       </div>
 
-      
+      {/* Lead review */}
       <ModalMiddle isOpen={modalOpen} onClose={closeModal} onAfterClose={() => setViewing(null)}>
         {viewing && (() => {
           const clientPhoto = viewing.client?.photo ? resolveMediaUrl(viewing.client.photo) : null
@@ -376,7 +395,7 @@ export default function ManagerLeadsPage() {
                 )}
               </div>
 
-              
+              {/* Client */}
               <div className="flex items-center gap-3">
                 <div className="size-[52px] rounded-full overflow-hidden bg-[#EFEAEE] shrink-0 flex items-center justify-center ring-1 ring-black/[0.04]">
                   {clientPhoto
@@ -395,7 +414,7 @@ export default function ManagerLeadsPage() {
                 </div>
               </div>
 
-              
+              {/* Details */}
               <div className="bg-[#F5F5F7] rounded-2xl px-4 py-1.5">
                 <InfoRow label={t('request.city')} value={viewing.city} />
                 {viewing.model && (
@@ -426,7 +445,7 @@ export default function ManagerLeadsPage() {
                 </button>
               )}
 
-              
+              {/* Status selector — opens from the chip at the top-right, overlays content */}
               {!isNew && statusOpen && (
                 <>
                   <div className="absolute inset-0 z-10" onClick={() => setStatusOpen(false)} />

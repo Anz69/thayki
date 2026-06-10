@@ -11,6 +11,8 @@ const STEP_CONTENT = [VipGemHero, VipLockedCards]
 const DUR_OUT = 0.20
 const DUR_IN = 0.46
 
+// ⚫️/⚪️ Single switch for the whole VIP modal theme.
+// Set to true for the black variant, false for the original white modal.
 const DARK = false
 
 const UI = DARK
@@ -33,6 +35,11 @@ const UI = DARK
       decline: 'bg-[#F0F0F3] text-black active:bg-[#E6E4EB]',
     }
 
+/**
+ * V.I.P explainer — same stepped, animated format as HowItWorksModal. The final
+ * step's button is "Continue", which hands control back to the request page to
+ * switch the form into V.I.P mode.
+ */
 export default function VipModal({ isOpen, onClose, onContinue }) {
   const { t } = useTranslation()
   const [stepIdx, setStepIdx] = useState(0)
@@ -179,7 +186,7 @@ export default function VipModal({ isOpen, onClose, onContinue }) {
             {t(`vip.${stepKey}s`)}
           </p>
 
-          
+          {/* Actions — sit right under the text */}
           <div ref={actionsRef} className="w-full mt-5">
             {isLast ? (
               <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">

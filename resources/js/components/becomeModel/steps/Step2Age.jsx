@@ -102,7 +102,7 @@ function AgePicker({ value, onChange, itemH, visibleCount }) {
     }
   }, [onChange])
 
-  const padCount  = Math.floor(visibleCount / 2)
+  const padCount  = Math.floor(visibleCount / 2)  // items above/below center
   const totalH    = itemH * visibleCount
   const fadeH     = itemH * Math.min(2, padCount)
 
@@ -110,12 +110,12 @@ function AgePicker({ value, onChange, itemH, visibleCount }) {
     <div className="relative w-full" style={{ height: totalH }}>
       <style>{`.age-picker::-webkit-scrollbar{display:none}`}</style>
 
-      
+      {/* top fade */}
       <div
         className="absolute inset-x-0 top-0 z-10 pointer-events-none"
         style={{ height: fadeH, background: 'linear-gradient(to bottom, #fff 30%, transparent)' }}
       />
-      
+      {/* bottom fade */}
       <div
         className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
         style={{ height: fadeH, background: 'linear-gradient(to top, #fff 30%, transparent)' }}
@@ -223,7 +223,7 @@ export default function Step2Age({ isActive, stepNum, totalSteps, onNext }) {
           </p>
         </div>
 
-        
+        {/* Picker занимает оставшееся пространство, но не overflow */}
         <div ref={pickerRef} className="flex-1 flex items-center justify-center min-h-0 overflow-hidden">
           <AgePicker
             value={age}

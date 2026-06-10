@@ -88,6 +88,8 @@ function mergeIncomingMessage(prev, incoming, myId) {
     }
   }
 
+  // Extra protection for image duplicates when the backend/source sends
+  // the same attachment as a second message with another id.
   if (normalized.type === 'image' && normalized.attachmentUrl) {
     const incomingTs = normalized.createdAt ? new Date(normalized.createdAt).getTime() : null
     const duplicateImageIdx = prev.findIndex((m) => {

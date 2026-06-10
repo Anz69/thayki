@@ -1,6 +1,17 @@
 import { Component } from 'react'
 import ModalMiddle from '@/layout/ModalMiddle'
 
+/**
+ * Top-level Error Boundary.
+ *
+ * Catches render-time and lifecycle errors in any descendant React component
+ * and shows a friendly fallback UI instead of a blank white screen. The user
+ * can either reload the app or attempt to recover (which clears the error).
+ *
+ * Async errors (event handlers, fetch, setTimeout, etc.) are NOT caught here —
+ * each call site must handle those itself. This boundary only protects the
+ * render tree from crashing the whole SPA.
+ */
 export default class ErrorBoundary extends Component {
   static baseChunkReloadKey = '__chunk_reload_once__'
 
@@ -37,6 +48,12 @@ export default class ErrorBoundary extends Component {
     const name = String(error?.name ?? '')
     const stack = String(error?.stack ?? '')
     const haystack = `${name}\n${message}\n${stack}`
+    // The last two patterns are how a FAILED React.lazy import surfaces when a
+    // stale index.html points at a chunk a deploy already replaced: React.lazy
+    // resolves to a non-module and accessing `_result.default` throws
+    // "undefined is not an object (evaluating '…_result.default')" (Safari/iOS).
+    // Without matching these, the boundary showed a dead-end crash instead of
+    // reloading to fetch the fresh chunks.
     return /ChunkLoadError|Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed|_result\.default|_result\W+default/i.test(haystack)
   }
 
@@ -49,6 +66,7 @@ export default class ErrorBoundary extends Component {
       sessionStorage.setItem(key, '1')
       window.location.reload()
     } catch {
+      // Best-effort recovery only.
     }
   }
 

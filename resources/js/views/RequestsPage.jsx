@@ -30,7 +30,7 @@ export default function RequestsPage() {
   const { t, i18n } = useTranslation()
   const navigate = useTransitionNavigate()
 
-  const [leads, setLeads] = useState(null)
+  const [leads, setLeads] = useState(null) // null = loading
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -66,6 +66,7 @@ export default function RequestsPage() {
     return () => io.disconnect()
   }, [page, hasMore, fetchPage])
 
+  // Single, gentle reveal once data first arrives (no re-animate on append).
   useEffect(() => {
     if (leads === null || animatedRef.current) return
     animatedRef.current = true

@@ -19,27 +19,50 @@ import StrangeWelcomePage from '@/views/StrangeWelcomePage'
 import BannedPage from '@/views/BannedPage'
 import ModalMiddle from '@/layout/ModalMiddle'
 
+// Each route is code-split. The chunk only downloads the first time the route
+// is visited — over a slow mobile / Telegram-webview connection that on-demand
+// fetch is the ~1s "tap a tab and it doesn't open for a second" stall (locally
+// the chunk loads in a few ms, so it's purely network latency on first hit).
+// `route()` wraps lazy() AND records the importer so we can warm the hot tabs
+// in the background after first paint — then the first tap finds the module
+// already in memory and navigation is instant. (React.lazy caches the resolved
+// module, so repeat visits were never the problem — only the first fetch.)
+// A chunk import can fail when the user is running a STALE index.html (Telegram
+// caches the Mini App aggressively) that points at hashed chunks a new deploy
+// has already replaced — the import 404s and React.lazy throws
+// "undefined is not an object (evaluating '…_result.default')", crashing on
+// navigation (e.g. right after creating a lead → RequestChatPage). Recover by
+// reloading ONCE to fetch the fresh HTML + chunks; only surface the error if it
+// still fails after the reload.
 function importWithRetry(importer, attempt = 0) {
   return importer().catch((err) => {
+    // A momentary internet drop fails the fetch even though the chunk still
+    // exists — retry a couple times (with backoff) before doing anything
+    // drastic, so a transient blip recovers silently.
     if (attempt < 2) {
       return new Promise((res) => setTimeout(res, 500 * (attempt + 1)))
         .then(() => importWithRetry(importer, attempt + 1))
     }
+    // Still failing → most likely a STALE index.html after a deploy (Telegram
+    // caches the Mini App) pointing at chunks that no longer exist. Reload ONCE
+    // to fetch fresh HTML + chunks; only surface the error if it still fails.
     try {
       const buildId = String(window.__APP_BUILD_ID__ ?? 'unknown')
       const key = `__chunk_reload_once__:${buildId}`
       if (sessionStorage.getItem(key) !== '1') {
         sessionStorage.setItem(key, '1')
         window.location.reload()
-        return new Promise(() => {})
+        return new Promise(() => {}) // never resolves — React keeps the fallback while reloading
       }
-    } catch {  }
+    } catch { /* sessionStorage unavailable */ }
     throw err
   })
 }
 
 const PREFETCH = []
 function route(importer, { prefetch = false } = {}) {
+  // Background prefetch uses the RAW importer (a failed warm-up must never
+  // reload the page); only real navigation gets the retry-with-reload.
   if (prefetch) PREFETCH.push(importer)
   return lazy(() => importWithRetry(importer))
 }
@@ -68,7 +91,7 @@ const ManagerEarningsPage = route(() => import('@/views/manager/ManagerEarningsP
 const ManagerSupportPage = route(() => import('@/views/manager/ManagerSupportPage'))
 
 let _prefetchedRoutes = false
-
+/** Warm the hot bottom-nav route chunks once, during idle after first paint. */
 function prefetchHotRoutes() {
   if (_prefetchedRoutes) return
   _prefetchedRoutes = true
@@ -111,7 +134,14 @@ function PageFallback() {
 let authRetried = false
 const MODEL_APP_GUARD_TTL_MS = 10000
 const MODEL_APP_GATE_PATHS = new Set(['/become-model', '/application-pending', '/home'])
-
+/**
+ * pending_review = заявка на модерации
+ * finished = approved/rejected — остаёмся на /application-pending до анимации
+ * absent = 404
+ * draft_or_unknown = черновик и т.п.
+ * error = сеть/API
+ * @type {{ userId: number|null, outcome: 'pending_review'|'finished'|'absent'|'draft_or_unknown'|'error'|null, checkedAt: number }}
+ */
 let modelAppGuardCache = { userId: null, outcome: null, checkedAt: 0 }
 
 export function resetModelAppGuardCache() {
@@ -177,6 +207,7 @@ function AuthErrorScreen() {
                 return
               }
             } catch {
+              // Fall through to existing error handling below.
             }
           }
 
@@ -274,8 +305,11 @@ function StrangeGuard({ children }) {
   const { user } = useAuthStore()
   const location = useLocation()
 
+  // Только явный флаг: иначе пропускаем «обычный» доступ и не ломаем UI из‑за undefined.
   if (!user || user.is_strange !== true) return children
 
+  // `/application-pending` нужен, иначе ModelApplicationPendingGuard кидает на заявку,
+  // StrangeGuard — обратно на /welcome, получается цикл и «пустая» страница.
   const allowed = new Set(['/welcome', '/application-pending', '/become-model'])
   if (allowed.has(location.pathname)) return children
 
@@ -287,8 +321,11 @@ function ModelApplicationPendingGuard({ children }) {
   const location = useLocation()
   const [gateReady, setGateReady] = useState(false)
   const [applicationOutcome, setApplicationOutcome] = useState(
-     (null),
+    /** @type {'pending_review'|'finished'|'absent'|'draft_or_unknown'|'error'|null} */ (null),
   )
+  // Tracks which key the current applicationOutcome was computed for.
+  // When the key changes (route change), we treat state as stale until the
+  // new fetch completes — prevents applying an old outcome to the new route.
   const [outcomeForKey, setOutcomeForKey] = useState(null)
 
   const modelAppGateRefetchKey = MODEL_APP_GATE_PATHS.has(location.pathname)
@@ -356,6 +393,11 @@ function ModelApplicationPendingGuard({ children }) {
     return () => { cancelled = true }
   }, [user?.id, modelAppGateRefetchKey])
 
+  // Render children (no redirect) while:
+  // - fetch is in progress (!gateReady), OR
+  // - the stored outcome is from a previous route (outcomeForKey !== current key),
+  //   which happens on the very first render after a route change before the
+  //   new effect has run — prevents applying a stale outcome to the new route.
   if (!gateReady || outcomeForKey !== modelAppGateRefetchKey) {
     return children
   }
@@ -389,6 +431,8 @@ export default function App() {
   useEffect(() => {
     registerOverlay(overlayRef.current)
     registerPageRoot(pageRootRef.current)
+    // Warm the hot bottom-nav route chunks in the background so the first tap
+    // on a tab opens instantly instead of waiting on an on-demand chunk fetch.
     prefetchHotRoutes()
   }, [])
 

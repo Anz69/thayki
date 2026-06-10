@@ -1,4 +1,4 @@
-
+/** Max upload size server accepts — margin under Laravel/nginx 10MB */
 const MAX_UPLOAD_BYTES = 9 * 1024 * 1024
 const INITIAL_LONG_EDGE = 1920
 const JPEG_QUALITY = 0.85
@@ -10,10 +10,11 @@ function isHeicLikeFile(file) {
   return /\.(heic|heif)$/i.test(file.name || '')
 }
 
+/** Loaded at runtime so production builds do not require `heic2any` in node_modules (CDN). */
 const HEIC2ANY_ESM = 'https://esm.sh/heic2any@0.0.4'
 
 async function loadHeic2any() {
-  const mod = await import( HEIC2ANY_ESM)
+  const mod = await import(/* @vite-ignore */ HEIC2ANY_ESM)
   return mod.default ?? mod
 }
 
@@ -29,6 +30,12 @@ async function heicToJpegFile(file) {
   return new File([blob], `${base}.jpg`, { type: 'image/jpeg', lastModified: Date.now() })
 }
 
+/**
+ * Converts HEIC/HEIF to JPEG in the browser when possible, then downscales other rasters.
+ *
+ * @param {File} file
+ * @returns {Promise<File>}
+ */
 export async function prepareImageFileForUpload(file) {
   if (!file) return file
 

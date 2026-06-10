@@ -1,3 +1,5 @@
+// Parsed model values (eye colour, hair) come from the source site in Russian.
+// Translate the common ones to the active locale; fall back to the raw value.
 
 const EYE_COLORS = [
   { match: ['голуб'], ru: 'Голубые', en: 'Blue' },

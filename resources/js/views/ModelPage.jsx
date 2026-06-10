@@ -20,6 +20,7 @@ import useModelPreview from '@/stores/useModelPreview'
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'paid', 'confirmed']
 
+// Normalise an inline (chat/parsed) model into the shape ModelPage expects.
 function normalizePreview(m) {
   if (!m) return null
   return {
@@ -185,6 +186,7 @@ export default function ModelPage({ preview = false }) {
   }, [])
 
   useEffect(() => {
+    // Preview (view-only): render an inline model from the store, no fetch.
     if (preview) {
       const data = normalizePreview(previewModel)
       if (!data) { navigate('/home', { replace: true }); return }
@@ -216,7 +218,7 @@ export default function ModelPage({ preview = false }) {
       })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [id, navigate, preview])
+  }, [id, navigate, preview]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!model || !pageReadyFired.current) return

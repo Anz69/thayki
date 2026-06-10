@@ -7,6 +7,7 @@ const TRANSLIT = {
   щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
 }
 
+/** Transliterate a Cyrillic name to Latin, preserving capitalisation. */
 function transliterate(str) {
   return str.replace(/[а-яё]/gi, (ch) => {
     const lower = ch.toLowerCase()
@@ -16,14 +17,23 @@ function transliterate(str) {
   })
 }
 
+/**
+ * Returns the model's name in the current UI language. For English: use the
+ * explicit English name if set, otherwise transliterate the Russian one
+ * (Яна → Yana) so nothing shows in Cyrillic to English clients.
+ */
 export function modelName(model) {
   if (!model) return ''
+  // Any non-Russian UI (English, Chinese, …) gets the Latin name — there's no
+  // Chinese name field, so fall back to English / transliteration instead of
+  // showing Cyrillic.
   const isEn = !(i18n.language || 'ru').toLowerCase().startsWith('ru')
   const en = model.display_name_en
   if (isEn && en) return en
 
   let name = model.display_name || en || ''
   if (isEn && name) {
+    // Localize the generic "Модель №123" fallback, then transliterate the rest.
     name = name.replace(/^Модель\s*№?\s*/i, 'Model №')
     name = transliterate(name)
   }

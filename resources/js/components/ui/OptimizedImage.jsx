@@ -1,5 +1,10 @@
 import { forwardRef } from 'react'
 
+/**
+ * Drop-in <img> replacement with WebP + PNG fallback via <picture>.
+ * All props (className, style, draggable, ref, etc.) are forwarded to the <img>.
+ * The <picture> wrapper uses display:contents so it is invisible to layout.
+ */
 const OptimizedImage = forwardRef(function OptimizedImage({ src, alt = '', ...props }, ref) {
   const normalizedSrc = typeof src === 'string' ? src : ''
   const hasSource = normalizedSrc.length > 0

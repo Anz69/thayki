@@ -12,6 +12,7 @@ import Step5Prices from '@/components/becomeModel/steps/Step5Prices'
 import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
 
+/** First Laravel validation message from API `error.details` (field => string[]). */
 function firstValidationDetailMessage(details) {
   if (details == null || typeof details !== 'object') return null
   for (const msgs of Object.values(details)) {
@@ -21,6 +22,7 @@ function firstValidationDetailMessage(details) {
   return null
 }
 
+/** Map collected form data to the POST /model-application payload */
 function buildApplicationPayload(data) {
   const prices       = data.prices ?? {}
   const priceOptions = []
@@ -62,6 +64,7 @@ const SCREENS = [
 const DUR_OUT = 0.28
 const DUR_IN  = 0.48
 
+/** loading → wizard hidden; ready → show wizard; blocked → active client meetings */
 function BecomeModelPrecheckBlocking({ onToMeetings, onToHome }) {
   return (
     <section className="min-h-dvh bg-white flex flex-col px-5 pt-14 pb-[max(2rem,env(safe-area-inset-bottom))]">
@@ -108,7 +111,7 @@ export default function BecomeModelPage() {
   const authStore = useAuthStore()
   const initialStep = 0
 
-  const [precheck, setPrecheck] = useState( ('loading'))
+  const [precheck, setPrecheck] = useState(/** @type {'loading'|'ready'|'blocked'} */ ('loading'))
   const [stepIdx, setStepIdx]     = useState(initialStep)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
@@ -245,7 +248,7 @@ export default function BecomeModelPage() {
         try {
           await authStore.refreshUser()
         } catch {
-          
+          /* POST уже принят — всё равно ведём на экран ожидания */
         }
         navigate('/application-pending', { replace: true })
       } catch (err) {
@@ -255,7 +258,7 @@ export default function BecomeModelPage() {
           try {
             await authStore.refreshUser()
           } catch {
-            
+            /* см. выше */
           }
           navigate('/application-pending', { replace: true })
           return

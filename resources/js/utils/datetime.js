@@ -1,4 +1,27 @@
-
+/**
+ * Russian-locale date/time helpers used across the chat UI.
+ *
+ *   formatRussianRelative(iso, { feminine: true })
+ *     "была в сети" pill — "только что" / "5 мин назад" / "2 ч назад" /
+ *     "вчера" / "10 апреля". Pass feminine=true so the verb agrees ("была"
+ *     vs "был") — the chat usually shows female models, but support chat
+ *     should pass feminine=false.
+ *
+ *   formatRussianDaySeparator(iso)
+ *     The pill shown above the first message of a new day:
+ *       same day   → "Сегодня, HH:MM"
+ *       yesterday  → "Вчера, HH:MM"
+ *       this year  → "10 апреля, HH:MM"
+ *       older      → "10 апреля 2024, HH:MM"
+ *
+ *   isSameDay(aIso, bIso)
+ *     Helper to decide when to insert the day separator.
+ *
+ * Implementation note: we deliberately avoid Intl.RelativeTimeFormat for the
+ * "X назад" string because it produces "5 мин. назад" with a period, which
+ * doesn't match the visual style of the screenshot. Hand-rolled is shorter
+ * and consistent.
+ */
 
 import i18n from '@/i18n'
 
@@ -89,6 +112,10 @@ export function formatRussianDaySeparator(iso) {
     : `${day} ${month} ${year}, ${time}`
 }
 
+/**
+ * Russian age declension: 21 → "21 год", 22 → "22 года", 18 → "18 лет".
+ * Returns "—" when n is falsy.
+ */
 export function declAge(n) {
   if (!n) return '—'
   let lang = 'ru'

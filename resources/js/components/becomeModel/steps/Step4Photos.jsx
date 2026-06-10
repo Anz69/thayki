@@ -20,7 +20,137 @@ function EmptySlot({ onAdd }) {
       className="relative rounded-2xl flex items-end justify-end p-2"
       style={{ aspectRatio: '2/3', background: '#FDE8F5', border: '2.5px dashed #E2319B' }}
     >
-      <input ref={inputRef} type="file" accept="image
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="w-10 h-10 absolute -bottom-2 right-0 rounded-full border-2 border-white bg-[#E2319B] flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
+function FilledSlot({ src, onRemove, hasError }) {
+  const slotRef = useRef(null)
+  useEffect(() => {
+    if (slotRef.current) {
+      gsap.fromTo(
+        slotRef.current,
+        { scale: 0.75, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.38, ease: 'back.out(1.6)' },
+      )
+    }
+  }, [])
+  return (
+    <div
+      ref={slotRef}
+      className={`relative rounded-2xl ${hasError ? 'ring-2 ring-[#E2319B] ring-offset-2' : ''}`}
+      style={{ aspectRatio: '2/3' }}
+    >
+      <img src={src} alt="" className="w-full h-full object-cover rounded-2xl" draggable={false} />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute -bottom-2 right-0 w-9 h-9 rounded-full bg-[#EFEEF3] flex items-center justify-center border border-[#D0C2C2] active:scale-90 transition-transform"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 4L8 8M8 8L12 12M8 8L12 4M8 8L4 12" stroke="#777779" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
+export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
+  const [photos,    setPhotos]    = useState(Array(MAX_PHOTOS).fill(null))
+  const [uploading, setUploading] = useState(false)
+  const [uploadErr, setUploadErr] = useState(null)
+  const [failedSlotIndex, setFailedSlotIndex] = useState(null)
+  const [uploadProgress, setUploadProgress] = useState(null)
+
+  const headRef = useRef(null)
+  const gridRef = useRef(null)
+  const hintRef = useRef(null)
+  const btnRef  = useRef(null)
+
+  const addPhoto = useCallback((idx, file, url) => {
+    setFailedSlotIndex(null)
+    setPhotos((prev) => {
+      const next = [...prev]
+      if (next[idx]?.url?.startsWith('blob:')) URL.revokeObjectURL(next[idx].url)
+      next[idx] = { file, url }
+      return next
+    })
+  }, [])
+
+  const removePhoto = useCallback((idx) => {
+    setFailedSlotIndex((f) => (f === idx ? null : f))
+    setPhotos((prev) => {
+      const next = [...prev]
+      if (next[idx]?.url?.startsWith('blob:')) URL.revokeObjectURL(next[idx].url)
+      next[idx] = null
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      setPhotos((prev) => {
+        prev.forEach((p) => { if (p?.url?.startsWith('blob:')) URL.revokeObjectURL(p.url) })
+        return Array(MAX_PHOTOS).fill(null)
+      })
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    gsap.set([headRef.current, gridRef.current, hintRef.current, btnRef.current], { autoAlpha: 0, y: 20 })
+  }, [])
+
+  useEffect(() => {
+    if (!isActive) return
+    gsap.fromTo(
+      [headRef.current, gridRef.current, hintRef.current, btnRef.current],
+      { autoAlpha: 0, y: 20 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.46,
+        stagger: 0.07,
+        ease: 'power3.out',
+        delay: 0.08,
+        clearProps: 'transform,opacity,visibility',
+      },
+    )
+  }, [isActive])
+
+  const filledSlots = photos.filter(Boolean)
+  const filledCount = filledSlots.length
+  const canProceed  = filledCount >= MIN_REQUIRED && !uploading
+
+  const handleNext = async () => {
+    if (!canProceed) return
+    setUploading(true)
+    setUploadErr(null)
+    setFailedSlotIndex(null)
+    setUploadProgress(null)
+    const paths = []
+    let ordinal = 0
+    try {
+      for (let i = 0; i < photos.length; i += 1) {
+        const slot = photos[i]
+        if (!slot) continue
+        ordinal += 1
+        setUploadProgress({ current: ordinal, total: filledCount })
+
+        let file = slot.file
+        try {
+          file = await prepareImageFileForUpload(file)
+        } catch {
+          /* keep original */
         }
 
         if (isFileProbablyTooLarge(file)) {

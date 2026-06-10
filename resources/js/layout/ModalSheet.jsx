@@ -40,6 +40,8 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', dark = f
     }
   }, [isVisible])
 
+  // Layout effect (before paint) so the sheet never flashes at its final
+  // position for a frame before snapping to y:100% — that flash read as "lag".
   useLayoutEffect(() => {
     if (!isVisible || !sheetRef.current) return
     const kids = Array.from(sheetRef.current.children)
@@ -87,7 +89,7 @@ export default function ModalSheet({ isOpen, onClose, height = '95dvh', dark = f
       }
       if (touchState.current.dir === 'h' || dy <= 0) return
 
-      e.preventDefault()
+      e.preventDefault() // Block Telegram from intercepting
       touchState.current.isDragging = true
       gsap.killTweensOf(sheetRef.current)
       gsap.set(sheetRef.current, { y: dy * 0.58 })

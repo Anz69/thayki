@@ -161,6 +161,8 @@ export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0, 
     <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>
       <div ref={contentWrapRef} style={{ position: 'relative', overflow: 'hidden' }}>
         {cryptoOnly ? (
+          // Lead payment: open straight into crypto (coins + address), no method
+          // chooser, no SBP. "Back" just closes the sheet.
           <CryptoStep price={price} onBack={onClose} wrapRef={contentWrapRef} onPaymentConfirmed={showPaymentSuccess} />
         ) : (
           <>

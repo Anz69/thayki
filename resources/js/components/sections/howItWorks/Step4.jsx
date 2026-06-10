@@ -78,7 +78,7 @@ export default function HowItWorksStep4({ isActive }) {
           />
         ))}
 
-        
+        {/* Card */}
         <div
           ref={cardRef}
           className="absolute"
@@ -91,11 +91,11 @@ export default function HowItWorksStep4({ isActive }) {
               boxShadow: '0 18px 40px rgba(226,49,155,0.35)',
             }}
           >
-            
+            {/* chip */}
             <div className="absolute left-4 top-5 w-9 h-7 rounded-[6px] bg-white/85" />
-            
+            {/* magnetic stripe shine */}
             <div className="absolute -right-6 -top-8 w-24 h-24 rounded-full bg-white/15" />
-            
+            {/* number dots */}
             <div className="absolute left-4 bottom-5 flex gap-2 items-center">
               {[0, 1, 2, 3].map((g) => (
                 <div key={g} className="flex gap-[3px]">
@@ -105,7 +105,7 @@ export default function HowItWorksStep4({ isActive }) {
                 </div>
               ))}
             </div>
-            
+            {/* 50% pill */}
             <div
               ref={pillRef}
               className="absolute right-3 top-4 px-2.5 py-1 rounded-full bg-white text-[#E2319B] text-[13px] font-extrabold leading-none"
@@ -116,7 +116,7 @@ export default function HowItWorksStep4({ isActive }) {
           </div>
         </div>
 
-        
+        {/* Confirmation badge */}
         <div
           ref={badgeRef}
           className="absolute z-10 rounded-full bg-white flex items-center justify-center"

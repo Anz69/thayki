@@ -13,7 +13,7 @@ export function getPageReady()       { return _pageReady }
 export function setPageReady(val) {
   _pageReady = val
   Array.from(_listeners).forEach(fn => {
-    try { fn(val) } catch {  }
+    try { fn(val) } catch { /* no listener should be able to cascade-fail */ }
   })
 }
 
@@ -28,6 +28,7 @@ export function subscribePageReady(fn) {
   }
   return () => _listeners.delete(fn)
 }
+
 
 const _loaderListeners = new Set()
 let _loaderDone = false
