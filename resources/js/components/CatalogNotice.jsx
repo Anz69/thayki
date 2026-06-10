@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import HowItWorksModal from '@/components/modals/HowItWorksModal'
 import FaqModal from '@/components/modals/FaqModal'
 
@@ -8,6 +9,7 @@ const SWIPE_THRESHOLD = 40
 
 export default function CatalogNotice() {
   const { t } = useTranslation()
+  const navigate = useTransitionNavigate()
   const PHRASES = [t('catalogNotice.p1'), t('catalogNotice.p2'), t('catalogNotice.p3')]
   const N = PHRASES.length
 
@@ -153,6 +155,13 @@ export default function CatalogNotice() {
                 {t('catalogNotice.faq')}
               </button>
             </div>
+            {/* Primary CTA — full width (same as the two buttons above), brand pink. */}
+            <button
+              onClick={() => navigate('/request')}
+              className="w-full py-3 rounded-full bg-[#E2319B] text-white text-[14px]/[100%] font-semibold active:scale-[0.98] transition-transform shadow-[0_8px_20px_rgba(226,49,155,0.32)]"
+            >
+              {t('request.title')}
+            </button>
           </div>
         </div>
       </div>
