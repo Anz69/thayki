@@ -182,6 +182,7 @@ export default function RequestChatPage() {
   const [othersTyping, setOthersTyping] = useState(false)
   const typingHideRef = useRef(null)
   const lastTypingSentRef = useRef(0)
+  const typingPingRef = useRef(null)
   // Older-message pagination: load 30, fetch more when scrolled to the top.
   const [loadingOlder, setLoadingOlder] = useState(false)
   const oldestIdRef = useRef(null)
@@ -405,6 +406,16 @@ export default function RequestChatPage() {
     lastTypingSentRef.current = now
     try { privateChannel(`chats.${chatId}`)?.whisper?.('typing', { from: myId }) } catch {}
   }, [chatId, myId])
+
+  // While the composer is focused (active), keep telling the other side we're
+  // typing so their indicator stays up; stop on blur (it auto-hides after 3s).
+  const onInputFocus = useCallback(() => {
+    sendTyping()
+    clearInterval(typingPingRef.current)
+    typingPingRef.current = setInterval(sendTyping, 2000)
+  }, [sendTyping])
+  const onInputBlur = useCallback(() => { clearInterval(typingPingRef.current) }, [])
+  useEffect(() => () => clearInterval(typingPingRef.current), [])
 
   // Catch-up after a connection gap. The websocket silently DROPS any messages
   // sent while the client was offline / backgrounded (internet dropped, screen
@@ -797,6 +808,8 @@ export default function RequestChatPage() {
               rows={1}
               value={inputText}
               onChange={(e) => { setInputText(e.target.value); autoResize(); sendTyping() }}
+              onFocus={onInputFocus}
+              onBlur={onInputBlur}
               onKeyDown={handleKeyDown}
               placeholder={t('requestChat.placeholder')}
               className="w-full bg-transparent text-black text-[15px]/[145%] font-normal outline-none placeholder:text-[#ABABAB] resize-none"
