@@ -12,14 +12,12 @@ function encodeStartPath(path) {
     const bytes = new TextEncoder().encode(path)
     let binary = ''
     for (const byte of bytes) binary += String.fromCharCode(byte)
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+    return btoa(binary).replace(/\+/g, '-').replace(/\
   } catch {
     return ''
   }
 }
 
-// Mini App short name (the "/app" in https://t.me/Bot/app). A startapp link MUST
-// include it — `t.me/Bot?startapp=…` (no short name) just opens the bot chat.
 const MINIAPP_NAME = (import.meta.env.VITE_TELEGRAM_MINIAPP_NAME ?? 'app').trim().replace(/^\/+|\/+$/g, '')
 
 function modelShareLink(modelId, botUsername, inviteToken = '') {
@@ -43,7 +41,6 @@ function botStartLink(botUsername, startToken = '') {
 
 const BRAND = 'Rus-Model'
 
-// Builds the share message in the CURRENT UI language (the one the sender picked).
 function buildShareText(selectedModels, botUsername, inviteToken, t) {
   if (selectedModels.length === 0) {
     return [
@@ -270,7 +267,6 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
 
   const buildPayloadWithToken = useCallback((token = inviteToken) => {
     const text = buildShareText(selectedModels, botUsername, token, t)
-    // По плану: home-шаринг идет через `start` (бот сначала открывается как бот, а не mini app).
     const url = botStartLink(botUsername, token)
     return { url, text }
   }, [inviteToken, selectedModels, botUsername, t])
@@ -305,10 +301,6 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     }
   }, [inviteLoading, inviteToken])
 
-  // Always share an INVITE link — with or without selected models. Without it
-  // (no selection) we used to send the bare bot link, which doesn't credit the
-  // inviter or pre-verify the recipient. Falls back to the plain bot link only
-  // if the invite API genuinely fails, so sharing never hard-blocks.
   const resolvePayload = useCallback(async () => {
     const token = await ensureInviteToken()
     if (!token) return sharePayload
@@ -318,7 +310,6 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   const shareToTelegram = async () => {
     const payload = await resolvePayload()
 
-    // Важно: Telegram ожидает `url=`. Иначе иногда происходит редирект/неверный результат.
     const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(payload.url)}&text=${encodeURIComponent(payload.text)}`
     const tg = window.Telegram?.WebApp
     if (tg?.openTelegramLink) {

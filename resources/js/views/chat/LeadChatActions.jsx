@@ -20,7 +20,6 @@ const money = (minor, currency = 'RUB') => {
   return `${currencySymbol(currency)} ${v}`
 }
 
-/* ── Telegram contact request (identity verification) ───────────────────── */
 function requestTelegramContact() {
   return new Promise((resolve, reject) => {
     const tg = window.Telegram?.WebApp
@@ -35,16 +34,12 @@ function requestTelegramContact() {
   })
 }
 
-/* Lets a horizontal strip scroll with a vertical mouse wheel (desktop). */
 const onHWheel = (e) => {
   const el = e.currentTarget
   if (el.scrollWidth <= el.clientWidth) return
   el.scrollLeft += (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX)
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   Typed message cards (payment / verification / model selection)
-   ═══════════════════════════════════════════════════════════════════════ */
 export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
   const { t } = useTranslation()
   const navigate = useTransitionNavigate()
@@ -53,14 +48,11 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
   const [payOpen, setPayOpen] = useState(false)
   const p = msg.payload || {}
 
-  // Warm the model-profile chunk so tapping a sent model opens instantly.
   useEffect(() => {
     if (msg.type === 'model_card') import('@/views/ModelPage').catch(() => {})
   }, [msg.type])
 
-  // Open a sent model exactly like the catalog profile page (view-only).
   const openModel = (m) => { setPreviewModel(m); navigate('/model-view') }
-  // Typed cards sit on the sender's side, like normal messages.
   const side = msg.from === 'user' ? 'justify-end' : 'justify-start'
 
   if (msg.type === 'payment_request') {
@@ -196,13 +188,10 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
   return null
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   Manager "+" attachment menu
-   ═══════════════════════════════════════════════════════════════════════ */
 export function LeadActionMenu({ leadId, onPickMedia, onPosted }) {
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [sheet, setSheet] = useState(null) // 'payment' | 'verify' | 'models' | 'link'
+  const [sheet, setSheet] = useState(null)
 
   const open = (which) => { setMenuOpen(false); setSheet(which) }
 
@@ -217,7 +206,7 @@ export function LeadActionMenu({ leadId, onPickMedia, onPosted }) {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#7F7F7F" strokeWidth="2" strokeLinecap="round" /></svg>
       </button>
 
-      {/* Action chooser */}
+      
       <ModalMiddle isOpen={menuOpen} onClose={() => setMenuOpen(false)}>
         <div className="flex flex-col px-4 pt-1 pb-6 gap-2">
           <MenuRow icon={ICONS.media} tint="#2F6BD8" label={t('leadChat.media')} onClick={() => { setMenuOpen(false); onPickMedia?.() }} />
@@ -234,23 +223,19 @@ export function LeadActionMenu({ leadId, onPickMedia, onPosted }) {
   )
 }
 
-/* ── Parse external model links (e100.club) → sequential preview editor → send.
-   Supports one or many links (one per line); bulk parsing runs sequentially
-   with progress, then a card-by-card preview with nav/swipe. ─────────────── */
 function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
   const { t } = useTranslation()
   const [urls, setUrls] = useState('')
   const [drafts, setDrafts] = useState(null)
   const [idx, setIdx] = useState(0)
-  const [progress, setProgress] = useState(null) // {done,total} while parsing
-  const [eta, setEta] = useState(null) // estimated seconds remaining
+  const [progress, setProgress] = useState(null)
+  const [eta, setEta] = useState(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
   const swipeX = useRef(null)
 
   const reset = () => { setUrls(''); setDrafts(null); setIdx(0); setProgress(null); setEta(null); setErr(null) }
 
-  // Live countdown between server responses.
   useEffect(() => {
     if (!progress) return undefined
     const id = setInterval(() => setEta((e) => (e == null ? e : Math.max(2, e - 1))), 1000)
@@ -260,7 +245,7 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
   const parse = async () => {
     const links = urls.split(/[\s,]+/).map((l) => l.trim()).filter((l) => l.includes('e100.club') || /\?p=/.test(l))
     if (!links.length || progress) return
-    const EST_PER_LINK = 30 // seconds, rough first guess
+    const EST_PER_LINK = 30
     const startedAt = Date.now()
     setErr(null); setProgress({ done: 0, total: links.length }); setEta(links.length * EST_PER_LINK)
     const out = []
@@ -277,7 +262,6 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
       setEta(done >= links.length ? null : Math.max(2, Math.round(avg * (links.length - done))))
     }
     setProgress(null); setEta(null)
-    // Surface the real server reason (envelope puts it under error.message).
     if (!out.length) { setErr(extractErrorMessage(lastErr, t('leadChat.parseError'))); return }
     if (failed) setErr(t('leadChat.parseSomeFailed', { n: failed }))
     setDrafts(out); setIdx(0)
@@ -342,7 +326,7 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
           </>
         ) : (
           <>
-            {/* Card navigation header (counter + arrows + swipe) */}
+            
             <div
               className="flex items-center justify-between select-none"
               onPointerDown={onSwipeStart}
@@ -362,7 +346,7 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
             </div>
 
             <div className="overflow-y-auto flex flex-col gap-3" style={{ maxHeight: '60dvh' }}>
-              {/* Photos with delete */}
+              
               {cur.photos.length > 0 && (
                 <div>
                   <span className="text-[#9B9AA0] text-[12px] mb-1 block">{t('leadChat.photosCount', { n: cur.photos.length })}</span>
@@ -379,7 +363,7 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
                 </div>
               )}
 
-              {/* Videos with delete */}
+              
               {cur.videos?.length > 0 && (
                 <div>
                   <span className="text-[#9B9AA0] text-[12px] mb-1 block">{t('leadChat.videosCount', { n: cur.videos.length })}</span>
@@ -450,18 +434,15 @@ function MenuRow({ icon, label, tint = '#7F7F7F', onClick }) {
   )
 }
 
-/* ── Payment request: manual requisites or crypto button ─────────────── */
 function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const { t } = useTranslation()
-  const [method, setMethod] = useState('manual') // 'manual' | 'crypto'
+  const [method, setMethod] = useState('manual')
   const [currency, setCurrency] = useState('RUB')
   const [amount, setAmount] = useState('')
   const [requisites, setRequisites] = useState('')
   const [busy, setBusy] = useState(false)
   const submitRef = useRef(null)
 
-  // Any input focus → instantly jump to the bottom of the sheet (the submit
-  // button); repeat after the keyboard finishes opening so it lands exactly.
   const scrollToSubmit = (e) => {
     const sc = e.currentTarget.closest('.modal-middle-scroll')
     setTimeout(() => { if (sc) sc.scrollTop = sc.scrollHeight + 9999 }, 300)
@@ -490,7 +471,7 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
       <div className="flex flex-col px-5 pt-1 pb-6 gap-3" onFocus={scrollToSubmit}>
         <h2 className="text-black text-lg font-bold">{t('leadChat.paySheetTitle')}</h2>
 
-        {/* Method toggle — sliding active pill */}
+        
         <div className="relative grid grid-cols-2 bg-[#EFEEF3] rounded-full p-1">
           <span
             className="absolute top-1 bottom-1 left-1 rounded-full bg-[#E2319B] shadow-sm"
@@ -512,7 +493,7 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
           ))}
         </div>
 
-        {/* Currency picker */}
+        
         <div className="flex gap-1.5">
           {CURRENCIES.map((c) => (
             <button key={c.code} onClick={() => setCurrency(c.code)} className={`flex-1 py-2 rounded-xl text-[13px] font-semibold transition-colors ${currency === c.code ? 'bg-[#1B1B1B] text-white' : 'bg-[#F5F5F7] text-[#7F7F7F]'}`}>
@@ -552,7 +533,6 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   )
 }
 
-/* ── Verification request confirm ────────────────────────────────────── */
 function VerifySheet({ open, onClose, leadId, onPosted }) {
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false)

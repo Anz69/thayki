@@ -35,9 +35,6 @@ export function setLanguage(lng) {
   if (!SUPPORTED.includes(lng)) return
   i18n.changeLanguage(lng)
   try { localStorage.setItem('lang', lng) } catch {}
-  // Persist the choice server-side so backend notifications (Telegram push)
-  // reach the user in their chosen language, not the Telegram client one.
-  // Lazy import keeps i18n init free of the api/auth module graph.
   import('@/utils/api')
     .then(({ default: api }) => api.patch('/me', { language_code: lng }))
     .catch(() => {})

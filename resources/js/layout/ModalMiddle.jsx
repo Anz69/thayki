@@ -34,32 +34,20 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
 
   useEffect(() => {
     if (!isVisible) return
-    // Make sure the mini app is full-height so the keyboard/viewport math below
-    // is sane (a half-expanded webview is what threw the sheet off-screen).
-    try { window.Telegram?.WebApp?.expand?.() } catch { /* noop */ }
+    try { window.Telegram?.WebApp?.expand?.() } catch {  }
     lockTelegramVerticalSwipes()
     return () => unlockTelegramVerticalSwipes()
   }, [isVisible])
 
-  // Keep the sheet (and its submit button) above the on-screen keyboard.
-  // When the keyboard opens, visualViewport shrinks — lift the sheet by that
-  // inset and cap its height to the visible area so nothing slides off / under.
   useEffect(() => {
     if (!isVisible) return undefined
     const vv = window.visualViewport
     if (!vv) return undefined
     const keyboardInset = () => {
-      // Raw inset between the layout and visual viewport. In the Telegram mini
-      // app this can be wildly larger than a real keyboard (the webview isn't
-      // fully expanded), which previously launched the sheet off the top of the
-      // screen. Clamp to a plausible keyboard height so the sheet stays on-screen.
       const raw = Math.max(0, Math.round(window.innerHeight - vv.height))
       const cap = Math.round(window.innerHeight * 0.6)
       return raw > cap ? 0 : raw
     }
-    // Height of the Telegram header overlay at the top. If we let the sheet grow
-    // taller than (visible area − this), its top slides UNDER the «Закрыть /
-    // Rus-Model Agency» bar and the modal looks clipped/crooked. Keep a gap.
     const topGap = () => {
       try {
         const tg = window.Telegram?.WebApp
@@ -67,15 +55,10 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
         return Math.max(12, Math.round(inset) + 8)
       } catch { return 56 }
     }
-    // `animate`: on the keyboard opening/closing the sheet quickly flies to its
-    // new spot above the keyboard (instead of jumping / looking crooked). On
-    // scroll we just set it instantly.
     const update = (animate) => {
       const sheet = sheetRef.current
       if (!sheet) return
       const kb = keyboardInset()
-      // Cap to the area between the keyboard and the Telegram header so the top
-      // never clips behind it.
       sheet.style.maxHeight = Math.max(160, Math.round(vv.height - topGap())) + 'px'
       if (animate) {
         gsap.to(sheet, { bottom: kb, duration: 0.18, ease: 'power3.out', overwrite: 'auto' })
@@ -84,8 +67,6 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
         sheet.style.bottom = kb + 'px'
       }
     }
-    // On the keyboard opening (resize), fly the sheet up and pull the content to
-    // the bottom so the action button / focused field is visible right away.
     const onResize = () => {
       update(true)
       if (keyboardInset() > 120) {
@@ -108,8 +89,6 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
     }
   }, [isVisible])
 
-  // Run before paint so the backdrop never flashes at full opacity (CSS bg would show for one frame,
-  // then gsap.set(opacity:0) in useEffect caused appear → vanish → fade-in).
   useLayoutEffect(() => {
     if (!isVisible || !rootRef.current || !sheetRef.current) return
     const kids = Array.from(sheetRef.current.children)
@@ -123,9 +102,6 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
       .to(kids, { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.08, ease: 'power3.out', clearProps: 'opacity,transform' }, 0.14)
   }, [isVisible])
 
-  // Safety net: if the entrance tween ever gets interrupted (navigation race,
-  // late-rendered children, tab switch), force the sheet + content to their
-  // final visible state so the modal can never be left as a blank white sheet.
   useEffect(() => {
     if (!isVisible) return undefined
     const id = setTimeout(() => {

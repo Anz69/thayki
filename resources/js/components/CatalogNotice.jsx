@@ -68,8 +68,6 @@ export default function CatalogNotice() {
         @keyframes cnSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
       `}</style>
 
-      {/* Gradient frame (replicated inline so the progress can live inside the
-          clipped, rounded border — corners trim the bar symmetrically). */}
       <div className="relative overflow-hidden" style={{ borderRadius: 16, padding: 1.5 }}>
         <div
           aria-hidden
@@ -80,8 +78,6 @@ export default function CatalogNotice() {
           }}
         />
 
-        {/* Progress on the top border, centered. The white track is the same
-            thickness as the border and masks it underneath (and in the gaps). */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-[3px] bg-white rounded-full px-1 z-50" style={{ height: 1.5, width: '82%' }}>
           {PHRASES.map((_, i) => (
             <button
@@ -160,9 +156,6 @@ export default function CatalogNotice() {
                 {t('request.title')}
               </button>
             </div>
-
-            {/* Primary CTA — full width (same as the two buttons above), brand pink. */}
-
           </div>
         </div>
       </div>

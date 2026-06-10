@@ -7,18 +7,6 @@ import api, { getStoredToken, clearToken } from '@/utils/api'
 import { logWarn } from '@/utils/logger'
 import { parseTelegramStartParam, buildDevInitData, getOrCreateDevTelegramId } from '@/utils/telegramAuth'
 
-/**
- * Single Inertia page — the React app shell.
- *
- * Auth priority (highest → lowest):
- * 1. Laravel session in Inertia shared props (HandleInertiaRequests sets auth.user)
- * 2. Stored Sanctum Bearer token in localStorage  → verified via GET /api/v1/auth/me
- * 3. Telegram Mini App initData               → POST /api/v1/auth/telegram (returns token)
- * 4. No auth context available               → redirect to /login
- *
- * Using token-based auth (not session) ensures the Mini App works regardless
- * of the SANCTUM_STATEFUL_DOMAINS configuration on the server.
- */
 export default function App() {
   const { auth, appEnv } = usePage().props
   const authStore    = useAuthStore()
@@ -98,7 +86,6 @@ export default function App() {
         return
       }
 
-      // No Telegram context. In local dev, auto-login a stable test account.
       if (appEnv === 'local') {
         try {
           const devId = getOrCreateDevTelegramId()

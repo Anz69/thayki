@@ -19,7 +19,6 @@ import { STATUS, StatusChip } from '@/views/manager/kit'
 const TYPED = new Set(['payment_request', 'verification_request', 'model_card'])
 const MANAGER_STATUSES = ['in_progress', 'awaiting_client', 'awaiting_payment', 'prepaid', 'completed', 'closed']
 
-/* Status chip + dropdown in the chat header (manager only). */
 function HeaderLeadStatus({ leadId }) {
   const { t } = useTranslation()
   const [status, setStatus] = useState(null)
@@ -104,9 +103,6 @@ function fmtTime(iso) {
 }
 
 function normalizeMsg(raw, myUserId) {
-  // Side is decided ONLY by who sent it — `is_support` affects styling, never
-  // the side (otherwise a manager's own messages flip to the "them" side and
-  // duplicate against the optimistic copy).
   const isMe = raw.user_id === myUserId || raw.sender_id === myUserId
   return {
     id: raw.id,
@@ -165,7 +161,6 @@ export default function RequestChatPage() {
 
   const chatId  = Number(params.get('id') || 0) || null
   const leadId  = params.get('lead')
-  // Where the user came from (set by the opener); falls back to home.
   const backTo  = params.get('from') || '/home'
 
   const role     = auth.user?.role
@@ -174,16 +169,12 @@ export default function RequestChatPage() {
 
   const [messages, setMessages]   = useState([])
   const [leadClosed, setLeadClosed] = useState(false)
-  // Manager-side: the lead must be ACCEPTED before the manager can reply. Until
-  // then (status === 'new') we gate the composer with an "accept" bar — opening
-  // the chat via a notification deep-link no longer lets them message unassigned.
   const [leadStatus, setLeadStatus] = useState(null)
   const [accepting, setAccepting]   = useState(false)
   const [othersTyping, setOthersTyping] = useState(false)
   const typingHideRef = useRef(null)
   const lastTypingSentRef = useRef(0)
   const typingPingRef = useRef(null)
-  // Older-message pagination: load 30, fetch more when scrolled to the top.
   const [loadingOlder, setLoadingOlder] = useState(false)
   const oldestIdRef = useRef(null)
   const hasMoreOlderRef = useRef(true)
@@ -222,7 +213,6 @@ export default function RequestChatPage() {
     if (root) { root.style.overflowY = 'hidden'; return () => { root.style.overflowY = '' } }
   }, [])
 
-  // ── Entrance + message animations ported 1:1 from the support chat ──
   useLayoutEffect(() => {
     gsap.set(headerRef.current,   { y: -40, autoAlpha: 0 })
     gsap.set(inputBarRef.current, { y: 24,  autoAlpha: 0 })
@@ -263,9 +253,6 @@ export default function RequestChatPage() {
       .add(() => { pageReadyDone.current = true; tryShowContent() }, 0.12)
   })
 
-  // Refresh the latest 30 and MERGE them in (don't replace) so any older
-  // messages the user loaded by scrolling up stay put, while new/updated ones
-  // (read receipts, fresh messages) are upserted.
   const reloadMessages = useCallback(() => {
     if (!chatId) return
     api.get(`/chats/${chatId}/messages`, { params: { limit: 30 } })
@@ -282,7 +269,6 @@ export default function RequestChatPage() {
       .catch(logError)
   }, [chatId, myId])
 
-  // Load the previous page of messages when the user scrolls to the top.
   const loadOlder = useCallback(async () => {
     if (loadingOlderRef.current || !hasMoreOlderRef.current || !chatId || oldestIdRef.current == null) return
     loadingOlderRef.current = true
@@ -301,7 +287,6 @@ export default function RequestChatPage() {
           const ids = new Set(prev.map((m) => String(m.id)))
           return [...older.filter((m) => !ids.has(String(m.id))), ...prev]
         })
-        // Keep the viewport anchored to where the user was after prepending.
         requestAnimationFrame(() => { if (scroller) scroller.scrollTop = scroller.scrollHeight - prevH })
       }
     } catch (e) { logError(e) } finally {
@@ -314,7 +299,6 @@ export default function RequestChatPage() {
     if (e.currentTarget.scrollTop < 80) loadOlder()
   }, [loadOlder])
 
-  // Manager: load the lead status so we know whether it still needs accepting.
   useEffect(() => {
     if (!isStaff || !leadId) return undefined
     let cancelled = false
@@ -364,15 +348,9 @@ export default function RequestChatPage() {
       '.message.sent': (e) => {
         const incoming = e.message ?? e
         setMessages((prev) => mergeIncomingMessage(prev, incoming, myId))
-        // The other side sent a message → they're no longer "typing".
         if (String(incoming?.user_id ?? incoming?.sender_id) !== String(myId)) setOthersTyping(false)
-        // A system note (e.g. "identity verified") means an existing typed card
-        // changed state on the server — refetch so it flips live.
         if (incoming?.type === 'system') setTimeout(reloadMessages, 400)
       },
-      // The other side read the chat → mark my outgoing messages as read so the
-      // manager sees a "read" tick on the messages they sent (shown manager-side
-      // only — see the bubble render).
       '.messages.read': (e) => {
         if (e.user_id === myId) return
         const readAt = e.read_at ?? new Date().toISOString()
@@ -381,9 +359,6 @@ export default function RequestChatPage() {
     })
   }, [chatId, myId, reloadMessages])
 
-  // "Typing…" indicator via client events (whispers) — no backend needed. We
-  // whisper 'typing' as the user types and show the bubble when the other side
-  // whispers (auto-hides after 3s of silence).
   useEffect(() => {
     if (!chatId) return undefined
     const ch = privateChannel(`chats.${chatId}`)
@@ -402,13 +377,11 @@ export default function RequestChatPage() {
 
   const sendTyping = useCallback(() => {
     const now = Date.now()
-    if (now - lastTypingSentRef.current < 1500) return // throttle whispers
+    if (now - lastTypingSentRef.current < 1500) return
     lastTypingSentRef.current = now
     try { privateChannel(`chats.${chatId}`)?.whisper?.('typing', { from: myId }) } catch {}
   }, [chatId, myId])
 
-  // While the composer is focused (active), keep telling the other side we're
-  // typing so their indicator stays up; stop on blur (it auto-hides after 3s).
   const onInputFocus = useCallback(() => {
     sendTyping()
     clearInterval(typingPingRef.current)
@@ -417,11 +390,6 @@ export default function RequestChatPage() {
   const onInputBlur = useCallback(() => { clearInterval(typingPingRef.current) }, [])
   useEffect(() => () => clearInterval(typingPingRef.current), [])
 
-  // Catch-up after a connection gap. The websocket silently DROPS any messages
-  // sent while the client was offline / backgrounded (internet dropped, screen
-  // locked, app switched) — those payment/verification cards & buttons would
-  // otherwise never appear. Refetch the full list when the tab becomes visible
-  // again, when the network returns, and on a periodic poll, so nothing is lost.
   useEffect(() => {
     if (!chatId) return undefined
     const refetch = () => { if (!document.hidden) reloadMessages() }
@@ -439,20 +407,14 @@ export default function RequestChatPage() {
     }
   }, [chatId, reloadMessages])
 
-  // Mark the chat read on open and whenever new messages arrive while viewing,
-  // so support/lead unread badges clear (server sets messages.read_at).
   useEffect(() => {
     if (!chatId) return
     api.post(`/chats/${chatId}/read`).catch(() => {})
   }, [chatId, messages.length])
 
-  // New-message pop — identical to the support chat (count-based, so the
-  // optimistic→real swap never double-animates).
   useEffect(() => {
     if (contentState.current !== 'messages') return
     const currentCount = messages.length
-    // Prepended older messages also grow the count — don't treat that as a new
-    // incoming message (no scroll-to-bottom / pop).
     if (prependingRef.current) { prependingRef.current = false; prevMsgCount.current = currentCount; return }
     const isNewMessage = currentCount > prevMsgCount.current
     prevMsgCount.current = currentCount
@@ -477,8 +439,6 @@ export default function RequestChatPage() {
     }
   }, [messages])
 
-  // Scroll to the bottom when the other side starts typing, so the «печатает…»
-  // indicator (rendered at the very end of the list) is actually visible.
   useEffect(() => {
     if (othersTyping) requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }))
   }, [othersTyping])
@@ -499,10 +459,6 @@ export default function RequestChatPage() {
     el.style.height = Math.min(el.scrollHeight, 120) + 'px'
   }
 
-  // Post one text message. On failure (e.g. internet dropped mid-send) the
-  // optimistic message is KEPT and flagged `failed` instead of vanishing — it
-  // stays visible with a retry and is auto-resent when the connection returns.
-  // client_message_id + Idempotency-Key make resends safe (no duplicates).
   const postMessageBody = useCallback(async (text, optimisticId, clientMessageId) => {
     try {
       const { data } = await api.post(`/chats/${chatId}/messages`, { body: text, client_message_id: clientMessageId }, {
@@ -531,8 +487,6 @@ export default function RequestChatPage() {
     postMessageBody(m.text, m.id, m.clientMessageId)
   }, [postMessageBody])
 
-  // Auto-resend any messages that failed while offline, once the connection
-  // returns (network 'online' or Telegram 'activated').
   useEffect(() => {
     const resend = () => setMessages((prev) => {
       const failed = prev.filter((x) => x.failed && x.type === 'text' && x.clientMessageId)
@@ -557,11 +511,6 @@ export default function RequestChatPage() {
     uploadingRef.current = true
     setUploading(true)
 
-    // Convert/downscale before upload — iPhone HEIC/HEIF and oversized photos
-    // are rejected by the server (mimes:jpg,png,webp + 10MB), so without this
-    // the manager saw their own optimistic copy but the client never got the
-    // image. prepareImageFileForUpload turns HEIC into JPEG and shrinks big
-    // files; non-images (pdf/video) pass through unchanged.
     const isImage = (file.type || '').startsWith('image/') || /\.(heic|heif|jpe?g|png|webp)$/i.test(file.name || '')
     let upload = file
     if (isImage) {
@@ -692,8 +641,7 @@ export default function RequestChatPage() {
                   </div>
                   <span className="text-[#ABABAB] text-xs font-medium px-1 inline-flex items-center gap-1">
                     {msg.time}
-                    {/* Outgoing status: red ! = failed (tap to resend, auto-resends
-                        when back online); single grey ✓ = sent; double pink ✓✓ = read. */}
+                    
                     {isUser && msg.failed ? (
                       <button type="button" onClick={() => retryMessage(msg)} className="inline-flex items-center text-[#E5484D] active:scale-90 transition-transform" aria-label="retry">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
@@ -714,8 +662,7 @@ export default function RequestChatPage() {
                   </div>
                   <span className="text-[#ABABAB] text-xs font-medium px-1 inline-flex items-center gap-1">
                     {msg.time}
-                    {/* Outgoing status: red ! = failed (tap to resend, auto-resends
-                        when back online); single grey ✓ = sent; double pink ✓✓ = read. */}
+                    
                     {isUser && msg.failed ? (
                       <button type="button" onClick={() => retryMessage(msg)} className="inline-flex items-center text-[#E5484D] active:scale-90 transition-transform" aria-label="retry">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>

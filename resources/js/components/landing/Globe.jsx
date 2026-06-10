@@ -10,9 +10,6 @@ const PINK = '#E2319B'
 const THETA = 0.22
 const ELEVATION = 0.04
 
-// Decorative points spread across the globe (NOT real locations) — polaroids are
-// pinned here and rotate with the globe (cobe "Polaroids" vibe). Captioned with
-// city names, not model names.
 const CITIES = [
   { id: 'moscow',  label: 'Moscow',   loc: [55, 37] },
   { id: 'dubai',   label: 'Dubai',    loc: [25, 55] },
@@ -23,7 +20,6 @@ const CITIES = [
   { id: 'tbilisi', label: 'Tbilisi',  loc: [41, 44] },
 ]
 
-// The exact models the agency wants featured on the landing globe (by name).
 const FEATURED_NAMES = ['элина', 'рузанна', 'даша', 'ангелина', 'адрианна', 'александра', 'ева']
 const normName = (s) => (s || '').toString().trim().toLowerCase().replace(/ё/g, 'е')
 
@@ -53,7 +49,6 @@ export default function Globe({ className = '', style }) {
   const pointerMovement    = useRef(0)
   const rotation           = useRef(0)
 
-  // Catalog photos, one paired to each city polaroid.
   const [photos, setPhotos] = useState([])
 
   useEffect(() => {
@@ -64,7 +59,6 @@ export default function Globe({ className = '', style }) {
         const all = (r?.data?.data ?? []).filter((m) => m.photos?.[0]?.url)
         const toCard = (m) => ({ photo: resolveMediaUrl(m.photos[0].url), name: modelName(m) })
 
-        // Pick exactly the agency-featured models, in the requested order.
         const byName = new Map()
         all.forEach((m) => {
           const key = normName(m.display_name)
@@ -72,7 +66,6 @@ export default function Globe({ className = '', style }) {
         })
         const featured = FEATURED_NAMES.map((n) => byName.get(n)).filter(Boolean).map(toCard)
 
-        // Fallback so the globe never goes blank if names ever change/are hidden.
         const list = featured.length ? featured : all.slice(0, CITIES.length).map(toCard)
         setPhotos(list)
       })
@@ -128,10 +121,6 @@ export default function Globe({ className = '', style }) {
     const STEP = (2 * Math.PI) / RING_N
     let ringW = -1
     const ringLastOp = new Float32Array(RING_N).fill(-1)
-    // Per-polaroid write. We keep SUB-PIXEL precision on the transform — rounding
-    // to whole pixels made the cards jump 1px every few frames at the globe's slow
-    // spin, which read as ~10fps. Only 7 elements, so writing each frame is cheap
-    // and GPU-composited (translate3d). Opacity still has a tiny dead-band.
     const polCache = new Map()
     const writePol = (el, id, op, px, py, scale) => {
       let c = polCache.get(id)
@@ -178,11 +167,9 @@ export default function Globe({ className = '', style }) {
         const eff = ringAngle - i * STEP
         const tt = (1 + Math.cos(eff)) / 2
         const op = Math.round((0.1 + 0.9 * Math.pow(tt, 0.85)) * 1000) / 1000
-        // Wider dead-band on mobile → far fewer style writes per frame.
         if (Math.abs(op - ringLastOp[i]) >= (isMobile ? 0.02 : 0.004)) { el.style.opacity = op; ringLastOp[i] = op }
       }
 
-      // Pin polaroids to their cities (depth → fade + perspective scale).
       for (const c of CITIES) {
         const el = polRefs.current[c.id]
         if (!el) continue
@@ -270,7 +257,7 @@ export default function Globe({ className = '', style }) {
           </div>
         </div>
 
-        {/* Polaroid photo cards pinned to cities (1:1, no repeats) */}
+        
         {CITIES.map((c, i) => {
           const p = photos[i] || null
           if (!p) return null

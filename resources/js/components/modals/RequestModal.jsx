@@ -10,13 +10,6 @@ import { buildLeadMessage } from '@/utils/leadMessage'
 import { modelName } from '@/utils/modelName'
 import CitySelect from '@/components/ui/CitySelect'
 
-/**
- * "Интересует этот типаж" — quick lead modal opened from a prototype card.
- *
- * Two steps: first only the city, then (after «Далее») the extra wishes reveal
- * with a smooth height transition. The bottom sheet is anchored to the bottom,
- * so animating the wishes block height grows the sheet upward smoothly.
- */
 export default function RequestModal({ isOpen, onClose, model }) {
   const { t } = useTranslation()
   const navigate = useTransitionNavigate()
@@ -39,8 +32,6 @@ export default function RequestModal({ isOpen, onClose, model }) {
     setSubmitting(false)
   }, [])
 
-  // The wishes block is only mounted on step 2 (so it's never visible before
-  // «Далее»). Reveal it with a smooth auto-height grow when it appears.
   useEffect(() => {
     const el = extraRef.current
     if (!el || step !== 2) return undefined
@@ -84,9 +75,6 @@ export default function RequestModal({ isOpen, onClose, model }) {
   const primaryBtn = (label, onClick, enabled) => (
     <button
       onClick={onClick}
-      // Keep the focused input from blurring on tap: otherwise the keyboard
-      // closes → visualViewport shifts the sheet → the button moves out from
-      // under the finger and the first tap is lost (needing a second press).
       onMouseDown={(e) => e.preventDefault()}
       disabled={!enabled}
       className={[
@@ -106,7 +94,7 @@ export default function RequestModal({ isOpen, onClose, model }) {
           <p className="text-[#7F7F7F] text-sm/[140%] font-medium">{t('requestModal.subtitle')}</p>
         </div>
 
-        {/* City */}
+        
         <div className="flex flex-col gap-2">
           <p className="text-black text-[14px]/[100%] font-medium px-1">
             {t('request.city')} <span className="text-[#E2319B]">*</span>
@@ -121,7 +109,7 @@ export default function RequestModal({ isOpen, onClose, model }) {
           />
         </div>
 
-        {/* Wishes — mounted & revealed only on step 2 (after «Далее») */}
+        
         {step === 2 && (
           <div ref={extraRef} style={{ overflow: 'hidden' }}>
             <div className="flex flex-col gap-2">

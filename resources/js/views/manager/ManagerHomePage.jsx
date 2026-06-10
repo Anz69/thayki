@@ -69,7 +69,7 @@ export default function ManagerHomePage() {
     <section ref={rootRef} className="flex flex-col min-h-screen bg-white">
       <div className="flex flex-col gap-5 container pt-[40px] pb-[120px]">
 
-        {/* Greeting + avatar */}
+        
         <div data-anim className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="text-[#9B9AA0] text-[14px] font-medium">{t('manager.greeting')}</span>
@@ -82,7 +82,7 @@ export default function ManagerHomePage() {
           </div>
         </div>
 
-        {/* Stats — GradientBorder accent (like the balance card) */}
+        
         <div data-anim>
           <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex items-center">
             <div className="flex-1 flex flex-col gap-1">
@@ -97,7 +97,7 @@ export default function ManagerHomePage() {
           </GradientBorder>
         </div>
 
-        {/* Panel sections */}
+        
         <div data-anim className="flex flex-col gap-3">
           <SectionLabel>{t('manager.title')}</SectionLabel>
           <MenuItem

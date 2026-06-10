@@ -3,21 +3,12 @@ import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
 import api from '@/utils/api'
 
-/**
- * Withdrawal modal.
- *
- * Three precheck states: loading → ok (form) | pending (already submitted).
- * A single <ModalMiddle> instance holds all states so React never unmounts it.
- * When precheck resolves, GSAP animates the container height from spinner to
- * the actual content height before rendering the new view.
- */
 export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess }) {
   const [amount, setAmount]       = useState('')
   const [error, setError]         = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [precheck, setPrecheck]   = useState(/** @type {'idle'|'loading'|'ok'|'pending'} */('idle'))
-  const [pendingData, setPendingData] = useState(/** @type {object|null} */(null))
-  // Rendered view — lags behind `precheck` by one animated transition
+  const [precheck, setPrecheck]   = useState(('idle'))
+  const [pendingData, setPendingData] = useState((null))
   const [displayedPrecheck, setDisplayedPrecheck] = useState('loading')
 
   const precheckContainerRef = useRef(null)
@@ -32,7 +23,6 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
   const hasAmount  = numAmount > 0
   const amountOver = numAmount > balance
 
-  // ─── precheck fetch ───────────────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) {
       isClosingRef.current = true
@@ -56,9 +46,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
       .catch(() => setPrecheck('ok'))
   }, [isOpen])
 
-  // ─── Animated height transition when precheck resolves ───────────────────
   useEffect(() => {
-    // 'idle' and 'loading' → no outgoing transition needed
     if (precheck === 'idle' || precheck === 'loading') return
 
     const container = precheckContainerRef.current
@@ -67,21 +55,17 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
       return
     }
 
-    // Capture current height (spinner / old content)
     const fromH = container.offsetHeight
     gsap.killTweensOf(container)
     gsap.set(container, { height: fromH, overflow: 'hidden' })
 
-    // Fade out old content
     gsap.to(container, {
       opacity: 0,
       duration: 0.14,
       ease: 'power2.in',
       onComplete: () => {
-        // Switch rendered content
         setDisplayedPrecheck(precheck)
 
-        // Double-rAF: wait for React to paint new layout before measuring
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             const c = precheckContainerRef.current
@@ -100,9 +84,8 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
         })
       },
     })
-  }, [precheck]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [precheck])
 
-  // ─── Amount buttons GSAP (slide-in / slide-out) ──────────────────────────
   useEffect(() => {
     const el = amountBtnsRef.current
     if (!el) return
@@ -136,7 +119,6 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
     )
   }, [hasAmount, isOpen])
 
-  // ─── Form view switcher (amount → done) ──────────────────────────────────
   const switchView = useCallback((next) => {
     if (isClosingRef.current) return
     const prev  = currentViewRef.current
@@ -179,7 +161,6 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
     })
   }, [])
 
-  // ─── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
     if (!hasAmount || amountOver || submitting) return
     setSubmitting(true)
@@ -211,7 +192,6 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
     }
   }, [hasAmount, amountOver, submitting, amountMinor, switchView])
 
-  // ─── After-close reset ────────────────────────────────────────────────────
   const handleAfterClose = useCallback(() => {
     const { amount: amountEl, done: doneEl } = viewRefs.current
     gsap.killTweensOf([amountBtnsRef.current, contentWrapRef.current, amountEl, doneEl, precheckContainerRef.current])
@@ -240,7 +220,6 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
     isClosingRef.current = false
   }, [])
 
-  // ─── Render ───────────────────────────────────────────────────────────────
   const displayAmount    = amount ? `฿ ${amount}` : ''
   const pendingAmountThb = pendingData?.amount_minor != null
     ? Math.floor(pendingData.amount_minor / 100)
@@ -250,7 +229,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
     <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>
       <div ref={precheckContainerRef}>
 
-        {/* ── Loading ─────────────────────────────────────────────────────── */}
+        
         {displayedPrecheck === 'loading' && (
           <div className="flex justify-center px-5 py-9">
             <div className="w-8 h-8 rounded-full border-[3px] border-[#FDE8F5] border-t-[#E2319B] animate-spin" />
@@ -282,10 +261,10 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
           </div>
         )}
 
-        {/* ── Form (ok state) ──────────────────────────────────────────────── */}
+        
         {displayedPrecheck === 'ok' && (
           <div ref={contentWrapRef} style={{ position: 'relative', overflow: 'hidden' }}>
-            {/* Amount view */}
+            
             <div ref={(el) => { viewRefs.current.amount = el }} style={{ position: 'relative' }}>
               <div className="flex flex-col gap-5 px-5 pt-2 pb-6">
                 <div className="flex flex-col items-center gap-1.5 text-center pt-1">
@@ -345,7 +324,7 @@ export default function WithdrawModal({ isOpen, onClose, balance = 0, onSuccess 
               </div>
             </div>
 
-            {/* Done view */}
+            
             <div
               ref={(el) => { viewRefs.current.done = el }}
               style={{ position: 'absolute', top: 0, left: 0, right: 0, visibility: 'hidden', opacity: 0, pointerEvents: 'none' }}

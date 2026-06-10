@@ -99,7 +99,7 @@ function FilledSlot({ photo, onRemove, onSetMain, onReplace, canRemove }) {
         className="hidden"
         onChange={handleReplaceFile}
       />
-      {/* Clicking the image replaces it */}
+      
       <button
         type="button"
         className="w-full h-full block rounded-2xl overflow-hidden focus:outline-none active:brightness-90 transition-[filter]"
@@ -120,7 +120,7 @@ function FilledSlot({ photo, onRemove, onSetMain, onReplace, canRemove }) {
         )}
       </button>
 
-      {/* Main badge */}
+      
       {photo.is_main && (
         <button
           type="button"
@@ -132,7 +132,7 @@ function FilledSlot({ photo, onRemove, onSetMain, onReplace, canRemove }) {
         </button>
       )}
 
-      {/* Make main button (only for real photos with id, not the main one already) */}
+      
       {photo.id && !photo.is_main && (
         <button
           type="button"
@@ -144,7 +144,7 @@ function FilledSlot({ photo, onRemove, onSetMain, onReplace, canRemove }) {
         </button>
       )}
 
-      {/* Remove button — disabled when at minimum (3 photos) */}
+      
       <button
         type="button"
         disabled={!canRemove}

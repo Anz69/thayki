@@ -49,7 +49,6 @@ export function unlockPageRootScroll(force = false) {
   unlockBodyScrollStyles(force)
 }
 
-/** Bot API 7.7+ swipe behavior; older Telegram WebApp logs a console warning if called anyway. */
 export function telegramSwipeBehaviorSupported() {
   const tg = resolveTelegramWebApp()
   return Boolean(

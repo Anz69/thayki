@@ -13,10 +13,6 @@ export const PlayBadge = ({ size = 64 }) => (
   </span>
 )
 
-/**
- * Full-screen, swipeable lightbox for a mixed media list.
- * `media`: [{ type: 'image'|'video', url, poster? }], `index`: start slide.
- */
 export default function MediaLightbox({ media, index = 0, onClose }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose() }

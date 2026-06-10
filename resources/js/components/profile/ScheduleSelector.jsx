@@ -25,7 +25,7 @@ export default function ScheduleSelector({ value, onChange, isEditing = false })
     } else {
       gsap.set(chevronRef.current, { autoAlpha: 0, width: 0, marginLeft: 0, overflow: 'hidden' })
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!mountedRef.current) { mountedRef.current = true; return }
@@ -42,7 +42,7 @@ export default function ScheduleSelector({ value, onChange, isEditing = false })
       }
       gsap.to(chevronRef.current, { autoAlpha: 0, width: 0, marginLeft: 0, duration: 0.22, ease: 'power2.in' })
     }
-  }, [isEditing]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isEditing])
 
   const toggle = useCallback(() => {
     if (!isEditing) return

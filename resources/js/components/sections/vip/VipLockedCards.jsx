@@ -9,11 +9,6 @@ const SPARKS = [
   { x: 214, y: 190, s: 16 },
 ]
 
-/**
- * VIP step 2 — the real catalog carousel (ModelCardCarousel) rendered behind a
- * blur + frosted veil with a lock badge: "exclusive profiles, hidden from the
- * public catalog".
- */
 export default function VipLockedCards({ isActive }) {
   const haloRef = useRef(null)
   const lockRef = useRef(null)
@@ -37,7 +32,7 @@ export default function VipLockedCards({ isActive }) {
 
     const idles = []
     const tl = gsap.timeline({
-      delay: 0.7, // let the carousel reveal first
+      delay: 0.7,
       onComplete() {
         idles.push(gsap.to(halo, { scale: 1.12, opacity: 0.7, duration: 2.1, ease: 'sine.inOut', yoyo: true, repeat: -1 }))
         idles.push(gsap.to(lock, { scale: 1.06, duration: 1.6, ease: 'sine.inOut', yoyo: true, repeat: -1 }))
@@ -53,11 +48,9 @@ export default function VipLockedCards({ isActive }) {
 
   return (
     <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-      {/* Constrained, centred stage so the portrait cards stay card-sized
-          (the carousel is full-height by default — that made them too long). */}
+      
       <div className="relative w-full" style={{ height: 300, maxWidth: 360 }}>
-        {/* The real catalog carousel — the cards themselves are blurred (faces
-            stay private), the white card frames stay crisp. */}
+        
         <div className="absolute inset-0" style={{ pointerEvents: 'none' }}>
           <ModelCardCarousel isActive={isActive} blur />
         </div>

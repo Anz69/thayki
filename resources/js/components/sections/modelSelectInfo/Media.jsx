@@ -14,7 +14,6 @@ export default function Media({ photos = [], videos = [] }) {
     )
   }
 
-  // One combined, mouse-scrollable lightbox for photos + videos.
   const media = [
     ...photos.map((p) => ({ type: 'image', url: resolveMediaUrl(p.url) })),
     ...videos.map((v) => ({ type: 'video', url: resolveMediaUrl(v.url), poster: v.poster ? resolveMediaUrl(v.poster) : undefined })),

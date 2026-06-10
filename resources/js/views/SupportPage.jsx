@@ -92,7 +92,6 @@ function mergeIncomingMessage(prev, incoming, myId) {
   return [...prev, normalized]
 }
 
-
 export default function SupportPage() {
   const { t } = useTranslation()
   const navigate = useTransitionNavigate()
@@ -166,8 +165,6 @@ export default function SupportPage() {
 
   function animateMessagesIn() {
     if (!messagesRef.current) return
-    // Keep initial viewport pinned to the latest message to avoid
-    // top flash before the list settles to bottom.
     messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
     gsap.set(messagesRef.current, { autoAlpha: 1 })
     const els = messagesRef.current.querySelectorAll('[data-msg]')

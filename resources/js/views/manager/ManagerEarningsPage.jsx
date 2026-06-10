@@ -89,7 +89,7 @@ export default function ManagerEarningsPage() {
           ))}
         </div>
 
-        {/* Daily dynamics chart */}
+        
         <div data-anim className="flex flex-col gap-2.5 mt-1">
           <span className="text-[#7F7F7F] text-[14px]/[100%] font-medium uppercase tracking-[0.1em] px-1">
             {t('manager.earn.dynamics')}

@@ -27,12 +27,11 @@ function ModelCard({ model }) {
     }
   }, [retryCount])
 
-  // Cached images fire onLoad before React attaches the handler → check .complete
   useEffect(() => {
     if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
       setImgLoaded(true)
     }
-  }, [retryCount]) // re-run when key changes (new <img> mounted after retry)
+  }, [retryCount])
 
   useEffect(() => () => clearTimeout(retryTimer.current), [])
 
@@ -101,7 +100,6 @@ export default function HomePage() {
       : []
   ), [models])
 
-  // ── Initial load ──────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false
     setLoading(true)
@@ -129,7 +127,6 @@ export default function HomePage() {
     return () => { cancelled = true }
   }, [reloadKey])
 
-  // ── Load next page ────────────────────────────────────────────────────────
   const fetchMore = useCallback(() => {
     if (isFetchingRef.current || !hasMore) return
     isFetchingRef.current = true
@@ -144,27 +141,25 @@ export default function HomePage() {
         setPage(nextPage)
         setHasMore(pagination ? nextPage < pagination.last_page : false)
       })
-      .catch(() => { /* silent — stay on current page */ })
+      .catch(() => {  })
       .finally(() => {
         setLoadingMore(false)
         isFetchingRef.current = false
       })
   }, [hasMore, page])
 
-  // ── IntersectionObserver on sentinel ─────────────────────────────────────
   useEffect(() => {
     const el = sentinelRef.current
     if (!el || loading) return
 
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) fetchMore() },
-      { rootMargin: '400px' }, // start loading 400px before reaching the bottom
+      { rootMargin: '400px' },
     )
     observer.observe(el)
     return () => observer.disconnect()
   }, [fetchMore, loading])
 
-  // ── GSAP: animate cards (initial + load-more batches) ────────────────────
   useEffect(() => {
     if (loading || !gridRef.current) return
     const allCards  = Array.from(gridRef.current.children)
@@ -177,7 +172,6 @@ export default function HomePage() {
     }
 
     if (prevCount === 0) {
-      // First batch — set all invisible then stagger in
       gsap.set(allCards, { autoAlpha: 0, y: 48, scale: 0.93, willChange: 'transform,opacity' })
       gsap.to(allCards, {
         autoAlpha: 1,
@@ -189,7 +183,6 @@ export default function HomePage() {
         clearProps: 'transform,will-change',
       })
     } else if (newCount > prevCount) {
-      // Extra pages — animate only the newly appended cards
       const newCards = allCards.slice(prevCount)
       gsap.fromTo(
         newCards,
@@ -207,9 +200,8 @@ export default function HomePage() {
     }
 
     prevCountRef.current = newCount
-  }, [loading, safeModels.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading, safeModels.length])
 
-  // ── GSAP: header / title / share entry ───────────────────────────────────
   const startAnimations = useCallback(() => {
     gsap.timeline({ defaults: { force3D: true } })
       .to(headerRef.current,   { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' })
@@ -306,7 +298,7 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Sentinel — invisible trigger for IntersectionObserver */}
+      
       {!loading && !error && safeModels.length > 0 && (
         <div ref={sentinelRef} className="flex justify-center py-6 container">
           {loadingMore && (

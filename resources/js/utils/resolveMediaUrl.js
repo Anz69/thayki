@@ -1,4 +1,4 @@
-/** Absolute URL for images stored as `/storage/...` or full CDN URLs. */
+
 export function resolveMediaUrl(url) {
   if (url == null || typeof url !== 'string') return null
   const u = url.trim()

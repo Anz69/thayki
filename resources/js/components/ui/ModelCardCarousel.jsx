@@ -14,7 +14,6 @@ const EMOJI_SETS = [
   ['🌸', '😻', '💖'], ['🦋', '💓', '🤩'], ['🌺', '❤️', '😏'],
 ]
 
-// Fallback if the catalog request fails / is empty
 const FALLBACK = [
   { id: 1, photo: '/img/girls/big/6.png', name: 'Канника', emojis: EMOJI_SETS[0] },
   { id: 2, photo: '/img/girls/big/2.png', name: 'Намфон',  emojis: EMOJI_SETS[1] },
@@ -58,16 +57,10 @@ export default function ModelCardCarousel({ className = '', isActive, blur = fal
   const wrapRef  = useRef(null)
   const swiperRef = useRef(null)
   const [models, setModels] = useState(FALLBACK)
-  // We reveal the carousel only once BOTH conditions hold:
-  //   1) catalog data has settled (no fallback→real flash), and
-  //   2) the modal open animation has finished (no init jank).
-  // Until then the wrapper stays invisible — so there's no "card pops in
-  // without animation, then updates" — just one smooth fade-up.
   const [loaded, setLoaded]   = useState(false)
   const [settled, setSettled] = useState(false)
   const ready = loaded && settled
 
-  // Use real imported prototype photos when available
   useEffect(() => {
     let cancelled = false
     api.get('/catalog/models', { params: { per_page: 6 } })
@@ -89,23 +82,18 @@ export default function ModelCardCarousel({ className = '', isActive, blur = fal
     return () => { cancelled = true }
   }, [])
 
-  // Start hidden.
   useLayoutEffect(() => {
     gsap.set(wrapRef.current, { autoAlpha: 0, y: 24 })
   }, [])
 
-  // Wait out the modal open animation before allowing the reveal.
   useEffect(() => {
     if (!isActive || settled) return undefined
     const id = setTimeout(() => setSettled(true), 440)
     return () => clearTimeout(id)
   }, [isActive, settled])
 
-  // Single smooth fade-up once everything is ready (Swiper is already mounted
-  // & laid out at this point, just behind opacity 0).
   useEffect(() => {
     if (!ready || !wrapRef.current) return undefined
-    // Let Swiper lay out its (looped/centered) slides for a frame, then reveal.
     const raf = requestAnimationFrame(() => {
       if (!wrapRef.current) return
       gsap.to(wrapRef.current, {
@@ -160,7 +148,7 @@ function ModelCard({ m, blur = false }) {
       }}
     >
       <div className="absolute inset-0 bg-[#EDE8E8]">
-        {/* Photo: softly blurred (scaled up so blurred edges don't bleed). */}
+        
         <div
           className="absolute inset-0"
           style={blur ? { filter: 'blur(8px)', transform: 'scale(1.12)' } : undefined}
@@ -173,8 +161,7 @@ function ModelCard({ m, blur = false }) {
           />
         </div>
         {blur ? (
-          /* Hidden profile: keep the photo rich (no washing out) — a refined
-             dark→pink scrim at the bottom for depth + contrast under the label. */
+          
           <div
             aria-hidden="true"
             className="absolute inset-0 pointer-events-none"
@@ -194,8 +181,7 @@ function ModelCard({ m, blur = false }) {
       </div>
 
       {blur ? (
-        /* Frosted "hidden profile" footer — a glass strip with a lock + redacted
-           lines, so the bottom reads as real (locked) content, not empty white. */
+        
         <div
           className="absolute inset-x-2.5 bottom-2.5 z-10 rounded-2xl px-3.5 py-3 flex items-center gap-3"
           style={{

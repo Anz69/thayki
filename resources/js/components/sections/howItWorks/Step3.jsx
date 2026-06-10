@@ -37,8 +37,6 @@ export default function HowItWorksStep3({ isActive }) {
     gsap.set(centerRef.current, { autoAlpha: 0, scale: 0.42 })
     gsap.set(dotsRef.current.filter(Boolean), { autoAlpha: 0, scale: 0 })
   }, [])
-  // Reset + replay whenever this step becomes active (not just on mount), so it
-  // doesn't sit frozen at its end-state when you navigate to it.
   useEffect(() => {
     if (!isActive) return undefined
     const center = centerRef.current

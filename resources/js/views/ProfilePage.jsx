@@ -100,7 +100,7 @@ export default function ProfilePage() {
     if (!profile.loaded) {
       profile.hydrate()
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (profile.loaded) {
@@ -124,9 +124,6 @@ export default function ProfilePage() {
     gsap.set(backLabelRef.current,   { autoAlpha: 0, y: 6, position: 'absolute' })
   }, [])
 
-  // nameHintRef / metricsHintRef / metricsEditRef live inside the
-  // {profile.loaded && ...} block, so their DOM nodes don't exist until
-  // profile loads. We must hide them right after React mounts them.
   useLayoutEffect(() => {
     if (!profile.loaded) return
     if (nameHintRef.current)    gsap.set(nameHintRef.current,    { height: 0, autoAlpha: 0, overflow: 'hidden' })

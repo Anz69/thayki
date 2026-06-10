@@ -219,15 +219,13 @@ export default function MorePage() {
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [fetchMeetings, fetchBalance])
 
-  // balanceRef is inside {balance >= 0.01 && ...} so it doesn't exist on mount.
-  // Track whether we've already played its entry animation.
   const balanceAnimatedRef = useRef(false)
 
   useLayoutEffect(() => {
     if (ordersRef.current) gsap.set(ordersRef.current, { autoAlpha: 0, y: 20 })
     if (section1Ref.current) gsap.set(section1Ref.current, { autoAlpha: 0, y: 24 })
     if (section2Ref.current) gsap.set(section2Ref.current, { autoAlpha: 0, y: 24 })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   usePageReady(() => {
     const s1 = section1Ref.current
@@ -238,7 +236,6 @@ export default function MorePage() {
       .to(s2, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.1)
   })
 
-  // Animate balance card in when it first becomes visible (loaded from API)
   useEffect(() => {
     if (!balanceRef.current || balance < 0.01) return
     if (balanceAnimatedRef.current) return
@@ -269,7 +266,6 @@ export default function MorePage() {
   return (
     <>
       <section className="flex flex-col min-h-screen bg-white">
-
 
         <div className="flex flex-col gap-4 container pt-[40px] pb-[120px]">
 
@@ -313,7 +309,6 @@ export default function MorePage() {
               </GradientBorder>
             </div>
           )}
-
 
           <div ref={ordersRef} className="flex flex-col gap-3">
             {activeMeetings.length > 0 && (
@@ -372,8 +367,6 @@ export default function MorePage() {
               </span>
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.howItWorks')}</span>
             </button>
-
-
 
             <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-3">
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.language')}</span>
