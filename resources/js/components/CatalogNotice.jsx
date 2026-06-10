@@ -99,10 +99,10 @@ export default function CatalogNotice() {
                     ? { width: '100%' }
                     : i === idx
                       ? {
-                          width: '0%',
-                          animation: `cnGrow ${ROTATE_MS}ms linear forwards`,
-                          animationPlayState: dragging ? 'paused' : 'running',
-                        }
+                        width: '0%',
+                        animation: `cnGrow ${ROTATE_MS}ms linear forwards`,
+                        animationPlayState: dragging ? 'paused' : 'running',
+                      }
                       : { width: '0%' }
                 }
               />
@@ -110,10 +110,8 @@ export default function CatalogNotice() {
           ))}
         </div>
 
-        {/* Inner panel */}
         <div className="relative" style={{ background: '#F5F5F7', borderRadius: 14.5 }}>
           <div className="px-4 pt-5 pb-4 flex flex-col items-center gap-4">
-            {/* Rotating text — centered, fixed height to avoid layout jumps */}
             <div
               ref={viewportRef}
               className="overflow-hidden select-none w-full"
@@ -140,28 +138,31 @@ export default function CatalogNotice() {
                 ))}
               </div>
             </div>
-
-            <div className="flex items-center gap-2 w-full pt-0.5">
+            <div className="flex flex-col gap-2 w-full items-center">
+              <div className="flex items-center gap-2 w-full pt-0.5">
+                <button
+                  onClick={() => setHowOpen(true)}
+                  className="flex-1 py-2.5 rounded-full bg-[#EFEEF3] text-black text-[13px]/[100%] font-medium active:bg-[#E4E3E8] transition-colors"
+                >
+                  {t('catalogNotice.howItWorks')}
+                </button>
+                <button
+                  onClick={() => setFaqOpen(true)}
+                  className="flex-1 py-2.5 rounded-full bg-[#EFEEF3] text-black text-[13px]/[100%] font-medium active:bg-[#E4E3E8] transition-colors"
+                >
+                  {t('catalogNotice.faq')}
+                </button>
+              </div>
               <button
-                onClick={() => setHowOpen(true)}
-                className="flex-1 py-2.5 rounded-full bg-[#EFEEF3] text-black text-[13px]/[100%] font-medium active:bg-[#E4E3E8] transition-colors"
+                onClick={() => navigate('/request')}
+                className="w-full py-2.5 rounded-full bg-[#E2319B] text-white text-[14px]/[100%] font-medium active:scale-[0.98] transition-transform shadow-[0_8px_20px_rgba(226,49,155,0.32)]"
               >
-                {t('catalogNotice.howItWorks')}
-              </button>
-              <button
-                onClick={() => setFaqOpen(true)}
-                className="flex-1 py-2.5 rounded-full bg-[#EFEEF3] text-black text-[13px]/[100%] font-medium active:bg-[#E4E3E8] transition-colors"
-              >
-                {t('catalogNotice.faq')}
+                {t('request.title')}
               </button>
             </div>
+
             {/* Primary CTA — full width (same as the two buttons above), brand pink. */}
-            <button
-              onClick={() => navigate('/request')}
-              className="w-full py-3 rounded-full bg-[#E2319B] text-white text-[14px]/[100%] font-semibold active:scale-[0.98] transition-transform shadow-[0_8px_20px_rgba(226,49,155,0.32)]"
-            >
-              {t('request.title')}
-            </button>
+
           </div>
         </div>
       </div>
