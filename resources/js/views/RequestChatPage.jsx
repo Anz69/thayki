@@ -324,6 +324,28 @@ export default function RequestChatPage() {
     })
   }, [chatId, myId, reloadMessages])
 
+  // Catch-up after a connection gap. The websocket silently DROPS any messages
+  // sent while the client was offline / backgrounded (internet dropped, screen
+  // locked, app switched) — those payment/verification cards & buttons would
+  // otherwise never appear. Refetch the full list when the tab becomes visible
+  // again, when the network returns, and on a periodic poll, so nothing is lost.
+  useEffect(() => {
+    if (!chatId) return undefined
+    const refetch = () => { if (!document.hidden) reloadMessages() }
+    const poll = setInterval(refetch, 20000)
+    document.addEventListener('visibilitychange', refetch)
+    window.addEventListener('focus', refetch)
+    window.addEventListener('online', reloadMessages)
+    try { window.Telegram?.WebApp?.onEvent?.('activated', reloadMessages) } catch {}
+    return () => {
+      clearInterval(poll)
+      document.removeEventListener('visibilitychange', refetch)
+      window.removeEventListener('focus', refetch)
+      window.removeEventListener('online', reloadMessages)
+      try { window.Telegram?.WebApp?.offEvent?.('activated', reloadMessages) } catch {}
+    }
+  }, [chatId, reloadMessages])
+
   // Mark the chat read on open and whenever new messages arrive while viewing,
   // so support/lead unread badges clear (server sets messages.read_at).
   useEffect(() => {
