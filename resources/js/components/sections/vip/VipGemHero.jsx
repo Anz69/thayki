@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import gsap from 'gsap'
+import LottieDiamond from '@/components/ui/LottieDiamond'
 
 const SPARKS = [
   { x: 196, y: 30, s: 22 },
@@ -60,18 +61,11 @@ export default function VipGemHero({ isActive }) {
             </svg>
           </span>
         ))}
-        {/* Transparent animated WebP (real alpha) — renders cleanly on ANY
-            background in every browser/webview, no black box, no blend-mode
-            backdrop dependence. The source gem is bluish; hue-rotate shifts it
-            to a vivid brand pink while keeping the white facet highlights. */}
-        <div ref={gemRef} className="absolute" style={{ left: 24, top: 28, width: 192, height: 192, filter: 'drop-shadow(0 18px 34px rgba(226,49,155,0.45))' }}>
-          <img
-            src="/img/blir-alpha-anim.webp"
-            alt=""
-            aria-hidden
-            className="w-full h-full object-contain pointer-events-none"
-            style={{ filter: 'sepia(1) hue-rotate(280deg) saturate(3) brightness(1.05) contrast(1.05)' }}
-          />
+        {/* CRYSTALL Lottie — vector, transparent, animates everywhere. */}
+        <div ref={gemRef} className="absolute pointer-events-none" style={{ left: 24, top: 28, width: 192, height: 192, filter: 'drop-shadow(0 18px 34px rgba(226,49,155,0.45))' }}>
+          {/* Keep the brand pink — the Lottie crystal is blue, tint it to match
+              the previous pink gem so the colors don't change. */}
+          <LottieDiamond size={192} style={{ filter: 'sepia(1) hue-rotate(280deg) saturate(3) brightness(1.05) contrast(1.05)' }} />
         </div>
       </div>
     </div>
