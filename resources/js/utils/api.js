@@ -69,25 +69,52 @@ const handleUnauthenticated = () => {
   resolveAuthStore().catch(() => {})
 }
 
+const MAX_RETRIES = 3
+const RETRY_BASE_MS = 600
+
+function isNetworkFailure(error) {
+  return error?.code === 'ECONNABORTED' || error?.message === 'Network Error' || !error?.response
+}
+
+function isRetryable(error) {
+  const cfg = error?.config
+  if (!cfg) return false
+  const method = (cfg.method || 'get').toLowerCase()
+  const status = error?.response?.status
+  const safeMethod = method === 'get' || method === 'head' || method === 'options'
+  const headers = cfg.headers || {}
+  const hasIdempotency = !!(headers['Idempotency-Key'] || headers['idempotency-key'])
+  const failed = isNetworkFailure(error) || (status >= 500 && status <= 599)
+  return failed && (safeMethod || hasIdempotency)
+}
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error?.code === 'ECONNABORTED' || error?.message === 'Network Error') {
-      error.isNetworkError = true
-      if (!error.userMessage) {
-        error.userMessage = error?.code === 'ECONNABORTED'
-          ? i18n.t('net.noResponse')
-          : i18n.t('net.noConnection')
+  async (error) => {
+    const status = error?.response?.status
+    if (status === 401 || status === 419) {
+      handleUnauthenticated()
+      return Promise.reject(error)
+    }
+
+    const cfg = error?.config
+    if (cfg && isRetryable(error)) {
+      cfg.__retryCount = (cfg.__retryCount || 0) + 1
+      if (cfg.__retryCount <= MAX_RETRIES) {
+        const delay = RETRY_BASE_MS * 2 ** (cfg.__retryCount - 1) + Math.floor(Math.random() * 250)
+        await new Promise((res) => setTimeout(res, delay))
+        return api(cfg)
       }
     }
 
-    const status = error?.response?.status
-    if (status === 401) {
-      handleUnauthenticated()
-    }
-
-    if (status === 419) {
-      handleUnauthenticated()
+    if (isNetworkFailure(error)) {
+      error.isNetworkError = true
+      if (!error.userMessage) {
+        const exhausted = (cfg?.__retryCount || 0) >= MAX_RETRIES
+        error.userMessage = exhausted
+          ? i18n.t('net.offline')
+          : (error?.code === 'ECONNABORTED' ? i18n.t('net.noResponse') : i18n.t('net.noConnection'))
+      }
     }
 
     return Promise.reject(error)

@@ -386,7 +386,8 @@
   },
   "net": {
     "noResponse": "服务器无响应，请检查网络连接。",
-    "noConnection": "无法连接服务器。"
+    "noConnection": "无法连接服务器。",
+    "offline": "无网络连接。请检查网络后重试。"
   },
   "meetingActions": {
     "cancel": "取消",

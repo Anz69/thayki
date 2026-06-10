@@ -386,7 +386,8 @@
   },
   "net": {
     "noResponse": "Server is not responding. Check your connection.",
-    "noConnection": "No connection to the server."
+    "noConnection": "No connection to the server.",
+    "offline": "No internet connection. Check your network and try again."
   },
   "meetingActions": {
     "cancel": "Cancel",
