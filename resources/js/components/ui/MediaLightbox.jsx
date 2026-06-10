@@ -1,9 +1,39 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Pagination, Mousewheel, Keyboard } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
+
+// Video that autoplays muted (browsers require it) and toggles sound on tap,
+// Instagram-style, with a speaker badge showing the current state.
+function LightboxVideo({ src, poster }) {
+  const ref = useRef(null)
+  const [muted, setMuted] = useState(true)
+  const toggle = (e) => {
+    e.stopPropagation()
+    const v = ref.current
+    if (!v) return
+    const next = !v.muted
+    v.muted = next
+    setMuted(next)
+    if (!next) { v.volume = 1; const p = v.play(); if (p?.catch) p.catch(() => {}) }
+  }
+  return (
+    <div className="relative inline-flex max-w-full max-h-full" onClick={toggle}>
+      <video ref={ref} src={src} poster={poster} autoPlay loop muted playsInline
+        className="max-w-full max-h-full object-contain rounded-xl bg-black" />
+      <span className="absolute bottom-3 right-3 size-9 rounded-full bg-black/55 backdrop-blur-md flex items-center justify-center pointer-events-none ring-1 ring-white/20">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4Z" fill="#fff" />
+          {muted
+            ? <path d="M16 9l5 5M21 9l-5 5" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+            : <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="#fff" strokeWidth="2" strokeLinecap="round" />}
+        </svg>
+      </span>
+    </div>
+  )
+}
 
 export const PlayBadge = ({ size = 64 }) => (
   <span className="absolute inset-0 flex items-center justify-center bg-black/15 pointer-events-none">
@@ -59,7 +89,7 @@ export default function MediaLightbox({ media, index = 0, onClose }) {
           <SwiperSlide key={i} className="flex items-center justify-center">
             <div className="w-full h-full flex items-center justify-center px-3 py-12" onClick={(e) => e.stopPropagation()}>
               {m.type === 'video'
-                ? <video src={m.url} poster={m.poster} autoPlay loop muted playsInline className="max-w-full max-h-full object-contain rounded-xl bg-black" />
+                ? <LightboxVideo src={m.url} poster={m.poster} />
                 : <img src={m.url} alt="" className="max-w-full max-h-full object-contain rounded-xl select-none" draggable={false} />}
             </div>
           </SwiperSlide>
