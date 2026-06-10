@@ -181,11 +181,17 @@ class StartHandler
             $chatId,
             "👋 <b>Rus-Model Agency</b>\n\n"
                 ."🇷🇺 Выберите язык, на котором вам удобно.\n"
-                ."🇬🇧 Please choose your preferred language.",
-            [[
-                ['text' => '🇷🇺 Русский', 'data' => 'lang:ru'],
-                ['text' => '🇬🇧 English', 'data' => 'lang:en'],
-            ]],
+                ."🇬🇧 Please choose your preferred language.\n"
+                ."🇨🇳 请选择您偏好的语言。",
+            [
+                [
+                    ['text' => '🇷🇺 Русский', 'data' => 'lang:ru'],
+                    ['text' => '🇬🇧 English', 'data' => 'lang:en'],
+                ],
+                [
+                    ['text' => '🇨🇳 中文', 'data' => 'lang:zh'],
+                ],
+            ],
         );
     }
 
@@ -197,7 +203,7 @@ class StartHandler
      */
     public function chooseLanguage(int $chatId, array $tgFrom, string $lang): void
     {
-        $lang = $lang === 'en' ? 'en' : 'ru';
+        $lang = in_array($lang, ['en', 'zh'], true) ? $lang : 'ru';
         $telegramId = (int) ($tgFrom['id'] ?? 0);
         if ($telegramId <= 0) {
             return;
@@ -323,6 +329,10 @@ class StartHandler
     private function localeFor(User $user): string
     {
         $code = strtolower((string) ($user->language_code ?? ''));
+
+        if (str_starts_with($code, 'zh')) {
+            return 'zh';
+        }
 
         return str_starts_with($code, 'en') ? 'en' : 'ru';
     }

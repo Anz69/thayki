@@ -67,6 +67,7 @@ export default function RequestPage() {
   const [vipMode, setVipMode] = useState(false)
 
   const rootRef = useRef(null)
+  const submitKeyRef = useRef(null)
   const vipBtnRef = useRef(null)
   const vipShineRef = useRef(null)
   const vipGlowRef = useRef(null)
@@ -190,6 +191,10 @@ export default function RequestPage() {
   const handleSubmit = async () => {
     if (!canSubmit) return
     setSubmitting(true)
+    // Stable idempotency key kept across retries: if the network drops and the
+    // user taps again, the backend (idempotency middleware) returns the SAME
+    // lead instead of creating duplicates. Reset only after a successful submit.
+    if (!submitKeyRef.current) submitKeyRef.current = `lead-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     try {
       // V.I.P request → goal is fixed to "V.I.P модели" (the typaj the manager sees).
       const goalLabel = isModelFlow ? null : (vipMode ? 'V.I.P модели' : ruLabel('goals', values.goal))
@@ -213,7 +218,7 @@ export default function RequestPage() {
         goal: goalLabel,
         // First chat message in the user's selected language (RU/EN).
         message,
-      }, { headers: { 'Idempotency-Key': `lead-${Date.now()}` } })
+      }, { headers: { 'Idempotency-Key': submitKeyRef.current } })
       const from = encodeURIComponent(isModelFlow ? `/model/${modelId}` : '/home')
       navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}&from=${from}`, { replace: true })
     } catch (err) {
