@@ -378,28 +378,34 @@ export default function MorePage() {
             <div className="w-full flex items-center justify-between bg-[#EFEEF3] rounded-xl px-4 py-3">
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.language')}</span>
               {(() => {
-                const langs = ['ru', 'en']
-                const active = (i18n.language || 'ru').startsWith('en') ? 'en' : 'ru'
-                const idx = langs.indexOf(active)
+                const langs = [
+                  { code: 'ru', label: 'RU' },
+                  { code: 'en', label: 'EN' },
+                  { code: 'zh', label: '中' },
+                ]
+                const cur = (i18n.language || 'ru').slice(0, 2).toLowerCase()
+                const active = langs.some((l) => l.code === cur) ? cur : 'ru'
+                const idx = langs.findIndex((l) => l.code === active)
+                const SEG = 40
                 return (
                   <div className="relative flex items-center bg-white rounded-full p-0.5">
                     <span
                       className="absolute top-0.5 bottom-0.5 rounded-full bg-[#E2319B]"
                       style={{
-                        width: 44,
+                        width: SEG,
                         left: 2,
-                        transform: `translateX(${idx * 44}px)`,
+                        transform: `translateX(${idx * SEG}px)`,
                         transition: 'transform 0.35s cubic-bezier(0.34,1.4,0.55,1)',
                       }}
                     />
                     {langs.map((lng) => (
                       <button
-                        key={lng}
-                        onClick={() => setLanguage(lng)}
+                        key={lng.code}
+                        onClick={() => setLanguage(lng.code)}
                         className="relative z-10 py-1 rounded-full text-[13px] font-semibold transition-colors duration-300 outline-none focus:outline-none focus-visible:outline-none"
-                        style={{ width: 44, color: active === lng ? '#fff' : '#9B9AA0' }}
+                        style={{ width: SEG, color: active === lng.code ? '#fff' : '#9B9AA0' }}
                       >
-                        {lng.toUpperCase()}
+                        {lng.label}
                       </button>
                     ))}
                   </div>

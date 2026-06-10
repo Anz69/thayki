@@ -2,8 +2,9 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import ru from '@/locales/ru.json'
 import en from '@/locales/en.json'
+import zh from '@/locales/zh.json'
 
-const SUPPORTED = ['ru', 'en']
+const SUPPORTED = ['ru', 'en', 'zh']
 
 function detectLanguage() {
   try {
@@ -11,8 +12,9 @@ function detectLanguage() {
     if (stored && SUPPORTED.includes(stored)) return stored
   } catch {}
   try {
-    const tg = window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code
-    if (typeof tg === 'string' && tg.toLowerCase().startsWith('en')) return 'en'
+    const tg = (window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code || '').toLowerCase()
+    if (tg.startsWith('zh')) return 'zh'
+    if (tg.startsWith('en')) return 'en'
   } catch {}
   return 'ru'
 }
@@ -21,6 +23,7 @@ i18n.use(initReactI18next).init({
   resources: {
     ru: { translation: ru },
     en: { translation: en },
+    zh: { translation: zh },
   },
   lng: detectLanguage(),
   fallbackLng: 'ru',

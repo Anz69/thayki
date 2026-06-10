@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import api, { storeToken, clearToken } from '@/utils/api'
 import i18n from '@/i18n'
 
-const SUPPORTED_LANGS = ['ru', 'en']
+const SUPPORTED_LANGS = ['ru', 'en', 'zh']
 
 // The bot stores the user's chosen language server-side. Treat the server as the
 // source of truth on load so the mini app opens in the language picked in the
