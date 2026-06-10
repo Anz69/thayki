@@ -49,6 +49,16 @@ class FaqResource extends Resource
                 ->rows(5)
                 ->helperText('Если пусто — покажется русский вариант')
                 ->columnSpanFull(),
+            Forms\Components\TextInput::make('question_zh')
+                ->label('Вопрос (中文)')
+                ->maxLength(500)
+                ->helperText('Если пусто — покажется английский, затем русский вариант')
+                ->columnSpanFull(),
+            Forms\Components\Textarea::make('answer_zh')
+                ->label('Ответ (中文)')
+                ->rows(5)
+                ->helperText('Если пусто — покажется английский, затем русский вариант')
+                ->columnSpanFull(),
             Forms\Components\TextInput::make('sort_order')
                 ->label('Порядок')
                 ->numeric()

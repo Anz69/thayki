@@ -589,8 +589,10 @@ export default function RequestChatPage() {
   return (
     <section className="flex flex-col bg-white overflow-hidden" style={{ height: '100dvh' }}>
       <style>{`
-        .typing-dot { width: 7px; height: 7px; border-radius: 9999px; background: #9B9AA0; display: inline-block; animation: typingDot 1.2s infinite ease-in-out; }
-        @keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4 } 30% { transform: translateY(-4px); opacity: 1 } }
+        .typing-bubble { animation: typingIn 0.26s cubic-bezier(0.34,1.4,0.64,1); transform-origin: left bottom; }
+        @keyframes typingIn { 0% { opacity: 0; transform: translateY(8px) scale(0.86) } 100% { opacity: 1; transform: none } }
+        .typing-dot { width: 7px; height: 7px; border-radius: 9999px; background: #9B9AA0; display: inline-block; animation: typingDot 1.25s infinite ease-in-out; }
+        @keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.35 } 30% { transform: translateY(-5px); opacity: 1 } }
         .tick-anim { animation: tickPop 0.34s cubic-bezier(0.34,1.56,0.64,1); transform-origin: center; }
         @keyframes tickPop { 0% { opacity: 0; transform: scale(0.4) } 55% { opacity: 1; transform: scale(1.18) } 100% { opacity: 1; transform: scale(1) } }
       `}</style>
@@ -680,10 +682,10 @@ export default function RequestChatPage() {
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
                       </button>
                     ) : isUser && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
-                      <svg key={msg.readAt ? 'read' : 'sent'} width="16" height="15" viewBox="0 0 24 24" fill="none" className={`tick-anim ${msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'}`} aria-hidden>
+                      <svg key={msg.readAt ? 'read' : 'sent'} width="17" height="13" viewBox="0 0 24 24" fill="currentColor" className={`tick-anim ${msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'}`} aria-hidden>
                         {msg.readAt
-                          ? <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                          : <path d="M5 12.5l4.5 4.5L20 6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
+                          ? <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
+                          : <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />}
                       </svg>
                     ) : null}
                   </span>
@@ -702,10 +704,10 @@ export default function RequestChatPage() {
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
                       </button>
                     ) : isUser && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
-                      <svg key={msg.readAt ? 'read' : 'sent'} width="16" height="15" viewBox="0 0 24 24" fill="none" className={`tick-anim ${msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'}`} aria-hidden>
+                      <svg key={msg.readAt ? 'read' : 'sent'} width="17" height="13" viewBox="0 0 24 24" fill="currentColor" className={`tick-anim ${msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'}`} aria-hidden>
                         {msg.readAt
-                          ? <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                          : <path d="M5 12.5l4.5 4.5L20 6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
+                          ? <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
+                          : <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />}
                       </svg>
                     ) : null}
                   </span>
@@ -722,11 +724,11 @@ export default function RequestChatPage() {
               )
             })}
             {othersTyping && (
-              <div data-msg className="flex justify-start mt-1">
-                <div className="bg-[#F0F0F0] rounded-3xl px-4 py-3 inline-flex items-center gap-1.5" aria-label={t('requestChat.typing')}>
+              <div className="flex justify-start mt-2">
+                <div className="typing-bubble bg-[#F0F0F0] rounded-3xl rounded-bl-lg px-4 py-3 inline-flex items-center gap-1.5" role="status" aria-label={t('requestChat.typing')}>
                   <span className="typing-dot" style={{ animationDelay: '0ms' }} />
-                  <span className="typing-dot" style={{ animationDelay: '160ms' }} />
-                  <span className="typing-dot" style={{ animationDelay: '320ms' }} />
+                  <span className="typing-dot" style={{ animationDelay: '180ms' }} />
+                  <span className="typing-dot" style={{ animationDelay: '360ms' }} />
                 </div>
               </div>
             )}

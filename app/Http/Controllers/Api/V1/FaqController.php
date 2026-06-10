@@ -14,18 +14,30 @@ class FaqController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $lang = str_starts_with(strtolower((string) $request->query('lang', 'ru')), 'en') ? 'en' : 'ru';
+        $raw = strtolower((string) $request->query('lang', 'ru'));
+        $lang = str_starts_with($raw, 'zh') ? 'zh' : (str_starts_with($raw, 'en') ? 'en' : 'ru');
 
-        $items = Cache::remember("faq_items_active_{$lang}", 300, function () use ($lang) {
+        // Per-language fallback chain: zh → en → ru; en → ru; ru → ru.
+        $pick = static function (FaqItem $i, string $field) use ($lang): string {
+            if ($lang === 'zh') {
+                return (string) ($i->{$field.'_zh'} ?: $i->{$field.'_en'} ?: $i->{$field});
+            }
+            if ($lang === 'en') {
+                return (string) ($i->{$field.'_en'} ?: $i->{$field});
+            }
+
+            return (string) $i->{$field};
+        };
+
+        $items = Cache::remember("faq_items_active_{$lang}", 300, function () use ($pick) {
             return FaqItem::where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get()
                 ->map(fn (FaqItem $i) => [
                     'id' => $i->id,
-                    // EN where filled, otherwise fall back to the Russian text.
-                    'question' => $lang === 'en' ? ($i->question_en ?: $i->question) : $i->question,
-                    'answer' => $lang === 'en' ? ($i->answer_en ?: $i->answer) : $i->answer,
+                    'question' => $pick($i, 'question'),
+                    'answer' => $pick($i, 'answer'),
                 ])
                 ->toArray();
         });

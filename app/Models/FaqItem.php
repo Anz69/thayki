@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class FaqItem extends Model
 {
-    protected $fillable = ['question', 'question_en', 'answer', 'answer_en', 'sort_order', 'is_active'];
+    protected $fillable = ['question', 'question_en', 'question_zh', 'answer', 'answer_en', 'answer_zh', 'sort_order', 'is_active'];
 
     protected function casts(): array
     {

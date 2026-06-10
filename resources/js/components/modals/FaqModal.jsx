@@ -64,8 +64,13 @@ export default function FaqModal({ isOpen, onClose }) {
   const [openId, setOpenId] = useState(null)
   const [items, setItems]   = useState([])
   const fetchedRef          = useRef(null)
-  // FAQ exists in RU/EN only; non-Russian locales (incl. Chinese) get English.
-  const lang = (i18n.language || 'ru').toLowerCase().startsWith('ru') ? 'ru' : 'en'
+  // Request the FAQ in the UI language; the API falls back zh → en → ru per item.
+  const lang = (() => {
+    const l = (i18n.language || 'ru').toLowerCase()
+    if (l.startsWith('zh')) return 'zh'
+    if (l.startsWith('ru')) return 'ru'
+    return 'en'
+  })()
 
   const toggle = useCallback((id) => {
     setOpenId((prev) => (prev === id ? null : id))

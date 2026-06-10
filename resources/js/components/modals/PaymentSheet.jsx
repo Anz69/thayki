@@ -11,7 +11,7 @@ const CheckCircle = () => (
     <path d="M22 36l10 10 18-20" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
-export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0, currency = 'THB' }) {
+export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0, currency = 'THB', cryptoOnly = false }) {
   const { t } = useTranslation()
   const [lazyCrypto, setLazyCrypto] = useState(false)
   const [lazySbp, setLazySbp]       = useState(false)
@@ -160,6 +160,12 @@ export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0, 
   return (
     <ModalMiddle isOpen={isOpen} onClose={onClose} onAfterClose={handleAfterClose}>
       <div ref={contentWrapRef} style={{ position: 'relative', overflow: 'hidden' }}>
+        {cryptoOnly ? (
+          // Lead payment: open straight into crypto (coins + address), no method
+          // chooser, no SBP. "Back" just closes the sheet.
+          <CryptoStep price={price} onBack={onClose} wrapRef={contentWrapRef} onPaymentConfirmed={showPaymentSuccess} />
+        ) : (
+          <>
         <div ref={(el) => { viewRefs.current.main = el }} style={{ position: 'relative' }}>
           <MainStep price={price} currency={currency} onCrypto={goCrypto} onSBP={goSbp} />
         </div>
@@ -178,6 +184,8 @@ export default function PaymentSheet({ isOpen, onClose, onConfirmed, price = 0, 
           >
             <SBPStep onBack={() => switchView('main')} />
           </div>
+        )}
+          </>
         )}
         <div
           ref={successOverlayRef}

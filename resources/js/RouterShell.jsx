@@ -34,8 +34,18 @@ import ModalMiddle from '@/layout/ModalMiddle'
 // navigation (e.g. right after creating a lead → RequestChatPage). Recover by
 // reloading ONCE to fetch the fresh HTML + chunks; only surface the error if it
 // still fails after the reload.
-function importWithRetry(importer) {
+function importWithRetry(importer, attempt = 0) {
   return importer().catch((err) => {
+    // A momentary internet drop fails the fetch even though the chunk still
+    // exists — retry a couple times (with backoff) before doing anything
+    // drastic, so a transient blip recovers silently.
+    if (attempt < 2) {
+      return new Promise((res) => setTimeout(res, 500 * (attempt + 1)))
+        .then(() => importWithRetry(importer, attempt + 1))
+    }
+    // Still failing → most likely a STALE index.html after a deploy (Telegram
+    // caches the Mini App) pointing at chunks that no longer exist. Reload ONCE
+    // to fetch fresh HTML + chunks; only surface the error if it still fails.
     try {
       const buildId = String(window.__APP_BUILD_ID__ ?? 'unknown')
       const key = `__chunk_reload_once__:${buildId}`

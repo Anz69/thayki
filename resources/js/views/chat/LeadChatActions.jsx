@@ -98,6 +98,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
               onClose={() => setPayOpen(false)}
               price={(p.amount_minor || 0) / 100}
               currency={p.currency || 'RUB'}
+              cryptoOnly
             />
           )}
           <div className={`px-4 py-2.5 text-center text-[13px] font-semibold ${confirmed ? 'bg-[#E6F5EA] text-[#1E9E4E]' : 'bg-[#FFF1DC] text-[#C77A12]'}`}>
