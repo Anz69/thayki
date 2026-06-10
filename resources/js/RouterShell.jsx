@@ -27,6 +27,10 @@ import MorePage from '@/views/MorePage'
 import RequestPage from '@/views/RequestPage'
 import RequestChatPage from '@/views/RequestChatPage'
 import RequestsPage from '@/views/RequestsPage'
+import ManagerHomePage from '@/views/manager/ManagerHomePage'
+import ManagerMorePage from '@/views/manager/ManagerMorePage'
+import ManagerLeadsPage from '@/views/manager/ManagerLeadsPage'
+import ManagerSupportPage from '@/views/manager/ManagerSupportPage'
 
 function importWithRetry(importer, attempt = 0) {
   return importer().catch((err) => {
@@ -62,11 +66,7 @@ const BecomeModelPage = route(() => import('@/views/BecomeModelPage'))
 const ApplicationPendingPage = route(() => import('@/views/ApplicationPendingPage'))
 const SupportPage = route(() => import('@/views/SupportPage'))
 const FeedbackPage = route(() => import('@/views/FeedbackPage'))
-const ManagerHomePage = route(() => import('@/views/manager/ManagerHomePage'))
-const ManagerMorePage = route(() => import('@/views/manager/ManagerMorePage'))
-const ManagerLeadsPage = route(() => import('@/views/manager/ManagerLeadsPage'))
-const ManagerEarningsPage = route(() => import('@/views/manager/ManagerEarningsPage'))
-const ManagerSupportPage = route(() => import('@/views/manager/ManagerSupportPage'))
+const ManagerEarningsPage = route(() => import('@/views/manager/ManagerEarningsPage'), { prefetch: true })
 
 let _prefetchedRoutes = false
 function prefetchHotRoutes() {
