@@ -27,10 +27,34 @@ import ModalMiddle from '@/layout/ModalMiddle'
 // in the background after first paint — then the first tap finds the module
 // already in memory and navigation is instant. (React.lazy caches the resolved
 // module, so repeat visits were never the problem — only the first fetch.)
+// A chunk import can fail when the user is running a STALE index.html (Telegram
+// caches the Mini App aggressively) that points at hashed chunks a new deploy
+// has already replaced — the import 404s and React.lazy throws
+// "undefined is not an object (evaluating '…_result.default')", crashing on
+// navigation (e.g. right after creating a lead → RequestChatPage). Recover by
+// reloading ONCE to fetch the fresh HTML + chunks; only surface the error if it
+// still fails after the reload.
+function importWithRetry(importer) {
+  return importer().catch((err) => {
+    try {
+      const buildId = String(window.__APP_BUILD_ID__ ?? 'unknown')
+      const key = `__chunk_reload_once__:${buildId}`
+      if (sessionStorage.getItem(key) !== '1') {
+        sessionStorage.setItem(key, '1')
+        window.location.reload()
+        return new Promise(() => {}) // never resolves — React keeps the fallback while reloading
+      }
+    } catch { /* sessionStorage unavailable */ }
+    throw err
+  })
+}
+
 const PREFETCH = []
 function route(importer, { prefetch = false } = {}) {
+  // Background prefetch uses the RAW importer (a failed warm-up must never
+  // reload the page); only real navigation gets the retry-with-reload.
   if (prefetch) PREFETCH.push(importer)
-  return lazy(importer)
+  return lazy(() => importWithRetry(importer))
 }
 
 const HomePage = route(() => import('@/views/HomePage'), { prefetch: true })
@@ -61,7 +85,7 @@ let _prefetchedRoutes = false
 function prefetchHotRoutes() {
   if (_prefetchedRoutes) return
   _prefetchedRoutes = true
-  const run = () => PREFETCH.forEach((importer) => { try { importer() } catch {} })
+  const run = () => PREFETCH.forEach((importer) => { try { importer()?.catch?.(() => {}) } catch {} })
   const ric = window.requestIdleCallback
   if (typeof ric === 'function') ric(run, { timeout: 2500 })
   else setTimeout(run, 1200)
