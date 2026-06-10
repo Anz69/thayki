@@ -31,4 +31,20 @@ export function subscribePrivate(channelName, listeners = {}) {
   }
 }
 
-export default { subscribePrivate }
+/**
+ * Returns the underlying private channel (same cached instance Echo uses for
+ * subscribePrivate), so callers can send/receive client events (whispers) —
+ * e.g. a "typing…" indicator that needs no backend event. Returns null if Echo
+ * isn't available.
+ */
+export function privateChannel(channelName) {
+  if (!channelName || typeof channelName !== 'string') return null
+  if (!echo || typeof echo.private !== 'function') return null
+  try {
+    return echo.private(channelName)
+  } catch {
+    return null
+  }
+}
+
+export default { subscribePrivate, privateChannel }

@@ -147,7 +147,8 @@
     "managerNote": "A manager will contact you shortly. On average, replies take no more than an hour.",
     "placeholder": "Message...",
     "closedNotice": "This request is closed — messaging is unavailable.",
-    "acceptToReply": "Accept the request to reply to the client."
+    "acceptToReply": "Accept the request to reply to the client.",
+    "typing": "typing…"
   },
   "support": {
     "title": "Support",

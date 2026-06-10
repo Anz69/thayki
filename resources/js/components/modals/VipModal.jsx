@@ -12,8 +12,8 @@ const DUR_OUT = 0.20
 const DUR_IN = 0.46
 
 // ⚫️/⚪️ Single switch for the whole VIP modal theme.
-// Set to false to instantly go back to the original white modal.
-const DARK = true
+// Set to true for the black variant, false for the original white modal.
+const DARK = false
 
 const UI = DARK
   ? {

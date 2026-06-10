@@ -7,7 +7,7 @@ import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
-import { subscribePrivate } from '@/utils/safeEcho'
+import { subscribePrivate, privateChannel } from '@/utils/safeEcho'
 import ChatLoadingSkeleton from '@/components/ui/ChatLoadingSkeleton'
 import PhotoViewer from '@/components/ui/PhotoViewer'
 import GradientBorder from '@/components/ui/GradientBorder'
@@ -179,6 +179,9 @@ export default function RequestChatPage() {
   // the chat via a notification deep-link no longer lets them message unassigned.
   const [leadStatus, setLeadStatus] = useState(null)
   const [accepting, setAccepting]   = useState(false)
+  const [othersTyping, setOthersTyping] = useState(false)
+  const typingHideRef = useRef(null)
+  const lastTypingSentRef = useRef(0)
   const [inputText, setInputText] = useState('')
   const [sending, setSending]     = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -310,6 +313,8 @@ export default function RequestChatPage() {
       '.message.sent': (e) => {
         const incoming = e.message ?? e
         setMessages((prev) => mergeIncomingMessage(prev, incoming, myId))
+        // The other side sent a message → they're no longer "typing".
+        if (String(incoming?.user_id ?? incoming?.sender_id) !== String(myId)) setOthersTyping(false)
         // A system note (e.g. "identity verified") means an existing typed card
         // changed state on the server — refetch so it flips live.
         if (incoming?.type === 'system') setTimeout(reloadMessages, 400)
@@ -324,6 +329,32 @@ export default function RequestChatPage() {
       },
     })
   }, [chatId, myId, reloadMessages])
+
+  // "Typing…" indicator via client events (whispers) — no backend needed. We
+  // whisper 'typing' as the user types and show the bubble when the other side
+  // whispers (auto-hides after 3s of silence).
+  useEffect(() => {
+    if (!chatId) return undefined
+    const ch = privateChannel(`chats.${chatId}`)
+    if (!ch || typeof ch.listenForWhisper !== 'function') return undefined
+    const onTyping = () => {
+      setOthersTyping(true)
+      clearTimeout(typingHideRef.current)
+      typingHideRef.current = setTimeout(() => setOthersTyping(false), 3000)
+    }
+    try { ch.listenForWhisper('typing', onTyping) } catch {}
+    return () => {
+      clearTimeout(typingHideRef.current)
+      try { ch.stopListeningForWhisper('typing') } catch {}
+    }
+  }, [chatId])
+
+  const sendTyping = useCallback(() => {
+    const now = Date.now()
+    if (now - lastTypingSentRef.current < 1500) return // throttle whispers
+    lastTypingSentRef.current = now
+    try { privateChannel(`chats.${chatId}`)?.whisper?.('typing', { from: myId }) } catch {}
+  }, [chatId, myId])
 
   // Catch-up after a connection gap. The websocket silently DROPS any messages
   // sent while the client was offline / backgrounded (internet dropped, screen
@@ -484,6 +515,10 @@ export default function RequestChatPage() {
 
   return (
     <section className="flex flex-col bg-white overflow-hidden" style={{ height: '100dvh' }}>
+      <style>{`
+        .typing-dot { width: 7px; height: 7px; border-radius: 9999px; background: #9B9AA0; display: inline-block; animation: typingDot 1.2s infinite ease-in-out; }
+        @keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4 } 30% { transform: translateY(-4px); opacity: 1 } }
+      `}</style>
       {viewerSrc && <PhotoViewer src={viewerSrc} onClose={() => setViewerSrc(null)} />}
 
       <header ref={headerRef} className="w-full py-4 bg-white shrink-0">
@@ -558,9 +593,13 @@ export default function RequestChatPage() {
                   </div>
                   <span className="text-[#ABABAB] text-xs font-medium px-1 inline-flex items-center gap-1">
                     {msg.time}
-                    {isStaff && isUser && msg.readAt && (
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-[#E2319B]" aria-hidden>
-                        <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    {/* Delivery/read ticks on MY outgoing messages (both sides):
+                        single grey ✓ = sent, double pink ✓✓ = read by the other. */}
+                    {isUser && !msg.uploading && !String(msg.id).startsWith('opt-') && (
+                      <svg width="16" height="15" viewBox="0 0 24 24" fill="none" className={msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'} aria-hidden>
+                        {msg.readAt
+                          ? <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                          : <path d="M5 12.5l4.5 4.5L20 6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
                       </svg>
                     )}
                   </span>
@@ -572,9 +611,13 @@ export default function RequestChatPage() {
                   </div>
                   <span className="text-[#ABABAB] text-xs font-medium px-1 inline-flex items-center gap-1">
                     {msg.time}
-                    {isStaff && isUser && msg.readAt && (
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-[#E2319B]" aria-hidden>
-                        <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    {/* Delivery/read ticks on MY outgoing messages (both sides):
+                        single grey ✓ = sent, double pink ✓✓ = read by the other. */}
+                    {isUser && !msg.uploading && !String(msg.id).startsWith('opt-') && (
+                      <svg width="16" height="15" viewBox="0 0 24 24" fill="none" className={msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'} aria-hidden>
+                        {msg.readAt
+                          ? <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                          : <path d="M5 12.5l4.5 4.5L20 6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
                       </svg>
                     )}
                   </span>
@@ -590,6 +633,15 @@ export default function RequestChatPage() {
                 </div>
               )
             })}
+            {othersTyping && (
+              <div data-msg className="flex justify-start mt-1">
+                <div className="bg-[#F0F0F0] rounded-3xl px-4 py-3 inline-flex items-center gap-1.5" aria-label={t('requestChat.typing')}>
+                  <span className="typing-dot" style={{ animationDelay: '0ms' }} />
+                  <span className="typing-dot" style={{ animationDelay: '160ms' }} />
+                  <span className="typing-dot" style={{ animationDelay: '320ms' }} />
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -648,7 +700,7 @@ export default function RequestChatPage() {
               ref={textareaRef}
               rows={1}
               value={inputText}
-              onChange={(e) => { setInputText(e.target.value); autoResize() }}
+              onChange={(e) => { setInputText(e.target.value); autoResize(); sendTyping() }}
               onKeyDown={handleKeyDown}
               placeholder={t('requestChat.placeholder')}
               className="w-full bg-transparent text-black text-[15px]/[145%] font-normal outline-none placeholder:text-[#ABABAB] resize-none"
