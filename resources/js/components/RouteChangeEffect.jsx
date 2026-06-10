@@ -1,7 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { transitionOut, setPageReady } from '@/utils/pageTransition'
+import usePhotoViewerStore from '@/stores/usePhotoViewerStore'
+import useBookingStore from '@/stores/useBookingStore'
 let isFirstNavigation = true
+
+function closeGlobalModals() {
+  try { if (usePhotoViewerStore.getState().isOpen) usePhotoViewerStore.getState().close() } catch { }
+  try { if (useBookingStore.getState().isOpen) useBookingStore.getState().close() } catch { }
+}
+
 export default function RouteChangeEffect() {
   const location = useLocation()
   const prevKey = useRef(null)
@@ -14,6 +22,7 @@ export default function RouteChangeEffect() {
     }
     if (prevKey.current !== location.key) {
       prevKey.current = location.key
+      closeGlobalModals()
       transitionOut()
     }
   }, [location])
