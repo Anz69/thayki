@@ -120,7 +120,8 @@
       "events": "Attending events",
       "wife": "Finding a wife",
       "undecided": "Not sure yet"
-    }
+    },
+    "vipGoal": "V.I.P models"
   },
   "share": {
     "title": "Share a selection",

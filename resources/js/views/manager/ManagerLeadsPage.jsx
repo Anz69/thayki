@@ -7,6 +7,7 @@ import api from '@/utils/api'
 import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
+import { localizeLeadValue } from '@/utils/leadLabels'
 import { STATUS, StatusChip, VerifiedMark } from './kit'
 
 const MANAGER_STATUSES = ['in_progress', 'awaiting_client', 'awaiting_payment', 'prepaid', 'completed', 'closed']
@@ -16,12 +17,15 @@ function relTime(iso, lang) {
   if (!iso) return ''
   const d = new Date(iso)
   const diff = (Date.now() - d.getTime()) / 1000
-  const rtf = new Intl.RelativeTimeFormat(lang === 'en' ? 'en' : 'ru', { numeric: 'auto' })
+  const code = (lang || 'ru').slice(0, 2)
+  const loc = code === 'en' ? 'en' : code === 'zh' ? 'zh' : 'ru'
+  const dateLoc = loc === 'en' ? 'en-US' : loc === 'zh' ? 'zh-CN' : 'ru-RU'
+  const rtf = new Intl.RelativeTimeFormat(loc, { numeric: 'auto' })
   if (diff < 60) return rtf.format(-Math.round(diff), 'second')
   if (diff < 3600) return rtf.format(-Math.round(diff / 60), 'minute')
   if (diff < 86400) return rtf.format(-Math.round(diff / 3600), 'hour')
   if (diff < 604800) return rtf.format(-Math.round(diff / 86400), 'day')
-  return d.toLocaleDateString(lang === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })
+  return d.toLocaleDateString(dateLoc, { day: 'numeric', month: 'short' })
 }
 
 function InfoRow({ label, value }) {
@@ -402,10 +406,10 @@ export default function ManagerLeadsPage() {
                     </span>
                   </button>
                 )}
-                <InfoRow label={t('request.hairType')} value={viewing.hair_type} />
-                <InfoRow label={t('request.age')} value={viewing.age_range} />
-                <InfoRow label={t('request.height')} value={viewing.height_range} />
-                <InfoRow label={t('request.goal')} value={viewing.goal} />
+                <InfoRow label={t('request.hairType')} value={localizeLeadValue('hair', viewing.hair_type)} />
+                <InfoRow label={t('request.age')} value={localizeLeadValue('ages', viewing.age_range)} />
+                <InfoRow label={t('request.height')} value={localizeLeadValue('heights', viewing.height_range)} />
+                <InfoRow label={t('request.goal')} value={localizeLeadValue('goals', viewing.goal)} />
                 <InfoRow label={t('request.wishes')} value={viewing.wishes} />
                 <InfoRow label={t('manager.created')} value={relTime(viewing.created_at, i18n.language)} />
               </div>

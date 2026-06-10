@@ -12,12 +12,15 @@ function relTime(iso, lang) {
   if (!iso) return ''
   const d = new Date(iso)
   const diff = (Date.now() - d.getTime()) / 1000
-  const rtf = new Intl.RelativeTimeFormat(lang === 'en' ? 'en' : 'ru', { numeric: 'auto' })
+  const code = (lang || 'ru').slice(0, 2)
+  const loc = code === 'en' ? 'en' : code === 'zh' ? 'zh' : 'ru'
+  const dateLoc = loc === 'en' ? 'en-US' : loc === 'zh' ? 'zh-CN' : 'ru-RU'
+  const rtf = new Intl.RelativeTimeFormat(loc, { numeric: 'auto' })
   if (diff < 60) return rtf.format(-Math.round(diff), 'second')
   if (diff < 3600) return rtf.format(-Math.round(diff / 60), 'minute')
   if (diff < 86400) return rtf.format(-Math.round(diff / 3600), 'hour')
   if (diff < 604800) return rtf.format(-Math.round(diff / 86400), 'day')
-  return d.toLocaleDateString(lang === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })
+  return d.toLocaleDateString(dateLoc, { day: 'numeric', month: 'short' })
 }
 
 export default function ManagerSupportPage() {
