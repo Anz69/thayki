@@ -40,7 +40,7 @@ class InitDataValidator
         $providedHash = (string) $pairs['hash'];
 
         $dataPairs = $pairs;
-        unset($dataPairs['hash'], $dataPairs['signature']);
+        unset($dataPairs['hash']);
         ksort($dataPairs);
 
         $dataCheckString = implode("\n", array_map(
@@ -153,7 +153,7 @@ class InitDataValidator
 
     public static function sign(array $pairs, string $botToken): string
     {
-        unset($pairs['hash'], $pairs['signature']);
+        unset($pairs['hash']);
         ksort($pairs);
         $dataCheckString = implode("\n", array_map(
             static fn (string $key, string $value): string => "{$key}={$value}",
