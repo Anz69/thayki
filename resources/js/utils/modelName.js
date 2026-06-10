@@ -24,7 +24,10 @@ function transliterate(str) {
  */
 export function modelName(model) {
   if (!model) return ''
-  const isEn = (i18n.language || 'ru').startsWith('en')
+  // Any non-Russian UI (English, Chinese, …) gets the Latin name — there's no
+  // Chinese name field, so fall back to English / transliteration instead of
+  // showing Cyrillic.
+  const isEn = !(i18n.language || 'ru').toLowerCase().startsWith('ru')
   const en = model.display_name_en
   if (isEn && en) return en
 

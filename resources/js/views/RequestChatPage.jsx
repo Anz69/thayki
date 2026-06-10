@@ -182,6 +182,12 @@ export default function RequestChatPage() {
   const [othersTyping, setOthersTyping] = useState(false)
   const typingHideRef = useRef(null)
   const lastTypingSentRef = useRef(0)
+  // Older-message pagination: load 30, fetch more when scrolled to the top.
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  const oldestIdRef = useRef(null)
+  const hasMoreOlderRef = useRef(true)
+  const loadingOlderRef = useRef(false)
+  const prependingRef = useRef(false)
   const [inputText, setInputText] = useState('')
   const [sending, setSending]     = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -256,15 +262,56 @@ export default function RequestChatPage() {
       .add(() => { pageReadyDone.current = true; tryShowContent() }, 0.12)
   })
 
+  // Refresh the latest 30 and MERGE them in (don't replace) so any older
+  // messages the user loaded by scrolling up stay put, while new/updated ones
+  // (read receipts, fresh messages) are upserted.
   const reloadMessages = useCallback(() => {
     if (!chatId) return
-    api.get(`/chats/${chatId}/messages`, { params: { limit: 100 } })
+    api.get(`/chats/${chatId}/messages`, { params: { limit: 30 } })
       .then((res) => {
-        setMessages((res.data.data ?? []).map((m) => normalizeMsg(m, myId)))
+        const incoming = res.data.data ?? []
+        setMessages((prev) => {
+          if (!prev.length) return incoming.map((m) => normalizeMsg(m, myId))
+          let next = prev
+          for (const raw of incoming) next = mergeIncomingMessage(next, raw, myId)
+          return next
+        })
         setLeadClosed(!!res.data.meta?.lead?.closed)
       })
       .catch(logError)
   }, [chatId, myId])
+
+  // Load the previous page of messages when the user scrolls to the top.
+  const loadOlder = useCallback(async () => {
+    if (loadingOlderRef.current || !hasMoreOlderRef.current || !chatId || oldestIdRef.current == null) return
+    loadingOlderRef.current = true
+    setLoadingOlder(true)
+    const scroller = messagesRef.current
+    const prevH = scroller ? scroller.scrollHeight : 0
+    try {
+      const res = await api.get(`/chats/${chatId}/messages`, { params: { limit: 30, before_id: oldestIdRef.current } })
+      const data = res.data.data ?? []
+      hasMoreOlderRef.current = data.length >= 30
+      if (data.length) {
+        oldestIdRef.current = res.data.meta?.cursor?.next_before_id ?? data[0]?.id ?? oldestIdRef.current
+        const older = data.map((m) => normalizeMsg(m, myId))
+        prependingRef.current = true
+        setMessages((prev) => {
+          const ids = new Set(prev.map((m) => String(m.id)))
+          return [...older.filter((m) => !ids.has(String(m.id))), ...prev]
+        })
+        // Keep the viewport anchored to where the user was after prepending.
+        requestAnimationFrame(() => { if (scroller) scroller.scrollTop = scroller.scrollHeight - prevH })
+      }
+    } catch (e) { logError(e) } finally {
+      loadingOlderRef.current = false
+      setLoadingOlder(false)
+    }
+  }, [chatId, myId])
+
+  const onMessagesScroll = useCallback((e) => {
+    if (e.currentTarget.scrollTop < 80) loadOlder()
+  }, [loadOlder])
 
   // Manager: load the lead status so we know whether it still needs accepting.
   useEffect(() => {
@@ -296,12 +343,15 @@ export default function RequestChatPage() {
 
   useEffect(() => {
     if (!chatId) { navigate('/home', { replace: true }); return }
-    api.get(`/chats/${chatId}/messages`, { params: { limit: 100 } })
+    api.get(`/chats/${chatId}/messages`, { params: { limit: 30 } })
       .then((res) => {
-        const normalized = (res.data.data ?? []).map((m) => normalizeMsg(m, myId))
+        const data = res.data.data ?? []
+        const normalized = data.map((m) => normalizeMsg(m, myId))
         prevMsgCount.current = normalized.length
         setMessages(normalized)
         setLeadClosed(!!res.data.meta?.lead?.closed)
+        oldestIdRef.current = res.data.meta?.cursor?.next_before_id ?? data[0]?.id ?? null
+        hasMoreOlderRef.current = data.length >= 30
       })
       .catch(logError)
       .finally(() => { setInitialLoad(false); loadDone.current = true; tryShowContent() })
@@ -390,6 +440,9 @@ export default function RequestChatPage() {
   useEffect(() => {
     if (contentState.current !== 'messages') return
     const currentCount = messages.length
+    // Prepended older messages also grow the count — don't treat that as a new
+    // incoming message (no scroll-to-bottom / pop).
+    if (prependingRef.current) { prependingRef.current = false; prevMsgCount.current = currentCount; return }
     const isNewMessage = currentCount > prevMsgCount.current
     prevMsgCount.current = currentCount
     if (!isNewMessage) return
@@ -538,6 +591,8 @@ export default function RequestChatPage() {
       <style>{`
         .typing-dot { width: 7px; height: 7px; border-radius: 9999px; background: #9B9AA0; display: inline-block; animation: typingDot 1.2s infinite ease-in-out; }
         @keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4 } 30% { transform: translateY(-4px); opacity: 1 } }
+        .tick-anim { animation: tickPop 0.34s cubic-bezier(0.34,1.56,0.64,1); transform-origin: center; }
+        @keyframes tickPop { 0% { opacity: 0; transform: scale(0.4) } 55% { opacity: 1; transform: scale(1.18) } 100% { opacity: 1; transform: scale(1) } }
       `}</style>
       {viewerSrc && <PhotoViewer src={viewerSrc} onClose={() => setViewerSrc(null)} />}
 
@@ -563,8 +618,13 @@ export default function RequestChatPage() {
           </div>
         )}
 
-        <div ref={messagesRef} className="absolute inset-0 overflow-y-auto">
+        <div ref={messagesRef} className="absolute inset-0 overflow-y-auto" onScroll={onMessagesScroll}>
           <div className="flex flex-col px-4 py-4 gap-0 container">
+            {loadingOlder && (
+              <div className="flex justify-center py-2">
+                <div className="w-5 h-5 rounded-full border-2 border-[#E2319B] border-t-transparent animate-spin" />
+              </div>
+            )}
             {messages.map((msg, idx) => {
               if (msg.type === 'system') {
                 const ok = typeof msg.text === 'string' && msg.text.trimStart().startsWith('✅')
@@ -620,7 +680,7 @@ export default function RequestChatPage() {
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
                       </button>
                     ) : isUser && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
-                      <svg width="16" height="15" viewBox="0 0 24 24" fill="none" className={msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'} aria-hidden>
+                      <svg key={msg.readAt ? 'read' : 'sent'} width="16" height="15" viewBox="0 0 24 24" fill="none" className={`tick-anim ${msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'}`} aria-hidden>
                         {msg.readAt
                           ? <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                           : <path d="M5 12.5l4.5 4.5L20 6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
@@ -642,7 +702,7 @@ export default function RequestChatPage() {
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
                       </button>
                     ) : isUser && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
-                      <svg width="16" height="15" viewBox="0 0 24 24" fill="none" className={msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'} aria-hidden>
+                      <svg key={msg.readAt ? 'read' : 'sent'} width="16" height="15" viewBox="0 0 24 24" fill="none" className={`tick-anim ${msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'}`} aria-hidden>
                         {msg.readAt
                           ? <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                           : <path d="M5 12.5l4.5 4.5L20 6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}

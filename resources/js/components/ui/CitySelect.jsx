@@ -34,7 +34,9 @@ const GAP = 8
  */
 export default function CitySelect({ value, onChange, placeholder, inline = false, overlay = false, autoDetect = false }) {
   const { i18n, t } = useTranslation()
-  const lang = (i18n.language || 'ru').startsWith('en') ? 'en' : 'ru'
+  // Geocoder only has RU/EN names. Russian UI → Russian names; everything else
+  // (English, Chinese, …) → English, so e.g. Chinese never shows Cyrillic cities.
+  const lang = (i18n.language || 'ru').toLowerCase().startsWith('ru') ? 'ru' : 'en'
 
   // IP-based city is prefilled straight into the input (editable if wrong); while
   // it's still the auto-filled value we gently ask the user to confirm it.

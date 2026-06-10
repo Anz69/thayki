@@ -381,7 +381,7 @@ export default function MorePage() {
                 const langs = [
                   { code: 'ru', label: 'RU' },
                   { code: 'en', label: 'EN' },
-                  { code: 'zh', label: '中' },
+                  { code: 'zh', label: '中文' },
                 ]
                 const cur = (i18n.language || 'ru').slice(0, 2).toLowerCase()
                 const active = langs.some((l) => l.code === cur) ? cur : 'ru'
