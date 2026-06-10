@@ -83,18 +83,55 @@ class TelegramVerifyCommand extends Command
             $this->warn('The cache was stale when the request arrived. Run: php artisan config:cache');
         } else {
             $this->line('<fg=red;options=bold>✗ Re-validation FAILED</fg=red;options=bold> — current token still does not match.');
-            $this->line('');
-            $this->line('<fg=gray>data_check_string (re-computed now):</>');
-            $pairs = $this->parseQs($raw);
-            unset($pairs['hash'], $pairs['signature']);
-            ksort($pairs);
-            $dcsNow = implode("\n", array_map(fn ($k, $v) => "{$k}={$v}", array_keys($pairs), array_values($pairs)));
-            foreach (explode("\n", $dcsNow) as $line) {
-                $this->line('  ' . $line);
+        }
+
+        $this->line('');
+        $this->line('<options=bold>Field & token diagnosis</>');
+
+        $rawPairs = $this->parseQs($raw);
+        $hasHash = isset($rawPairs['hash']);
+        $hasSig  = isset($rawPairs['signature']);
+        $this->line('<fg=gray>raw fields present:</> ' . implode(', ', array_keys($rawPairs)));
+        $this->line('<fg=gray>has hash field:</>      ' . ($hasHash ? 'yes' : 'NO'));
+        $this->line('<fg=gray>has signature field:</> ' . ($hasSig ? 'yes (Bot API 8.0)' : 'no'));
+
+        $exclSig = $rawPairs;
+        unset($exclSig['hash'], $exclSig['signature']);
+        ksort($exclSig);
+        $dcsExcl = implode("\n", array_map(fn ($k, $v) => "{$k}={$v}", array_keys($exclSig), array_values($exclSig)));
+
+        $inclSig = $rawPairs;
+        unset($inclSig['hash']);
+        ksort($inclSig);
+        $dcsIncl = implode("\n", array_map(fn ($k, $v) => "{$k}={$v}", array_keys($inclSig), array_values($inclSig)));
+
+        $secret = hash_hmac('sha256', $token, 'WebAppData', true);
+        $hashExcl = hash_hmac('sha256', $dcsExcl, $secret);
+        $hashIncl = hash_hmac('sha256', $dcsIncl, $secret);
+
+        $this->line('');
+        $this->line('<fg=gray>hash WITHOUT signature in dcs:</> ' . ($hashExcl === $provided ? '<fg=green;options=bold>✓ MATCH</>' : '✗ no'));
+        $this->line('<fg=gray>hash WITH    signature in dcs:</> ' . ($hashIncl === $provided ? '<fg=green;options=bold>✓ MATCH</>' : '✗ no'));
+
+        $this->line('');
+        $this->info('Identifying which bot the server token belongs to …');
+        try {
+            $resp = Http::timeout(10)->get("https://api.telegram.org/bot{$token}/getMe");
+            $b = $resp->json();
+            if ($resp->ok() && ($b['ok'] ?? false) === true) {
+                $this->line('<fg=gray>server token bot:</> @' . ($b['result']['username'] ?? '?') . '  (id ' . ($b['result']['id'] ?? '?') . ')');
+                $this->warn('→ This MUST equal the bot the Mini App is launched from. If it differs, the token is for the wrong bot.');
+            } else {
+                $this->line('<fg=red>server token getMe failed:</> ' . ($b['description'] ?? 'unknown'));
             }
+        } catch (\Throwable $e) {
+            $this->error('getMe unreachable: ' . $e->getMessage());
+        }
+
+        if ($hashExcl !== $provided && $hashIncl !== $provided) {
             $this->line('');
-            $this->warn('The data_check_string above must match what Telegram signed.');
-            $this->warn('Likely cause: initData is being modified before reaching PHP (nginx body filter, middleware, etc.)');
+            $this->warn('Neither variant matches → the token does NOT belong to the bot that signed this initData,');
+            $this->warn('OR initData was altered in transit. Compare "server token bot" above with the Mini App bot.');
         }
 
         $this->line('');
