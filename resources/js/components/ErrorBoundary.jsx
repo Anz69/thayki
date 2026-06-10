@@ -48,7 +48,13 @@ export default class ErrorBoundary extends Component {
     const name = String(error?.name ?? '')
     const stack = String(error?.stack ?? '')
     const haystack = `${name}\n${message}\n${stack}`
-    return /ChunkLoadError|Failed to fetch dynamically imported module|Importing a module script failed/i.test(haystack)
+    // The last two patterns are how a FAILED React.lazy import surfaces when a
+    // stale index.html points at a chunk a deploy already replaced: React.lazy
+    // resolves to a non-module and accessing `_result.default` throws
+    // "undefined is not an object (evaluating '…_result.default')" (Safari/iOS).
+    // Without matching these, the boundary showed a dead-end crash instead of
+    // reloading to fetch the fresh chunks.
+    return /ChunkLoadError|Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed|_result\.default|_result\W+default/i.test(haystack)
   }
 
   tryRecoverChunkError = (error) => {

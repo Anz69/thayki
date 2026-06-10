@@ -72,7 +72,7 @@ const ApplicationPendingPage = route(() => import('@/views/ApplicationPendingPag
 const SupportPage = route(() => import('@/views/SupportPage'))
 const FeedbackPage = route(() => import('@/views/FeedbackPage'))
 const RequestPage = route(() => import('@/views/RequestPage'), { prefetch: true })
-const RequestChatPage = route(() => import('@/views/RequestChatPage'))
+const RequestChatPage = route(() => import('@/views/RequestChatPage'), { prefetch: true })
 const RequestsPage = route(() => import('@/views/RequestsPage'))
 const ManagerHomePage = route(() => import('@/views/manager/ManagerHomePage'))
 const ManagerMorePage = route(() => import('@/views/manager/ManagerMorePage'))
