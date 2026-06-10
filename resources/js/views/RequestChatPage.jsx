@@ -117,6 +117,7 @@ function normalizeMsg(raw, myUserId) {
     type: raw.type ?? (raw.attachment_url ? 'image' : 'text'),
     payload: raw.payload ?? null,
     attachmentUrl: raw.attachment_url ?? raw.attachmentUrl ?? null,
+    readAt: raw.read_at ?? raw.readAt ?? null,
   }
 }
 
@@ -311,6 +312,14 @@ export default function RequestChatPage() {
         // A system note (e.g. "identity verified") means an existing typed card
         // changed state on the server — refetch so it flips live.
         if (incoming?.type === 'system') setTimeout(reloadMessages, 400)
+      },
+      // The other side read the chat → mark my outgoing messages as read so the
+      // manager sees a "read" tick on the messages they sent (shown manager-side
+      // only — see the bubble render).
+      '.messages.read': (e) => {
+        if (e.user_id === myId) return
+        const readAt = e.read_at ?? new Date().toISOString()
+        setMessages((prev) => prev.map((m) => (m.from === 'user' && !m.readAt ? { ...m, readAt } : m)))
       },
     })
   }, [chatId, myId, reloadMessages])
@@ -512,14 +521,28 @@ export default function RequestChatPage() {
                       </div>
                     )}
                   </div>
-                  <span className="text-[#ABABAB] text-xs font-medium px-1">{msg.time}</span>
+                  <span className="text-[#ABABAB] text-xs font-medium px-1 inline-flex items-center gap-1">
+                    {msg.time}
+                    {isStaff && isUser && msg.readAt && (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-[#E2319B]" aria-hidden>
+                        <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </span>
                 </div>
               ) : (
                 <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
                   <div className={['max-w-[260px] px-4 py-3 rounded-3xl', isUser ? 'bg-[#1C1C1E] text-[#D2D2D2]' : 'bg-[#F0F0F0] text-black'].join(' ')}>
                     <p className="text-[15px]/[148%] font-normal" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.text}</p>
                   </div>
-                  <span className="text-[#ABABAB] text-xs font-medium px-1">{msg.time}</span>
+                  <span className="text-[#ABABAB] text-xs font-medium px-1 inline-flex items-center gap-1">
+                    {msg.time}
+                    {isStaff && isUser && msg.readAt && (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-[#E2319B]" aria-hidden>
+                        <path d="M1.5 12.5l4 4L13 8M8 13.5l3.5 3.5L22.5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </span>
                 </div>
               )
 
