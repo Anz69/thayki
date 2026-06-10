@@ -61,7 +61,6 @@ class UploadAvatarAction
             Storage::disk($disk)->putFileAs(dirname($path), $file, basename($path), 'public');
         }
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $storage */
         $storage = Storage::disk($disk);
 
         $user->update([

@@ -105,26 +105,17 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         return ApiResponse::ok(new UserResource($user->loadMissing('modelProfile', 'wallet')));
     }
 
-    /**
-     * Called by the Mini App right after the user grants write access
-     * (Telegram requestWriteAccess). The bot can now message them, so send the
-     * appropriate welcome — strange users get the strange stub, verified users
-     * the full welcome. Deduped so repeated pings don't spam the user.
-     */
     public function writeAccessGranted(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
-        // Welcome exactly once per user, ever. Persistent DB flag (not cache) so
-        // existing users — who all have bot_welcomed=true from the backfill — are
-        // never spammed on app open, and a new user gets it a single time.
         if ($user->bot_welcomed) {
             return ApiResponse::ok(['sent' => false]);
         }
@@ -149,7 +140,7 @@ class AuthController extends Controller
 
     public function logout(Request $request, AuditLogger $audit): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $token = $user->currentAccessToken();
 

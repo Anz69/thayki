@@ -24,7 +24,6 @@ class RoadmapAdminController extends Controller
         $payload['status'] = RoadmapStatus::from((string) ($payload['status'] ?? RoadmapStatus::Planned->value));
         $payload['position'] = $payload['position'] ?? 0;
 
-        /** @var RoadmapItem $item */
         $item = RoadmapItem::query()->create($payload);
         $this->audit->log('roadmap.created', $request->user(), $item, ['title' => $item->title]);
 

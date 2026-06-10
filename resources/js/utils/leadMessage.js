@@ -1,14 +1,3 @@
-/**
- * Builds the lead's first chat message in the user's current UI language.
- * Option values are passed as i18n keys (group + key) and resolved via t().
- *
- * @param {object}   p
- * @param {Function} p.t           i18n t()
- * @param {string=}  p.modelName   selected prototype name (for the card flow)
- * @param {string}   p.city
- * @param {string=}  p.wishes
- * @param {{hair?:string, ages?:string, heights?:string, goals?:string}=} p.options option keys
- */
 export function buildLeadMessage({ t, modelName, city, wishes, options = {} }) {
   const lines = [t('leadMsg.title'), '']
 

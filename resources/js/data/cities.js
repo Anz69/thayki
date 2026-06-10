@@ -1,5 +1,3 @@
-// Major RU/CIS cities for the city autocomplete. `ru`/`en` are display names;
-// matching is done against both so the user can type in either language.
 const CITIES = [
   { ru: 'Москва', en: 'Moscow' },
   { ru: 'Санкт-Петербург', en: 'Saint Petersburg' },

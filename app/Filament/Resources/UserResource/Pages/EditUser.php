@@ -38,7 +38,7 @@ class EditUser extends EditRecord
         $adminId = auth()->id();
 
         DB::transaction(function () use ($newBalanceMinor, $newLockedMinor, $adminId): void {
-            /** @var Wallet $wallet */
+
             $wallet = $this->record->wallet()->lockForUpdate()->firstOrCreate(
                 [],
                 ['balance_minor' => 0, 'locked_minor' => 0, 'currency' => 'THB', 'version' => 0],

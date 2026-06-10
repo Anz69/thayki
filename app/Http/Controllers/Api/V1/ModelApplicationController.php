@@ -19,10 +19,9 @@ class ModelApplicationController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
-        /** @var ModelApplication|null $application */
         $application = ModelApplication::query()->where('user_id', $user->id)->first();
         if ($application === null) {
             return ApiResponse::ok(null);
@@ -33,7 +32,7 @@ class ModelApplicationController extends Controller
 
     public function store(SubmitModelApplicationRequest $request, SubmitModelApplicationAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $application = $action->execute($user, $request->validated());
 

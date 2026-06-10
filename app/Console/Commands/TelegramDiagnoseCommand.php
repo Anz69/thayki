@@ -8,20 +8,6 @@ use App\Services\Telegram\TelegramBotService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
-/**
- * One-shot health check for the Telegram integration.
- *
- *   php artisan telegram:diagnose
- *
- * Prints, in order:
- *   1) Whether the env variables we need are present (with masked values).
- *   2) Whether the bot token is accepted by Telegram (getMe).
- *   3) What URL Telegram currently calls for our webhook + last error.
- *   4) Whether our env's webhook secret matches the secret in the URL above.
- *
- * Optional: pass --send=<chat_id> to fire a test message to that chat to
- * confirm outbound messaging works end-to-end.
- */
 class TelegramDiagnoseCommand extends Command
 {
     protected $signature = 'telegram:diagnose {--send= : Telegram chat id to send a test message to}';

@@ -8,14 +8,9 @@ use App\Models\ModelPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/**
- * @mixin ModelPhoto
- */
 class ModelPhotoResource extends JsonResource
 {
-    /**
-     * @return array<string, mixed>
-     */
+
     public function toArray(Request $request): array
     {
         return [

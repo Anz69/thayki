@@ -14,10 +14,6 @@ use App\Services\Audit\AuditLogger;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Admin-side workflow for processing withdrawals: approve, mark paid, or reject.
- * Rejecting a withdrawal returns the held funds to the wallet.
- */
 class ProcessWithdrawalAction
 {
     public function __construct(
@@ -38,7 +34,7 @@ class ProcessWithdrawalAction
     public function reject(Withdrawal $withdrawal, User|AdminUser|null $admin = null, ?string $note = null): Withdrawal
     {
         return DB::transaction(function () use ($withdrawal, $admin, $note): Withdrawal {
-            /** @var Withdrawal $withdrawal */
+
             $withdrawal = Withdrawal::query()->whereKey($withdrawal->id)->lockForUpdate()->firstOrFail();
 
             if (! in_array($withdrawal->status, [WithdrawalStatus::Pending, WithdrawalStatus::Approved], true)) {
@@ -71,7 +67,7 @@ class ProcessWithdrawalAction
     private function transition(Withdrawal $withdrawal, User|AdminUser|null $admin, WithdrawalStatus $next, ?string $note): Withdrawal
     {
         return DB::transaction(function () use ($withdrawal, $admin, $next, $note): Withdrawal {
-            /** @var Withdrawal $withdrawal */
+
             $withdrawal = Withdrawal::query()->whereKey($withdrawal->id)->lockForUpdate()->firstOrFail();
 
             $allowed = match ($next) {

@@ -23,7 +23,6 @@ class SendChatMessageNotificationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** Short pause so a fast read receipt can update the message before we notify. */
     private const READ_DEBOUNCE_SECONDS = 1;
 
     public function __construct(public readonly int $messageId) {}
@@ -31,15 +30,12 @@ class SendChatMessageNotificationJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            /** @var Message|null $message */
+
             $message = Message::query()->with('sender')->find($this->messageId);
             if ($message === null) {
                 return;
             }
 
-            // Typed cards (payment / verification / model) and system notes send
-            // their own targeted push from their action — skip the generic
-            // "new message" notification to avoid duplicates.
             if (! in_array((string) $message->type, ['text', 'image', ''], true)) {
                 return;
             }
@@ -59,8 +55,7 @@ class SendChatMessageNotificationJob implements ShouldQueue
             }
 
             $sender = $message->sender;
-            // Lead chats behave like support: only the client is a participant,
-            // so admins are pinged directly instead of via the participant loop.
+
             $isSupport = $chat->type === ChatType::Support || $chat->type === ChatType::Lead;
             $isLead = $chat->type === ChatType::Lead;
             $notifier = Notifier::default();
@@ -68,9 +63,6 @@ class SendChatMessageNotificationJob implements ShouldQueue
             $lead = $isLead ? Lead::query()->where('chat_id', $chat->id)->first() : null;
             $leadId = $lead?->id;
 
-            // The lead's very first message IS the auto-generated request itself.
-            // CreateLeadAction already pushed a "new lead" notification for it, so
-            // skip here to avoid a duplicate (see screenshot: two pushes per lead).
             if ($isLead) {
                 $firstId = (int) Message::query()->where('chat_id', $chat->id)->min('id');
                 if ($firstId === (int) $message->id) {
@@ -78,25 +70,19 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 }
             }
 
-            // Support bot is identified by telegram_id = 0 (see SupportChats::getSupportUser).
             $senderIsSupport = $isSupport
                 && $sender !== null
                 && (int) ($sender->telegram_id ?? -1) === 0;
 
             $senderIsStaff = in_array($sender?->role, [UserRole::Manager, UserRole::Admin], true);
 
-            // The message text to show inline (plain messages only; typed cards
-            // like payment/verification have no body).
             $preview = ($message->type === null || $message->type === 'text')
                 ? trim((string) $message->body)
                 : '';
             $preview = $preview !== '' ? e(mb_substr($preview, 0, 200)) : '';
 
-            // Track who's already been notified so a manager who is BOTH staff
-            // and a chat participant doesn't get the same push twice.
             $notified = [];
 
-            // A user wrote to support/lead → notify staff (admins + managers).
             if ($isSupport && ! $senderIsSupport && ! $senderIsStaff) {
                 $notifier->notifyAdmins(
                     ($isLead ? '📩 Новое сообщение по заявке от <b>' : '💬 Новое сообщение в поддержке от <b>')
@@ -106,7 +92,6 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     $dedupToken,
                 );
 
-                // Managers: for support — all of them; for a lead — its assigned manager.
                 $managers = User::query()
                     ->where('role', UserRole::Manager->value)
                     ->whereNotNull('tg_chat_id')
@@ -142,7 +127,7 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 if ($this->isSameUser($sender, $recipient)) {
                     continue;
                 }
-                // Already pinged in the staff loop above — don't double-notify.
+
                 if (isset($notified[$recipient->id])) {
                     continue;
                 }
@@ -153,12 +138,8 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     continue;
                 }
 
-                // Each recipient is notified in their own UI language.
                 $locale = $this->localeFor($recipient);
 
-                // Lead chat → "new message in request #N" (no body — the client
-                // only needs to know there's a new message and tap to open it);
-                // support → "from support"; meeting → "from <name>".
                 if ($isLead) {
                     $text = trans('notifications.new_message_lead', ['id' => $leadId], $locale);
                 } elseif ($isSupport) {
@@ -210,7 +191,6 @@ class SendChatMessageNotificationJob implements ShouldQueue
         return $name !== '' ? $name : ($user->username ?? $fallback);
     }
 
-    /** Map a user's stored Telegram/app language to a supported locale. */
     private function localeFor(?User $user): string
     {
         $code = strtolower((string) ($user->language_code ?? ''));

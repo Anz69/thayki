@@ -6,12 +6,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Post-meeting complaints. Created via a public API by the meeting's client
- * (or, in the future, the model). Reviewed in Filament by admins.
- *
- * Status lifecycle: pending -> resolved | dismissed.
- */
 return new class extends Migration
 {
     public function up(): void
@@ -22,7 +16,7 @@ return new class extends Migration
             $table->foreignId('meeting_id')->nullable()->constrained('meetings')->nullOnDelete();
             $table->string('subject', 255)->nullable();
             $table->text('body');
-            $table->string('status', 16)->default('pending'); // pending | resolved | dismissed
+            $table->string('status', 16)->default('pending');
             $table->text('admin_note')->nullable();
             $table->foreignId('resolved_by_admin_id')->nullable()->constrained('admin_users')->nullOnDelete();
             $table->timestamp('resolved_at')->nullable();

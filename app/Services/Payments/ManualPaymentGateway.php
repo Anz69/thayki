@@ -8,13 +8,6 @@ use App\Models\Payment;
 use App\Services\Payments\Contracts\PaymentGateway;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
-/**
- * Explicit stub implementation: issues a wallet address from configuration
- * and defers verification to an admin action (POST /admin/payments/{id}/confirm).
- *
- * This class keeps the contract clean so USDT/BTC/TON/fiat adapters can be
- * plugged in later without touching any action or controller.
- */
 class ManualPaymentGateway implements PaymentGateway
 {
     public function __construct(private readonly ConfigRepository $config) {}

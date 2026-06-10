@@ -18,12 +18,6 @@ class Dashboard extends BaseDashboard
 
     protected static ?string $title = 'Обзор';
 
-    /**
-     * Widgets shown on this dashboard page in order.
-     *
-     * The legacy booking/revenue widgets (meetings, payments, platform
-     * commission) were removed with the pivot to the lead-gen product.
-     */
     public function getWidgets(): array
     {
         return [

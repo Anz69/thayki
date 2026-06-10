@@ -29,7 +29,6 @@ export default function Info({ model }) {
         </div>
       </div>
 
-      {/* Physical info */}
       <div className="flex flex-col gap-2.5 py-1 bg-[#EFEEF3] w-full rounded-2xl">
         <Row label={t('modelInfo.height')}     value={cm(model.height_cm)} />
         <Row label={t('modelInfo.bust')}       value={cm(model.bust_cm)} />

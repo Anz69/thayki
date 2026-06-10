@@ -6,12 +6,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Lets admins receive Telegram-bot notifications about events. The admin maps
- * their Telegram chat to their admin account by /start-ing the bot with the
- * special token issued in the Filament profile area (see SettingsPage), or
- * the migration is left as no-op if `admin_users` doesn't exist yet.
- */
 return new class extends Migration
 {
     public function up(): void

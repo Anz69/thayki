@@ -51,11 +51,6 @@ class PlatformRevenueStatsWidget extends BaseWidget
         ];
     }
 
-    /**
-     * Daily commission totals for the last N days, in major units (฿), as a sparkline.
-     *
-     * @return list<int>
-     */
     private function dailyCommissionSeries(int $days): array
     {
         $rows = PlatformEarning::query()

@@ -9,14 +9,9 @@ use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/**
- * @mixin Chat
- */
 class ChatResource extends JsonResource
 {
-    /**
-     * @return array<string, mixed>
-     */
+
     public function toArray(Request $request): array
     {
         $myId      = $request->user()?->id;
@@ -39,7 +34,7 @@ class ChatResource extends JsonResource
         );
 
         $lastMessage = $this->whenLoaded('lastMessage', function () {
-            /** @var Message|null $msg */
+
             $msg = $this->lastMessage;
             if (! $msg) return null;
             return [

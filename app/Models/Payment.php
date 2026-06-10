@@ -12,23 +12,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
-/**
- * @property int $id
- * @property int $meeting_id
- * @property int $user_id
- * @property string $gateway
- * @property PaymentMethod $method
- * @property int $amount_minor
- * @property string $currency
- * @property string|null $wallet_address
- * @property string|null $tx_hash
- * @property PaymentStatus $status
- * @property Carbon|null $confirmed_at
- * @property array<string, mixed>|null $raw
- */
 class Payment extends Model
 {
-    /** @use HasFactory<PaymentFactory> */
+
     use HasFactory;
 
     protected $guarded = ['id'];
@@ -44,13 +30,11 @@ class Payment extends Model
         ];
     }
 
-    /** @return BelongsTo<Meeting, $this> */
     public function meeting(): BelongsTo
     {
         return $this->belongsTo(Meeting::class);
     }
 
-    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

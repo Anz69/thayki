@@ -10,11 +10,6 @@ use App\Models\Meeting;
 use App\Models\Payment;
 use Illuminate\Support\Facades\Log;
 
-/**
- * When a meeting is completed but has no {@see Payment} row (e.g. created in
- * Filament without the normal client payment flow), create a single synthetic
- * pending payment so {@see ConfirmPaymentAction} can credit the model wallet.
- */
 class EnsureSyntheticPaymentForMeetingAction
 {
     public function execute(Meeting $meeting): ?Payment

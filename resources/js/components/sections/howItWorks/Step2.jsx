@@ -18,7 +18,6 @@ const CheckIcon = () => (
   </svg>
 )
 
-// Classic arrow cursor used to "click" a suggestion.
 const CursorIcon = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
     <path d="M5 3l14 7-6 1.6L9.8 18 5 3z" fill="#111" stroke="#fff" strokeWidth="1.2" strokeLinejoin="round" />
@@ -30,11 +29,6 @@ const SUGGESTIONS = {
   en: ['Moscow', 'Moscow Mills', 'Mostar'],
 }
 
-/**
- * Step 2 — a self-playing demo of "leave a request": the city is typed in, a
- * suggestions dropdown opens, a cursor taps the right city, then a parameter
- * chip selects and the submit button flips to a "sent" confirmation.
- */
 export default function HowItWorksStep2({ isActive }) {
   const { t, i18n } = useTranslation()
   const lang = (i18n.language || 'ru').toLowerCase().startsWith('ru') ? 'ru' : 'en'
@@ -53,7 +47,6 @@ export default function HowItWorksStep2({ isActive }) {
   const sentRef = useRef(null)
   const setRow = (i) => (el) => { rowsRef.current[i] = el }
 
-  // Initial hidden state before first paint (avoids a flash of the final demo).
   useLayoutEffect(() => {
     gsap.set(rowsRef.current.filter(Boolean), { autoAlpha: 0, y: 26 })
     if (ddRef.current) gsap.set(ddRef.current, { autoAlpha: 0, y: -6, scale: 0.96, transformOrigin: 'top center' })
@@ -62,15 +55,12 @@ export default function HowItWorksStep2({ isActive }) {
     if (caretRef.current) gsap.set(caretRef.current, { autoAlpha: 1 })
   }, [])
 
-  // Reset to a clean state and replay the demo EVERY time this step becomes
-  // active, so it never freezes mid-way when you navigate back to it.
   useEffect(() => {
     if (!isActive) return undefined
 
     const rows = rowsRef.current.filter(Boolean)
     const partial = demoCity.slice(0, Math.min(4, demoCity.length))
 
-    // --- full reset ---
     gsap.killTweensOf([...rows, ddRef.current, cursorRef.current, sugRef.current,
       chipRef.current, btnRef.current, labelRef.current, sentRef.current, caretRef.current])
     gsap.set(rows, { autoAlpha: 0, y: 26 })
@@ -88,13 +78,10 @@ export default function HowItWorksStep2({ isActive }) {
       autoAlpha: 0, duration: 0.5, repeat: -1, yoyo: true, ease: 'steps(1)',
     })
 
-    // Start after the modal's slide-in transition so they don't compete.
     const tl = gsap.timeline({ delay: 0.5 })
 
-    // 1) Cards rise in.
     tl.to(rows, { y: 0, autoAlpha: 1, duration: 0.5, stagger: 0.1, ease: 'power3.out' })
 
-    // 2) Type the first letters.
     tl.to({ i: 0 }, {
       i: partial.length, duration: 0.45, ease: 'none',
       onUpdate() {
@@ -103,29 +90,21 @@ export default function HowItWorksStep2({ isActive }) {
       },
     }, '-=0.1')
 
-    // 3) Suggestions dropdown opens.
     tl.to(ddRef.current, { autoAlpha: 1, y: 0, scale: 1, duration: 0.28, ease: 'back.out(1.6)' }, '+=0.05')
 
-    // 4) Cursor flies straight to the row (clean, no overshoot / settle).
     tl.fromTo(cursorRef.current,
       { autoAlpha: 0, x: 34, y: 30 },
       { autoAlpha: 1, x: 0, y: 0, duration: 0.45, ease: 'power3.out' }, '-=0.05')
 
-    // 5) HOVER — a light, subtle grey background fades in as the cursor reaches
-    //    the row.
     tl.to(sugRef.current, { backgroundColor: '#F5F5F7', duration: 0.28, ease: 'power2.out' }, '-=0.18')
 
-    // 6) CLICK — the cursor presses down.
     tl.to(cursorRef.current, { scale: 0.82, duration: 0.12, ease: 'power2.in' }, '+=0.1')
 
-    // 7) Click response: the row deepens to a stronger grey (the pressed state)
-    //    together with a spring pop + cursor release.
     tl.to(sugRef.current, { backgroundColor: '#E4E4E9', duration: 0.16, ease: 'power2.out' })
     tl.fromTo(sugRef.current, { scale: 1 }, { scale: 0.97, duration: 0.1, ease: 'power2.in' }, '<')
     tl.to(sugRef.current, { scale: 1, duration: 0.24, ease: 'back.out(2.4)' })
     tl.to(cursorRef.current, { scale: 1, duration: 0.2, ease: 'back.out(2.4)' }, '<')
 
-    // 7) City fills, caret + dropdown + cursor disappear.
     tl.add(() => {
       caretBlink.kill()
       if (cityValRef.current) cityValRef.current.textContent = demoCity
@@ -134,7 +113,6 @@ export default function HowItWorksStep2({ isActive }) {
     tl.to(ddRef.current, { autoAlpha: 0, y: -6, scale: 0.96, duration: 0.24, ease: 'power2.in' }, '+=0.05')
     tl.to(cursorRef.current, { autoAlpha: 0, x: 14, y: 12, duration: 0.2 }, '<')
 
-    // 8) A goal chip selects with a pop.
     tl.to(chipRef.current, {
       backgroundColor: '#E2319B', color: '#ffffff', borderColor: 'transparent',
       boxShadow: '0 6px 16px rgba(226,49,155,0.28)', duration: 0.22,
@@ -142,7 +120,6 @@ export default function HowItWorksStep2({ isActive }) {
     tl.fromTo(chipRef.current, { scale: 1 }, { scale: 1.1, duration: 0.16, ease: 'back.out(3)' }, '<')
     tl.to(chipRef.current, { scale: 1, duration: 0.16 })
 
-    // 9) Submit press → flip to "sent".
     tl.to(btnRef.current, { scale: 0.96, duration: 0.12, ease: 'power2.in' }, '+=0.15')
     tl.to(btnRef.current, { scale: 1, duration: 0.2, ease: 'back.out(2.2)' })
     tl.to(labelRef.current, { autoAlpha: 0, y: -10, duration: 0.2 }, '-=0.1')
@@ -154,7 +131,6 @@ export default function HowItWorksStep2({ isActive }) {
 
   return (
     <div className="flex flex-col justify-center flex-1 px-5 gap-3">
-      {/* City field + suggestions dropdown */}
       <div ref={setRow(0)} className="relative z-20">
         <div className="bg-[#F5F5F7] rounded-2xl px-4 py-3.5 w-full">
           <span className="text-[#9B9AA0] text-[12px]/[100%] font-medium">{t('request.city')}</span>
@@ -176,8 +152,6 @@ export default function HowItWorksStep2({ isActive }) {
               key={city}
               ref={i === 0 ? sugRef : undefined}
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-              // Readable rows; hover only adds a soft grey background (no
-              // darkening), like a normal list row.
               style={{ color: '#3A3A3E' }}
             >
               <PinIcon color="currentColor" />
@@ -192,7 +166,6 @@ export default function HowItWorksStep2({ isActive }) {
         </div>
       </div>
 
-      {/* Goal chips */}
       <div ref={setRow(1)} className="bg-[#F5F5F7] rounded-2xl px-4 py-3.5 w-full">
         <span className="text-[#9B9AA0] text-[12px]/[100%] font-medium">{t('request.goal')}</span>
         <div className="mt-2.5 flex flex-wrap gap-2">
@@ -207,7 +180,6 @@ export default function HowItWorksStep2({ isActive }) {
         </div>
       </div>
 
-      {/* Submit button */}
       <div ref={setRow(2)} className="w-full">
         <div
           ref={btnRef}
@@ -226,7 +198,6 @@ export default function HowItWorksStep2({ isActive }) {
             <CheckIcon />
             {t('hiw.sent')}
           </span>
-          {/* keeps the button height without showing text */}
           <span className="invisible text-[15px]/[100%] font-semibold block text-center">{t('request.submit')}</span>
         </div>
       </div>

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class ManagerSupportController extends Controller
 {
-    /** Inbox of all support conversations, newest activity first. */
+
     public function index(): JsonResponse
     {
         $chats = Chat::query()
@@ -26,7 +26,6 @@ class ManagerSupportController extends Controller
 
         $chatIds = $chats->pluck('id')->all();
 
-        // Unread = client messages not yet read by staff (exclude staff senders).
         $unread = [];
         if ($chatIds !== []) {
             $rows = DB::table('messages as m')
@@ -48,8 +47,6 @@ class ManagerSupportController extends Controller
             $user = $participant?->user;
             $last = $chat->lastMessage;
 
-            // "Awaiting reply" = the last message is from the client (not staff),
-            // so a manager still needs to answer it.
             $awaiting = $last !== null
                 && ! in_array($last->sender?->role, [UserRole::Admin, UserRole::Manager], true);
 

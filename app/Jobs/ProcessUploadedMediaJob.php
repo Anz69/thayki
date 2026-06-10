@@ -30,7 +30,7 @@ class ProcessUploadedMediaJob implements ShouldQueue
 
     public function handle(): void
     {
-        /** @var ModelPhoto|null $photo */
+
         $photo = ModelPhoto::query()->find($this->photoId);
         if ($photo === null) {
             return;

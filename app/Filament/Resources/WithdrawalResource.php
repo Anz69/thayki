@@ -20,7 +20,6 @@ class WithdrawalResource extends Resource
 {
     protected static ?string $model = Withdrawal::class;
 
-    // Legacy payout flow — disabled in the lead-gen product.
     protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';

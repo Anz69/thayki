@@ -17,7 +17,6 @@ class FaqController extends Controller
         $raw = strtolower((string) $request->query('lang', 'ru'));
         $lang = str_starts_with($raw, 'zh') ? 'zh' : (str_starts_with($raw, 'en') ? 'en' : 'ru');
 
-        // Per-language fallback chain: zh → en → ru; en → ru; ru → ru.
         $pick = static function (FaqItem $i, string $field) use ($lang): string {
             if ($lang === 'zh') {
                 return (string) ($i->{$field.'_zh'} ?: $i->{$field.'_en'} ?: $i->{$field});

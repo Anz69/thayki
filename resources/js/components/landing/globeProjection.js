@@ -1,13 +1,7 @@
-// Mirrors cobe v2's internal lat/lng → screen projection so DOM labels can be
-// anchored to the exact same points cobe renders its markers/arcs at.
-// Derived from cobe's `U` (location → unit vector), `O` (vector → screen) and
-// the globe radius constant `ee = 0.8`. Assumes a square canvas, scale 1,
-// offset [0,0] — which is how Globe.jsx configures createGlobe.
 
 const PI = Math.PI
-const EE = 0.8 // cobe globe radius
+const EE = 0.8
 
-// cobe `U`: [lat, lng] (degrees) → unit vector on the sphere
 function locationToVector(lat, lng) {
   const r = (lat * PI) / 180
   const a = (lng * PI) / 180 - PI
@@ -15,8 +9,6 @@ function locationToVector(lat, lng) {
   return [-o * Math.cos(a), Math.sin(r), o * Math.sin(a)]
 }
 
-// cobe `O`: 3D vector → { x, y } in 0..1 of the canvas + signed depth.
-// depth >= 0 means the point faces the camera (front hemisphere).
 function projectVector(v, phi, theta) {
   const ct = Math.cos(theta)
   const st = Math.sin(theta)
@@ -34,7 +26,6 @@ export function projectCity(lat, lng, phi, theta, elevation = 0.04) {
   return projectVector([u[0] * r, u[1] * r, u[2] * r], phi, theta)
 }
 
-// cobe `X`: midpoint (peak) of an arc between two locations
 export function projectArcMid(a, b, phi, theta, arcHeight = 0.42, elevation = 0.04) {
   const ta = locationToVector(a[0], a[1])
   const tb = locationToVector(b[0], b[1])
@@ -44,7 +35,6 @@ export function projectArcMid(a, b, phi, theta, arcHeight = 0.42, elevation = 0.
   return projectVector([sum[0] * i, sum[1] * i, sum[2] * i], phi, theta)
 }
 
-// Smooth front/back fade from signed depth
 export function depthToOpacity(depth) {
   if (depth >= 0.04) return 1
   if (depth <= -0.06) return 0

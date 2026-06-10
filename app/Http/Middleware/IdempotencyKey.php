@@ -14,14 +14,6 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Persists the first successful response for (user_id, idempotency_key) and
- * replays it on retries with the same request body. Conflicting bodies
- * for the same key return 409 IDEMPOTENCY_CONFLICT.
- *
- * Only POST/PATCH/PUT/DELETE are guarded; safe methods pass through.
- * Header: Idempotency-Key.
- */
 class IdempotencyKey
 {
     public function handle(Request $request, Closure $next): Response
@@ -67,7 +59,6 @@ class IdempotencyKey
             }
         }
 
-        /** @var Response $response */
         $response = $next($request);
 
         if ($response instanceof JsonResponse && $response->isSuccessful()) {

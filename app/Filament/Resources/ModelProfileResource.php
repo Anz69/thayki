@@ -74,10 +74,6 @@ class ModelProfileResource extends Resource
                     ->relationship('user', 'first_name')
                     ->searchable(),
 
-                // Photos live at the very bottom — right above the save button —
-                // so the form reads top-to-bottom and you confirm with the photos
-                // in view. The `photo_files` key isn't a model column: the
-                // Create/Edit pages strip it out and persist via syncPhotos().
                 Forms\Components\Section::make('Фотографии')
                     ->icon('heroicon-o-photo')
                     ->columnSpanFull()
@@ -104,13 +100,6 @@ class ModelProfileResource extends Resource
             ]);
     }
 
-    /**
-     * Reconcile a profile's ModelPhoto rows with the ordered list of paths
-     * coming from the form's FileUpload (kept + newly uploaded). Removed files
-     * are deleted from disk; order/main flag follow the list order.
-     *
-     * @param  list<string>  $paths
-     */
     public static function syncPhotos(ModelProfile $profile, array $paths): void
     {
         $paths = array_values(array_filter($paths));
@@ -188,8 +177,7 @@ class ModelProfileResource extends Resource
 
     public static function getRelations(): array
     {
-        // Photos are managed inside the form (above the save button) via the
-        // FileUpload + syncPhotos, so no separate relation-manager panel below.
+
         return [];
     }
 

@@ -10,16 +10,10 @@ use App\Models\User;
 use App\Models\Withdrawal;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Withdrawal>
- */
 class WithdrawalFactory extends Factory
 {
     protected $model = Withdrawal::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [

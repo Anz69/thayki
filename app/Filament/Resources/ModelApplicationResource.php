@@ -15,16 +15,10 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
-/**
- * Заявки кандидатов на роль модели. Создание invite-ссылок для будущих
- * моделей живёт в отдельном разделе «Invite-ссылки» — здесь чисто
- * рассмотрение уже поданных заявок (approve / reject).
- */
 class ModelApplicationResource extends Resource
 {
     protected static ?string $model = ModelApplication::class;
 
-    // Legacy "become a model" onboarding — not part of the lead-gen flow.
     protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $navigationIcon = 'heroicon-o-star';

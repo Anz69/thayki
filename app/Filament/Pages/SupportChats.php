@@ -40,10 +40,8 @@ class SupportChats extends Page
 
     public string $search = '';
 
-    /** 'leads' = заявки на подбор (ChatType::Lead), 'support' = поддержка (ChatType::Support). */
     public string $activeTab = 'leads';
 
-    /** Synced with query string ?user= — deep links from admin (e.g. complaints) preselect the chat. */
     #[Url(as: 'user', except: null)]
     public ?int $urlUser = null;
 
@@ -57,9 +55,6 @@ class SupportChats extends Page
         $this->applyUrlPreselect();
     }
 
-    /**
-     * Resolve ?user= / ?chat= from Livewire URL props or raw request (Filament full-page links).
-     */
     private function applyUrlPreselect(): void
     {
         $userId = $this->positiveIntOrNull($this->urlUser);
@@ -133,7 +128,7 @@ class SupportChats extends Page
                 ->where('sender_id', '!=', $supportUserId)
                 ->where(function ($w) use ($supportUserId) {
                     $w
-                        // If support participant row is missing, treat messages as unread.
+
                         ->whereNotExists(function ($sub) use ($supportUserId) {
                             $sub
                                 ->selectRaw('1')
@@ -247,7 +242,6 @@ class SupportChats extends Page
             ['role' => ChatParticipantRole::Support, 'last_read_at' => $now],
         );
 
-        // Keep message-level read marks in sync for legacy consumers.
         Message::query()
             ->where('chat_id', $chatId)
             ->where('sender_id', '!=', $supportUser->id)
@@ -255,10 +249,6 @@ class SupportChats extends Page
             ->update(['read_at' => $now]);
     }
 
-    /**
-     * When a manager replies in a lead chat, move the lead from "new" to
-     * "in progress" automatically (only if it's still new).
-     */
     private function markLeadInProgress(Chat $chat): void
     {
         if ($chat->type !== ChatType::Lead) {

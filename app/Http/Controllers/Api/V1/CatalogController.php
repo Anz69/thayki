@@ -20,7 +20,7 @@ class CatalogController extends Controller
 {
     public function index(ListModelsRequest $request, ModelProfileQuery $query): JsonResponse
     {
-        /** @var array<string, mixed> $filters */
+
         $filters = $request->validated();
 
         $paginator = $query->paginate($filters);
@@ -39,7 +39,7 @@ class CatalogController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        /** @var ModelProfile|null $profile */
+
         $profile = ModelProfile::query()
             ->published()
             ->with(['photos', 'priceOptions'])
@@ -52,17 +52,6 @@ class CatalogController extends Controller
         return ApiResponse::ok(new ModelProfileResource($profile));
     }
 
-    /**
-     * Returns the model's currently-occupied slots for the booking modal so
-     * the front-end can grey out conflicting times before the user submits.
-     *
-     * Open meetings only — terminal statuses (rejected, expired, cancelled,
-     * completed) are excluded so they don't keep blocking new bookings.
-     *
-     * Window: today → today+`days` (default 7, max 30). Slots are returned
-     * as ISO timestamps + duration_hours, so the FE can compute end-of-slot
-     * and detect overlaps with any (start, duration) the user picks.
-     */
     public function bookedSlots(Request $request, int $id): JsonResponse
     {
         $profile = ModelProfile::query()->published()->find($id);

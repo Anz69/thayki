@@ -11,15 +11,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-/**
- * Parses a model page from e100.club (server-rendered HTML) into our internal
- * draft format, downloading the photos into local storage so the resulting
- * card is self-contained.
- *
- * Example page: https://e100.club/?p=62_5851f3f77325a11ba66023b845000585350
- * The page exposes params inside `<div class="col-md-12">Label: <strong>v</strong></div>`
- * and media via `img.php?p={token}&i={n}` (photos) / `&v={n}` (videos).
- */
 class E100Parser
 {
     private const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
@@ -30,7 +21,6 @@ class E100Parser
 
     private const MAX_VIDEOS = 6;
 
-    /** Cyrillic label (lowercased, no unit suffix) → internal field. */
     private const MAP = [
         'возраст' => 'age',
         'рост' => 'height_cm',
@@ -43,12 +33,9 @@ class E100Parser
         'цвет глаз' => 'eyes',
     ];
 
-    /**
-     * @return array<string, mixed>
-     */
     public function parse(string $url): array
     {
-        // Downloading many remote files can exceed PHP-FPM's default 30s cap.
+
         @set_time_limit(180);
 
         $token = $this->extractToken($url);
@@ -84,12 +71,8 @@ class E100Parser
         $photoIndexes = $this->matchMediaIndexes($html, 'i');
         $videoIndexes = $this->matchMediaIndexes($html, 'v');
 
-        // Download all media concurrently (in small batches) so a model with
-        // 15+ photos and videos doesn't take ~90s sequentially.
         $draft = Str::random(24);
 
-        // One combined concurrent pass for photos + videos + posters (fewer
-        // sequential rounds → faster overall).
         $jobs = [];
         $photoSrcs = [];
         foreach (array_slice($photoIndexes, 0, self::MAX_PHOTOS) as $i) {
@@ -153,7 +136,6 @@ class E100Parser
         return null;
     }
 
-    /** @return array<string, mixed> */
     private function matchParams(string $html): array
     {
         $out = [];
@@ -175,12 +157,6 @@ class E100Parser
         return $out;
     }
 
-    /**
-     * Collect distinct media indexes for `img.php?...&{key}={n}` (full-size only,
-     * skipping the `preview=1` thumbnails).
-     *
-     * @return list<int>
-     */
     private function matchMediaIndexes(string $html, string $key): array
     {
         $found = [];
@@ -195,13 +171,6 @@ class E100Parser
         return $keys;
     }
 
-    /**
-     * Download many remote files concurrently (batched, to avoid being rate
-     * limited). Returns a map of source URL → stored public URL (null on fail).
-     *
-     * @param  array<string, string>  $jobs  source URL => destination path
-     * @return array<string, string|null>
-     */
     private function downloadBatch(array $jobs): array
     {
         $out = [];

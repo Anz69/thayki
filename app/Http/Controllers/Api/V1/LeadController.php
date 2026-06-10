@@ -21,10 +21,10 @@ use Illuminate\Http\Request;
 
 class LeadController extends Controller
 {
-    /** Current user's submitted requests, newest first. */
+
     public function index(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $perPage = min(50, max(5, (int) $request->query('per_page', 20)));
@@ -32,7 +32,7 @@ class LeadController extends Controller
         $paginator = Lead::query()
             ->where('user_id', $user->id)
             ->with(['modelProfile.photos'])
-            // Active leads first, finished (completed/closed) last; newest within each.
+
             ->orderByRaw("CASE WHEN status IN ('closed','completed') THEN 1 ELSE 0 END asc")
             ->latest()
             ->paginate($perPage);
@@ -70,7 +70,7 @@ class LeadController extends Controller
 
     public function store(StoreLeadRequest $request, CreateLeadAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $lead = $action->execute($user, $request->validated());
@@ -81,14 +81,9 @@ class LeadController extends Controller
         ]);
     }
 
-    /**
-     * The client confirms their identity by sharing their Telegram contact
-     * (phone) through the Mini App. We store it on the user, mark the lead
-     * verified, post a system note, and notify the assigned manager.
-     */
     public function verifyContact(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         if ($lead->user_id !== $user->id) {
@@ -119,10 +114,7 @@ class LeadController extends Controller
                     'role' => ChatParticipantRole::Client,
                 ]);
             }
-            // Flip any pending verification_request card to "done" AND broadcast
-            // the updated card so the manager's open chat flips it live (the
-            // client receives the same MessageSent and updates the card in place
-            // by id — no full reload needed).
+
             $card = Message::query()->where('chat_id', $chat->id)
                 ->where('type', 'verification_request')
                 ->latest('id')->first();
@@ -135,7 +127,6 @@ class LeadController extends Controller
                 trans('lead.verification_done', [], $locale), null, null, 'system');
         }
 
-        // Notify the manager in Telegram that verification passed.
         if ($lead->manager_id !== null) {
             $manager = User::query()->find($lead->manager_id);
             $mLocale = str_starts_with(strtolower((string) ($manager?->language_code ?? '')), 'en') ? 'en' : 'ru';

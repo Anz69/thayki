@@ -11,13 +11,8 @@ class EditModelProfile extends EditRecord
 {
     protected static string $resource = ModelProfileResource::class;
 
-    /** @var list<string> */
     protected array $photoFiles = [];
 
-    /**
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $this->photoFiles = array_values((array) ($data['photo_files'] ?? []));

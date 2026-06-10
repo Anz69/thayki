@@ -12,34 +12,15 @@ const PinIcon = () => (
   </svg>
 )
 
-// Open-Meteo geocoding: free, no key, CORS-enabled, worldwide, localized names.
 const GEO_URL = 'https://geocoding-api.open-meteo.com/v1/search'
-const MIN_CHARS = 2 // suggestions only appear after the first letters are typed
+const MIN_CHARS = 2
 const MAX_ITEMS = 8
 const GAP = 8
 
-/**
- * Taxi-style city input with an animated suggestion dropdown.
- *
- * Suggestions appear only after typing (≥2 chars) AND when we have matches. A
- * small curated RU/CIS list gives instant results; a debounced Open-Meteo call
- * covers any city in the world with names localized to the active language.
- *
- * Rendering modes:
- *  - default (portal): fixed-positioned dropdown rendered in a portal so it
- *    escapes `overflow:hidden`/transformed ancestors (used on the /request page).
- *  - `inline`: the list lives in-flow right under the input and grows/shrinks
- *    its height smoothly. Pass `overlay` to make that inline list absolutely
- *    positioned (it overlays following content instead of pushing it).
- */
 export default function CitySelect({ value, onChange, placeholder, inline = false, overlay = false, autoDetect = false }) {
   const { i18n, t } = useTranslation()
-  // Geocoder only has RU/EN names. Russian UI → Russian names; everything else
-  // (English, Chinese, …) → English, so e.g. Chinese never shows Cyrillic cities.
   const lang = (i18n.language || 'ru').toLowerCase().startsWith('ru') ? 'ru' : 'en'
 
-  // IP-based city is prefilled straight into the input (editable if wrong); while
-  // it's still the auto-filled value we gently ask the user to confirm it.
   const detectTriedRef = useRef(false)
   const userTypedRef = useRef(false)
   const cityInputRef = useRef(null)
@@ -68,13 +49,11 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
 
   const query = (value || '').trim()
 
-  // Instant local matches (RU/CIS) — shown immediately while remote loads.
   const local = useMemo(() => {
     if (query.length < MIN_CHARS) return []
     return searchCities(query, lang, MAX_ITEMS).map((name) => ({ name }))
   }, [query, lang])
 
-  // Merge local + remote, dedupe by city name, drop an exact match of the value.
   const suggestions = useMemo(() => {
     const seen = new Set()
     const out = []
@@ -91,8 +70,6 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
 
   const showList = open && query.length >= MIN_CHARS && suggestions.length > 0
 
-  // Position the fixed dropdown under (or above) the input, capping its height
-  // to the free space so it can scroll instead of overflowing the viewport.
   const updatePosition = useCallback(() => {
     const el = wrapRef.current
     if (!el) return
@@ -110,7 +87,6 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
     })
   }, [])
 
-  // Debounced worldwide geocoding lookup.
   useEffect(() => {
     clearTimeout(debounceRef.current)
     if (query.length < MIN_CHARS) {
@@ -135,12 +111,11 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
             }),
           )
         })
-        .catch(() => { /* aborted / offline — keep local matches */ })
+        .catch(() => { })
     }, 250)
     return () => clearTimeout(debounceRef.current)
   }, [query, lang])
 
-  // ── Inline mode: grow/shrink the in-flow (or absolute) list height smoothly.
   useEffect(() => {
     if (!inline) return undefined
     const wrap = inlineWrapRef.current
@@ -160,7 +135,6 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
     return undefined
   }, [inline, showList, suggestions, overlay])
 
-  // ── Portal mode below: keep the fixed dropdown anchored while open.
   useEffect(() => {
     if (inline || !showList) return undefined
     updatePosition()
@@ -173,7 +147,6 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
     }
   }, [inline, showList, suggestions.length, updatePosition])
 
-  // Close on outside click (the portal list lives outside wrapRef).
   useEffect(() => {
     const onDocPointer = (e) => {
       if (wrapRef.current?.contains(e.target)) return
@@ -184,7 +157,6 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
     return () => document.removeEventListener('pointerdown', onDocPointer)
   }, [])
 
-  // Portal mount + enter/exit animation. Keep node mounted through fade-out.
   useEffect(() => {
     if (inline) return undefined
     if (showList) {
@@ -205,8 +177,6 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
     abortRef.current?.abort()
   }, [])
 
-  // Detect the city by IP once and prefill it straight into the input — but
-  // never clobber what the user has already typed.
   useEffect(() => {
     if (!autoDetect || detectTriedRef.current) return
     if ((value || '').trim() !== '') return
@@ -273,7 +243,6 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
         />
       </div>
 
-      {/* Gentle confirmation that the auto-detected city is correct. */}
       {autoDetect && autoFilled && (value || '').trim() !== '' && (
         <div className="mt-2 flex items-center gap-3 rounded-xl bg-[#FBF2F8] border border-[#E2319B]/10 px-3.5 py-2.5">
           <div className="min-w-0 flex-1 flex flex-col">
@@ -290,8 +259,6 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
         </div>
       )}
 
-      {/* Inline list: in-flow (pushes content, grows the sheet) or absolute
-          overlay — both animate their height smoothly. */}
       {inline && (
         <div
           ref={inlineWrapRef}
@@ -317,7 +284,6 @@ export default function CitySelect({ value, onChange, placeholder, inline = fals
         </div>
       )}
 
-      {/* Portal list (default for the full page). */}
       {!inline && mounted && pos && typeof document !== 'undefined' && createPortal(
         <div
           ref={listRef}

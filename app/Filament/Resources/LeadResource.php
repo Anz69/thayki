@@ -93,10 +93,7 @@ class LeadResource extends Resource
                 Tables\Actions\DeleteAction::make()
                     ->label('Удалить')
                     ->requiresConfirmation(),
-                // NB: we deliberately do NOT delete the lead's chat here — that
-                // cascade hit a constraint and 500'd on bulk delete. The lead
-                // deletes on its own (lead_payments cascade via FK); the chat is
-                // just left in place (harmless).
+
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()

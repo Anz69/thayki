@@ -7,12 +7,6 @@ namespace App\Console\Commands;
 use App\Services\Telegram\TelegramBotService;
 use Illuminate\Console\Command;
 
-/**
- * (Re)registers the Telegram webhook with the correct allowed_updates.
- *
- * The webhook MUST allow `callback_query` or inline buttons (language picker,
- * etc.) silently do nothing — Telegram simply never delivers the press.
- */
 class TelegramSetWebhook extends Command
 {
     protected $signature = 'telegram:set-webhook {url? : Full webhook URL; defaults to APP_URL/telegram/webhook/<secret>} {--show : Only print current getWebhookInfo}';

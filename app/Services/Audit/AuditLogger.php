@@ -13,9 +13,6 @@ class AuditLogger
 {
     public function __construct(private readonly Request $request) {}
 
-    /**
-     * @param  array<string, mixed>  $context
-     */
     public function log(
         string $action,
         ?User $user = null,
@@ -33,7 +30,6 @@ class AuditLogger
             'created_at' => now(),
         ];
 
-        /** @var AuditLog $log */
         $log = AuditLog::query()->create($attrs);
 
         return $log;

@@ -23,9 +23,6 @@ class SubmitModelApplicationAction
         private readonly Notifier $notifier,
     ) {}
 
-    /**
-     * @param  array<string, mixed>  $payload
-     */
     public function execute(User $user, array $payload): ModelApplication
     {
         if ($user->role === UserRole::Admin) {
@@ -60,7 +57,7 @@ class SubmitModelApplicationAction
         }
 
         $application = DB::transaction(function () use ($user, $payload): ModelApplication {
-            /** @var ModelApplication $application */
+
             $application = ModelApplication::query()->create([
                 'user_id' => $user->id,
                 'payload' => $payload,

@@ -8,16 +8,10 @@ use App\Models\ModelPhoto;
 use App\Models\ModelProfile;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<ModelPhoto>
- */
 class ModelPhotoFactory extends Factory
 {
     protected $model = ModelPhoto::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [

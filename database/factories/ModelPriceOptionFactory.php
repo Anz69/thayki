@@ -8,16 +8,10 @@ use App\Models\ModelPriceOption;
 use App\Models\ModelProfile;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<ModelPriceOption>
- */
 class ModelPriceOptionFactory extends Factory
 {
     protected $model = ModelPriceOption::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         $hours = fake()->randomElement([1, 3, 6, 12]);

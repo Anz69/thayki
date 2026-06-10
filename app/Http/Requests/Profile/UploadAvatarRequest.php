@@ -13,13 +13,10 @@ class UploadAvatarRequest extends FormRequest
         return true;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function rules(): array
     {
         return [
-            // Type checks run in UploadAvatarAction (incl. HEIC by extension / sniffed mime).
+
             'photo' => ['required', 'file', 'max:10240'],
         ];
     }

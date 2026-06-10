@@ -23,13 +23,10 @@ class CreatePaymentAction
         private readonly AuditLogger $audit,
     ) {}
 
-    /**
-     * @return array{payment: Payment, intent: PaymentIntent}
-     */
     public function execute(User $client, int $meetingId, PaymentMethod $method): array
     {
         return DB::transaction(function () use ($client, $meetingId, $method): array {
-            /** @var Meeting $meeting */
+
             $meeting = Meeting::query()->whereKey($meetingId)->lockForUpdate()->firstOrFail();
 
             if ($meeting->client_id !== $client->id) {
@@ -40,7 +37,6 @@ class CreatePaymentAction
                 throw DomainException::conflict('PAYMENT_INVALID_STATE', 'Payment can only be created for accepted meetings.');
             }
 
-            /** @var Payment|null $existing */
             $existing = Payment::query()->where('meeting_id', $meeting->id)->lockForUpdate()->first();
 
             if ($existing !== null) {
@@ -62,7 +58,7 @@ class CreatePaymentAction
                 ]);
                 $payment = $existing->refresh();
             } else {
-                /** @var Payment $payment */
+
                 $payment = Payment::query()->create([
                     'meeting_id' => $meeting->id,
                     'user_id' => $client->id,

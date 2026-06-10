@@ -18,7 +18,7 @@ class SubmitPaymentAction
     public function execute(User $client, Payment $payment, string $txHash): Payment
     {
         return DB::transaction(function () use ($client, $payment, $txHash): Payment {
-            /** @var Payment $payment */
+
             $payment = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
 
             if ($payment->user_id !== $client->id) {

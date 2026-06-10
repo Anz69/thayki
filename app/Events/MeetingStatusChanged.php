@@ -24,9 +24,6 @@ class MeetingStatusChanged implements ShouldBroadcastNow
         public readonly MeetingStatus $previousStatus,
     ) {}
 
-    /**
-     * @return array<int, Channel>
-     */
     public function broadcastOn(): array
     {
         return [
@@ -41,9 +38,6 @@ class MeetingStatusChanged implements ShouldBroadcastNow
         return 'meeting.status_changed';
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function broadcastWith(): array
     {
         return [

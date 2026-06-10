@@ -22,7 +22,6 @@ export default function FeedbackPage() {
   const navigate      = useTransitionNavigate()
   const meetingId     = params.get('meeting') || null
 
-  // 'loading' | 'choice' | 'review' | 'complaint'
   const [mode, setMode]           = useState('loading')
   const [body, setBody]           = useState('')
   const [stars, setStars]         = useState(0)
@@ -31,7 +30,7 @@ export default function FeedbackPage() {
   const [error, setError]         = useState('')
   const [hasReview, setHasReview]       = useState(false)
   const [hasComplaint, setHasComplaint] = useState(false)
-  const [justDone, setJustDone]   = useState(null) // 'review' | 'complaint' | null
+  const [justDone, setJustDone]   = useState(null)
 
   const headerRef  = useRef(null)
   const contentRef = useRef(null)
@@ -94,7 +93,7 @@ export default function FeedbackPage() {
         subject: 'Отзыв',
         body: stars > 0 ? `${'★'.repeat(stars)} ${body.trim()}`.trim() : body.trim(),
       }, {
- 
+
         headers: { 'Idempotency-Key': `review-${meetingId}-${Date.now()}` },
       })
       setHasReview(true)
@@ -177,18 +176,15 @@ export default function FeedbackPage() {
 
       <div ref={contentRef} className="flex-1 container pb-[40px] pt-2 flex flex-col">
 
-        {/* ── Loading ── */}
         {mode === 'loading' && (
           <div className="flex-1 flex items-center justify-center">
             <div className="w-7 h-7 rounded-full border-2 border-[#EFEEF3] border-t-[#E2319B] animate-spin" />
           </div>
         )}
 
-        {/* ── Choice ── */}
         {mode === 'choice' && (
           <div className="flex flex-col gap-6 pt-2">
 
-            {/* Success banner after just submitting */}
             {justDone && (
               <div className="flex items-center gap-3 bg-[#F5F5F7] rounded-2xl px-4 py-3.5">
                 <div className="w-8 h-8 rounded-full bg-[#E2319B]/10 flex items-center justify-center shrink-0 text-[#E2319B]">
@@ -202,9 +198,8 @@ export default function FeedbackPage() {
               </div>
             )}
 
-            {/* Header block */}
             <div className="flex flex-col items-center gap-3 text-center py-2 pt-12">
-      
+
               <h2 className="text-black text-2xl/[120%] font-[500]">
                 {bothDone ? 'Всё отправлено!' : 'Встреча завершена'}
               </h2>
@@ -215,10 +210,8 @@ export default function FeedbackPage() {
               </p>
             </div>
 
-            {/* Action cards */}
             <div className="flex flex-col gap-3">
 
-              {/* Review card */}
               <button
                 onClick={() => !hasReview && switchMode('review')}
                 disabled={hasReview}
@@ -244,7 +237,6 @@ export default function FeedbackPage() {
                 )}
               </button>
 
-              {/* Complaint card */}
               <button
                 onClick={() => !hasComplaint && switchMode('complaint')}
                 disabled={hasComplaint}
@@ -271,7 +263,6 @@ export default function FeedbackPage() {
               </button>
             </div>
 
-            {/* Home button */}
             <button
               onClick={() => navigate('/home')}
               className="w-full py-4 rounded-full bg-black/5 text-black text-base/[100%] font-[500] active:bg-[#ECEAEC] transition-colors mt-2"
@@ -289,7 +280,6 @@ export default function FeedbackPage() {
               <p className="text-[#7F7F7F] text-sm/[140%]">Ваш отзыв увидят другие пользователи.</p>
             </div>
 
-            {/* Stars */}
             <div className="flex gap-2 items-center">
               {[1, 2, 3, 4, 5].map(n => (
                 <button
@@ -309,7 +299,6 @@ export default function FeedbackPage() {
               )}
             </div>
 
-            {/* Text */}
             <div className="flex flex-col gap-2">
               <p className="text-black text-sm/[100%] font-medium">Комментарий <span className="text-[#BDBDBD] font-normal">(необязательно)</span></p>
               <textarea
@@ -341,7 +330,6 @@ export default function FeedbackPage() {
           </div>
         )}
 
-        {/* ── Complaint form ── */}
         {mode === 'complaint' && (
           <div className="flex flex-col gap-5 pt-2">
 

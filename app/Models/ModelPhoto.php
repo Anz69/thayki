@@ -10,17 +10,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * @property int $id
- * @property int $model_profile_id
- * @property string $disk
- * @property string $path
- * @property int $position
- * @property bool $is_main
- */
 class ModelPhoto extends Model
 {
-    /** @use HasFactory<ModelPhotoFactory> */
+
     use HasFactory;
 
     protected $guarded = ['id'];
@@ -35,7 +27,6 @@ class ModelPhoto extends Model
         ];
     }
 
-    /** @return BelongsTo<ModelProfile, $this> */
     public function modelProfile(): BelongsTo
     {
         return $this->belongsTo(ModelProfile::class);

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('manager_id')->nullable()->constrained('users')->nullOnDelete();
             $table->unsignedBigInteger('amount_minor');
             $table->string('currency', 8)->default('THB');
-            $table->string('method', 16)->default('requisites'); // requisites | crypto
-            $table->string('status', 16)->default('requested');  // requested | confirmed
+            $table->string('method', 16)->default('requisites');
+            $table->string('status', 16)->default('requested');
             $table->timestamp('confirmed_at')->nullable();
             $table->timestamps();
 

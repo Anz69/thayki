@@ -8,14 +8,9 @@ use App\Models\ModelPriceOption;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/**
- * @mixin ModelPriceOption
- */
 class ModelPriceOptionResource extends JsonResource
 {
-    /**
-     * @return array<string, mixed>
-     */
+
     public function toArray(Request $request): array
     {
         return [

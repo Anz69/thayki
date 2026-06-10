@@ -36,7 +36,6 @@ export default function Avatar({ src, name, size = 112, className = '' }) {
     }
   }, [resolvedSrc])
 
-  // Cached images fire onLoad before React attaches the handler — check .complete after mount
   useEffect(() => {
     const img = imgRef.current
     if (img?.complete && img.naturalWidth > 0) {

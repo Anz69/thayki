@@ -11,16 +11,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
-/**
- * @property int $id
- * @property int $chat_id
- * @property int $user_id
- * @property ChatParticipantRole $role
- * @property Carbon|null $last_read_at
- */
 class ChatParticipant extends Model
 {
-    /** @use HasFactory<ChatParticipantFactory> */
+
     use HasFactory;
 
     protected $guarded = ['id'];
@@ -33,13 +26,11 @@ class ChatParticipant extends Model
         ];
     }
 
-    /** @return BelongsTo<Chat, $this> */
     public function chat(): BelongsTo
     {
         return $this->belongsTo(Chat::class);
     }
 
-    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

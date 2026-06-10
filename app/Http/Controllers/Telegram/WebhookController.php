@@ -10,15 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Telegram bot webhook receiver.
- *
- * Wired up at POST /telegram/webhook/{secret}, where {secret} is matched
- * against config('telegram.webhook_secret'). The secret-in-URL is Telegram's
- * recommended pattern for protecting the webhook endpoint.
- *
- * We only handle the bare minimum for now: text messages, specifically /start.
- */
 class WebhookController extends Controller
 {
     public function __invoke(Request $request, string $secret, StartHandler $start): JsonResponse
@@ -41,7 +32,6 @@ class WebhookController extends Controller
         try {
             $update = $request->all();
 
-            // Language picker buttons (callback_query with data "lang:ru|en").
             $callback = $update['callback_query'] ?? null;
             if (is_array($callback)) {
                 $data = (string) ($callback['data'] ?? '');
@@ -51,7 +41,7 @@ class WebhookController extends Controller
                 if (str_starts_with($data, 'lang:') && $cbChat > 0 && $cbFrom !== []) {
                     $lang = substr($data, 5);
                     $start->bot()->answerCallback($cbId, $lang === 'en' ? 'English ✓' : 'Русский ✓');
-                    // Remove the language-picker message after the choice.
+
                     $cbMsgId = (int) ($callback['message']['message_id'] ?? 0);
                     if ($cbMsgId > 0) {
                         $start->bot()->deleteMessage($cbChat, $cbMsgId);

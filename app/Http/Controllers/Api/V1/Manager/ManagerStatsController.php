@@ -15,11 +15,7 @@ use Illuminate\Support\Facades\Http;
 
 class ManagerStatsController extends Controller
 {
-    /**
-     * Fallback conversion rate from each currency's minor unit to USD minor,
-     * used when the live FX feed is unavailable. (amount_minor × rate = USD
-     * minor, since the /100·×100 cancels.)
-     */
+
     private const FALLBACK_TO_USD = [
         'USD' => 1.0,
         'EUR' => 1.08,
@@ -27,11 +23,10 @@ class ManagerStatsController extends Controller
         'THB' => 0.028,
     ];
 
-    /** Aggregate earnings across all confirmed lead payments, normalised to USD. */
     public function earnings(): JsonResponse
     {
         $rates = $this->ratesToUsd();
-        /** @var Collection<int, LeadPayment> $payments */
+
         $payments = LeadPayment::query()
             ->where('status', 'confirmed')
             ->get(['amount_minor', 'currency', 'confirmed_at']);
@@ -45,7 +40,6 @@ class ManagerStatsController extends Controller
                 || ($p->confirmed_at !== null && $p->confirmed_at->gte($since)))
             ->sum($usd);
 
-        // Daily totals for the last 14 days (oldest → newest), zero-filled.
         $days = 14;
         $series = [];
         for ($i = $days - 1; $i >= 0; $i--) {
@@ -71,19 +65,13 @@ class ManagerStatsController extends Controller
         ]);
     }
 
-    /**
-     * Live "currency-minor → USD-minor" multipliers, fetched from a free FX
-     * feed and cached for 12h. Falls back to static rates on any failure.
-     *
-     * @return array<string, float>
-     */
     private function ratesToUsd(): array
     {
         return Cache::remember('fx:to_usd_minor', now()->addHours(12), function (): array {
             try {
                 $res = Http::timeout(8)->get('https://open.er-api.com/v6/latest/USD');
                 if ($res->successful() && $res->json('result') === 'success') {
-                    $perUsd = $res->json('rates') ?? []; // 1 USD = X currency
+                    $perUsd = $res->json('rates') ?? [];
                     $out = [];
                     foreach (array_keys(self::FALLBACK_TO_USD) as $code) {
                         if (! empty($perUsd[$code])) {
@@ -91,7 +79,7 @@ class ManagerStatsController extends Controller
                         }
                     }
                     if (! empty($out['USD'])) {
-                        return $out + self::FALLBACK_TO_USD; // fill any missing
+                        return $out + self::FALLBACK_TO_USD;
                     }
                 }
             } catch (\Throwable) {

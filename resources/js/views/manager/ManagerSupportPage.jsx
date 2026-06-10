@@ -33,8 +33,6 @@ export default function ManagerSupportPage() {
 
   const awaitingCount = items ? items.filter((it) => it.awaiting).length : 0
 
-  // Inbox is loaded in full → filter client-side by tab (unanswered/all) then by
-  // name / @username / last-message preview.
   const q = search.trim().toLowerCase()
   const visible = items === null ? null : items.filter((it) => {
     if (tab === 'unanswered' && !it.awaiting) return false
@@ -52,7 +50,6 @@ export default function ManagerSupportPage() {
 
   useEffect(() => { load() }, [load])
 
-  // Slide the active-tab pill to the selected segment.
   useLayoutEffect(() => {
     const el = tabRefs.current[tab]
     if (!el) return
@@ -86,7 +83,6 @@ export default function ManagerSupportPage() {
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500]">{t('manager.support')}</span>
         </div>
 
-        {/* Category tabs: unanswered / all */}
         <div className="container mt-3">
           <div className="relative flex p-1 bg-[#EFEEF3] rounded-full">
             <span

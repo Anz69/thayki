@@ -18,12 +18,7 @@ use Illuminate\Support\Str;
 
 class UploadModelPhotoAction
 {
-    /**
-     * Hard ceiling — matches the FE's MAX_PHOTOS so the FE-side "you've
-     * hit the limit" message and the BE error code line up. Bumping
-     * this means changing both this and `MAX_PHOTOS` in
-     * resources/js/components/modals/ChangeMediaModal.jsx.
-     */
+
     private const MAX_PHOTOS = 6;
 
     public function execute(ModelProfile $profile, UploadedFile $file, bool $makeMain = false): ModelPhoto
@@ -112,7 +107,6 @@ class UploadModelPhotoAction
                     ->update(['is_main' => false]);
             }
 
-            /** @var ModelPhoto $photo */
             $photo = ModelPhoto::query()->create([
                 'model_profile_id' => $profile->id,
                 'disk' => $disk,

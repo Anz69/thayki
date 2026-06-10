@@ -10,14 +10,6 @@ use App\Models\PlatformEarning;
 use App\Models\WalletTransaction;
 use Illuminate\Console\Command;
 
-/**
- * Backfill platform_earnings rows for previously-confirmed payments.
- *
- * Reads each CreditPayment wallet transaction (which already carries the
- * commission rate and gross amount in `meta`) and creates a PlatformEarning
- * record if none exists. The unique constraint on payment_id makes the
- * command idempotent — repeated runs do nothing.
- */
 class BackfillPlatformEarningsCommand extends Command
 {
     protected $signature = 'platform:backfill-earnings
@@ -63,7 +55,7 @@ class BackfillPlatformEarningsCommand extends Command
                 $rate = (float) ($meta['commission'] ?? 0.0);
                 $gross = (int) ($meta['gross_minor'] ?? ($payment->amount_minor + abs((int) $tx->amount_minor)));
                 $net = (int) $tx->amount_minor;
-                // Prefer explicit value from meta; otherwise derive from gross - net.
+
                 $commissionMinor = (int) ($meta['commission_minor'] ?? ($gross - $net));
                 $confirmedAt = $payment->confirmed_at ?? $tx->created_at;
 

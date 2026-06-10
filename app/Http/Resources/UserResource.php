@@ -8,21 +8,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/**
- * @mixin User
- */
 class UserResource extends JsonResource
 {
-    /**
-     * @return array<string, mixed>
-     *
-     * Notes
-     * - `telegram_id` is intentionally NOT exposed publicly. It is the user's
-     *   primary external identifier and leaking it would let third parties
-     *   correlate accounts across services. Only the authenticated owner may
-     *   see their own telegram_id (via /auth/me with `?include=telegram_id`,
-     *   if ever needed) — which we do NOT enable by default.
-     */
+
     public function toArray(Request $request): array
     {
         return [

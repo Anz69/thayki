@@ -5,8 +5,6 @@ import { Pagination, Mousewheel, Keyboard } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
 
-// Video that autoplays muted (browsers require it) and toggles sound on tap,
-// Instagram-style, with a speaker badge showing the current state.
 function LightboxVideo({ src, poster }) {
   const ref = useRef(null)
   const [muted, setMuted] = useState(true)
@@ -43,10 +41,6 @@ export const PlayBadge = ({ size = 64 }) => (
   </span>
 )
 
-/**
- * Full-screen, swipeable lightbox for a mixed media list.
- * `media`: [{ type: 'image'|'video', url, poster? }], `index`: start slide.
- */
 export default function MediaLightbox({ media, index = 0, onClose }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose() }

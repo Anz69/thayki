@@ -10,17 +10,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Hard gate that blocks every authenticated API call from a banned user
- * after the fact. Sanctum tokens stay valid until they're explicitly
- * deleted, so without this middleware a user banned in Filament can keep
- * pinging the API as long as they hold their Bearer token.
- *
- * As an extra belt-and-braces, we also delete the current access token
- * on the way out so the next request from the same client falls back to
- * a clean 401 (matches the "your session ended" UX) instead of repeatedly
- * hitting USER_BANNED.
- */
 class EnsureUserIsActive
 {
     public function handle(Request $request, Closure $next): Response

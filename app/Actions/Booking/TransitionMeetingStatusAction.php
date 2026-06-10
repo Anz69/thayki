@@ -12,24 +12,9 @@ use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Generic, explicit state-machine transitions for a Meeting.
- *
- * NEW canonical happy path (post simplification):
- *   pending  -> accepted | rejected | expired | cancelled
- *   accepted -> paid | cancelled | expired
- *   paid     -> completed | cancelled
- *
- * The legacy `confirmed` status is kept in the enum so historical rows in
- * production are still parseable, but no transition leads INTO it any more.
- * `confirmed -> completed | cancelled` is preserved purely so historical
- * confirmed rows can still be retired cleanly.
- */
 class TransitionMeetingStatusAction
 {
-    /**
-     * @var array<string, list<string>>
-     */
+
     private const ALLOWED = [
         'pending'   => ['accepted', 'rejected', 'expired', 'cancelled'],
         'accepted'  => ['paid', 'cancelled', 'expired'],

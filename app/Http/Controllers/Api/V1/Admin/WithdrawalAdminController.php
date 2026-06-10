@@ -44,7 +44,7 @@ class WithdrawalAdminController extends Controller
 
     public function approve(Request $request, Withdrawal $withdrawal, ProcessWithdrawalAction $action): JsonResponse
     {
-        /** @var User $admin */
+
         $admin = $request->user();
 
         return ApiResponse::ok(new WithdrawalResource($action->approve($withdrawal, $admin)));
@@ -52,7 +52,7 @@ class WithdrawalAdminController extends Controller
 
     public function markPaid(Request $request, Withdrawal $withdrawal, ProcessWithdrawalAction $action): JsonResponse
     {
-        /** @var User $admin */
+
         $admin = $request->user();
 
         return ApiResponse::ok(new WithdrawalResource($action->markPaid($withdrawal, $admin)));
@@ -61,7 +61,7 @@ class WithdrawalAdminController extends Controller
     public function reject(Request $request, Withdrawal $withdrawal, ProcessWithdrawalAction $action): JsonResponse
     {
         $request->validate(['note' => ['sometimes', 'string', 'max:1024']]);
-        /** @var User $admin */
+
         $admin = $request->user();
 
         return ApiResponse::ok(new WithdrawalResource($action->reject($withdrawal, $admin, $request->input('note'))));

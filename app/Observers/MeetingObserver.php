@@ -14,17 +14,6 @@ use App\Models\Meeting;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
-/**
- * When a meeting transitions into Completed, the model has effectively
- * fulfilled the deal — auto-confirm any still-Submitted/Pending payment so
- * the model wallet is credited without a separate manual admin step.
- *
- * The observer covers ALL writes (state-machine transitions, Filament direct
- * edits, console scripts), because Eloquent fires `updated` regardless of the
- * write path. ConfirmPaymentAction is itself idempotent (unique on payment_id
- * for the platform earning, idempotent credit by reference), so multiple
- * triggers do not double-credit.
- */
 class MeetingObserver
 {
     public function updated(Meeting $meeting): void
@@ -70,12 +59,6 @@ class MeetingObserver
         }
     }
 
-    /**
-     * Pick a deterministic actor for the auto-confirm audit trail. Prefers
-     * the authenticated admin (Filament edits, API calls), then optional
-     * {@see config('wallet.system_actor_user_id')} for environments without
-     * an admin row, then the first active admin.
-     */
     private function systemActor(Meeting $meeting): ?User
     {
         $user = auth()->user();

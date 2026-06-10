@@ -15,7 +15,7 @@ class EnsureMeetingChatAction
     public function execute(Meeting $meeting): Chat
     {
         return DB::transaction(function () use ($meeting): Chat {
-            /** @var Chat $chat */
+
             $chat = Chat::query()->firstOrCreate(
                 ['meeting_id' => $meeting->id],
                 ['type' => ChatType::Meeting],

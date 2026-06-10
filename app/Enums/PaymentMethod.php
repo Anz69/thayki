@@ -21,9 +21,6 @@ enum PaymentMethod: string
         };
     }
 
-    /**
-     * @return list<self>
-     */
     public static function withdrawalDefaults(): array
     {
         return [self::Usdt, self::Btc, self::Ton];

@@ -8,16 +8,10 @@ use App\Enums\ChatType;
 use App\Models\Chat;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Chat>
- */
 class ChatFactory extends Factory
 {
     protected $model = Chat::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [

@@ -26,7 +26,7 @@ class MeetingController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $query = Meeting::query()->with(['modelProfile.photos', 'modelProfile.user', 'client']);
@@ -100,7 +100,7 @@ class MeetingController extends Controller
 
     public function latest(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $meeting = Meeting::query()
@@ -128,7 +128,7 @@ class MeetingController extends Controller
     public function show(Request $request, Meeting $meeting): JsonResponse
     {
         $this->authorizeAccess($request->user(), $meeting);
-        /** @var User $user */
+
         $user = $request->user();
         $meeting = $this->expireStalePendingIfNeeded($meeting, $user);
 
@@ -137,7 +137,7 @@ class MeetingController extends Controller
 
     public function store(CreateMeetingRequest $request, CreateMeetingAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $meeting = $action->execute(
@@ -157,7 +157,7 @@ class MeetingController extends Controller
 
     public function accept(Request $request, Meeting $meeting, TransitionMeetingStatusAction $transition): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $this->authorizeModelOwner($user, $meeting);
 
@@ -168,7 +168,7 @@ class MeetingController extends Controller
 
     public function reject(Request $request, Meeting $meeting, TransitionMeetingStatusAction $transition): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $this->authorizeModelOwner($user, $meeting);
 
@@ -180,7 +180,7 @@ class MeetingController extends Controller
 
     public function cancel(Request $request, Meeting $meeting, TransitionMeetingStatusAction $transition): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $this->authorizeAccess($user, $meeting);
         $request->validate(['reason' => ['sometimes', 'string', 'max:255']]);
@@ -190,16 +190,9 @@ class MeetingController extends Controller
         return ApiResponse::ok(new MeetingResource($meeting->load(['modelProfile.photos', 'modelProfile.user', 'client'])));
     }
 
-    /**
-     * Legacy endpoint. The product flow no longer asks the model to "confirm"
-     * after payment — paid is treated as the final positive state. We keep
-     * the route defined for backwards compatibility, but it now returns the
-     * meeting as-is (idempotent no-op) rather than transitioning to a status
-     * that the simplified state machine no longer accepts.
-     */
     public function confirm(Request $request, Meeting $meeting, TransitionMeetingStatusAction $transition): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $this->authorizeModelOwner($user, $meeting);
 
@@ -208,7 +201,7 @@ class MeetingController extends Controller
 
     public function complete(Request $request, Meeting $meeting, TransitionMeetingStatusAction $transition): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $this->authorizeAccess($user, $meeting);
 

@@ -29,7 +29,7 @@ class ConfirmPaymentAction
     public function execute(Payment $payment, User $actor): Payment
     {
         return DB::transaction(function () use ($payment, $actor): Payment {
-            /** @var Payment $payment */
+
             $payment = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
 
             if ($payment->status === PaymentStatus::Confirmed) {
@@ -87,7 +87,6 @@ class ConfirmPaymentAction
                 ],
             );
 
-            // Idempotent ledger entry — unique on payment_id guards re-confirmation.
             PlatformEarning::query()->firstOrCreate(
                 ['payment_id' => $payment->id],
                 [

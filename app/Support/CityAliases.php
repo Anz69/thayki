@@ -4,16 +4,9 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-/**
- * Bilingual (RU/EN) aliases for popular cities so search matches a lead's city
- * regardless of which language/spelling it was saved in ("Moscow" vs "Москва").
- *
- * Matching is fuzzy-substring in both directions, so partial input works too
- * ("моск" → Москва/Moscow, "spb" → Санкт-Петербург/Питер/SPb).
- */
 final class CityAliases
 {
-    /** @var array<int, array<int, string>> Each group lists equivalent names. */
+
     private const GROUPS = [
         ['москва', 'moscow', 'мск', 'msk'],
         ['санкт-петербург', 'saint petersburg', 'st petersburg', 'st. petersburg', 'петербург', 'питер', 'спб', 'пбург', 'spb', 'sankt-peterburg', 'piter'],
@@ -59,19 +52,13 @@ final class CityAliases
         ['мадрид', 'madrid'],
     ];
 
-    /**
-     * Expand a search term into all equivalent city spellings (the original
-     * term always included). Returns just `[term]` when no city group matches.
-     *
-     * @return array<int, string>
-     */
     public static function expand(string $term): array
     {
         $needle = mb_strtolower(trim($term));
         if ($needle === '') {
             return [];
         }
-        // Too short to disambiguate — don't expand (avoids matching everything).
+
         if (mb_strlen($needle) < 2) {
             return [$term];
         }
@@ -79,9 +66,7 @@ final class CityAliases
         $out = [$term];
         foreach (self::GROUPS as $group) {
             foreach ($group as $name) {
-                // When either side is a short token/abbreviation (msk, spb, ny,
-                // екб…) require an exact match, otherwise it false-matches via
-                // substring ("omsk" ⊃ "msk", "nizhny" ⊃ "ny").
+
                 $shortest = min(mb_strlen($name), mb_strlen($needle));
                 $match = $shortest <= 3
                     ? $needle === $name

@@ -8,21 +8,10 @@ use App\Models\AppSetting;
 use App\Models\ModelProfile;
 use App\Models\PlatformEarning;
 
-/**
- * Single source of truth for commission resolution and arithmetic.
- *
- * The rate is read at confirmation time and snapshotted into PlatformEarning;
- * existing earnings are never recomputed when settings change.
- */
 class CommissionService
 {
     public const SETTING_DEFAULT_RATE = 'commission_default';
 
-    /**
-     * Resolve the effective rate for a given model profile.
-     *
-     * @return array{rate: float, source: string}
-     */
     public function resolveRate(?ModelProfile $profile): array
     {
         if ($profile !== null && $profile->commission_override !== null) {
@@ -38,12 +27,6 @@ class CommissionService
         ];
     }
 
-    /**
-     * Compute the breakdown for a gross amount and a profile.
-     *
-     * Rounding rule: commission is rounded once, net is gross - commission.
-     * This avoids drift between two independent rounds (one satang).
-     */
     public function calculate(int $grossMinor, ?ModelProfile $profile): CommissionBreakdown
     {
         $resolved = $this->resolveRate($profile);
@@ -62,9 +45,6 @@ class CommissionService
         );
     }
 
-    /**
-     * Default rate from AppSetting, falling back to config('payments.commission').
-     */
     public function defaultRate(): float
     {
         $stored = AppSetting::get(self::SETTING_DEFAULT_RATE);

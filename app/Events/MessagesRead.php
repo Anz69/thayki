@@ -23,7 +23,6 @@ class MessagesRead implements ShouldBroadcastNow
         public readonly string $readAt,
     ) {}
 
-    /** @return array<int, Channel> */
     public function broadcastOn(): array
     {
         return [new PrivateChannel('chats.'.$this->chatId)];
@@ -34,7 +33,6 @@ class MessagesRead implements ShouldBroadcastNow
         return 'messages.read';
     }
 
-    /** @return array<string, mixed> */
     public function broadcastWith(): array
     {
         return [

@@ -179,12 +179,10 @@ export default function LoginPage() {
   return (
     <section className="min-h-dvh bg-white flex flex-col items-center justify-center gap-6 px-6">
 
-      {/* Logo */}
       <div ref={logoRef} className="invisible">
         <img src="/img/thaiky.png" alt="" className="size-36 object-contain drop-shadow-sm" />
       </div>
 
-      {/* Heading */}
       <div className="flex flex-col items-center gap-2 text-center">
         <h1
           ref={titleRef}
@@ -202,7 +200,6 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Auth card */}
       <div
         ref={cardRef}
         className="invisible w-full max-w-[320px] bg-[#F7F6FA] rounded-3xl p-5 flex flex-col gap-4"
@@ -274,7 +271,7 @@ export default function LoginPage() {
               rel="noopener noreferrer"
               className="w-full py-3 rounded-2xl bg-[#229ED9]/10 text-[#229ED9] text-sm/[100%] font-[500] text-center flex items-center justify-center gap-2 active:opacity-70 transition-opacity"
             >
-            
+
               Открыть бота в Telegram
             </a>
 
@@ -304,7 +301,6 @@ export default function LoginPage() {
         )}
       </div>
 
-      {/* Footer */}
       <p
         ref={footerRef}
         className="invisible text-[#C0BFC4] text-[11px]/[160%] font-medium text-center max-w-[220px]"

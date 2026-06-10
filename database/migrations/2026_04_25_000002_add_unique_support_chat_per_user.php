@@ -6,11 +6,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Add performance indexes for chat queries and message read tracking.
- * Unique protection for support chats is handled at the application layer
- * via lockForUpdate in EnsureSupportChatAction.
- */
 return new class extends Migration
 {
     public function up(): void

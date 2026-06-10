@@ -16,9 +16,6 @@ class InvalidInitDataException extends ApiException
         return new self('INIT_DATA_EXPIRED', 'Telegram initData is expired.', 401);
     }
 
-    /**
-     * @param  array<string, mixed>  $details
-     */
     public static function malformed(string $message = 'Telegram initData is malformed.', array $details = []): self
     {
         return new self('INIT_DATA_INVALID', $message, 422, $details);

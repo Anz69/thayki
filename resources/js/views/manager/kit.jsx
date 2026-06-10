@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 
-// Status palette — same look as the client «Мои заявки» chips.
 export const STATUS = {
   new:              { key: 'new',             bg: '#FDE8F5', fg: '#E2319B', dot: '#E2319B' },
   in_progress:      { key: 'inProgress',      bg: '#FFF1DC', fg: '#C77A12', dot: '#E0921C' },
@@ -21,7 +20,6 @@ export function StatusChip({ status }) {
   )
 }
 
-// Section heading — identical to the client MorePage SectionLabel.
 export function SectionLabel({ children }) {
   return (
     <p className="text-[#7F7F7F] text-[14px]/[100%] font-medium uppercase tracking-[0.1em] px-1">{children}</p>

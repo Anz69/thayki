@@ -11,8 +11,8 @@ function StarSVG({ size, color }) {
 }
 const STAR_SIZE = 168
 const STAR_H    = Math.round(STAR_SIZE * (156 / 162))
-const CX        = STAR_SIZE / 2          
-const CY        = STAR_H / 2            
+const CX        = STAR_SIZE / 2
+const CY        = STAR_H / 2
 const SIDE_SIZE = 148
 const SPARKLES = [
   { dx: -60, dy: -88, r: 4.5 },
@@ -23,8 +23,8 @@ const SPARKLES = [
   { dx:  38, dy:  66, r: 4   },
 ].map((s) => ({
   r:    s.r,
-  top:  CY + s.dy - s.r,   
-  left: CX + s.dx - s.r,   
+  top:  CY + s.dy - s.r,
+  left: CX + s.dx - s.r,
 }))
 export default function HowItWorksStep3({ isActive }) {
   const centerRef = useRef(null)
@@ -37,8 +37,6 @@ export default function HowItWorksStep3({ isActive }) {
     gsap.set(centerRef.current, { autoAlpha: 0, scale: 0.42 })
     gsap.set(dotsRef.current.filter(Boolean), { autoAlpha: 0, scale: 0 })
   }, [])
-  // Reset + replay whenever this step becomes active (not just on mount), so it
-  // doesn't sit frozen at its end-state when you navigate to it.
   useEffect(() => {
     if (!isActive) return undefined
     const center = centerRef.current

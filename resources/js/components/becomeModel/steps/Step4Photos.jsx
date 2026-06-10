@@ -150,7 +150,6 @@ export default function Step4Photos({ isActive, stepNum, totalSteps, onNext }) {
         try {
           file = await prepareImageFileForUpload(file)
         } catch {
-          /* keep original */
         }
 
         if (isFileProbablyTooLarge(file)) {

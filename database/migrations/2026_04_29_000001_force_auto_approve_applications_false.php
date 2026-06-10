@@ -17,7 +17,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Intentionally no-op: this migration enforces a safe default.
+
     }
 };
 

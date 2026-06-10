@@ -10,17 +10,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
 
-/**
- * Canonical envelope for every V1 API response.
- *
- * Success:  { ok: true,  data: ..., meta?: ... }
- * Error:    { ok: false, error: { code, message, details? } }
- */
 final class ApiResponse
 {
-    /**
-     * @param  array<string, mixed>|null  $meta
-     */
+
     public static function ok(mixed $data = null, ?array $meta = null, int $status = 200): JsonResponse
     {
         [$payload, $resolvedMeta] = self::resolveDataAndMeta($data, $meta);
@@ -44,9 +36,6 @@ final class ApiResponse
         return response()->json(null, 204);
     }
 
-    /**
-     * @param  array<string, mixed>|null  $details
-     */
     public static function error(string $code, string $message, ?array $details = null, int $status = 400): JsonResponse
     {
         $error = [
@@ -64,10 +53,6 @@ final class ApiResponse
         ], $status);
     }
 
-    /**
-     * @param  array<string, mixed>|null  $meta
-     * @return array{0: mixed, 1: array<string, mixed>|null}
-     */
     private static function resolveDataAndMeta(mixed $data, ?array $meta): array
     {
         if ($data instanceof ResourceCollection) {

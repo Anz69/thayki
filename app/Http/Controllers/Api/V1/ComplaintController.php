@@ -21,7 +21,7 @@ class ComplaintController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $meetingId = $request->query('meeting_id');
@@ -38,12 +38,12 @@ class ComplaintController extends Controller
 
     public function store(StoreComplaintRequest $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $meetingId = $request->input('meeting_id');
         if ($meetingId !== null) {
-            /** @var Meeting|null $meeting */
+
             $meeting = Meeting::query()->find((int) $meetingId);
             if ($meeting === null) {
                 throw DomainException::invalid('MEETING_NOT_FOUND', 'Meeting not found.');
@@ -68,7 +68,6 @@ class ComplaintController extends Controller
             }
         }
 
-        /** @var Complaint $complaint */
         $body = trim((string) $request->input('body', ''));
         $complaint = Complaint::query()->create([
             'user_id'    => $user->id,

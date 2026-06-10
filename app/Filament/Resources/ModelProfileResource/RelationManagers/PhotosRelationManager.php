@@ -10,10 +10,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * Manages a prototype profile's photos. Upload accepts ANY number of photos
- * (no 6-cap — that limit only existed in the old model self-upload flow).
- */
 class PhotosRelationManager extends RelationManager
 {
     protected static string $relationship = 'photos';

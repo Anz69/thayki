@@ -14,7 +14,6 @@ class PaymentResource extends Resource
 {
     protected static ?string $model = Payment::class;
 
-    // Legacy payment flow — disabled in the lead-gen product.
     protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';

@@ -24,7 +24,7 @@ class TelegramWebAuthController extends Controller
     public function handle(Request $request): JsonResponse
     {
         if (Auth::check()) {
-            /** @var User $user */
+
             $user = Auth::user();
 
             return response()->json([
@@ -48,9 +48,8 @@ class TelegramWebAuthController extends Controller
         $payload    = $validated['user'];
         $telegramId = (int) $payload['id'];
 
-        /** @var User $user */
         $user = DB::transaction(function () use ($payload, $telegramId): User {
-            /** @var User $user */
+
             $user = User::query()->lockForUpdate()->firstOrCreate(
                 ['telegram_id' => $telegramId],
                 [
@@ -103,7 +102,6 @@ class TelegramWebAuthController extends Controller
         ]);
     }
 
-    /** @return array<string, mixed> */
     private function formatUser(User $user): array
     {
         return [

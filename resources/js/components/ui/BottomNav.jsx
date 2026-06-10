@@ -31,7 +31,6 @@ function getSlot(pathname, clientStatus, modelStatus, isModel) {
 
 function getTabsForSlot(slot, isManager = false) {
   if (slot === 'tabs') {
-    // Managers don't create leads — hide the «Подобрать» tab for them.
     return isManager ? TABS.filter((tab) => tab.path !== '/request') : TABS
   }
   return null
@@ -53,8 +52,6 @@ export default function BottomNav() {
   const auth         = useAuthStore()
 
   const { pathname } = location
-  // '/request' is NOT hidden here — getSlot returns null for it so the pill
-  // animates out smoothly (the page shows its own submit bar instead).
   const hiddenPaths = new Set(['/become-model', '/application-pending', '/welcome'])
   const isHiddenPath = hiddenPaths.has(pathname) || pathname === '/'
 
@@ -311,7 +308,6 @@ export default function BottomNav() {
 
   }, [activeIndex, renderedSlot])
 
-  // Re-place the active pill when labels change width (e.g. language switch)
   useEffect(() => {
     if (renderedSlot !== 'tabs' || activeIndex < 0) return
     const id = requestAnimationFrame(() => {

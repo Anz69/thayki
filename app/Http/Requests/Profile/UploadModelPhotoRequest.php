@@ -13,9 +13,6 @@ class UploadModelPhotoRequest extends FormRequest
         return ($user = $this->user()) !== null && $user->isModel();
     }
 
-    /**
-     * @return array<string, array<int, string>>
-     */
     public function rules(): array
     {
         return [

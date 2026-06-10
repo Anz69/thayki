@@ -12,7 +12,6 @@ export function emitActiveMeetingsRefresh() {
     try {
       fn()
     } catch {
-      /* no-op */
     }
   })
 }

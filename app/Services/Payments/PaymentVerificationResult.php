@@ -8,9 +8,7 @@ use App\Enums\PaymentStatus;
 
 final class PaymentVerificationResult
 {
-    /**
-     * @param  array<string, mixed>  $raw
-     */
+
     public function __construct(
         public readonly PaymentStatus $status,
         public readonly ?string $txHash = null,

@@ -4,9 +4,6 @@ import gsap from 'gsap'
 import '../css/app.css'
 import '@/i18n'
 
-// Silence "GSAP target null not found" warnings that appear when refs point
-// to conditionally-rendered elements. GSAP already handles null gracefully
-// (skips the tween); this just removes the console noise.
 gsap.config({ nullTargetWarn: false })
 
 function resolveBuildId() {
@@ -99,20 +96,9 @@ try {
   window.Telegram?.WebApp?.onEvent?.('viewportChanged', () => applyDeepLink('warm'))
 } catch {}
 
-// Users who open the app via a friend's deep link skip /start, so the bot has no
-// permission to message them. On launch we ask Telegram for write access unless
-// the bot can already reach them (allows_write_to_pm) or we've already gotten a
-// grant on this device.
-//
-// IMPORTANT: this must survive the SDK race — `window.Telegram.WebApp` (and
-// especially `initDataUnsafe.user`) may not be populated the instant this bundle
-// runs. The old one-shot check silently did nothing in that window and never
-// retried, so the prompt never appeared. Poll until the SDK is ready, then ask.
 function requestTelegramWriteAccess() {
   const KEY = '__tg_write_access_granted__'
 
-  // Notify the backend so the bot sends the right welcome (strange stub vs full
-  // welcome) now that it can message this user. Waits for the auth token.
   const pingBackend = (attempt = 0) => {
     let token = null
     try { token = localStorage.getItem('_tg_auth_token') } catch {}
@@ -123,22 +109,15 @@ function requestTelegramWriteAccess() {
     }).catch(() => {})
   }
 
-  let asked = false // popup already shown this session — don't double-fire
+  let asked = false
 
-  // Returns true once the decision is made (popup shown / nothing to ask / not
-  // possible). Returns false only while the SDK isn't ready yet, so callers can
-  // keep retrying.
   const tryAsk = () => {
     if (asked) return true
     const tg = window.Telegram?.WebApp
     const u = tg?.initDataUnsafe?.user
-    if (!tg || !u) return false // SDK/user not ready yet — keep waiting
+    if (!tg || !u) return false
     try { tg.ready() } catch {}
 
-    // Bot can ALREADY message them — opened via a link that pre-grants write
-    // access (allows_write_to_pm), or we already got a grant on this device.
-    // No popup needed, but still trigger the welcome (backend dedupes), otherwise
-    // a deep-link user who arrives pre-granted never gets the welcome message.
     if (u.allows_write_to_pm === true || localStorage.getItem(KEY) === '1') {
       asked = true
       pingBackend()
@@ -146,24 +125,21 @@ function requestTelegramWriteAccess() {
     }
     if (typeof tg.requestWriteAccess !== 'function') { asked = true; return true }
 
-    asked = true // mark BEFORE showing so a gesture + the poll can't double-fire
+    asked = true
     try {
       tg.requestWriteAccess((granted) => {
-        if (!granted) return // declined → not stored, so we ask again next launch
+        if (!granted) return
         try { localStorage.setItem(KEY, '1') } catch {}
         pingBackend()
       })
-    } catch { /* older client without requestWriteAccess */ }
+    } catch { }
     return true
   }
 
-  // 1) Auto: poll until the SDK is ready (up to ~9s), then ask.
   let tries = 0
   const poll = () => { if (tryAsk()) return; if (tries++ < 30) setTimeout(poll, 300) }
   setTimeout(poll, 800)
 
-  // 2) Gesture fallback: some Telegram clients suppress an auto-popup that wasn't
-  //    triggered by a user action. The first tap guarantees the prompt appears.
   const onGesture = () => {
     if (tryAsk() && asked) {
       window.removeEventListener('pointerdown', onGesture)

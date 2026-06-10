@@ -12,25 +12,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
-/**
- * @property int $id
- * @property int $client_id
- * @property int $model_profile_id
- * @property Carbon $scheduled_at
- * @property int $duration_hours
- * @property int $price_thb
- * @property MeetingStatus $status
- * @property Carbon|null $accepted_at
- * @property Carbon|null $paid_at
- * @property Carbon|null $confirmed_at
- * @property Carbon|null $completed_at
- * @property Carbon|null $cancelled_at
- * @property Carbon|null $closed_at
- * @property string|null $cancel_reason
- */
 class Meeting extends Model
 {
-    /** @use HasFactory<MeetingFactory> */
+
     use HasFactory;
 
     protected $guarded = ['id'];
@@ -51,25 +35,21 @@ class Meeting extends Model
         ];
     }
 
-    /** @return BelongsTo<User, $this> */
     public function client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'client_id');
     }
 
-    /** @return BelongsTo<ModelProfile, $this> */
     public function modelProfile(): BelongsTo
     {
         return $this->belongsTo(ModelProfile::class);
     }
 
-    /** @return HasOne<Payment, $this> */
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);
     }
 
-    /** @return HasOne<Chat, $this> */
     public function chat(): HasOne
     {
         return $this->hasOne(Chat::class);

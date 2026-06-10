@@ -8,10 +8,6 @@ use App\Models\ModelProfile;
 use App\Support\RuTranslit;
 use Illuminate\Console\Command;
 
-/**
- * Backfills `display_name_en` for existing prototype profiles by
- * transliterating the Russian `display_name`.
- */
 class RelocaleModelProfilesCommand extends Command
 {
     protected $signature = 'models:relocale {--force : Overwrite existing EN names}';

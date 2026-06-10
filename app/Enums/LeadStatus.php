@@ -27,7 +27,6 @@ enum LeadStatus: string
         };
     }
 
-    /** Statuses a manager can pick manually in the panel. */
     public static function managerSelectable(): array
     {
         return [

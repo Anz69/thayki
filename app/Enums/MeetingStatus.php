@@ -15,7 +15,6 @@ enum MeetingStatus: string
     case Completed = 'completed';
     case Cancelled = 'cancelled';
 
-    /** @return list<self> */
     public static function openStatuses(): array
     {
         return [self::Pending, self::Accepted, self::Paid, self::Confirmed];

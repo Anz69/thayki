@@ -45,7 +45,7 @@ class ModelApplicationAdminController extends Controller
 
     public function approve(Request $request, ModelApplication $application, ApproveModelApplicationAction $action): JsonResponse
     {
-        /** @var User $admin */
+
         $admin = $request->user();
         $application = $action->execute($application, $admin);
 
@@ -58,7 +58,6 @@ class ModelApplicationAdminController extends Controller
             'note' => ['sometimes', 'string', 'max:1024'],
         ]);
 
-        /** @var User $admin */
         $admin = $request->user();
         $application = $action->execute($application, $admin, $request->input('note'));
 

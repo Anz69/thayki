@@ -20,7 +20,6 @@ class PlatformEarningResource extends Resource
 {
     protected static ?string $model = PlatformEarning::class;
 
-    // Legacy meeting-based revenue tracking — disabled in the lead-gen product.
     protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';

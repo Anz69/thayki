@@ -9,14 +9,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
-/**
- * Diagnostic tool for Telegram bot token + initData validation.
- *
- * Usage:
- *   php artisan telegram:verify                    — checks configured bot token
- *   php artisan telegram:verify --debug-last       — shows last HMAC failure from cache
- *   php artisan telegram:verify --init-data="..."  — validates raw initData manually
- */
 class TelegramVerifyCommand extends Command
 {
     protected $signature = 'telegram:verify
@@ -50,8 +42,6 @@ class TelegramVerifyCommand extends Command
         return self::SUCCESS;
     }
 
-    // ─── --debug-last ──────────────────────────────────────────────────────────
-
     private function showDebugLast(): int
     {
         $snap = Cache::get('tg:hmac_debug:last');
@@ -82,7 +72,6 @@ class TelegramVerifyCommand extends Command
         $raw = $snap['raw_init_data'] ?? '';
         $this->line('  ' . substr($raw, 0, 300) . (strlen($raw) > 300 ? '...' : ''));
 
-        // Re-validate with current token to see if it matches now
         $this->line('');
         $this->info('Re-validating with current TELEGRAM_BOT_TOKEN …');
         $token    = $this->resolveToken();
@@ -111,8 +100,6 @@ class TelegramVerifyCommand extends Command
         $this->line('');
         return self::SUCCESS;
     }
-
-    // ─── helpers ──────────────────────────────────────────────────────────────
 
     private function resolveToken(): string
     {
@@ -176,7 +163,6 @@ class TelegramVerifyCommand extends Command
         }
     }
 
-    /** @return array<string,string> */
     private function parseQs(string $qs): array
     {
         $pairs = [];

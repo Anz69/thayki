@@ -44,16 +44,6 @@ class AppServiceProvider extends ServiceProvider
         Meeting::observe(MeetingObserver::class);
     }
 
-    /**
-     * Single source of truth for event→listener wiring.
-     *
-     * Laravel 11/12 also runs convention-based auto-discovery on
-     * app/Listeners/ when EventServiceProvider is present — that is what
-     * was causing every Telegram notification to fire twice when we also
-     * had EventServiceProvider::$listen filled in. We now drive everything
-     * from this one place and EventServiceProvider was removed from
-     * bootstrap/providers.php to make double-registration impossible.
-     */
     private function registerEventListeners(): void
     {
         Event::listen(MeetingStatusChanged::class, SendMeetingStatusNotification::class);

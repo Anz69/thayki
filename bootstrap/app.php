@@ -34,17 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         apiPrefix: 'api',
     )
-    // The mini app authenticates the /broadcasting/auth request with a Sanctum
-    // Bearer token, so the channel-auth route must use the sanctum guard —
-    // otherwise private channel subscriptions are denied (401) and chat messages
-    // never arrive in real time.
-    //
-    // EnsureFrontendRequestsAreStateful gives this route the SAME auth resolution
-    // as the api/* group (which works in prod): on the stateful domain it loads
-    // the session and lets Sanctum resolve the user via session-or-token, instead
-    // of token-only. Without it, broadcasting/auth was the odd one out and 401'd
-    // behind the prod proxy while api/* kept working. CSRF for it is disabled
-    // below (same as api/*) so the added stateful layer can't introduce a 419.
+
     ->withBroadcasting(
         __DIR__.'/../routes/channels.php',
         attributes: ['middleware' => [EnsureFrontendRequestsAreStateful::class, 'auth:sanctum']],
@@ -68,40 +58,15 @@ return Application::configure(basePath: dirname(__DIR__))
             ForceJsonResponse::class,
         ]);
 
-        // Append after authentication so $request->user() is populated.
-        // EnsureUserIsActive 403's any banned user and revokes their
-        // current Sanctum token on the way out — without this a banned
-        // user can keep using the API forever, because Sanctum tokens
-        // remain valid until explicitly deleted.
-        // EnsureUserIsVerified is the server-side enforcement of the
-        // "double-bottom" flow — strange users can authenticate and read
-        // their own profile, but cannot reach catalog / booking / chats.
         $middleware->api(append: [
             EnsureUserIsActive::class,
             EnsureUserIsVerified::class,
         ]);
 
-        // Telegram bot webhooks come in as POSTs from Telegram's servers and
-        // can never carry a CSRF token. Without this exception every update
-        // bounces with HTTP 419 and Telegram retries forever (then disables
-        // the webhook). The URL is already protected by the secret-in-path
-        // pattern (see TelegramBotWebhookController + telegram.webhook_secret).
-        //
-        // The whole `api/*` surface is stateless, Bearer-token auth (Sanctum
-        // personal access tokens issued to the Mini App). Token auth is immune
-        // to CSRF by construction — a browser never auto-attaches the
-        // Authorization header cross-site — so CSRF here adds no protection and
-        // actively breaks things: when the session cookie / <meta> csrf token
-        // drift (long-lived webview, language change, app re-open), any non-GET
-        // call (POST /leads, PATCH /me) returns a false 419, which the client
-        // interceptor escalates to a forced re-login → "sign-in error" and a
-        // wiped form. Exempting api/* removes that whole failure class.
         $middleware->validateCsrfTokens(except: [
             'telegram/webhook/*',
             'api/*',
-            // Bearer-token channel auth (Sanctum). See withBroadcasting above —
-            // it now runs the stateful middleware for parity with api/*, which
-            // would otherwise enforce CSRF and intermittently 419 the handshake.
+
             'broadcasting/auth',
         ]);
     })

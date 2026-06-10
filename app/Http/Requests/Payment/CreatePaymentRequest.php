@@ -15,9 +15,6 @@ class CreatePaymentRequest extends FormRequest
         return $this->user() !== null;
     }
 
-    /**
-     * @return array<string, array<int, mixed>>
-     */
     public function rules(): array
     {
         $userId = (int) ($this->user()?->id ?? 0);

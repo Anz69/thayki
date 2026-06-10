@@ -30,7 +30,7 @@ class ManagerResource extends Resource
 
     public static function form(Form $form): Form
     {
-        // Reuse the same user form (role select included → can demote/promote).
+
         return UserResource::form($form);
     }
 

@@ -30,7 +30,7 @@ class ChatController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $perPage = min(100, max(1, (int) $request->input('per_page', 50)));
@@ -84,7 +84,7 @@ class ChatController extends Controller
 
     public function showForMeeting(Request $request, Meeting $meeting, EnsureMeetingChatAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $profile = $user->modelProfile()->first();
@@ -102,7 +102,7 @@ class ChatController extends Controller
 
     public function support(Request $request, EnsureSupportChatAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $chat = $action->execute($user)->load('participants.user');
@@ -112,7 +112,7 @@ class ChatController extends Controller
 
     public function messages(Request $request, Chat $chat): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         if (! $this->canAccessChat($user, $chat)) {
             throw DomainException::forbidden('CHAT_FORBIDDEN', 'Not a participant.');
@@ -131,8 +131,6 @@ class ChatController extends Controller
 
         $meta = ['cursor' => ['next_before_id' => $next, 'limit' => $limit]];
 
-        // Surface lead status so the client can disable the composer on a
-        // closed/completed lead (it's read-only — see postMessage guard).
         if ($chat->type === ChatType::Lead) {
             $lead = Lead::query()->where('chat_id', $chat->id)->first();
             if ($lead !== null) {
@@ -152,10 +150,9 @@ class ChatController extends Controller
 
     public function postMessage(PostMessageRequest $request, Chat $chat, PostMessageAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
-        // Closed / completed leads are read-only — nobody can keep writing in them.
         if ($chat->type === ChatType::Lead) {
             $leadStatus = Lead::query()->where('chat_id', $chat->id)->value('status');
             if (in_array($leadStatus, [LeadStatus::Closed->value, LeadStatus::Completed->value], true)) {
@@ -163,11 +160,9 @@ class ChatController extends Controller
             }
         }
 
-        // A manager replying in a chat they haven't joined yet.
         if (! $chat->isParticipant($user) && $user->role === UserRole::Manager) {
             if ($chat->type === ChatType::Lead) {
-                // Lead chats require accepting the lead first — only the assigned
-                // manager may write (so opening from a push can't bypass accept).
+
                 $lead = Lead::query()->where('chat_id', $chat->id)->first();
                 if ($lead === null || $lead->manager_id !== $user->id) {
                     throw DomainException::forbidden(
@@ -202,10 +197,6 @@ class ChatController extends Controller
         return ApiResponse::created(new MessageResource($message->load('sender')));
     }
 
-    /**
-     * Lead chats track a conversational status: when the client writes it goes
-     * back to "in progress"; when the manager writes it becomes "awaiting client".
-     */
     private function advanceLeadStatus(Chat $chat, User $sender): void
     {
         if ($chat->type !== ChatType::Lead) {
@@ -228,7 +219,6 @@ class ChatController extends Controller
         }
     }
 
-    /** Participants, plus staff (admin always; manager on lead/support chats). */
     private function canAccessChat(User $user, Chat $chat): bool
     {
         if ($chat->isParticipant($user)) {
@@ -244,7 +234,7 @@ class ChatController extends Controller
 
     public function markRead(Request $request, Chat $chat): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         if (! $this->canAccessChat($user, $chat)) {
             throw DomainException::forbidden('CHAT_FORBIDDEN', 'Not a participant.');
@@ -252,16 +242,12 @@ class ChatController extends Controller
 
         $now = now();
 
-        // Participant read cursor (only when the reader is an actual participant).
         if ($chat->isParticipant($user)) {
             $chat->participants()
                 ->where('user_id', $user->id)
                 ->update(['last_read_at' => $now]);
         }
 
-        // Mark inbound messages read. This also covers staff reading support/lead
-        // chats, where they aren't listed as participants — otherwise the support
-        // inbox unread badge (counted via messages.read_at) would never clear.
         Message::query()
             ->where('chat_id', $chat->id)
             ->whereNull('read_at')

@@ -14,7 +14,6 @@ class LeadPaymentResource extends Resource
 {
     protected static ?string $model = LeadPayment::class;
 
-    /** Approximate currency → USD multipliers for the earnings total. */
     private const RATES = ['USD' => 1.0, 'EUR' => 1.08, 'RUB' => 0.011, 'THB' => 0.028];
 
     private static function toUsd(int $amountMinor, ?string $currency): int

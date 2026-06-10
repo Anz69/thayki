@@ -9,16 +9,10 @@ use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<WalletTransaction>
- */
 class WalletTransactionFactory extends Factory
 {
     protected $model = WalletTransaction::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [

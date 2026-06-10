@@ -11,7 +11,7 @@ export default function BookingPage() {
                     <h1 className="text-black text-2xl/[100%] font-medium">Встреча</h1>
                 </div>
             </header>
-            <section > 
+            <section >
             </section>
         </main>
     )

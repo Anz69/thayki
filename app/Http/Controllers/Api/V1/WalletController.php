@@ -20,10 +20,9 @@ class WalletController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
-        /** @var Wallet $wallet */
         $wallet = Wallet::query()->firstOrCreate(
             ['user_id' => $user->id],
             ['balance_minor' => 0, 'locked_minor' => 0, 'currency' => 'THB', 'version' => 0],
@@ -34,10 +33,9 @@ class WalletController extends Controller
 
     public function transactions(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
-        /** @var Wallet $wallet */
         $wallet = Wallet::query()->firstOrCreate(
             ['user_id' => $user->id],
             ['balance_minor' => 0, 'locked_minor' => 0, 'currency' => 'THB', 'version' => 0],
@@ -55,7 +53,7 @@ class WalletController extends Controller
 
     public function withdrawals(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $paginator = Withdrawal::query()
             ->where('user_id', $user->id)
@@ -80,7 +78,7 @@ class WalletController extends Controller
 
     public function requestWithdrawal(RequestWithdrawalRequest $request, RequestWithdrawalAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $withdrawal = $action->execute(
@@ -91,14 +89,9 @@ class WalletController extends Controller
         return ApiResponse::created(new WithdrawalResource($withdrawal));
     }
 
-    /**
-     * Returns the latest non-terminal withdrawal for the authenticated user.
-     * Used by the frontend to pre-check whether a pending withdrawal exists
-     * before showing the withdrawal form.
-     */
     public function withdrawalStatus(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $latest = Withdrawal::query()

@@ -13,19 +13,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Encapsulates the bot's /start logic.
- *
- * Two paths:
- *   1. Bare `/start`: greet the user with the public/strange message —
- *      "join our chat". User stays strange (or becomes strange if new).
- *   2. `/start <token>`: look up token in `start_invites`. If valid:
- *        - kind=verify  → flip is_strange=false, send full welcome.
- *        - kind=model   → flip is_strange=false AND nudge to "become a model".
- *      Each token is single-use per (token,user) and respects max_uses.
- *
- * Always captures `tg_chat_id` so subsequent notifications can reach the user.
- */
 class StartHandler
 {
     public function __construct(private readonly TelegramBotService $bot) {}
@@ -40,9 +27,6 @@ class StartHandler
         return $this->bot;
     }
 
-    /**
-     * @param  array  $tgFrom  Telegram "from" object: id, username, first_name, last_name, language_code
-     */
     public function handle(int $chatId, array $tgFrom, ?string $startParam): void
     {
         $telegramId = (int) ($tgFrom['id'] ?? 0);
@@ -52,16 +36,12 @@ class StartHandler
 
         $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
 
-        // First contact (bare /start, language not yet chosen): ask the user
-        // which language they prefer before anything else.
         if (($startParam === null || $startParam === '') && ! $user->language_chosen) {
             $this->promptLanguage($chatId);
 
             return;
         }
 
-        // Past this point a welcome WILL be sent — mark it so the Mini App's
-        // write-access ping (which also sends a welcome) doesn't duplicate it.
         $this->markWelcomed($user);
 
         $locale = $this->localeFor($user);
@@ -123,18 +103,11 @@ class StartHandler
         $this->sendVerifiedWelcome($chatId, $user->first_name ?? '', $locale);
     }
 
-    /**
-     * Send the same welcome the bot would send on /start, picked by the user's
-     * current state. Used when a Mini App user grants write access (they opened
-     * via a deep link and skipped /start, so the bot couldn't message them until
-     * now) — strange users get the "join the chat" stub, verified users get the
-     * full welcome, models get the model welcome.
-     */
     public function sendWelcomeFor(User $user): bool
     {
         $chatId = $user->tg_chat_id;
         if ($chatId === null) {
-            return false; // no chat yet — caller should NOT mark this as done
+            return false;
         }
 
         $locale = $this->localeFor($user);
@@ -156,11 +129,6 @@ class StartHandler
         return true;
     }
 
-    /**
-     * Mark that this user has been welcomed by the bot, so the Mini App's
-     * write-access welcome (AuthController@writeAccessGranted) won't send a
-     * duplicate. Shares the same cache key.
-     */
     private function markWelcomed(User $user): void
     {
         if ($user->bot_welcomed) {
@@ -169,12 +137,10 @@ class StartHandler
         try {
             $user->forceFill(['bot_welcomed' => true])->save();
         } catch (\Throwable) {
-            // Column missing (migration not run yet) — ignore; worst case is one
-            // duplicate welcome.
+
         }
     }
 
-    /** Ask the user to pick a language (bilingual prompt + inline buttons). */
     private function promptLanguage(int $chatId): void
     {
         $this->bot->sendButtons(
@@ -195,12 +161,6 @@ class StartHandler
         );
     }
 
-    /**
-     * Handle a language choice from the inline keyboard: persist it and then
-     * continue with the normal welcome.
-     *
-     * @param  array  $tgFrom  Telegram "from" object
-     */
     public function chooseLanguage(int $chatId, array $tgFrom, string $lang): void
     {
         $lang = in_array($lang, ['en', 'zh'], true) ? $lang : 'ru';
@@ -211,9 +171,6 @@ class StartHandler
 
         $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
 
-        // Persist the choice. Guard `language_chosen` so a server that hasn't run
-        // the migration yet still saves the language_code (the part that actually
-        // drives localization) instead of throwing and saving nothing.
         $attrs = ['language_code' => $lang];
         if (Schema::hasColumn('users', 'language_chosen')) {
             $attrs['language_chosen'] = true;
@@ -244,7 +201,7 @@ class StartHandler
     private function upsertUser(int $telegramId, int $chatId, array $tgFrom): User
     {
         return DB::transaction(function () use ($telegramId, $chatId, $tgFrom): User {
-            /** @var User $user */
+
             $user = User::query()->lockForUpdate()->firstOrCreate(
                 ['telegram_id' => $telegramId],
                 [
@@ -255,7 +212,7 @@ class StartHandler
                     'role' => UserRole::Client,
                     'status' => UserStatus::Active,
                     'tg_chat_id' => $chatId,
-                    'is_strange' => true, // unverified until an invite flips it
+                    'is_strange' => true,
                 ],
             );
 
@@ -317,7 +274,6 @@ class StartHandler
         );
     }
 
-    /** Localized "Hi, Name! " / "Hi! " prefix. */
     private function greeting(string $firstName, string $locale): string
     {
         return $firstName !== ''
@@ -325,7 +281,6 @@ class StartHandler
             : trans('start.greeting', [], $locale);
     }
 
-    /** Map a user's stored Telegram/app language to a supported locale. */
     private function localeFor(User $user): string
     {
         $code = strtolower((string) ($user->language_code ?? ''));

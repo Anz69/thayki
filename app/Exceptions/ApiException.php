@@ -9,9 +9,7 @@ use Throwable;
 
 class ApiException extends RuntimeException
 {
-    /**
-     * @param  array<string, mixed>  $details
-     */
+
     public function __construct(
         public readonly string $errorCode,
         string $message = '',

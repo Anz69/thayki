@@ -16,7 +16,7 @@ class EnsureSupportChatAction
     public function execute(User $user): Chat
     {
         return DB::transaction(function () use ($user): Chat {
-            /** @var Chat|null $chat */
+
             $chat = Chat::query()
                 ->where('type', ChatType::Support)
                 ->whereHas('participants', fn ($q) => $q->where('user_id', $user->id))

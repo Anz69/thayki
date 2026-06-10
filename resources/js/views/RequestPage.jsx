@@ -14,8 +14,6 @@ import LottieDiamond from '@/components/ui/LottieDiamond'
 import VipModal from '@/components/modals/VipModal'
 import ru from '@/locales/ru.json'
 
-// field → { group (locale ns), labelKey, option keys }. The Russian label is
-// sent to the backend so managers always read requests in Russian.
 const GROUPS = [
   { field: 'hairType', group: 'hair',    labelKey: 'hairType', keys: ['any', 'blonde', 'brunette', 'brown', 'red'] },
   { field: 'ageRange', group: 'ages',    labelKey: 'age',      keys: ['a1', 'a2', 'a3', 'a4'] },
@@ -54,8 +52,6 @@ export default function RequestPage() {
 
   const [params] = useSearchParams()
   const modelId = params.get('model')
-  // The flow is decided by the URL param immediately (not after the fetch), so
-  // the page never first renders the generic form and then swaps.
   const isModelFlow = !!modelId
 
   const [model, setModel] = useState(null)
@@ -74,9 +70,6 @@ export default function RequestPage() {
   const vipSparkRef = useRef(null)
   const vipBadgeRef = useRef(null)
   const vipGemRef = useRef(null)
-  // In the open "подбор" form every option is required (only wishes are optional);
-  // the prototype flow has no option groups, so only the city is required. In
-  // V.I.P mode the goal is predetermined, so its group is hidden & not required.
   const visibleGroups = vipMode ? GROUPS.filter((g) => g.field !== 'goal') : GROUPS
   const allGroupsSelected = isModelFlow || visibleGroups.every(({ field }) => values[field] != null)
   const canSubmit = city.trim().length > 0 && allGroupsSelected && !submitting
@@ -84,8 +77,6 @@ export default function RequestPage() {
     ? t('request.cityRequiredHint')
     : (!allGroupsSelected ? t('request.allRequiredHint') : '')
 
-  // When opened from a prototype ("Интересует этот типаж") — load it to show
-  // the selected model and attach it to the lead.
   useEffect(() => {
     if (!modelId) { setModel(null); return undefined }
     let cancelled = false
@@ -110,15 +101,10 @@ export default function RequestPage() {
         duration: 0.55,
         stagger: 0.07,
         ease: 'power3.out',
-        // Clear the leftover transform so each card stops being its own
-        // stacking context — otherwise the city dropdown gets trapped behind
-        // the cards that follow it in the DOM.
         onComplete: () => gsap.set(els, { clearProps: 'transform,willChange' }),
       })
   })
 
-  // Header VIP button: light sweep + a soft bottom glow that fades up & breathes,
-  // and a twinkling sparkle.
   useEffect(() => {
     if (isModelFlow) return undefined
     const shine = vipShineRef.current
@@ -146,7 +132,6 @@ export default function RequestPage() {
     return () => anims.forEach((a) => a.kill())
   }, [isModelFlow])
 
-  // V.I.P badge appears when the form enters VIP mode — animate it in + float gem.
   useEffect(() => {
     if (!vipMode) return undefined
     const badge = vipBadgeRef.current
@@ -167,7 +152,6 @@ export default function RequestPage() {
 
   const setVal = (field, v) => setValues((p) => ({ ...p, [field]: v }))
 
-  // Smoothly collapse + fade the V.I.P badge before leaving VIP mode.
   const cancelVip = () => {
     const el = vipBadgeRef.current
     if (!el) { setVipMode(false); return }
@@ -180,8 +164,6 @@ export default function RequestPage() {
     })
   }
 
-  // On focus, lift the active field to the top of the scroll area so it (and the
-  // next field below it) stay visible above the on-screen keyboard.
   const scrollFieldIntoView = (e) => {
     const card = e.currentTarget
     setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
@@ -191,12 +173,8 @@ export default function RequestPage() {
   const handleSubmit = async () => {
     if (!canSubmit) return
     setSubmitting(true)
-    // Stable idempotency key kept across retries: if the network drops and the
-    // user taps again, the backend (idempotency middleware) returns the SAME
-    // lead instead of creating duplicates. Reset only after a successful submit.
     if (!submitKeyRef.current) submitKeyRef.current = `lead-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     try {
-      // V.I.P request → goal is fixed to "V.I.P модели" (the typaj the manager sees).
       const goalLabel = isModelFlow ? null : (vipMode ? 'V.I.P модели' : ruLabel('goals', values.goal))
       let message = buildLeadMessage({
         t,
@@ -216,7 +194,6 @@ export default function RequestPage() {
         age_range: isModelFlow ? null : ruLabel('ages', values.ageRange),
         height_range: isModelFlow ? null : ruLabel('heights', values.height),
         goal: goalLabel,
-        // First chat message in the user's selected language (RU/EN).
         message,
       }, { headers: { 'Idempotency-Key': submitKeyRef.current } })
       const from = encodeURIComponent(isModelFlow ? `/model/${modelId}` : '/home')
@@ -242,7 +219,6 @@ export default function RequestPage() {
           </span>
           {!isModelFlow && (
             <span className="ml-auto relative inline-flex">
-              {/* soft pink glow BEHIND the pill (fades up + breathes) */}
               <span
                 ref={vipGlowRef}
                 aria-hidden
@@ -255,7 +231,6 @@ export default function RequestPage() {
               className="relative flex items-center gap-1.5 pl-3.5 pr-4 py-2.5 rounded-full text-white active:scale-95 transition-transform"
               style={{ background: '#161616', boxShadow: '0 6px 14px rgba(0,0,0,0.18)' }}
             >
-              {/* clipped light sweep */}
               <span className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
                 <span
                   ref={vipShineRef}
@@ -264,12 +239,10 @@ export default function RequestPage() {
                   style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent)', opacity: 0 }}
                 />
               </span>
-              {/* Lottie crystal — silver/ч-б so it reads on the black pill. */}
               <span className="relative z-10 inline-flex shrink-0">
                 <LottieDiamond size={20} style={{ filter: 'grayscale(1) brightness(1.2) contrast(1.05)' }} />
               </span>
               <span className="relative z-10 text-sm/[80%] font-[500]">VIP</span>
-              {/* sparkle accent */}
               <svg ref={vipSparkRef} className="absolute -top-1.5 -right-1.5 w-4 h-4 z-10" viewBox="0 0 24 24" fill="#E2319B" aria-hidden>
                 <path d="M12 2.5l1.7 5.1a3 3 0 0 0 1.9 1.9L20.5 11l-4.9 1.5a3 3 0 0 0-1.9 1.9L12 19.5l-1.7-5.1a3 3 0 0 0-1.9-1.9L3.5 11l4.9-1.5a3 3 0 0 0 1.9-1.9L12 2.5Z" />
               </svg>
@@ -280,7 +253,6 @@ export default function RequestPage() {
       </header>
 
       <div className="container flex flex-col gap-4 pt-3 pb-40">
-        {/* Selected prototype (when arriving from «Интересует этот типаж») */}
         {isModelFlow && (
           <div data-anim className="flex items-center gap-3.5 rounded-2xl p-3 bg-white border-[1.5px] border-[#E2319B]/35">
             <div className="size-16 rounded-2xl overflow-hidden bg-[#F4EEF1] shrink-0">
@@ -306,7 +278,6 @@ export default function RequestPage() {
           </div>
         )}
 
-        {/* V.I.P mode badge (after the explainer's «Continue») */}
         {!isModelFlow && vipMode && (
           <div
             ref={vipBadgeRef}
@@ -317,10 +288,9 @@ export default function RequestPage() {
               ref={vipGemRef}
               className="shrink-0 size-11 flex items-center justify-center"
             >
-              {/* Lottie crystal — grayscale graphite gem on the white card. */}
               <LottieDiamond size={44} style={{ filter: 'grayscale(1) brightness(0.9) contrast(1.45)' }} />
             </span>
-            
+
             <div className="flex-1 min-w-0 flex flex-col">
               <span className="flex items-center gap-1.5">
                 <span className="text-black text-[15px]/[110%] font-bold">{t('vip.button')}</span>
@@ -340,8 +310,6 @@ export default function RequestPage() {
           </div>
         )}
 
-        {/* Base pricing info — text lives in locale (request.priceTitle/priceInfo),
-            edit there to set real numbers/ranges. */}
         <div data-anim className="flex items-start gap-3 rounded-2xl p-4 bg-[#FBF2F8] border border-[#E2319B]/15">
           <span className="shrink-0 mt-0.5 flex items-center justify-center size-9 rounded-full bg-[#E2319B]/10">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -355,7 +323,6 @@ export default function RequestPage() {
           </div>
         </div>
 
-        {/* City — required, prominent */}
         <div
           data-anim
           onFocusCapture={scrollFieldIntoView}
@@ -368,7 +335,6 @@ export default function RequestPage() {
           <CitySelect value={city} onChange={setCity} placeholder={t('request.cityPlaceholder')} inline overlay autoDetect />
         </div>
 
-        {/* Option groups — only for the open "подбор" form, not the prototype flow */}
         {!isModelFlow && visibleGroups.map(({ field, group, labelKey, keys }) => (
           <div key={field} data-anim className="flex flex-col gap-3 bg-white rounded-2xl p-4 border border-black/5">
             <p className="text-black text-[15px]/[100%] font-semibold">
@@ -378,7 +344,6 @@ export default function RequestPage() {
           </div>
         ))}
 
-        {/* Wishes */}
         <div
           data-anim
           onFocusCapture={scrollFieldIntoView}
@@ -396,7 +361,6 @@ export default function RequestPage() {
         </div>
       </div>
 
-      {/* Submit bar */}
       <div
         className="fixed bottom-0 left-0 right-0 px-5 z-40 bg-gradient-to-t from-[#FAFAFB] via-[#FAFAFB] to-transparent pt-8"
         style={{ paddingBottom: 'max(28px, calc(env(safe-area-inset-bottom) + 16px))' }}

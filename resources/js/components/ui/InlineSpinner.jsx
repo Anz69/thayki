@@ -1,13 +1,3 @@
-/**
- * Lightweight spinner for inline loading states inside a page (the
- * page-level AppLoader covers initial app boot only). Pure CSS — no GSAP
- * subscription, so it can be mounted/unmounted freely without leaks.
- *
- *   <InlineSpinner />            // 24px, brand pink
- *   <InlineSpinner size={32} />
- *   <InlineSpinner color="#fff" />
- *   <InlineSpinner label="Загружаем…" />
- */
 export default function InlineSpinner({
   size = 24,
   color = '#E2319B',

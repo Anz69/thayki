@@ -13,10 +13,6 @@ use App\Models\User;
 use App\Services\Telegram\Notifier;
 use Illuminate\Support\Facades\DB;
 
-/**
- * A manager picks up a lead: assigns themselves, moves it to "in progress",
- * joins the lead chat, posts a system note, and notifies the client.
- */
 class AcceptLeadAction
 {
     public function __construct(private readonly PostMessageAction $postMessage) {}
@@ -24,7 +20,7 @@ class AcceptLeadAction
     public function execute(User $manager, Lead $lead): Lead
     {
         $chat = DB::transaction(function () use ($manager, $lead) {
-            /** @var Lead $lead */
+
             $lead = Lead::query()->lockForUpdate()->findOrFail($lead->id);
 
             if ($lead->manager_id !== null && $lead->manager_id !== $manager->id) {
@@ -55,7 +51,6 @@ class AcceptLeadAction
                 ? $lead->locale
                 : (str_starts_with(strtolower((string) ($client?->language_code ?? '')), 'en') ? 'en' : 'ru');
 
-            // System note inside the chat (client + manager see it).
             $this->postMessage->execute(
                 $manager,
                 $chat->fresh(['participants']),
@@ -65,10 +60,6 @@ class AcceptLeadAction
                 'system',
             );
 
-            // Telegram push to the client — DEFERRED to after the HTTP response.
-            // The bot API call can take up to 5s; running it inline made the
-            // manager's "Accept" spin for seconds. afterResponse() sends it once
-            // the manager already has their response and is in the chat.
             if ($client !== null) {
                 $clientId = $client->id;
                 $chatId = $chat->id;

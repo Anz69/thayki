@@ -9,8 +9,8 @@ import { useCompactMode } from '@/composables/useCompactMode'
 import { useTranslation } from 'react-i18next'
 const STEPS = ['s1', 's2', 's3', 's4']
 const STEP_CONTENT = [HowItWorksStep1, HowItWorksStep2, HowItWorksStep3, HowItWorksStep4]
-const DUR_OUT = 0.20   // уходящий слайд исчезает быстро
-const DUR_IN  = 0.46   // входящий плавно тормозит
+const DUR_OUT = 0.20
+const DUR_IN  = 0.46
 export default function HowItWorksModal({ isOpen, onClose }) {
   const { t } = useTranslation()
   const [stepIdx, setStepIdx] = useState(0)
@@ -75,7 +75,7 @@ export default function HowItWorksModal({ isOpen, onClose }) {
       duration: 0.34,
       stagger: 0.05,
       ease: 'power3.out',
-      delay: 0.22,   // появляется когда входящий слайд уже почти на месте
+      delay: 0.22,
       clearProps: 'transform,opacity,visibility',
     })
   }, [stepIdx])

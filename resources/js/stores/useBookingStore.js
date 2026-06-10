@@ -14,14 +14,6 @@ const useBookingStore = create((set, get) => ({
   schedule:       'any',
   durations:      [],
 
-  /**
-   * Slots already taken by other meetings on this model in the next 7 days.
-   * Loaded eagerly when the modal is opened so DateStep/TimeStep can grey
-   * out conflicts before the user submits — instead of relying solely on
-   * the server-side SLOT_TAKEN error after the fact.
-   *
-   * Each entry: { scheduledAt: Date, startMs: number, endMs: number }.
-   */
   bookedSlots: [],
 
   get formattedTime() {
@@ -39,12 +31,6 @@ const useBookingStore = create((set, get) => ({
     return true
   },
 
-  /**
-   * Returns true if the candidate (start, durationHours) overlaps any
-   * existing booking on this model. Used by:
-   *   - TimeStep   to disable conflicting hours upfront
-   *   - submit()   as a final guard before we POST
-   */
   isSlotConflicting(startMs, durationHours) {
     const s = get()
     if (!Number.isFinite(startMs) || !Number.isFinite(durationHours) || durationHours <= 0) {
@@ -59,11 +45,6 @@ const useBookingStore = create((set, get) => ({
     return false
   },
 
-  /**
-   * Returns true iff every hour of `dayDate` is fully covered by booked
-   * slots overlapping with the model's schedule. Cheap heuristic — checks
-   * each integer hour against `isSlotConflicting(start, 1)`.
-   */
   isDayFullyBooked(dayDate, schedule = 'any') {
     if (!dayDate) return false
     const start = new Date(dayDate)
@@ -83,12 +64,6 @@ const useBookingStore = create((set, get) => ({
     return candidates > 0 && blocked === candidates
   },
 
-  /**
-   * Pre-fetch the booked slots for a model. Called from open(), but also
-   * exposed so RegistrationModal can refresh after a 409 SLOT_TAKEN error
-   * (someone else booked the same slot in the meantime — the FE catches
-   * up immediately instead of forcing the user to close + reopen).
-   */
   async loadBookedSlots(modelId) {
     if (!modelId) {
       set({ bookedSlots: [] })

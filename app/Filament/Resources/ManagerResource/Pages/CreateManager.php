@@ -10,7 +10,6 @@ class CreateManager extends CreateRecord
 {
     protected static string $resource = ManagerResource::class;
 
-    /** @param array<string,mixed> $data @return array<string,mixed> */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['role'] = UserRole::Manager->value;

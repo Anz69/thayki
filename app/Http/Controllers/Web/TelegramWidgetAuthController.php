@@ -15,19 +15,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Handles authentication via the Telegram Login Widget
- * (https://core.telegram.org/widgets/login).
- *
- * The widget POSTs: id, first_name, last_name?, username?, photo_url?,
- *                   auth_date, hash
- *
- * Validation follows the official spec:
- *   1. Build check_string = sorted key=value pairs joined by \n (excluding hash)
- *   2. secret_key = SHA-256(bot_token) — NOT hex, raw binary
- *   3. expected_hash = HMAC-SHA256(check_string, secret_key)
- *   4. Compare with hash using constant-time comparison
- */
 class TelegramWidgetAuthController extends Controller
 {
     public function handle(Request $request): JsonResponse
@@ -54,9 +41,8 @@ class TelegramWidgetAuthController extends Controller
 
         $telegramId = (int) $data['id'];
 
-        /** @var User $user */
         $user = DB::transaction(function () use ($data, $telegramId): User {
-            /** @var User $user */
+
             $user = User::query()->lockForUpdate()->firstOrCreate(
                 ['telegram_id' => $telegramId],
                 [
@@ -128,7 +114,6 @@ class TelegramWidgetAuthController extends Controller
         return hash_equals($expectedHash, $receivedHash);
     }
 
-    /** @return array<string, mixed> */
     private function formatUser(User $user): array
     {
         return [

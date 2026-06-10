@@ -19,7 +19,6 @@ export function parseTelegramStartParam(rawStartParam) {
       return { browserToken: null, inviteToken }
     }
   } catch {
-    // Not a base64url route token -> treat as invite token.
   }
 
   return { browserToken: null, inviteToken: startParam }
@@ -43,10 +42,6 @@ function extractInviteTokenFromPath(pathWithQuery) {
   }
 }
 
-/**
- * Stable per-browser dev Telegram id, persisted so the same local test
- * account is reused across reloads.
- */
 export function getOrCreateDevTelegramId() {
   try {
     const stored = localStorage.getItem('__dev_tg_id')
@@ -59,11 +54,6 @@ export function getOrCreateDevTelegramId() {
   }
 }
 
-/**
- * Builds an unsigned initData string for local dev login. The backend accepts
- * it only when APP_ENV=local (or TELEGRAM_ALLOW_UNSIGNED=true) — see
- * App\Services\Telegram\InitDataValidator.
- */
 export function buildDevInitData(telegramId, firstName = 'Dev', username) {
   const user = JSON.stringify({
     id: telegramId,
@@ -75,8 +65,6 @@ export function buildDevInitData(telegramId, firstName = 'Dev', username) {
     allows_write_to_pm: true,
   })
   const authDate = Math.floor(Date.now() / 1000)
-  // Unique hash per call — the backend keys anti-replay on the hash, so a
-  // constant value would make every login after the first look like a replay.
   const nonce = `${Date.now()}${Math.random().toString(36).slice(2, 10)}`
   return `auth_date=${authDate}&hash=devmode_${nonce}&user=${encodeURIComponent(user)}`
 }

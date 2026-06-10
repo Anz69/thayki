@@ -15,38 +15,11 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
-/**
- * @property int $id
- * @property int $telegram_id
- * @property string|null $username
- * @property string $first_name
- * @property string|null $last_name
- * @property string|null $language_code
- * @property string|null $photo_url
- * @property bool $photo_customized
- * @property bool $is_strange
- * @property bool $notifications_enabled
- * @property int|null $tg_chat_id
- * @property UserRole $role
- * @property UserStatus $status
- * @property Carbon|null $last_auth_at
- */
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
+
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * Mass-assignable columns.
-     *
-     * Note: even though `role`, `status` and `last_auth_at` appear here so
-     * that admin actions and seeders/factories can assign them via ->fill(),
-     * end-user request payloads are filtered through dedicated FormRequest
-     * objects (see `UpdateMyProfileRequest`, `UpdateMyModelProfileRequest`)
-     * which never expose those keys. The id column stays implicit-protected.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'telegram_id',
         'username',
@@ -66,14 +39,10 @@ class User extends Authenticatable
         'last_seen_at',
     ];
 
-    /** @var list<string> */
     protected $hidden = [
         'remember_token',
     ];
 
-    /**
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -91,31 +60,26 @@ class User extends Authenticatable
         ];
     }
 
-    /** @return HasOne<ModelProfile, $this> */
     public function modelProfile(): HasOne
     {
         return $this->hasOne(ModelProfile::class);
     }
 
-    /** @return HasOne<Wallet, $this> */
     public function wallet(): HasOne
     {
         return $this->hasOne(Wallet::class);
     }
 
-    /** @return HasOne<ModelApplication, $this> */
     public function modelApplication(): HasOne
     {
         return $this->hasOne(ModelApplication::class);
     }
 
-    /** @return HasMany<Meeting, $this> */
     public function meetingsAsClient(): HasMany
     {
         return $this->hasMany(Meeting::class, 'client_id');
     }
 
-    /** @return HasMany<Withdrawal, $this> */
     public function withdrawals(): HasMany
     {
         return $this->hasMany(Withdrawal::class);

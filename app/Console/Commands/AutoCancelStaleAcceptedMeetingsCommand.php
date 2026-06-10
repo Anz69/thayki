@@ -12,24 +12,6 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Auto-cancels meetings the model never confirmed in time.
- *
- * Definition of "in time": the meeting's `created_at` is more than the
- * configured TTL ago (default 2 hours) AND the meeting is still in the
- * `pending` state — i.e. the model has not pressed "Accept" yet.
- *
- * (Once the model accepts, the next gate is payment, which has its own
- * separate clock; see ExpirePendingMeetingsCommand for the historical
- * pending->expired sweep — this command operates on the "model failed
- * to acknowledge in 2h" window specifically.)
- *
- * NOTE: in practice both deadlines collapse onto the same `pending` state
- * — pending means "model hasn't accepted". We use the longer 2h window
- * here so it fires AFTER ExpirePendingMeetingsCommand if both are scheduled,
- * which is harmless: this command is idempotent because it re-checks status
- * inside a per-row lock.
- */
 class AutoCancelStaleAcceptedMeetingsCommand extends Command
 {
     protected $signature = 'meetings:auto-cancel-unconfirmed';
@@ -59,7 +41,7 @@ class AutoCancelStaleAcceptedMeetingsCommand extends Command
 
         foreach ($candidates as $meetingId) {
             DB::transaction(function () use ($meetingId, $transition, $ttlSeconds, &$cancelled): void {
-                /** @var Meeting|null $meeting */
+
                 $meeting = Meeting::query()->whereKey($meetingId)->lockForUpdate()->first();
 
                 if ($meeting === null

@@ -7,9 +7,6 @@ namespace App\Filament\Widgets;
 use App\Models\Lead;
 use Filament\Widgets\ChartWidget;
 
-/**
- * Daily lead volume over the last 30 days: total created vs closed.
- */
 class LeadsChartWidget extends ChartWidget
 {
     protected static ?string $heading = 'Заявки по дням (30 дней)';
@@ -63,10 +60,6 @@ class LeadsChartWidget extends ChartWidget
         return 'line';
     }
 
-    /**
-     * @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query
-     * @return list<int>
-     */
     private function dailyCounts($query, string $column, int $days): array
     {
         $rows = $query

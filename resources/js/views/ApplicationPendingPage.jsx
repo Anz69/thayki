@@ -23,7 +23,6 @@ export default function ApplicationPendingPage() {
   const loopTlRef = useRef(null)
   const pollIdRef = useRef(null)
 
-  /** Сближение блока с кольцами и текста, когда внешние кольца исчезают (меньше «пустоты»). */
   function tightenStage() {
     gsap.timeline({ defaults: { ease: 'power3.out' } })
       .to(orbitWrapRef.current, { marginBottom: 8, duration: 0.62 }, 0)
@@ -94,11 +93,8 @@ export default function ApplicationPendingPage() {
         const res = await api.get('/model-application')
         const data = res.data?.data
 
-        // Re-check after the async gap: guards against React StrictMode double-mount
-        // where two simultaneous calls both read null before either sets the ref.
         if (finalStateRef.current) return
 
-        // No application record — user shouldn't be on this page
         if (data === null || data === undefined) {
           stopPolling()
           resetModelAppGuardCache()
@@ -122,7 +118,6 @@ export default function ApplicationPendingPage() {
               try {
                 await refreshUser()
               } catch {
-                /* переходим на главную даже если /auth/me не ответил */
               }
               navigate('/home', { replace: true })
             },
@@ -178,7 +173,6 @@ export default function ApplicationPendingPage() {
               try {
                 await refreshUser()
               } catch {
-                /* см. сценарий одобрения */
               }
               navigate('/home', { replace: true })
             },
@@ -218,7 +212,6 @@ export default function ApplicationPendingPage() {
             .to({}, { duration: 0.8 })
         }
       } catch {
-        /* network/server error — keep polling */
       }
     }
 

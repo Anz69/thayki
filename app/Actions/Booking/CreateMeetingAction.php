@@ -40,7 +40,7 @@ class CreateMeetingAction
         }
 
         return DB::transaction(function () use ($client, $modelProfileId, $scheduledAt, $durationHours): Meeting {
-            /** @var ModelProfile|null $profile */
+
             $profile = ModelProfile::query()
                 ->whereKey($modelProfileId)
                 ->where('is_published', true)
@@ -81,7 +81,6 @@ class CreateMeetingAction
                 ? $matchingOption->price_thb
                 : $profile->hourly_rate_thb * $durationHours;
 
-            /** @var Meeting $meeting */
             $meeting = Meeting::query()->create([
                 'client_id' => $client->id,
                 'model_profile_id' => $profile->id,

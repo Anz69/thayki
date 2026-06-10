@@ -33,7 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Rose,
             ])
-            // "Бронирования" и "Финансы" убраны вместе с пивотом на лид-флоу.
+
             ->navigationGroups([
                 NavigationGroup::make()->label('Пользователи и модели'),
                 NavigationGroup::make()->label('Заявки'),

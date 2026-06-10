@@ -24,9 +24,7 @@ use App\Http\Controllers\Api\V1\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
-    // ------------------------------------------------------------------------
-    // Public
-    // ------------------------------------------------------------------------
+
     Route::middleware('throttle:auth')->group(function (): void {
         Route::post('/auth/telegram', [AuthController::class, 'login'])->name('auth.telegram');
     });
@@ -40,23 +38,15 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
     });
 
-    // ------------------------------------------------------------------------
-    // Authenticated
-    // ------------------------------------------------------------------------
-    // `touch.last_seen` quietly bumps users.last_seen_at (throttled to 1/min)
-    // so the chat header can render "была в сети: <relative>" with live data.
     Route::middleware(['auth:sanctum', 'throttle:api', 'touch.last_seen'])->group(function (): void {
-        // Auth / session
+
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
-        // Mini App calls this after the user grants Telegram write access so the
-        // bot sends the right welcome (strange stub vs full welcome).
+
         Route::post('/auth/write-access', [AuthController::class, 'writeAccessGranted'])->name('auth.write-access');
 
-        // Geo — best-effort city detection by IP (pre-fills the request city).
         Route::get('/geo/city', [\App\Http\Controllers\Api\V1\GeoController::class, 'city'])->name('geo.city');
 
-        // Me / profile
         Route::get('/me', [MeController::class, 'profile'])->name('me.profile');
         Route::patch('/me', [MeController::class, 'updateProfile'])->name('me.update');
         Route::get('/me/model-profile', [MeController::class, 'modelProfile'])->name('me.model-profile');
@@ -71,18 +61,15 @@ Route::prefix('v1')->group(function (): void {
         Route::delete('/me/model-profile/photos/{photoId}', [MeController::class, 'deletePhoto'])->name('me.model-profile.photos.delete');
         Route::post('/me/model-profile/photos/{photoId}/main', [MeController::class, 'setMainPhoto'])->name('me.model-profile.photos.main');
 
-        // Photo upload (for model applications — no model profile required)
         Route::post('/uploads/photo', [PhotoUploadController::class, 'store'])
             ->middleware('throttle:30,1')
             ->name('uploads.photo');
 
-        // Model application ("become a model")
         Route::get('/model-application', [ModelApplicationController::class, 'show'])->name('model-application.show');
         Route::post('/model-application', [ModelApplicationController::class, 'store'])
             ->middleware('idempotency')
             ->name('model-application.store');
 
-        // Meetings
         Route::get('/meetings', [MeetingController::class, 'index'])->name('meetings.index');
         Route::get('/meetings/latest', [MeetingController::class, 'latest'])->name('meetings.latest');
         Route::post('/meetings', [MeetingController::class, 'store'])
@@ -97,7 +84,6 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/meetings/{meeting}/complete', [MeetingController::class, 'complete'])->name('meetings.complete');
         });
 
-        // Payments
         Route::middleware('throttle:payments')->group(function (): void {
             Route::post('/payments', [PaymentController::class, 'store'])
                 ->middleware('idempotency')
@@ -108,7 +94,6 @@ Route::prefix('v1')->group(function (): void {
                 ->name('payments.submit');
         });
 
-        // Chats
         Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
         Route::get('/chats/support', [ChatController::class, 'support'])->name('chats.support');
         Route::get('/chats/meetings/{meeting}', [ChatController::class, 'showForMeeting'])->name('chats.meeting');
@@ -118,7 +103,6 @@ Route::prefix('v1')->group(function (): void {
             ->name('chats.postMessage');
         Route::post('/chats/{chat}/read', [ChatController::class, 'markRead'])->name('chats.markRead');
 
-        // Leads (подбор модели)
         Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
         Route::post('/leads', [LeadController::class, 'store'])
             ->middleware('idempotency')
@@ -127,19 +111,15 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('idempotency')
             ->name('leads.verifyContact');
 
-        // Complaints (post-meeting feedback / abuse report)
         Route::get('/complaints',  [ComplaintController::class, 'index'])->name('complaints.index');
         Route::post('/complaints', [ComplaintController::class, 'store'])
             ->middleware('idempotency')
             ->name('complaints.store');
 
-        // Share-an-invite: verified users mint a one-shot, 7-day deep-link
-        // they can forward. Strange users are blocked inside the controller.
         Route::post('/invites/share', [InviteController::class, 'share'])
             ->middleware(['throttle:10,1', 'idempotency'])
             ->name('invites.share');
 
-        // Wallet / withdrawals
         Route::get('/wallet', [WalletController::class, 'show'])->name('wallet.show');
         Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('wallet.transactions');
         Route::get('/withdrawals', [WalletController::class, 'withdrawals'])->name('withdrawals.index');
@@ -150,9 +130,6 @@ Route::prefix('v1')->group(function (): void {
                 ->name('withdrawals.store');
         });
 
-        // --------------------------------------------------------------------
-        // Admin
-        // --------------------------------------------------------------------
         Route::middleware('role:admin')->prefix('admin')->group(function (): void {
             Route::get('/model-applications', [ModelApplicationAdminController::class, 'index'])->name('admin.applications.index');
             Route::post('/model-applications/{application}/approve', [ModelApplicationAdminController::class, 'approve'])->name('admin.applications.approve');
@@ -173,9 +150,6 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/audit', [AuditController::class, 'index'])->name('admin.audit.index');
         });
 
-        // --------------------------------------------------------------------
-        // Manager panel (in-app). Admins may use it too.
-        // --------------------------------------------------------------------
         Route::middleware('role:manager,admin')->prefix('manager')->group(function (): void {
             Route::get('/leads', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'index'])->name('manager.leads.index');
             Route::get('/leads/{lead}', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'show'])->name('manager.leads.show');

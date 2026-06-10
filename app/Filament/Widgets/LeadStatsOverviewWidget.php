@@ -12,10 +12,6 @@ use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
-/**
- * Lead-gen overview: the headline number is NEW (unhandled) leads, plus
- * supporting figures for clients and the prototype catalog.
- */
 class LeadStatsOverviewWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
@@ -46,7 +42,6 @@ class LeadStatsOverviewWidget extends BaseWidget
         $publishedModels = ModelProfile::where('is_published', true)->count();
         $totalModels = ModelProfile::count();
 
-        // Earnings: all confirmed lead payments, converted to USD (approx).
         $rates = ['USD' => 1.0, 'EUR' => 1.08, 'RUB' => 0.011, 'THB' => 0.028];
         $payments = LeadPayment::where('status', 'confirmed')->get(['amount_minor', 'currency', 'confirmed_at']);
         $toUsd = fn ($p) => (int) round(((int) ($p->amount_minor ?? 0)) * ($rates[strtoupper((string) $p->currency)] ?? 0));
@@ -107,12 +102,6 @@ class LeadStatsOverviewWidget extends BaseWidget
         ];
     }
 
-    /**
-     * Daily row counts for the given model/date column over the last N days.
-     *
-     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $model
-     * @return list<int>
-     */
     private function dailyCounts(string $model, string $column, int $days): array
     {
         $rows = $model::selectRaw("DATE({$column}) as day, COUNT(*) as cnt")

@@ -20,9 +20,6 @@ class MessageSent implements ShouldBroadcastNow
 
     public function __construct(public readonly Message $message) {}
 
-    /**
-     * @return array<int, Channel>
-     */
     public function broadcastOn(): array
     {
         return [new PrivateChannel('chats.'.$this->message->chat_id)];
@@ -33,9 +30,6 @@ class MessageSent implements ShouldBroadcastNow
         return 'message.sent';
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function broadcastWith(): array
     {
         $sender = $this->message->relationLoaded('sender')

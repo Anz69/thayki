@@ -8,12 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
-/**
- * @property int $id
- * @property int $invite_id
- * @property int $user_id
- * @property Carbon $used_at
- */
 class StartInviteUse extends Model
 {
     public $timestamps = false;
@@ -27,13 +21,11 @@ class StartInviteUse extends Model
         ];
     }
 
-    /** @return BelongsTo<StartInvite, $this> */
     public function invite(): BelongsTo
     {
         return $this->belongsTo(StartInvite::class, 'invite_id');
     }
 
-    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

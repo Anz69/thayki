@@ -6,9 +6,6 @@ namespace App\Support;
 
 use Illuminate\Http\UploadedFile;
 
-/**
- * HEIC/HEIF: iPhones use these; MIME is often application/octet-stream, so we also check extension.
- */
 final class HeicImageHandler
 {
     public static function isHeic(UploadedFile $file): bool
@@ -23,10 +20,6 @@ final class HeicImageHandler
         return in_array($mime, ['image/heic', 'image/heif'], true);
     }
 
-    /**
-     * @throws \RuntimeException when ext-imagick is not available
-     * @throws \Throwable on decode failure
-     */
     public static function toJpegBlob(UploadedFile $file): string
     {
         if (! class_exists(\Imagick::class)) {

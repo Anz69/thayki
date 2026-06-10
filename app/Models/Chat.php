@@ -12,15 +12,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
-/**
- * @property int $id
- * @property ChatType $type
- * @property int|null $meeting_id
- * @property Carbon|null $last_message_at
- */
 class Chat extends Model
 {
-    /** @use HasFactory<ChatFactory> */
+
     use HasFactory;
 
     protected $guarded = ['id'];
@@ -33,25 +27,21 @@ class Chat extends Model
         ];
     }
 
-    /** @return BelongsTo<Meeting, $this> */
     public function meeting(): BelongsTo
     {
         return $this->belongsTo(Meeting::class);
     }
 
-    /** @return HasMany<ChatParticipant, $this> */
     public function participants(): HasMany
     {
         return $this->hasMany(ChatParticipant::class);
     }
 
-    /** @return HasMany<Message, $this> */
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class);
     }
 
-    /** Latest single message for preview in chat list */
     public function lastMessage(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(Message::class)->latestOfMany();

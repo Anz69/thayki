@@ -9,18 +9,6 @@ use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Facades\Http;
 
-/**
- * Validates a Telegram Mini App `initData` raw query string.
- *
- * Algorithm (per https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app):
- *   1. Parse query string, split into pairs.
- *   2. Extract `hash` from the pairs.
- *   3. Build data_check_string = sorted pairs joined with "\n" as "key=value".
- *   4. secret_key = HMAC_SHA256(key="WebAppData", message=BOT_TOKEN)     (raw)
- *   5. expected   = HMAC_SHA256(key=secret_key,   message=data_check_string)
- *   6. hash_equals(expected, provided_hash)
- *   7. auth_date freshness check.
- */
 class InitDataValidator
 {
     public function __construct(
@@ -28,14 +16,6 @@ class InitDataValidator
         private readonly CacheRepository  $cache,
     ) {}
 
-    /**
-     * @return array{
-     *   hash: string,
-     *   auth_date: int,
-     *   user: array<string, mixed>,
-     *   raw: array<string, string>
-     * }
-     */
     public function validate(string $rawInitData): array
     {
         if (trim($rawInitData) === '') {
@@ -69,16 +49,11 @@ class InitDataValidator
             array_values($dataPairs),
         ));
 
-        // Read bot token from config, fall back to env() directly in case
-        // config:cache is stale (e.g. token was updated in .env after caching).
-        // Always trim to avoid whitespace/CRLF issues in .env files.
         $botToken = trim((string) $this->config->get('telegram.bot_token', ''));
         if ($botToken === '') {
             $botToken = trim((string) env('TELEGRAM_BOT_TOKEN', ''));
         }
 
-        // APP_ENV=local always permits unsigned (dev test-account) login, even
-        // without a configured bot token, so a fresh local checkout can log in.
         $isLocal = $this->config->get('app.env') === 'local';
         $allowUnsigned = $isLocal || (bool) $this->config->get('telegram.allow_unsigned', false);
 
@@ -94,14 +69,12 @@ class InitDataValidator
         }
 
         if (! $valid && $allowUnsigned) {
-            // Dev / unsigned mode: accept without the bot-token network
-            // diagnostics below. Still enforces auth_date freshness + payload shape.
+
             \Illuminate\Support\Facades\Log::warning(
                 'Telegram initData HMAC skipped — unsigned login allowed (APP_ENV=local or TELEGRAM_ALLOW_UNSIGNED=true).'
             );
         } elseif (! $valid) {
-            // Auto-diagnose: verify the bot token against Telegram API (cached 1 h).
-            // This distinguishes "wrong token in .env" from "tampered initData".
+
             $tokenStatus = $this->checkBotToken($botToken);
 
             if ($tokenStatus === false) {
@@ -114,8 +87,6 @@ class InitDataValidator
                 );
             }
 
-            // Store debug snapshot so `php artisan telegram:verify --debug-last` can
-            // display the exact raw initData and data_check_string that failed.
             $this->cache->put('tg:hmac_debug:last', [
                 'raw_init_data'     => $rawInitData,
                 'data_check_string' => $dataCheckString,
@@ -136,7 +107,6 @@ class InitDataValidator
                 ]
             );
 
-            // Reached only when unsigned login is NOT allowed (production).
             throw InvalidInitDataException::signature();
         }
 
@@ -162,11 +132,6 @@ class InitDataValidator
         ];
     }
 
-    /**
-     * Verify the bot token against Telegram's getMe API.
-     * Returns true = valid, false = invalid, null = could not determine (network error).
-     * Result is cached for 1 hour to avoid hammering the API.
-     */
     public function checkBotToken(string $token): ?bool
     {
         $cacheKey = 'tg:token_ok:' . md5($token);
@@ -182,16 +147,10 @@ class InitDataValidator
             $this->cache->put($cacheKey, $ok, 3600);
             return $ok;
         } catch (\Throwable) {
-            return null; // network unreachable — cannot determine
+            return null;
         }
     }
 
-    /**
-     * Computes a hash that the Mini App would send for the given pairs so
-     * tests can build synthetic initData strings.
-     *
-     * @param  array<string, string>  $pairs
-     */
     public static function sign(array $pairs, string $botToken): string
     {
         unset($pairs['hash']);
@@ -206,9 +165,6 @@ class InitDataValidator
         return hash_hmac('sha256', $dataCheckString, $secretKey);
     }
 
-    /**
-     * @param  array<string, string|int|bool>  $pairs
-     */
     public static function build(array $pairs, string $botToken): string
     {
         $stringified = [];
@@ -225,9 +181,6 @@ class InitDataValidator
         return http_build_query($stringified, '', '&', PHP_QUERY_RFC3986);
     }
 
-    /**
-     * @return array<string, string>
-     */
     private function parse(string $initData): array
     {
         $pairs = [];

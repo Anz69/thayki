@@ -103,11 +103,6 @@ class StatsOverviewWidget extends BaseWidget
         ];
     }
 
-    /**
-     * Returns daily counts for the given model and date column over the last N days.
-     *
-     * @return list<int>
-     */
     private function dailyCounts(string $model, string $column, int $days): array
     {
         $rows = $model::selectRaw("DATE({$column}) as day, COUNT(*) as cnt")

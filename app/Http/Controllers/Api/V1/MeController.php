@@ -26,7 +26,7 @@ class MeController extends Controller
 {
     public function profile(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         return ApiResponse::ok(new UserResource($user));
@@ -34,7 +34,7 @@ class MeController extends Controller
 
     public function updateProfile(UpdateMyProfileRequest $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $user->fill($request->validated())->save();
 
@@ -43,7 +43,7 @@ class MeController extends Controller
 
     public function modelProfile(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $profile = $user->modelProfile()->with(['photos', 'priceOptions'])->first();
 
@@ -56,7 +56,7 @@ class MeController extends Controller
 
     public function updateModelProfile(UpdateModelProfileRequest $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $profile = $user->modelProfile()->first();
 
@@ -71,7 +71,6 @@ class MeController extends Controller
             $user->update(['first_name' => $request->input('display_name')]);
         }
 
-        // Sync price options when provided
         if ($request->has('price_options')) {
             $profile->priceOptions()->delete();
             foreach ($validated['price_options'] as $opt) {
@@ -88,7 +87,7 @@ class MeController extends Controller
 
     public function uploadAvatar(UploadAvatarRequest $request, UploadAvatarAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $updated = $action->execute($user, $request->file('photo'));
 
@@ -97,7 +96,7 @@ class MeController extends Controller
 
     public function deleteAvatar(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $user->update(['photo_customized' => false]);
 
@@ -106,7 +105,7 @@ class MeController extends Controller
 
     public function uploadPhoto(UploadModelPhotoRequest $request, UploadModelPhotoAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $profile = $user->modelProfile()->first();
 
@@ -125,14 +124,13 @@ class MeController extends Controller
 
     public function deletePhoto(Request $request, int $photoId): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $profile = $user->modelProfile()->first();
         if ($profile === null) {
             throw new NotFoundHttpException;
         }
 
-        /** @var ModelPhoto|null $photo */
         $photo = ModelPhoto::query()
             ->where('model_profile_id', $profile->id)
             ->where('id', $photoId)
@@ -149,14 +147,13 @@ class MeController extends Controller
 
     public function setMainPhoto(Request $request, int $photoId): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $profile = $user->modelProfile()->first();
         if ($profile === null) {
             throw new NotFoundHttpException;
         }
 
-        /** @var ModelPhoto|null $photo */
         $photo = ModelPhoto::query()
             ->where('model_profile_id', $profile->id)
             ->where('id', $photoId)

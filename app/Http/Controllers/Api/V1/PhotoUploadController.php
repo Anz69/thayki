@@ -29,7 +29,6 @@ class PhotoUploadController extends Controller
             ],
         );
 
-        /** @var User $user */
         $user = $request->user();
 
         $file = $request->file('photo');

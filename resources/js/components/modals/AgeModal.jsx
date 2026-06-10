@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import ModalSheet from '@/layout/ModalSheet'
 import useProfileStore from '@/stores/useProfileStore'
-const ITEM_H         = 88           
+const ITEM_H         = 88
 const SNAP_DELAY     = 110
 const SMOOTH_SYNC_MS = 220
-const AGES           = Array.from({ length: 53 }, (_, i) => 18 + i) 
+const AGES           = Array.from({ length: 53 }, (_, i) => 18 + i)
 function clamp(v, min, max) { return Math.min(Math.max(v, min), max) }
 function getIdx(scrollTop) {
   return clamp(Math.round(scrollTop / ITEM_H), 0, AGES.length - 1)
@@ -13,8 +13,8 @@ function scrollTo(el, idx, behavior = 'smooth') {
   el?.scrollTo({ top: idx * ITEM_H, behavior })
 }
 function AgeDrum({ value, onChange }) {
-  const wrapRef     = useRef(null)   
-  const colRef      = useRef(null)   
+  const wrapRef     = useRef(null)
+  const colRef      = useRef(null)
   const timer       = useRef(null)
   const syncing     = useRef(false)
   const dragStartY  = useRef(0)
@@ -85,7 +85,7 @@ function AgeDrum({ value, onChange }) {
       document.removeEventListener('mousemove', onDragMove)
       document.removeEventListener('mouseup',   stopDrag)
     }
-  }, []) 
+  }, [])
   useEffect(() => {
     if (!colRef.current || syncing.current) return
     const cur = getIdx(colRef.current.scrollTop)

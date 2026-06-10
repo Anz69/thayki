@@ -10,17 +10,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * @property int $id
- * @property int $user_id
- * @property int $balance_minor
- * @property int $locked_minor
- * @property string $currency
- * @property int $version
- */
 class Wallet extends Model
 {
-    /** @use HasFactory<WalletFactory> */
+
     use HasFactory;
 
     protected $guarded = ['id'];
@@ -34,13 +26,11 @@ class Wallet extends Model
         ];
     }
 
-    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /** @return HasMany<WalletTransaction, $this> */
     public function transactions(): HasMany
     {
         return $this->hasMany(WalletTransaction::class);

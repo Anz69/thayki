@@ -22,7 +22,7 @@ class PaymentController extends Controller
 {
     public function store(CreatePaymentRequest $request, CreatePaymentAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         $result = $action->execute(
@@ -36,7 +36,7 @@ class PaymentController extends Controller
 
     public function show(Request $request, Payment $payment): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         if ($payment->user_id !== $user->id) {
             throw DomainException::forbidden('PAYMENT_FORBIDDEN', 'You do not own this payment.');
@@ -47,7 +47,7 @@ class PaymentController extends Controller
 
     public function submit(SubmitPaymentTxRequest $request, Payment $payment, SubmitPaymentAction $action): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
         $payment = $action->execute($user, $payment, (string) $request->input('tx_hash'));
 

@@ -10,16 +10,10 @@ use App\Models\ChatParticipant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<ChatParticipant>
- */
 class ChatParticipantFactory extends Factory
 {
     protected $model = ChatParticipant::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [

@@ -6,10 +6,6 @@ namespace App\Services\Commission;
 
 use App\Models\PlatformEarning;
 
-/**
- * Immutable result of a commission calculation. Returned by CommissionService
- * and consumed by ConfirmPaymentAction. All money is in minor units (e.g. satang).
- */
 final readonly class CommissionBreakdown
 {
     public function __construct(

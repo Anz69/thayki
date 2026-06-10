@@ -12,19 +12,11 @@ use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Lets a *verified* (non-strange) user mint a single-use deep-link they can
- * forward to a friend. The friend, on tapping it, runs through the bot's
- * /start flow and gets flipped to non-strange themselves (see StartHandler).
- *
- * Strange users are blocked outright — you cannot bootstrap verification by
- * inviting yourself.
- */
 class InviteController extends Controller
 {
     public function share(Request $request): JsonResponse
     {
-        /** @var User $user */
+
         $user = $request->user();
 
         if ($user->is_strange) {
@@ -33,9 +25,6 @@ class InviteController extends Controller
 
         $token = rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
 
-        // A shared selection is meant to be forwarded to MANY clients (and carries
-        // several model links sharing one token), so it must grant access to many
-        // people — not be single-use. High cap acts as effectively unlimited.
         $expiresAt = now()->addDays(30);
 
         StartInvite::query()->create([

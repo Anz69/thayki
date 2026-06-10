@@ -13,28 +13,10 @@ use App\Models\ModelProfile;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Creates a "подбор модели" lead, spins up a Lead chat with the client as
- * participant, and posts the client's request as the first message so a
- * manager can pick it up.
- *
- * @phpstan-type LeadInput array{
- *   model_profile_id?: int|null,
- *   city: string,
- *   hair_type?: string|null,
- *   age_range?: string|null,
- *   height_range?: string|null,
- *   goal?: string|null,
- *   wishes?: string|null,
- * }
- */
 class CreateLeadAction
 {
     public function __construct(private readonly PostMessageAction $postMessage) {}
 
-    /**
-     * @param  LeadInput  $data
-     */
     public function execute(User $client, array $data): Lead
     {
         $lead = DB::transaction(function () use ($client, $data): Lead {
@@ -47,7 +29,6 @@ class CreateLeadAction
                 ? $data['locale']
                 : $this->localeFor($client);
 
-            /** @var Lead $lead */
             $lead = Lead::query()->create([
                 'user_id' => $client->id,
                 'model_profile_id' => $profile?->id,
@@ -59,9 +40,7 @@ class CreateLeadAction
                 'wishes' => isset($data['wishes']) ? trim((string) $data['wishes']) : null,
                 'locale' => $locale,
                 'status' => 'new',
-                // Identity is verified once PER USER (phone_verified_at), not per
-                // lead — so a client who already verified is shown as verified on
-                // every subsequent lead instead of being asked again.
+
                 'identity_verified_at' => $client->phone_verified_at !== null ? now() : null,
             ]);
 
@@ -73,9 +52,6 @@ class CreateLeadAction
 
             $lead->update(['chat_id' => $chat->id]);
 
-            // The client builds the message in their UI language; if none was
-            // supplied, fall back to a server-built message in the client's own
-            // language (from their stored language_code), not always Russian.
             $body = (isset($data['message']) && trim((string) $data['message']) !== '')
                 ? trim((string) $data['message'])
                 : $this->formatMessage($lead, $profile, $locale);
@@ -90,7 +66,6 @@ class CreateLeadAction
         return $lead;
     }
 
-    /** Ping every manager about a brand-new lead so they can pick it up. */
     private function notifyManagers(Lead $lead): void
     {
         $managers = User::query()
@@ -100,9 +75,7 @@ class CreateLeadAction
             ->get();
 
         $notifier = \App\Services\Telegram\Notifier::default();
-        // The client's own request message (first message in the lead chat) so
-        // the manager sees what was asked straight from the push. Strip the
-        // redundant leading "📩 …" title line to keep the push tidy.
+
         $firstMessage = $lead->chat?->messages()->orderBy('id')->value('body');
         if (is_string($firstMessage)) {
             $lines = preg_split('/\r?\n/', $firstMessage) ?: [];
@@ -130,8 +103,6 @@ class CreateLeadAction
             );
         }
 
-        // Admins get the same single new-lead push (the generic per-message
-        // notification is suppressed for the lead's first message).
         $adminText = trans('notifications.new_lead', ['city' => $lead->city], 'ru');
         if (is_string($firstMessage) && $firstMessage !== '') {
             $adminText .= "\n\n".$firstMessage;
@@ -169,7 +140,6 @@ class CreateLeadAction
         return implode("\n", $lines);
     }
 
-    /** Map the client's stored Telegram/app language to a supported locale. */
     private function localeFor(User $client): string
     {
         $code = strtolower((string) ($client->language_code ?? ''));

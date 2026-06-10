@@ -13,14 +13,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Expires every Pending meeting whose age exceeds the configured TTL.
- *
- * Run this on a schedule (every minute by default — see routes/console.php).
- * It is the source of truth for expiration when the queue driver is `sync`,
- * because sync queues ignore `delay()` and the per-meeting job alone cannot
- * be relied upon.
- */
 class ExpirePendingMeetingsCommand extends Command
 {
     protected $signature = 'meetings:expire-pending';
@@ -57,7 +49,7 @@ class ExpirePendingMeetingsCommand extends Command
 
         foreach ($candidates as $meetingId) {
             DB::transaction(function () use ($meetingId, $transition, $ttl, &$expired, &$skipped): void {
-                /** @var Meeting|null $meeting */
+
                 $meeting = Meeting::query()->whereKey($meetingId)->lockForUpdate()->first();
 
                 if ($meeting === null

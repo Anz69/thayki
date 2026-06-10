@@ -8,16 +8,10 @@ use App\Enums\RoadmapStatus;
 use App\Models\RoadmapItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<RoadmapItem>
- */
 class RoadmapItemFactory extends Factory
 {
     protected $model = RoadmapItem::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [

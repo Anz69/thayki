@@ -44,7 +44,7 @@ class PaymentAdminController extends Controller
 
     public function confirm(Request $request, Payment $payment, ConfirmPaymentAction $action): JsonResponse
     {
-        /** @var User $admin */
+
         $admin = $request->user();
         $payment = $action->execute($payment, $admin);
 

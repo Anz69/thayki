@@ -23,7 +23,7 @@ use Illuminate\Http\Request;
 
 class ManagerLeadController extends Controller
 {
-    /** Paginated leads, filtered by tab (new|active|closed|all). */
+
     public function index(Request $request): JsonResponse
     {
         $tab = (string) $request->query('tab', 'all');
@@ -37,11 +37,10 @@ class ManagerLeadController extends Controller
                 LeadStatus::New->value, LeadStatus::Closed->value, LeadStatus::Completed->value,
             ]));
 
-        // Free-text search across client name/username, city, lead #id and model name.
         $search = trim((string) $request->query('q', ''));
         if ($search !== '') {
             $idMatch = (int) ltrim($search, '#');
-            // Match the city in either language ("Moscow" ↔ "Москва").
+
             $cityTerms = \App\Support\CityAliases::expand($search);
             $query->where(function ($w) use ($search, $idMatch, $cityTerms) {
                 $w->where(function ($cw) use ($cityTerms) {
@@ -77,7 +76,6 @@ class ManagerLeadController extends Controller
         );
     }
 
-    /** Single lead (used by the chat header to show/change status). */
     public function show(Lead $lead): JsonResponse
     {
         return ApiResponse::ok($this->serialize($lead->load(['user', 'manager', 'modelProfile.photos'])));
@@ -85,7 +83,7 @@ class ManagerLeadController extends Controller
 
     public function accept(Lead $lead, AcceptLeadAction $action): JsonResponse
     {
-        /** @var User $manager */
+
         $manager = request()->user();
         $lead = $action->execute($manager, $lead);
 
@@ -106,7 +104,6 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
     }
 
-    /** Manager sends a payment request (manual requisites or crypto button). */
     public function paymentRequest(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
     {
         $data = $request->validate([
@@ -116,7 +113,6 @@ class ManagerLeadController extends Controller
             'requisites' => ['nullable', 'required_if:method,manual', 'string', 'max:2000'],
         ]);
 
-        /** @var User $manager */
         $manager = $request->user();
         $method = $data['method'] ?? 'manual';
         $currency = strtoupper($data['currency'] ?? 'THB');
@@ -128,8 +124,7 @@ class ManagerLeadController extends Controller
             'currency' => $currency,
             'method' => $method,
             'requisites' => $method === 'manual' ? trim((string) ($data['requisites'] ?? '')) : null,
-            // Crypto gateway is not wired yet — the client gets a "pay" button
-            // that opens a placeholder until a provider is connected.
+
             'pay_url' => null,
             'status' => 'pending',
         ], trans('lead.payment_body', ['amount' => $this->money($amountMinor, $currency)], $locale));
@@ -140,16 +135,12 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
     }
 
-    /** Manager confirms the payment was received → records it, status → prepaid. */
     public function paymentConfirm(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
     {
-        /** @var User $manager */
+
         $manager = $request->user();
         $locale = $this->leadLocale($lead);
 
-        // Confirm the EXACT card the manager tapped (message_id), not just the
-        // latest payment request — otherwise tapping an older invoice confirmed
-        // the newest one.
         $messageId = (int) $request->input('message_id', 0);
         $base = Message::query()->where('chat_id', $lead->chat_id)->where('type', 'payment_request');
         $req = $messageId > 0
@@ -160,7 +151,6 @@ class ManagerLeadController extends Controller
             throw DomainException::invalid('PAYMENT_NOT_FOUND', 'Платёжный запрос не найден.');
         }
 
-        // Idempotent: if this card is already confirmed, just return current state.
         if (($req->payload['status'] ?? null) === 'confirmed') {
             return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
         }
@@ -195,10 +185,9 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
     }
 
-    /** Manager asks the client to verify their identity (Telegram contact). */
     public function verificationRequest(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
     {
-        /** @var User $manager */
+
         $manager = $request->user();
         $locale = $this->leadLocale($lead);
 
@@ -211,7 +200,6 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
     }
 
-    /** Manager sends one or several internal-catalog model profiles to the client. */
     public function sendModels(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
     {
         $data = $request->validate([
@@ -219,7 +207,6 @@ class ManagerLeadController extends Controller
             'model_profile_ids.*' => ['integer'],
         ]);
 
-        /** @var User $manager */
         $manager = $request->user();
         $profiles = ModelProfile::query()->with('photos')
             ->whereIn('id', $data['model_profile_ids'])->get();
@@ -239,7 +226,6 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
     }
 
-    /** Parse a single external model page (e100.club) into an editable draft. */
     public function parseModel(Request $request, Lead $lead, E100Parser $parser): JsonResponse
     {
         $data = $request->validate([
@@ -249,7 +235,6 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($parser->parse($data['url']));
     }
 
-    /** Send one or more reviewed (parsed/edited) external cards to the client. */
     public function sendParsed(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
     {
         $data = $request->validate([
@@ -271,7 +256,6 @@ class ManagerLeadController extends Controller
             'models.*.videos.*.poster' => ['nullable', 'string'],
         ]);
 
-        /** @var User $manager */
         $manager = $request->user();
 
         $models = array_map(function (array $m): array {
@@ -307,9 +291,6 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
     }
 
-    // ── helpers ──────────────────────────────────────────────────────────
-
-    /** Ensure the manager is a chat participant, then post a typed card message. */
     private function postCard(PostMessageAction $post, User $manager, Lead $lead, string $type, ?array $payload, ?string $body): void
     {
         $chat = $lead->chat;
@@ -358,7 +339,6 @@ class ManagerLeadController extends Controller
         return $symbol.$amount;
     }
 
-    /** @return array<string, mixed> */
     private function modelCardData(ModelProfile $p): array
     {
         $photos = $p->photos
@@ -378,7 +358,6 @@ class ManagerLeadController extends Controller
         ];
     }
 
-    /** @return array<string, mixed> */
     private function serialize(Lead $lead): array
     {
         $profile = $lead->modelProfile;
@@ -405,7 +384,7 @@ class ManagerLeadController extends Controller
                 'name' => trim(($client->first_name ?? '').' '.($client->last_name ?? '')) ?: ($client->username ?? '—'),
                 'username' => $client->username,
                 'photo' => $client->photo_url,
-                // Only exposed once the client passed identity verification.
+
                 'phone' => $lead->identity_verified_at !== null ? $client->phone_number : null,
             ] : null,
             'model' => $profile ? [

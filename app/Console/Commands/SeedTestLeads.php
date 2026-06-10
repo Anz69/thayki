@@ -17,11 +17,6 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Seeds throwaway leads so the manager panel can be tested with realistic data.
- * Seeded rows are tagged (wishes = self::TAG) so `--clear` can remove them
- * without touching real leads. Creates NO Telegram notifications.
- */
 class SeedTestLeads extends Command
 {
     protected $signature = 'leads:seed-test {count=20 : How many test leads to create} {--clear : Delete previously seeded test leads first}';
@@ -34,7 +29,6 @@ class SeedTestLeads extends Command
 
     private const CLIENT_NAMES = ['Антон', 'Кирилл', 'Дмитрий', 'Игорь', 'Сергей', 'Павел', 'Максим', 'Олег', 'Роман', 'Артём'];
 
-    /** Status distribution so every tab (new / active / closed) gets entries. */
     private const STATUSES = [
         LeadStatus::New, LeadStatus::New, LeadStatus::New,
         LeadStatus::InProgress, LeadStatus::InProgress,
@@ -62,9 +56,9 @@ class SeedTestLeads extends Command
             $status = $statuses[$i % count($statuses)];
             $client = $clients[$i % count($clients)];
             $city = self::CITIES[$i % count(self::CITIES)];
-            // ~70% of leads point at a real model so the card shows a photo/name.
+
             $modelId = ($modelIds !== [] && $i % 10 < 7) ? $modelIds[$i % count($modelIds)] : null;
-            // Active/closed leads are "owned" by a manager; new ones are unassigned.
+
             $managerId = ($manager !== null && $status !== LeadStatus::New) ? $manager->id : null;
             $createdAt = now()->subHours(($i * 7) % 240)->subMinutes($i * 13 % 60);
 
@@ -112,7 +106,6 @@ class SeedTestLeads extends Command
         return self::SUCCESS;
     }
 
-    /** Reuse existing test clients, creating a small pool if missing. */
     private function ensureClients(): array
     {
         $clients = [];
@@ -120,7 +113,7 @@ class SeedTestLeads extends Command
             if ($idx >= 5) {
                 break;
             }
-            $telegramId = 990_000_000 + $idx; // safely out of real Telegram id range collisions for tests
+            $telegramId = 990_000_000 + $idx;
             $clients[] = User::query()->firstOrCreate(
                 ['telegram_id' => $telegramId],
                 [
@@ -136,7 +129,6 @@ class SeedTestLeads extends Command
         return $clients;
     }
 
-    /** Delete seeded leads (and their chats/messages) created by this command. */
     private function clearSeeded(): int
     {
         $leads = Lead::query()->where('wishes', self::TAG)->get();

@@ -2,18 +2,6 @@
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Third Party Services
-    |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
-    */
-
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
@@ -35,8 +23,6 @@ return [
         ],
     ],
 
-    // Public-facing WebSocket endpoint (browser → Apache → Reverb).
-    // Separate from REVERB_HOST/PORT which the PHP backend uses internally.
     'reverb_public' => [
         'host'   => env('REVERB_PUBLIC_HOST', env('REVERB_HOST', '127.0.0.1')),
         'port'   => (int) env('REVERB_PUBLIC_PORT', env('REVERB_PORT', 8080)),

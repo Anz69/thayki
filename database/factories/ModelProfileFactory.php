@@ -10,16 +10,10 @@ use App\Models\ModelProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<ModelProfile>
- */
 class ModelProfileFactory extends Factory
 {
     protected $model = ModelProfile::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [

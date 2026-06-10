@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import Lottie from 'lottie-react'
 
-// The CRYSTALL Lottie is ~350KB — fetch it once and cache the parsed data so
-// every diamond (modal hero, badge, header) shares a single download.
 let cachedData = null
 let cachedPromise = null
 function loadCrystall() {

@@ -6,10 +6,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Localized model name. `display_name` stays the Russian (default) name;
- * `display_name_en` holds the English variant.
- */
 return new class extends Migration
 {
     public function up(): void

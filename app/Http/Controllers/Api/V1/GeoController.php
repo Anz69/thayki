@@ -11,13 +11,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
-/**
- * Best-effort city detection from the caller's IP, used to pre-fill the city
- * field in the request/selection flows ("Looks like you're in {city}?").
- *
- * Fail-soft: any error returns an empty city so the UI just falls back to a
- * plain editable field.
- */
 class GeoController extends Controller
 {
     public function city(Request $request): JsonResponse
@@ -32,7 +25,7 @@ class GeoController extends Controller
 
         $data = Cache::remember("geo:ip:{$ip}:{$lang}", now()->addDay(), function () use ($ip, $lang) {
             try {
-                // ipwho.is — HTTPS, free, no key, returns a localized city name.
+
                 $res = Http::timeout(3)->get("https://ipwho.is/{$ip}", [
                     'fields' => 'success,city,country',
                     'lang' => $lang,
@@ -46,7 +39,7 @@ class GeoController extends Controller
                     ];
                 }
             } catch (\Throwable) {
-                // ignore — fall through to empty
+
             }
 
             return ['city' => null, 'country' => null];
@@ -55,7 +48,6 @@ class GeoController extends Controller
         return ApiResponse::ok($data);
     }
 
-    /** Real client IP, honouring Cloudflare / reverse-proxy headers. */
     private function clientIp(Request $request): ?string
     {
         $cf = $request->header('CF-Connecting-IP');
@@ -73,7 +65,6 @@ class GeoController extends Controller
         return $request->ip();
     }
 
-    /** Skip lookups for localhost / LAN IPs (dev, internal). */
     private function isPrivate(string $ip): bool
     {
         return filter_var(

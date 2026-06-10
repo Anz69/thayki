@@ -70,7 +70,6 @@ export default function LandingPage() {
 
   return (
     <main className="flex flex-col h-dvh overflow-hidden">
-      {/* Globe + text + button as one vertically-centred group (no dead gap). */}
       <div
         className="flex-1 min-h-0 w-full flex flex-col items-center justify-center px-2"
         style={{
@@ -78,7 +77,6 @@ export default function LandingPage() {
           paddingBottom: `max(3vh, calc(env(safe-area-inset-bottom) + ${isCompact ? '10px' : '14px'}))`,
         }}
       >
-        {/* ── Globe ── */}
         <div
           ref={globeBoxRef}
           className="invisible relative w-full aspect-square shrink-0"
@@ -91,7 +89,6 @@ export default function LandingPage() {
           <GlobeOverlay ref={overlayRef} />
         </div>
 
-        {/* ── Text + button (sit right under the globe) ── */}
         <div className={`relative z-50 flex flex-col items-center ${bottomGap} ${isCompact ? 'mt-2' : 'mt-4'}`}>
           <div className={`flex flex-col items-center text-center ${textGap}`}>
             <h1 className={`text-black font-semibold leading-[110%] ${titleSize}`}>
@@ -110,7 +107,6 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* CTA button */}
           <div ref={btnWrapRef} className="invisible">
             <TransitionLink
               to="/home"

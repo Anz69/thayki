@@ -10,22 +10,6 @@ use App\Models\User;
 use App\Services\Telegram\Notifier;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Sends Telegram notifications when a meeting transitions between statuses.
- *
- * Wires both the client and the model into the right flow:
- *   - pending: client just placed the booking → model gets a "new booking" ping
- *   - accepted: model accepted → client gets "your booking is accepted, pay"
- *   - paid: client paid → model gets "client paid, meeting is set"
- *   - cancelled / rejected / expired: both sides notified of the dropoff
- *   - completed: client gets a "leave a review or complaint" prompt
- *
- * Admins are pinged on the high-signal transitions (paid, cancelled,
- * complaint-eligible completed) so they can keep tabs without polling.
- *
- * All operations are best-effort. Notifications must never block the
- * status transition itself, so every error path silently swallows.
- */
 class SendMeetingStatusNotification
 {
     public function handle(MeetingStatusChanged $event): void

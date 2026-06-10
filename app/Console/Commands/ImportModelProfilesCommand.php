@@ -12,22 +12,12 @@ use Illuminate\Http\File;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * Bulk-imports static prototype model profiles from a folder.
- *
- * Folder layout: one subdirectory per model, each containing:
- *   info.txt   — "Ключ: значение" lines (Имя, Рост, Грудь, Талия, Бёдра, Глаза, Размер груди, Возраст)
- *   photos/    — NNN.jpeg images
- *
- * Usage: php artisan models:import "/path/to/mds" [--fresh]
- */
 class ImportModelProfilesCommand extends Command
 {
     protected $signature = 'models:import {path : Folder containing model subdirectories} {--fresh : Delete all existing prototype profiles (user_id IS NULL) first}';
 
     protected $description = 'Import static prototype model profiles (info.txt + photos) from a folder';
 
-    /** info.txt key (lowercased, ё→е) → handler */
     private const KEYS = [
         'имя' => 'display_name',
         'рост' => 'height_cm',
@@ -87,7 +77,7 @@ class ImportModelProfilesCommand extends Command
             $photos = $this->collectPhotos($dir.'/photos');
 
             $count = DB::transaction(function () use ($data, $name, $photos): int {
-                /** @var ModelProfile $profile */
+
                 $profile = ModelProfile::query()->create([
                     'user_id' => null,
                     'display_name' => $name,
@@ -140,11 +130,6 @@ class ImportModelProfilesCommand extends Command
         return self::SUCCESS;
     }
 
-    /**
-     * Parse "Ключ: значение" lines into a normalized field map.
-     *
-     * @return array<string, string>
-     */
     private function parseInfo(string $raw): array
     {
         $out = [];
@@ -165,9 +150,6 @@ class ImportModelProfilesCommand extends Command
         return $out;
     }
 
-    /**
-     * @return list<string> Absolute photo paths, natural-sorted.
-     */
     private function collectPhotos(string $photosDir): array
     {
         if (! is_dir($photosDir)) {

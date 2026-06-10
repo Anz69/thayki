@@ -51,7 +51,6 @@ export default function VipGemHero({ isActive }) {
   return (
     <div className="flex items-center justify-center flex-1 relative overflow-hidden">
       <div className="relative" style={{ width: 240, height: 264 }}>
-        {/* soft aura — gentle, fits the gem (no techy ring) */}
         <span ref={haloRef} aria-hidden className="absolute rounded-full pointer-events-none"
           style={{ left: 10, top: 24, width: 220, height: 220, background: 'radial-gradient(circle, rgba(226,49,155,0.34) 0%, rgba(226,49,155,0.12) 42%, rgba(226,49,155,0) 70%)' }} />
         {SPARKS.map((p, i) => (
@@ -61,10 +60,7 @@ export default function VipGemHero({ isActive }) {
             </svg>
           </span>
         ))}
-        {/* CRYSTALL Lottie — vector, transparent, animates everywhere. */}
         <div ref={gemRef} className="absolute pointer-events-none" style={{ left: 24, top: 28, width: 192, height: 192, filter: 'drop-shadow(0 18px 34px rgba(226,49,155,0.45))' }}>
-          {/* Keep the brand pink — the Lottie crystal is blue, tint it to match
-              the previous pink gem so the colors don't change. */}
           <LottieDiamond size={192} style={{ filter: 'sepia(1) hue-rotate(280deg) saturate(3) brightness(1.05) contrast(1.05)' }} />
         </div>
       </div>

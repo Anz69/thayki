@@ -38,8 +38,6 @@ class PostMessageAction
             }
         }
 
-        // Special messages (system note, payment/verification/model cards) may
-        // carry no body/attachment — they're described entirely by type+payload.
         $isSpecial = $type !== 'text' || $payload !== null;
         if (! $isSpecial && ($body === null || trim($body) === '') && $attachment === null) {
             throw DomainException::invalid('MESSAGE_EMPTY', 'Message body or attachment is required.');
@@ -78,7 +76,6 @@ class PostMessageAction
                 $path = $dir.'/'.$name;
             }
 
-            /** @var Message $message */
             $message = Message::query()->create([
                 'chat_id'          => $chat->id,
                 'sender_id'        => $sender->id,
@@ -91,8 +88,7 @@ class PostMessageAction
             ]);
 
             if ($clientMessageId !== null && $clientMessageId !== '') {
-                // Keep this value in-memory for immediate API/Broadcast response
-                // even when the DB schema on the target env doesn't have this column yet.
+
                 $message->setAttribute('client_message_id', $clientMessageId);
             }
 

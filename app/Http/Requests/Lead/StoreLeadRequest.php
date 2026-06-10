@@ -10,15 +10,12 @@ class StoreLeadRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Managers handle leads, they don't create them as clients.
+
         $user = $this->user();
 
         return $user === null || ! $user->isManager();
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function rules(): array
     {
         return [

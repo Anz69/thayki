@@ -10,16 +10,10 @@ use App\Models\ModelProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Meeting>
- */
 class MeetingFactory extends Factory
 {
     protected $model = Meeting::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [

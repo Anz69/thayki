@@ -64,8 +64,6 @@ export default function ModelMorePage() {
     <>
       <section className="flex flex-col min-h-screen bg-white">
 
-  
-
         <div className="flex flex-col gap-4 container pt-[40px] pb-[120px]">
 
           <div ref={section1Ref} className="flex flex-col gap-4">

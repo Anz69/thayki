@@ -9,16 +9,10 @@ use App\Models\ModelApplication;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<ModelApplication>
- */
 class ModelApplicationFactory extends Factory
 {
     protected $model = ModelApplication::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [

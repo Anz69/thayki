@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// Broadcasting auth for Filament admin (uses 'admin' guard, not 'web')
 Route::post('/admin/broadcasting/auth', function (Request $request) {
     $socketId    = $request->input('socket_id', '');
     $channelName = $request->input('channel_name', '');
@@ -24,27 +23,20 @@ Route::post('/admin/broadcasting/auth', function (Request $request) {
     return response()->json(['auth' => $key . ':' . $sig]);
 })->middleware(['web', 'auth:admin']);
 
-// Telegram Mini App auth (session-based, not token)
 Route::post('/auth/telegram', [TelegramWebAuthController::class, 'handle'])
     ->name('web.auth.telegram');
 
-// Telegram Login Widget auth (for browser users)
 Route::post('/auth/telegram-widget', [TelegramWidgetAuthController::class, 'handle'])
     ->middleware('throttle:auth')
     ->name('web.auth.telegram-widget');
 
-// Browser tab polling: waits for Mini App to authenticate via deep-link token
 Route::get('/auth/browser-poll/{token}', [BrowserPollController::class, 'poll'])
     ->middleware('throttle:60,1')
     ->name('web.auth.browser-poll');
 
-// Telegram bot webhook. Telegram delivers POST updates here when the bot
-// receives a message; the secret-in-URL pattern protects the endpoint.
 Route::post('/telegram/webhook/{secret}', TelegramBotWebhookController::class)
     ->name('telegram.webhook');
 
-// SPA catch-all — Inertia renders the React app shell
-// All React Router navigation is client-side from here
 Route::get('/{any}', function () {
     return Inertia::render('App');
 })->where('any', '.*')->name('spa');

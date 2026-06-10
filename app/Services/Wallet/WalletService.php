@@ -11,18 +11,9 @@ use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Centralized, idempotent wallet mutations. All callers MUST go through this
- * service so that balances, locked amounts, optimistic locking and audit
- * transactions remain consistent.
- */
 class WalletService
 {
-    /**
-     * Credit wallet and record a transaction; idempotent by (reference_type, reference_id, type).
-     *
-     * @param  array<string, mixed>  $meta
-     */
+
     public function credit(
         User $user,
         int $amountMinor,
@@ -32,14 +23,14 @@ class WalletService
         array $meta = [],
     ): WalletTransaction {
         return DB::transaction(function () use ($user, $amountMinor, $type, $referenceType, $referenceId, $meta): WalletTransaction {
-            /** @var Wallet $wallet */
+
             $wallet = Wallet::query()->where('user_id', $user->id)->lockForUpdate()->firstOrCreate(
                 ['user_id' => $user->id],
                 ['balance_minor' => 0, 'locked_minor' => 0, 'currency' => 'THB', 'version' => 0],
             );
 
             if ($referenceType !== null && $referenceId !== null) {
-                /** @var WalletTransaction|null $existing */
+
                 $existing = WalletTransaction::query()
                     ->where('reference_type', $referenceType)
                     ->where('reference_id', $referenceId)
@@ -67,12 +58,6 @@ class WalletService
         });
     }
 
-    /**
-     * Debit wallet with optimistic lock. Throws if balance would go negative
-     * or the version changes between read and update.
-     *
-     * @param  array<string, mixed>  $meta
-     */
     public function debit(
         User $user,
         int $amountMinor,
@@ -82,7 +67,7 @@ class WalletService
         array $meta = [],
     ): WalletTransaction {
         return DB::transaction(function () use ($user, $amountMinor, $type, $referenceType, $referenceId, $meta): WalletTransaction {
-            /** @var Wallet $wallet */
+
             $wallet = Wallet::query()->where('user_id', $user->id)->lockForUpdate()->firstOrFail();
 
             if ($wallet->availableBalance() < $amountMinor) {

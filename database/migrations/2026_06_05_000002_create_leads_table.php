@@ -6,10 +6,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Client "подбор модели" requests (leads). Each lead spawns a Lead-type chat
- * where a manager follows up with the client.
- */
 return new class extends Migration
 {
     public function up(): void

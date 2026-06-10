@@ -11,23 +11,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Bumps `users.last_seen_at` on each authenticated API hit, throttled per
- * user via the cache so we don't write on every request.
- *
- * Why throttled
- *   Mini-App pages poll `/auth/me`, `/wallet`, `/meetings/latest`, etc. on
- *   every focus/visibility change — a naive UPDATE on every request would
- *   thrash the row and contend with chat writes. A 60-second cache key per
- *   user keeps it cheap and "live enough" for the chat-presence pill.
- *
- * Failure mode
- *   Best-effort. We never throw from here — a touch failing must never break
- *   the actual request.
- */
 class TouchLastSeen
 {
-    /** Don't write more than once per user every N seconds. */
+
     private const THROTTLE_SECONDS = 60;
 
     public function handle(Request $request, Closure $next): Response

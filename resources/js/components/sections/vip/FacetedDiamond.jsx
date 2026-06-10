@@ -1,5 +1,3 @@
-// A faceted brilliant-cut diamond drawn with shaded facet polygons — reads as a
-// real premium gem (not a flat outline). Pink/magenta palette to match the brand.
 export default function FacetedDiamond({ size = 168 }) {
   const id = 'fd'
   return (
@@ -24,20 +22,16 @@ export default function FacetedDiamond({ size = 168 }) {
       </defs>
 
       <g stroke="rgba(255,255,255,0.22)" strokeWidth="0.6" strokeLinejoin="round">
-        {/* crown */}
         <polygon points="72,46 128,46 140,92 60,92" fill={`url(#${id}-table)`} />
         <polygon points="72,46 60,92 28,92" fill={`url(#${id}-crown)`} />
         <polygon points="128,46 140,92 172,92" fill={`url(#${id}-crown)`} />
-        {/* pavilion */}
         <polygon points="28,92 60,92 100,196" fill={`url(#${id}-pavDark)`} />
         <polygon points="60,92 100,92 100,196" fill={`url(#${id}-pavMid)`} />
         <polygon points="100,92 140,92 100,196" fill={`url(#${id}-pavMid)`} />
         <polygon points="140,92 172,92 100,196" fill={`url(#${id}-pavDark)`} />
       </g>
 
-      {/* girdle highlight */}
       <line x1="28" y1="92" x2="172" y2="92" stroke="rgba(255,255,255,0.5)" strokeWidth="1.3" strokeLinecap="round" />
-      {/* table glint */}
       <polygon points="80,52 98,52 93,70 76,70" fill="#fff" opacity="0.55" />
       <polygon points="103,52 120,52 124,70 108,70" fill="#fff" opacity="0.22" />
     </svg>
