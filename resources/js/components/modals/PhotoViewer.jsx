@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Keyboard } from 'swiper/modules'
 import 'swiper/css'
 import ModalSheet from '@/layout/ModalSheet'
 import usePhotoViewerStore from '@/stores/usePhotoViewerStore'
 export default function PhotoViewer() {
+  const { t } = useTranslation()
   const store = usePhotoViewerStore()
   const swiperRef = useRef(null)
   const scrollToIndex = (index) => {
@@ -51,10 +53,10 @@ export default function PhotoViewer() {
               strokeLinejoin="round"
             />
           </svg>
-          <span className="text-sm font-medium text-[#111]">Назад</span>
+          <span className="text-sm font-medium text-[#111]">{t('common.back')}</span>
         </button>
         <span className="text-sm font-[500] text-[#111] tabular-nums absolute left-1/2 -translate-x-1/2">
-          Фото {store.currentIndex + 1} из {store.photos.length}
+          {t('photoViewer.counter', { current: store.currentIndex + 1, total: store.photos.length })}
         </span>
         <button
           onClick={store.close}

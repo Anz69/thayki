@@ -1,5 +1,6 @@
 import { useEffect, useRef, useLayoutEffect } from 'react'
 import gsap from 'gsap'
+import i18n from '@/i18n'
 import useAuthStore from '@/stores/useAuthStore'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import { resetModelAppGuardCache } from '@/RouterShell'
@@ -146,8 +147,8 @@ export default function ApplicationPendingPage() {
             )
             .to(headRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' }, 0.28)
             .call(() => {
-              if (headRef.current) headRef.current.textContent = 'Заявка одобрена!'
-              if (subRef.current) subRef.current.textContent = 'Переходим в профиль модели…'
+              if (headRef.current) headRef.current.textContent = i18n.t('appPending.approved')
+              if (subRef.current) subRef.current.textContent = i18n.t('appPending.toProfile')
             }, [], 0.52)
             .to(headRef.current, { opacity: 1, duration: 0.32, ease: 'power2.out' }, 0.56)
             .to(subRef.current, { opacity: 0, duration: 0.18, ease: 'power2.in' }, 0.3)
@@ -203,8 +204,8 @@ export default function ApplicationPendingPage() {
             .to(headRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' }, 0.2)
             .to(subRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' }, 0.24)
             .call(() => {
-              if (headRef.current) headRef.current.textContent = 'Заявка отклонена'
-              if (subRef.current) subRef.current.textContent = 'Возвращаемся на главную…'
+              if (headRef.current) headRef.current.textContent = i18n.t('appPending.rejected')
+              if (subRef.current) subRef.current.textContent = i18n.t('appPending.toHome')
             }, [], 0.46)
             .to(headRef.current, { opacity: 1, duration: 0.32, ease: 'power2.out' }, 0.5)
             .to(subRef.current, { opacity: 1, duration: 0.32, ease: 'power2.out' }, 0.56)
@@ -281,14 +282,14 @@ export default function ApplicationPendingPage() {
           className="text-[22px]/[110%] font-[500] text-black tracking-[-0.02em]"
           style={{ visibility: 'hidden' }}
         >
-          Заявка на рассмотрении
+          {i18n.t('appPending.title')}
         </h1>
         <p
           ref={subRef}
           className="text-[#7F7F7F] text-[14px]/[148%] font-medium max-w-[260px]"
           style={{ visibility: 'hidden' }}
         >
-          Мы проверяем вашу анкету. Обычно это занимает несколько минут.
+          {i18n.t('appPending.desc')}
         </p>
       </div>
     </div>

@@ -1,4 +1,7 @@
+import { useTranslation } from 'react-i18next'
+
 export default function BannedPage() {
+  const { t } = useTranslation()
   const handleSupport = () => {
     const tg = window.Telegram?.WebApp
     if (tg?.openTelegramLink) {
@@ -17,17 +20,17 @@ export default function BannedPage() {
         </svg>
       </div>
 
-      <h1 className="text-xl font-bold text-gray-900 mb-3">Аккаунт заблокирован</h1>
+      <h1 className="text-xl font-bold text-gray-900 mb-3">{t('banned.title')}</h1>
 
       <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-xs">
-        Доступ к приложению ограничен. Если вы считаете это ошибкой, свяжитесь с поддержкой.
+        {t('banned.desc')}
       </p>
 
       <button
         onClick={handleSupport}
         className="w-full max-w-xs py-3 rounded-2xl bg-[#E2319B] text-white text-sm font-semibold active:opacity-80 transition-opacity"
       >
-        Написать в поддержку
+        {t('banned.contact')}
       </button>
     </div>
   )

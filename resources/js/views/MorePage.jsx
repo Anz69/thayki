@@ -59,26 +59,18 @@ function Toggle({ value, onChange }) {
   )
 }
 
-const STATUS_MAP = {
-  pending: 'Ожидает подтверждения',
-  accepted: 'Принято',
-  paid: 'Оплачено',
-  confirmed: 'Подтверждено',
-  completed: 'Завершено',
-  expired: 'Истекло',
-}
-
 function formatDate(iso) {
   if (!iso) return '—'
   try {
     const d = new Date(iso)
     if (isNaN(d)) return '—'
-    const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
+    const days = i18n.t('weekdaysShort', { returnObjects: true })
+    const day = Array.isArray(days) ? days[d.getDay()] : ''
     const dd = String(d.getDate()).padStart(2, '0')
     const mm = String(d.getMonth() + 1).padStart(2, '0')
     const hh = String(d.getHours()).padStart(2, '0')
     const min = String(d.getMinutes()).padStart(2, '0')
-    return `${days[d.getDay()]}, ${dd}.${mm}, ${hh}:${min}`
+    return `${day}, ${dd}.${mm}, ${hh}:${min}`
   } catch { return '—' }
 }
 
@@ -95,7 +87,7 @@ function OrderCard({ meeting, currentUserId, onClick }) {
     : (meeting.client?.photo_url ?? null)
   const counterPhoto = counterPhotoRaw ? resolveMediaUrl(counterPhotoRaw) : null
 
-  const statusLabel = t(`orderStatus.${meeting.status}`, STATUS_MAP[meeting.status] ?? meeting.status)
+  const statusLabel = t(`orderStatus.${meeting.status}`, t(`moreStatus.${meeting.status}`, meeting.status))
   const price = meeting.price_thb ?? 0
   const duration = meeting.duration_hours ? `${meeting.duration_hours} ${t('common.hoursShort')}` : '—'
 

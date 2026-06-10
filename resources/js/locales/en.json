@@ -11,7 +11,10 @@
     "close": "Close",
     "loading": "Checking...",
     "client": "Client",
-    "hoursShort": "h"
+    "hoursShort": "h",
+    "user": "User",
+    "support": "Support",
+    "somethingWrong": "Something went wrong"
   },
   "orderStatus": {
     "pending": "Awaiting confirmation",
@@ -362,5 +365,59 @@
     "title": "Chat",
     "meetingClosed": "Meeting ended — chat closed",
     "placeholder": "Message..."
+  },
+  "photoViewer": {
+    "counter": "Photo {{current}} of {{total}}"
+  },
+  "catalog": {
+    "slide": "Slide {{n}}"
+  },
+  "errors": {
+    "desc": "An unexpected error occurred. Try reloading the page — that usually helps.",
+    "reload": "Reload",
+    "showCause": "View error details",
+    "details": "Error details",
+    "detailsUnavailable": "Error details unavailable"
+  },
+  "net": {
+    "noResponse": "Server is not responding. Check your connection.",
+    "noConnection": "No connection to the server."
+  },
+  "meetingActions": {
+    "cancel": "Cancel",
+    "goToChat": "Go to chat",
+    "confirm": "Confirm",
+    "finish": "Finish meeting",
+    "meetingFallback": "Meeting"
+  },
+  "moreStatus": {
+    "pending": "Awaiting confirmation",
+    "accepted": "Accepted",
+    "paid": "Paid",
+    "confirmed": "Confirmed",
+    "completed": "Completed",
+    "expired": "Expired"
+  },
+  "weekdaysShort": [
+    "Sun",
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat"
+  ],
+  "banned": {
+    "title": "Account blocked",
+    "desc": "Access to the app is restricted. If you believe this is a mistake, contact support.",
+    "contact": "Contact support"
+  },
+  "appPending": {
+    "approved": "Application approved!",
+    "toProfile": "Going to your model profile…",
+    "rejected": "Application rejected",
+    "toHome": "Returning home…",
+    "title": "Application under review",
+    "desc": "We are reviewing your application. This usually takes a few minutes."
   }
 }

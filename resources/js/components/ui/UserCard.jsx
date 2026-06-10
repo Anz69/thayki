@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/stores/useAuthStore'
 
 const IconUser = () => (
@@ -15,6 +16,7 @@ const IconUser = () => (
 )
 
 export default function UserCard() {
+  const { t } = useTranslation()
   const { user, displayName } = useAuthStore()
   const [imgFailed, setImgFailed]   = useState(false)
   const name     = displayName()
@@ -37,7 +39,7 @@ export default function UserCard() {
       )}
       <div className="flex flex-col gap-0.5 min-w-0">
         <span className="text-black text-[15px]/[120%] font-[500] truncate">
-          {name || 'Пользователь'}
+          {name || t('common.user')}
         </span>
         {username && (
           <span className="text-[#7F7F7F] text-[13px]/[120%] font-medium truncate">

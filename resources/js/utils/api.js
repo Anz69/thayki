@@ -1,4 +1,5 @@
 import axios from 'axios'
+import i18n from '@/i18n'
 
 const api = axios.create({
   baseURL:         '/api/v1',
@@ -75,8 +76,8 @@ api.interceptors.response.use(
       error.isNetworkError = true
       if (!error.userMessage) {
         error.userMessage = error?.code === 'ECONNABORTED'
-          ? 'Сервер не отвечает. Проверьте интернет.'
-          : 'Нет соединения с сервером.'
+          ? i18n.t('net.noResponse')
+          : i18n.t('net.noConnection')
       }
     }
 
@@ -93,7 +94,7 @@ api.interceptors.response.use(
   },
 )
 
-export function extractErrorMessage(err, fallback = 'Что-то пошло не так') {
+export function extractErrorMessage(err, fallback = i18n.t('common.somethingWrong')) {
   if (!err) return fallback
   if (err.userMessage) return err.userMessage
   const data = err.response?.data

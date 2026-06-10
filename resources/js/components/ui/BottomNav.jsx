@@ -132,23 +132,23 @@ export default function BottomNav() {
   function renderMeetingButtons(slot) {
     switch (slot) {
       case 'client-default': return (
-        <><button onClick={clientCancel} className={CANCEL}>Отменить</button>
-          <button onClick={goSupport}    className={GHOST}>Поддержка</button></>
+        <><button onClick={clientCancel} className={CANCEL}>{t('meetingActions.cancel')}</button>
+          <button onClick={goSupport}    className={GHOST}>{t('common.support')}</button></>
       )
       case 'client-chat': return (
-        <button onClick={goChat} className={WHITE}>Перейти в чат</button>
+        <button onClick={goChat} className={WHITE}>{t('meetingActions.goToChat')}</button>
       )
       case 'model-pending': return (
-        <><button onClick={modelCancel}  className={WHITE}>Отменить</button>
-          <button onClick={confirmModel} className={PINK}>Подтвердить</button></>
+        <><button onClick={modelCancel}  className={WHITE}>{t('meetingActions.cancel')}</button>
+          <button onClick={confirmModel} className={PINK}>{t('meetingActions.confirm')}</button></>
       )
       case 'model-waiting': return (
-        <><button onClick={modelCancel} className={CANCEL}>Отменить</button>
-          <button onClick={goSupport}   className={GHOST}>Поддержка</button></>
+        <><button onClick={modelCancel} className={CANCEL}>{t('meetingActions.cancel')}</button>
+          <button onClick={goSupport}   className={GHOST}>{t('common.support')}</button></>
       )
       case 'model-confirmed': return (
-        <><button onClick={goChat}        className={WHITE}>Перейти в чат</button>
-          <button onClick={finishMeeting} className={PINK}>Завершить встречу</button></>
+        <><button onClick={goChat}        className={WHITE}>{t('meetingActions.goToChat')}</button>
+          <button onClick={finishMeeting} className={PINK}>{t('meetingActions.finish')}</button></>
       )
       default: return null
     }
@@ -366,7 +366,7 @@ export default function BottomNav() {
                       ?? meeting.meeting?.model_profile?.photos?.find(p => p.is_main)?.url
                       ?? meeting.meeting?.model_profile?.photos?.[0]?.url
                       ?? null
-                    const modelName = meeting.meeting?.model_profile?.display_name ?? 'Встреча'
+                    const modelName = meeting.meeting?.model_profile?.display_name ?? t('meetingActions.meetingFallback')
                     return (
                       <>
                         <div className="size-5 rounded-full overflow-hidden shrink-0 flex items-center justify-center" {...(!modelPhoto ? { style: { background: '#E2319B' } } : {})}>

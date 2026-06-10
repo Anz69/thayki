@@ -84,7 +84,7 @@ export default function CatalogNotice() {
               key={i}
               type="button"
               onClick={() => goTo(i)}
-              aria-label={`Слайд ${i + 1}`}
+              aria-label={t('catalog.slide', { n: i + 1 })}
               className="flex-1 h-full overflow-hidden rounded-full bg-[#E2E0E8]"
             >
               <span

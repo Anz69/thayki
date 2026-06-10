@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import i18n from '@/i18n'
 import ModalMiddle from '@/layout/ModalMiddle'
 
 export default class ErrorBoundary extends Component {
@@ -91,9 +92,9 @@ export default class ErrorBoundary extends Component {
         }}
       >
         <div style={{ fontSize: 56, lineHeight: 1 }}>⚠️</div>
-        <div style={{ fontSize: 20, fontWeight: 500 }}>Что-то пошло не так</div>
+        <div style={{ fontSize: 20, fontWeight: 500 }}>{i18n.t('common.somethingWrong')}</div>
         <div style={{ fontSize: 14, color: '#7F7F7F', maxWidth: 320 }}>
-          Произошла непредвиденная ошибка. Попробуйте перезагрузить страницу — обычно это помогает.
+          {i18n.t('errors.desc')}
         </div>
 
         <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
@@ -110,7 +111,7 @@ export default class ErrorBoundary extends Component {
               cursor: 'pointer',
             }}
           >
-            Попробовать снова
+            {i18n.t('common.retry')}
           </button>
           <button
             onClick={this.handleReload}
@@ -125,7 +126,7 @@ export default class ErrorBoundary extends Component {
               cursor: 'pointer',
             }}
           >
-            Перезагрузить
+            {i18n.t('errors.reload')}
           </button>
         </div>
 
@@ -143,12 +144,12 @@ export default class ErrorBoundary extends Component {
             marginTop: 2,
           }}
         >
-          Посмотреть причину ошибки
+          {i18n.t('errors.showCause')}
         </button>
 
         <ModalMiddle isOpen={this.state.showDetail} onClose={this.closeDetail}>
           <div style={{ padding: '0 20px 24px' }}>
-            <p style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 12 }}>Детали ошибки</p>
+            <p style={{ fontSize: 16, fontWeight: 600, color: '#111827', marginBottom: 12 }}>{i18n.t('errors.details')}</p>
             <pre
               style={{
                 fontSize: 11,
@@ -165,7 +166,7 @@ export default class ErrorBoundary extends Component {
             >
               {JSON.stringify({
                 name: this.state.error?.name ?? 'Error',
-                message: this.state.error?.message ?? 'Детали ошибки недоступны',
+                message: this.state.error?.message ?? i18n.t('errors.detailsUnavailable'),
                 stack: this.state.error?.stack ?? null,
                 componentStack: this.state.componentStack ?? null,
                 route: this.state.errorRoute ?? null,
@@ -187,7 +188,7 @@ export default class ErrorBoundary extends Component {
                 cursor: 'pointer',
               }}
             >
-              Закрыть
+              {i18n.t('common.close')}
             </button>
           </div>
         </ModalMiddle>
