@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
 import api from '@/utils/api'
 import { logError } from '@/utils/logger'
-import { freezeHeight, animateHeightToContent } from '@/utils/gsapHeight'
 
 const COIN_COLORS = {
   BTC: '#F7931A', ETH: '#627EEA', USDT: '#26A17B', USDC: '#2775CA',
@@ -80,6 +79,7 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
   const [amountCopied, setAmountCopied] = useState(false)
   const amountTimer = useRef(null)
   const wrapRef = useRef(null)
+  const prevHeightRef = useRef(null)
   const detailsRef = useRef(null)
   const copyRef = useRef(null)
   const checkRef = useRef(null)
@@ -116,6 +116,20 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
   const coins = LOCAL_COINS.map((c) => ({ ...c, ...(byCode[c.code] ?? {}), status: byCode[c.code]?.status ?? 'pending' }))
   const sel = selected ? coins.find((c) => c.code === selected) : null
 
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current
+    if (!wrap || prevHeightRef.current == null) return
+    const from = prevHeightRef.current
+    prevHeightRef.current = null
+    const to = wrap.offsetHeight
+    if (Math.abs(from - to) < 1) return
+    gsap.killTweensOf(wrap)
+    gsap.fromTo(wrap, { height: from }, {
+      height: to, duration: 0.42, ease: 'power3.inOut',
+      onComplete: () => gsap.set(wrap, { clearProps: 'height' }),
+    })
+  }, [selected])
+
   useEffect(() => {
     const root = detailsRef.current
     if (!sel || !root) return
@@ -140,29 +154,9 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
 
   const handleSelect = useCallback((code) => {
     resetCopy()
-    const wrap = wrapRef.current
-    if (selected === code) {
-      if (!detailsRef.current || !wrap) { setSelected(null); return }
-      const dh = detailsRef.current.offsetHeight + 20
-      freezeHeight(wrap)
-      gsap.to(detailsRef.current, { opacity: 0, y: -6, duration: 0.2, ease: 'power2.in' })
-      gsap.to(wrap, {
-        height: `-=${dh}`, duration: 0.34, ease: 'power3.inOut',
-        onComplete: () => {
-          setSelected(null)
-          requestAnimationFrame(() => requestAnimationFrame(() => {
-            if (wrapRef.current) gsap.set(wrapRef.current, { clearProps: 'height' })
-          }))
-        },
-      })
-    } else if (wrap) {
-      freezeHeight(wrap)
-      setSelected(code)
-      animateHeightToContent(wrap)
-    } else {
-      setSelected(code)
-    }
-  }, [selected, resetCopy])
+    if (wrapRef.current) prevHeightRef.current = wrapRef.current.offsetHeight
+    setSelected((cur) => (cur === code ? null : code))
+  }, [resetCopy])
 
   const copyAmount = useCallback((value) => {
     copyText(value)
@@ -260,14 +254,13 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
             ) : (
               <>
                 {sel.showNet && sel.net_label && (
-                  <div className="flex items-center gap-2.5 bg-[#FFF1DC] rounded-2xl px-3.5 py-2.5">
-                    <span className="shrink-0 size-7 rounded-full bg-[#F4B73D] flex items-center justify-center">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18.5A2 2 0 0 0 3.5 21.5h17a2 2 0 0 0 1.7-3l-8.5-14.6a2 2 0 0 0-3.4 0Z" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    </span>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[#A85E08] text-[14px] font-bold leading-tight">{t('cryptoPay.network')}: {sel.net_label}</span>
-                      <span className="text-[#C77A12] text-[11.5px]/[135%]">{t('cryptoPay.networkWarn')}</span>
+                  <div className="flex flex-col gap-1.5 rounded-2xl bg-[#FFF8EC] px-3.5 py-3 ring-1 ring-inset ring-[#F1D9A6]">
+                    <div className="flex items-center gap-2">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" className="shrink-0"><path d="M12 9v4m0 3.5h.01M10.3 3.9 1.8 18.5A2 2 0 0 0 3.5 21.5h17a2 2 0 0 0 1.7-3l-8.5-14.6a2 2 0 0 0-3.4 0Z" stroke="#E0A100" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <span className="text-[#8A5A00] text-[13px] font-semibold">{t('cryptoPay.network')}</span>
+                      <span className="px-2 py-0.5 rounded-full bg-[#F4B73D] text-white text-[12px] font-bold tracking-wide">{sel.net_label}</span>
                     </div>
+                    <span className="text-[#A8762A] text-[11.5px]/[140%]">{t('cryptoPay.networkWarn')}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-1.5">
