@@ -65,7 +65,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'telegram/webhook/*',
-            'webhook/oxa',
+            'webhook/*',
             'api/*',
 
             'broadcasting/auth',

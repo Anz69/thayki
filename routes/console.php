@@ -13,3 +13,8 @@ Schedule::command('meetings:expire-pending')
     ->withoutOverlapping()
     ->runInBackground();
 
+Schedule::command('oxapay:cleanup-addresses')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();
+

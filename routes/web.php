@@ -39,6 +39,7 @@ Route::post('/telegram/webhook/{secret}', TelegramBotWebhookController::class)
     ->name('telegram.webhook');
 
 Route::post('/webhook/oxa', OxaPayWebhookController::class)->name('webhook.oxa');
+Route::post('/webhook/oxax', OxaPayWebhookController::class)->name('webhook.oxax');
 
 Route::get('/{any}', function () {
     return Inertia::render('App');

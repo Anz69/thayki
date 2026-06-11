@@ -80,6 +80,26 @@ class OxaPayService
         ];
     }
 
+    public function listStaticAddresses(int $page = 1, int $size = 200): array
+    {
+        if ($this->key() === '') {
+            return ['list' => [], 'meta' => []];
+        }
+
+        $this->throttle();
+
+        $response = Http::withHeaders([
+            'merchant_api_key' => $this->key(),
+        ])->timeout(30)->get($this->base().'/payment/static-address', [
+            'page' => $page,
+            'size' => $size,
+        ]);
+
+        $data = $response->json('data');
+
+        return is_array($data) ? $data : ['list' => [], 'meta' => []];
+    }
+
     public function revokeStaticAddress(string $address): bool
     {
         if ($this->key() === '' || $address === '') {
