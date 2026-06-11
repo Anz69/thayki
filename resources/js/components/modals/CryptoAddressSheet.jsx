@@ -23,14 +23,34 @@ const IconCheck = () => (
 )
 
 function CoinIcon({ code, size = 'full' }) {
+  const [loaded, setLoaded] = useState(false)
+  const [failed, setFailed] = useState(false)
   const bg = COIN_COLORS[code] ?? '#888'
-  const cls = size === 'sm' ? 'w-4 h-4 text-[7px]' : 'w-full h-full'
+  const box = size === 'sm' ? 'w-4 h-4' : 'w-full h-full'
+
+  if (failed) {
+    return (
+      <span
+        className={`${box} rounded-full flex items-center justify-center text-white font-bold select-none`}
+        style={{ background: bg, fontSize: size === 'sm' ? 7 : (code.length > 3 ? 10 : 12), letterSpacing: '-0.03em' }}
+      >
+        {code}
+      </span>
+    )
+  }
+
   return (
-    <span
-      className={`${cls} rounded-full flex items-center justify-center text-white font-bold select-none`}
-      style={{ background: bg, fontSize: size === 'sm' ? 7 : (code.length > 3 ? 10 : 12), letterSpacing: '-0.03em' }}
-    >
-      {code}
+    <span className={`relative ${box} rounded-full overflow-hidden block`}>
+      {!loaded && <span className="absolute inset-0 rounded-full bg-gradient-to-br from-[#F0F0F3] to-[#E7E7EC] animate-pulse" />}
+      <img
+        src={`/img/payments/crypto/${code.toLowerCase()}.svg`}
+        alt={code}
+        loading="lazy"
+        className="w-full h-full object-cover rounded-full"
+        style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.2s ease' }}
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+      />
     </span>
   )
 }

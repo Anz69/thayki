@@ -359,7 +359,8 @@
     "parseEta": "≈ 剩余 {{s}}",
     "parseAlmost": "快好了，再等几秒…",
     "minShort": "分",
-    "secShort": "秒"
+    "secShort": "秒",
+    "payCryptoAuto": "款项到账后将自动确认。"
   },
   "chat": {
     "back": "返回",

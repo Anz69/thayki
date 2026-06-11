@@ -359,7 +359,8 @@
     "parseEta": "≈ {{s}} left",
     "parseAlmost": "almost done, a few more seconds…",
     "minShort": "min",
-    "secShort": "s"
+    "secShort": "s",
+    "payCryptoAuto": "Confirms automatically once the payment arrives."
   },
   "chat": {
     "back": "Back",
