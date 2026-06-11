@@ -70,7 +70,8 @@ class OxaPayWebhookController
 
         $isPaid = in_array($status, ['paid', 'confirmed', 'completed'], true);
 
-        $this->notifyManager($lead, $row, $coin, $amount, $address, $isPaid, $status);
+        $payRef = ($txHash !== null && $txHash !== '') ? $txHash : (string) ($payload['track_id'] ?? '');
+        $this->notifyManager($lead, $row, $coin, $amount, $address, $isPaid, $status, $payRef);
 
         if ($isPaid && $row->status !== LeadCryptoAddress::STATUS_PAID) {
             try {
@@ -98,7 +99,7 @@ class OxaPayWebhookController
         return $symbol.number_format($amountMinor / 100, 2).' '.$currency;
     }
 
-    private function notifyManager(Lead $lead, LeadCryptoAddress $row, string $coin, string $amount, string $address, bool $paid, string $status): void
+    private function notifyManager(Lead $lead, LeadCryptoAddress $row, string $coin, string $amount, string $address, bool $paid, string $status, ?string $txHash = null): void
     {
         $client = $lead->user;
         $name = trim(($client->first_name ?? '').' '.($client->last_name ?? ''));
@@ -143,7 +144,8 @@ class OxaPayWebhookController
             .$reqLines;
 
         $notifier = Notifier::default();
-        $dedup = 'oxa-'.$status.'-'.md5($address.$amount);
+        $dedupBasis = ($txHash !== null && $txHash !== '') ? $txHash : ($address.'|'.$amount);
+        $dedup = 'oxa-'.$status.'-'.md5($dedupBasis);
 
         if ($lead->manager && $lead->manager->tg_chat_id) {
             $notifier->notifyUser($lead->manager, $text, '/manager/leads', 'Открыть', $dedup);
