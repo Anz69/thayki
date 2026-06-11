@@ -5,9 +5,21 @@ import { Pagination, Mousewheel, Keyboard } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
 
-function LightboxVideo({ src, poster }) {
+function LightboxVideo({ src, poster, active }) {
   const ref = useRef(null)
   const [muted, setMuted] = useState(true)
+  useEffect(() => {
+    const v = ref.current
+    if (!v) return
+    if (active) {
+      const p = v.play()
+      if (p?.catch) p.catch(() => {})
+    } else {
+      v.pause()
+      v.muted = true
+      setMuted(true)
+    }
+  }, [active])
   const toggle = (e) => {
     e.stopPropagation()
     const v = ref.current
@@ -19,7 +31,7 @@ function LightboxVideo({ src, poster }) {
   }
   return (
     <div className="relative inline-flex max-w-full max-h-full" onClick={toggle}>
-      <video ref={ref} src={src} poster={poster} autoPlay loop muted playsInline
+      <video ref={ref} src={src} poster={poster} loop muted playsInline
         className="max-w-full max-h-full object-contain rounded-xl bg-black" />
       <span className="absolute bottom-3 right-3 size-9 rounded-full bg-black/55 backdrop-blur-md flex items-center justify-center pointer-events-none ring-1 ring-white/20">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -42,6 +54,7 @@ export const PlayBadge = ({ size = 64 }) => (
 )
 
 export default function MediaLightbox({ media, index = 0, onClose }) {
+  const [active, setActive] = useState(index)
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
@@ -68,6 +81,7 @@ export default function MediaLightbox({ media, index = 0, onClose }) {
         slidesPerView={1}
         spaceBetween={16}
         grabCursor
+        onSlideChange={(s) => setActive(s.activeIndex)}
         mousewheel={{ forceToAxis: true }}
         keyboard={{ enabled: true }}
         className="media-lb w-full h-full"
@@ -83,7 +97,7 @@ export default function MediaLightbox({ media, index = 0, onClose }) {
           <SwiperSlide key={i} className="flex items-center justify-center">
             <div className="w-full h-full flex items-center justify-center px-3 py-12" onClick={(e) => e.stopPropagation()}>
               {m.type === 'video'
-                ? <LightboxVideo src={m.url} poster={m.poster} />
+                ? <LightboxVideo src={m.url} poster={m.poster} active={i === active} />
                 : <img src={m.url} alt="" className="max-w-full max-h-full object-contain rounded-xl select-none" draggable={false} />}
             </div>
           </SwiperSlide>

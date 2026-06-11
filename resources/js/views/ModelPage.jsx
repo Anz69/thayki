@@ -275,7 +275,7 @@ export default function ModelPage({ preview = false }) {
               )}
             </div>
           </header>
-          {!loadError && (
+          {!loadError && !preview && (
             <div className="w-full bg-[#FBF1F8] border-y border-[#E2319B]/12">
               <div className="relative flex items-center gap-2 px-3.5 py-1.5 overflow-hidden">
                 <span className="relative z-20 shrink-0 flex items-center justify-center size-5 rounded-full bg-[#E2319B]/12">

@@ -167,16 +167,16 @@ export default function HowItWorksStep2({ isActive }) {
       </div>
 
       <div ref={setRow(1)} className="bg-[#F5F5F7] rounded-2xl px-4 py-3.5 w-full">
-        <span className="text-[#9B9AA0] text-[12px]/[100%] font-medium">{t('request.goal')}</span>
+        <span className="text-[#9B9AA0] text-[12px]/[100%] font-medium">{t('request.event')}</span>
         <div className="mt-2.5 flex flex-wrap gap-2">
           <span
             ref={chipRef}
             className="px-3.5 py-2 rounded-full text-[13px]/[100%] font-medium bg-white text-black border border-black/5"
           >
-            {t('request.goals.travel')}
+            {t('request.events.trip')}
           </span>
-          <Chip>{t('request.goals.leisure')}</Chip>
-          <Chip>{t('request.goals.events')}</Chip>
+          <Chip>{t('request.events.oneTime')}</Chip>
+          <Chip>{t('request.events.relationship')}</Chip>
         </div>
       </div>
 
