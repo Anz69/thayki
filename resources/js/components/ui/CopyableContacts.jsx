@@ -31,7 +31,7 @@ function CopyableToken({ raw }) {
     <span
       onClick={onCopy}
       role="button"
-      className={`cursor-pointer select-text font-semibold underline underline-offset-[1px] [text-decoration-thickness:0.5px] transition-colors ${copied ? 'text-[#1E9E4E] decoration-[#1E9E4E]/50' : 'text-[#E2319B] decoration-[#E2319B]/45 active:text-[#C01A7E]'}`}
+      className={`cursor-pointer select-text font-semibold underline underline-offset-2 [text-decoration-thickness:1.5px] transition-colors ${copied ? 'text-[#1E9E4E] decoration-[#1E9E4E]/55' : 'text-[#E2319B] decoration-[#E2319B]/55 active:text-[#C01A7E]'}`}
     >
       {raw}
     </span>
