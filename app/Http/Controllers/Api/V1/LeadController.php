@@ -170,28 +170,54 @@ class LeadController extends Controller
         $margin = (float) config('oxapay.margin', 0.025);
         $cryptoBasis = $payFiat * (1 + $margin);
 
-        $rows = LeadCryptoAddress::query()
+        $refetch = fn () => LeadCryptoAddress::query()
             ->where('lead_id', $lead->id)
             ->where('message_id', $message->id)
             ->get()
             ->keyBy('network');
 
-        $hasReady = $rows->contains(
-            static fn ($r) => in_array($r->status, [LeadCryptoAddress::STATUS_ACTIVE, LeadCryptoAddress::STATUS_PAID], true)
-        );
-        if (! $hasReady && \Illuminate\Support\Facades\Cache::add('oxa:gen:'.$message->id, 1, 90)) {
+        $rows = $refetch();
+
+        if ($rows->isEmpty()) {
             foreach ((array) config('oxapay.networks', []) as $network) {
                 LeadCryptoAddress::query()->firstOrCreate(
                     ['lead_id' => $lead->id, 'message_id' => $message->id, 'network' => $network],
                     ['status' => LeadCryptoAddress::STATUS_PENDING],
                 );
             }
-            \App\Jobs\GenerateLeadCryptoAddressesJob::dispatch($lead->id, $message->id)->afterResponse();
-            $rows = LeadCryptoAddress::query()
-                ->where('lead_id', $lead->id)
-                ->where('message_id', $message->id)
-                ->get()
-                ->keyBy('network');
+            $rows = $refetch();
+        }
+
+        $pending = $rows->filter(static fn ($r) => $r->status === LeadCryptoAddress::STATUS_PENDING);
+        if ($pending->isNotEmpty()) {
+            $lock = \Illuminate\Support\Facades\Cache::lock('oxa:gen:'.$message->id, 25);
+            if ($lock->get()) {
+                try {
+                    $oxa = app(\App\Services\Payments\OxaPayService::class);
+                    $deadline = microtime(true) + 9;
+                    foreach ($pending as $row) {
+                        if (microtime(true) > $deadline) {
+                            break;
+                        }
+                        try {
+                            $orderId = 'lead'.$lead->id.'-m'.$message->id.'-'.preg_replace('/[^A-Za-z0-9]/', '', (string) $row->network);
+                            $res = $oxa->generateStaticAddress((string) $row->network, $orderId, 'Lead #'.$lead->id.' crypto payment');
+                            $row->update([
+                                'address' => $res['address'],
+                                'memo' => $res['memo'],
+                                'track_id' => $res['track_id'],
+                                'status' => $res['address'] !== '' ? LeadCryptoAddress::STATUS_ACTIVE : LeadCryptoAddress::STATUS_FAILED,
+                            ]);
+                        } catch (\Throwable $e) {
+                            \Illuminate\Support\Facades\Log::error('crypto address gen failed', ['network' => $row->network, 'lead' => $lead->id, 'error' => $e->getMessage()]);
+                            $row->update(['status' => LeadCryptoAddress::STATUS_FAILED]);
+                        }
+                    }
+                } finally {
+                    $lock->release();
+                }
+                $rows = $refetch();
+            }
         }
 
         $rate = app(\App\Services\Payments\CryptoRateService::class);
