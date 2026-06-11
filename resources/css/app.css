@@ -117,6 +117,13 @@ html {
   100% { transform: scale(2.4); opacity: 0; }
 }
 
+@keyframes copyToastPop {
+  0%   { transform: translate(-50%, 12px) scale(0.92); opacity: 0; }
+  14%  { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  80%  { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, 8px) scale(0.96); opacity: 0; }
+}
+
 @layer utilities {
   .balance-shimmer {
     animation: balanceShimmer 1.2s ease-in-out infinite;

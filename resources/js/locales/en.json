@@ -18,7 +18,8 @@
     "yes": "Yes",
     "no": "No",
     "cancel": "Cancel",
-    "done": "Done"
+    "done": "Done",
+    "copied": "Copied"
   },
   "orderStatus": {
     "pending": "Awaiting confirmation",
