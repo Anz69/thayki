@@ -35,6 +35,18 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
   toRef.current = single ? value : to
 
   const [active, setActive] = useState(null)
+  const [trackW, setTrackW] = useState(0)
+
+  useLayoutEffect(() => {
+    const el = trackRef.current
+    if (!el) return undefined
+    const update = () => setTrackW(el.offsetWidth)
+    update()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const clampSnap = useCallback((v) => {
     const snapped = Math.round((v - min) / step) * step + min
@@ -114,7 +126,15 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
   const fromPct = pct(lo)
   const toPct = pct(hi)
   const fmt = (v) => (format ? format(v) : v)
-  const merged = !single && toPct - fromPct < 16
+  const merged = (() => {
+    if (single) return false
+    if (lo === hi) return true
+    if (!trackW) return toPct - fromPct < 16
+    const estW = (s) => String(s).length * 7.3 + 24
+    const cFrom = (fromPct / 100) * trackW
+    const cTo = (toPct / 100) * trackW
+    return (cTo - cFrom) < (estW(fmt(lo)) + estW(fmt(hi))) / 2 + 10
+  })()
   const ease = active ? 'transition-none' : 'transition-[left,right,width] duration-300 ease-out'
 
   const knob = (which, p) => {
