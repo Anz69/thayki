@@ -465,5 +465,19 @@
   },
   "ageModal": {
     "done": "完成"
+  },
+  "cryptoPay": {
+    "title": "加密货币支付",
+    "amountLabel": "应付：",
+    "hint": "请将所示金额发送到所选币种的地址。每个币种均标注了网络。",
+    "generating": "正在生成地址，请稍候…",
+    "network": "网络",
+    "copy": "复制",
+    "copied": "已复制",
+    "address": "地址",
+    "memo": "MEMO / 备注",
+    "memoWarn": "必须填写 MEMO，否则付款将丢失。",
+    "unavailable": "暂不可用",
+    "confirmed": "已收到付款 ✓"
   }
 }

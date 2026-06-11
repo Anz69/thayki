@@ -465,5 +465,19 @@
   },
   "ageModal": {
     "done": "Done"
+  },
+  "cryptoPay": {
+    "title": "Pay with crypto",
+    "amountLabel": "To pay:",
+    "hint": "Send the shown amount to the address of your chosen coin. The network is shown for each coin.",
+    "generating": "Generating addresses, please wait…",
+    "network": "Network",
+    "copy": "Copy",
+    "copied": "Copied",
+    "address": "Address",
+    "memo": "MEMO / Tag",
+    "memoWarn": "You must include the MEMO — otherwise the payment will be lost.",
+    "unavailable": "Temporarily unavailable",
+    "confirmed": "Payment received ✓"
   }
 }

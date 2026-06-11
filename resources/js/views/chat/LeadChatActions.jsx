@@ -6,6 +6,7 @@ import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
 import ClientPaymentSheet from '@/components/modals/PaymentSheet'
+import CryptoAddressSheet from '@/components/modals/CryptoAddressSheet'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import useModelPreview from '@/stores/useModelPreview'
 
@@ -84,13 +85,12 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
               <span className="mt-0.5 text-[#9B9AA0] text-[12px]">{t('leadChat.payCryptoHint')}</span>
             )}
           </div>
-          {!isManager && (
-            <ClientPaymentSheet
+          {!isManager && p.method === 'crypto' && (
+            <CryptoAddressSheet
               isOpen={payOpen}
               onClose={() => setPayOpen(false)}
-              price={(p.amount_minor || 0) / 100}
-              currency={p.currency || 'RUB'}
-              cryptoOnly
+              leadId={leadId}
+              messageId={msg.id}
             />
           )}
           <div className={`px-4 py-2.5 text-center text-[13px] font-semibold ${confirmed ? 'bg-[#E6F5EA] text-[#1E9E4E]' : 'bg-[#FFF1DC] text-[#C77A12]'}`}>

@@ -80,7 +80,7 @@ class OxaPayWebhookController
                     'paid_at' => now(),
                 ]);
                 $this->confirmPayment($lead, $row);
-                RevokeLeadCryptoAddressesJob::dispatch($lead->id, $row->id);
+                RevokeLeadCryptoAddressesJob::dispatch($lead->id, $row->id)->afterResponse();
             }
             $this->notifyManager($lead, $coin, $amount, $address, true);
 
