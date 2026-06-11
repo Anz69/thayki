@@ -15,8 +15,8 @@ const COIN_COLORS = {
 const LOCAL_COINS = [
   { code: 'BTC', name: 'Bitcoin', net_label: 'Bitcoin' },
   { code: 'ETH', name: 'Ethereum', net_label: 'ERC-20' },
-  { code: 'USDT', name: 'Tether', net_label: 'TRC-20' },
-  { code: 'USDC', name: 'USD Coin', net_label: 'ERC-20' },
+  { code: 'USDT', name: 'Tether', net_label: 'TRC-20', showNet: true },
+  { code: 'USDC', name: 'USD Coin', net_label: 'ERC-20', showNet: true },
   { code: 'BNB', name: 'BNB', net_label: 'BEP-20' },
   { code: 'POL', name: 'Polygon', net_label: 'Polygon' },
   { code: 'LTC', name: 'Litecoin', net_label: 'Litecoin' },
@@ -104,12 +104,17 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
   const sel = selected ? coins.find((c) => c.code === selected) : null
 
   useEffect(() => {
-    if (sel && detailsRef.current) {
-      gsap.fromTo(detailsRef.current,
-        { opacity: 0, y: 16, scale: 0.97, filter: 'blur(4px)' },
-        { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.38, ease: 'power3.out', clearProps: 'filter,scale' },
+    const root = detailsRef.current
+    if (!sel || !root) return
+    const kids = Array.from(root.children)
+    gsap.killTweensOf([root, ...kids])
+    gsap.timeline()
+      .fromTo(root, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: 'power1.out' }, 0)
+      .fromTo(kids,
+        { opacity: 0, y: 18, scale: 0.97, filter: 'blur(7px)' },
+        { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.5, ease: 'power3.out', stagger: 0.07, clearProps: 'filter,transform,opacity' },
+        0.04,
       )
-    }
   }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const resetCopy = useCallback(() => {
@@ -195,7 +200,9 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
                 <span className="text-[#7F7F7F] text-sm/[100%] font-medium">{t('payment.transferTo')}</span>
                 <span className="inline-flex w-4 h-4"><CoinIcon code={sel.code} sm /></span>
                 <span className="text-[#7F7F7F] text-sm/[100%] font-medium">{sel.name}</span>
-                <span className="text-[#B7B6BC] text-[13px]/[100%] font-medium">· {sel.net_label}</span>
+                {sel.showNet && sel.net_label && (
+                  <span className="text-[#B7B6BC] text-[13px]/[100%] font-medium">· {sel.net_label}</span>
+                )}
               </div>
               {!data?.confirmed && (
                 <>
