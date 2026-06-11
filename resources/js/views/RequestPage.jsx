@@ -86,7 +86,7 @@ export default function RequestPage() {
 
   const eventOk = eventType === 'oneTime' || eventType === 'relationship'
     || (eventType === 'trip' && tripCity.trim().length > 0)
-  const paramsOk = !!bustType && !!figure && !!hair && (vipMode || (!!eventType && eventOk))
+  const paramsOk = !!bustType && !!figure && !!hair && !!eventType && eventOk
   const allSelected = isModelFlow || paramsOk
   const canSubmit = city.trim().length > 0 && allSelected && !submitting
   const formHint = city.trim().length === 0
@@ -219,7 +219,7 @@ export default function RequestPage() {
       rows.push([t('leadMsg.weight'), weightRangeStr])
       rows.push([t('leadMsg.figure'), U(`figures.${figure}`)])
       rows.push([t('leadMsg.hair'), U(`hair.${hair}`)])
-      if (!vipMode) rows.push([t('leadMsg.event'), eventStr()])
+      rows.push([t('leadMsg.event'), eventStr()])
     }
     if (comments.trim()) rows.push([t('leadMsg.comments'), comments.trim()])
 
@@ -267,12 +267,12 @@ export default function RequestPage() {
         weight_from: weight.from,
         weight_to: weight.to,
         figure,
-        event_type: vipMode ? null : eventType,
-        event_hours_from: !vipMode && eventType === 'oneTime' ? eventHours.from : null,
-        event_hours_to: !vipMode && eventType === 'oneTime' ? eventHours.to : null,
-        trip_days_from: !vipMode && eventType === 'trip' ? tripDays.from : null,
-        trip_days_to: !vipMode && eventType === 'trip' ? tripDays.to : null,
-        trip_city: !vipMode && eventType === 'trip' ? tripCity.trim() : null,
+        event_type: eventType,
+        event_hours_from: eventType === 'oneTime' ? eventHours.from : null,
+        event_hours_to: eventType === 'oneTime' ? eventHours.to : null,
+        trip_days_from: eventType === 'trip' ? tripDays.from : null,
+        trip_days_to: eventType === 'trip' ? tripDays.to : null,
+        trip_city: eventType === 'trip' ? tripCity.trim() : null,
       }
 
       const { data } = await api.post('/leads', { ...base, ...typage },
@@ -465,15 +465,14 @@ export default function RequestPage() {
               </div>
             </Section>
 
-            {!vipMode && (
-              <Section title={t('request.event')}>
-                <div className="flex flex-wrap gap-2">
-                  {EVENTS.map((k) => (
-                    <Chip key={k} active={eventType === k} onClick={() => setEventType(eventType === k ? null : k)}>
-                      {t(`request.events.${k}`)}
-                    </Chip>
-                  ))}
-                </div>
+            <Section title={t('request.event')}>
+              <div className="flex flex-wrap gap-2">
+                {EVENTS.map((k) => (
+                  <Chip key={k} active={eventType === k} onClick={() => setEventType(eventType === k ? null : k)}>
+                    {t(`request.events.${k}`)}
+                  </Chip>
+                ))}
+              </div>
 
                 {eventType === 'oneTime' && (
                   <div className="mt-1.5 rounded-xl bg-[#F8F7FA] p-3.5">
@@ -499,7 +498,6 @@ export default function RequestPage() {
                   </div>
                 )}
               </Section>
-            )}
           </>
         )}
 
