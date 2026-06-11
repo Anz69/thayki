@@ -137,13 +137,6 @@ html {
   .marquee-track {
     animation: marqueeX 26s linear infinite;
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .marquee-track {
-    animation: none;
-  }
-}
 
   .container {
     max-width: 700px;
@@ -157,5 +150,11 @@ html {
     .container {
       max-width: 400px;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
   }
 }
