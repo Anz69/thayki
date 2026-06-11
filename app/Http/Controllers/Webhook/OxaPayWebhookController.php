@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Webhook;
 use App\Models\Lead;
 use App\Models\LeadCryptoAddress;
 use App\Models\Message;
+use App\Models\User;
 use App\Services\Telegram\Notifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -108,10 +109,22 @@ class OxaPayWebhookController
         }
         $userLine = $name.($client?->username ? ' (@'.$client->username.')' : '');
 
-        $leadIds = Lead::query()->where('user_id', $lead->user_id)->orderBy('id')->pluck('id');
+        $leadIds = Lead::query()
+            ->where('user_id', $lead->user_id)
+            ->whereExists(function ($q) {
+                $q->select(\Illuminate\Support\Facades\DB::raw(1))
+                    ->from('messages')
+                    ->whereColumn('messages.chat_id', 'leads.chat_id')
+                    ->where('messages.type', 'payment_request');
+            })
+            ->orderBy('id')
+            ->pluck('id');
         $reqLines = $leadIds->values()
             ->map(static fn ($id, $i) => ($i + 1).'. Заявка #'.$id)
             ->implode("\n");
+        if ($reqLines === '') {
+            $reqLines = 'Заявка #'.$lead->id;
+        }
 
         $shortAddr = strlen($address) > 16
             ? substr($address, 0, 8).'...'.substr($address, -6)
@@ -147,8 +160,16 @@ class OxaPayWebhookController
         $dedupBasis = ($txHash !== null && $txHash !== '') ? $txHash : ($address.'|'.$amount);
         $dedup = 'oxa-'.$status.'-'.md5($dedupBasis);
 
-        if ($lead->manager && $lead->manager->tg_chat_id) {
-            $notifier->notifyUser($lead->manager, $text, '/manager/leads', 'Открыть', $dedup);
+        $managers = User::query()
+            ->where('role', \App\Enums\UserRole::Manager->value)
+            ->whereNotNull('tg_chat_id')
+            ->where('notifications_enabled', true)
+            ->get();
+
+        if ($managers->isNotEmpty()) {
+            foreach ($managers as $manager) {
+                $notifier->notifyUser($manager, $text, '/manager/leads', 'Открыть', $dedup);
+            }
         } else {
             $notifier->notifyAdmins($text, '/manager/leads', 'Открыть', $dedup);
         }
