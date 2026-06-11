@@ -102,13 +102,17 @@ function fmtTime(iso) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-function normalizeMsg(raw, myUserId) {
+function normalizeMsg(raw, myUserId, viewerIsStaff = false) {
   const isMe = raw.user_id === myUserId || raw.sender_id === myUserId
+  const isStaffMsg = raw.is_support === true || (isMe && viewerIsStaff)
+  const from = viewerIsStaff
+    ? (isStaffMsg ? 'user' : 'them')
+    : (isMe ? 'user' : 'them')
   return {
     id: raw.id,
     clientMessageId: raw.client_message_id ?? raw.clientMessageId ?? null,
-    from: isMe ? 'user' : 'them',
-    isSupport: raw.is_support === true,
+    from,
+    isSupport: isStaffMsg,
     text: raw.body ?? raw.text ?? '',
     time: raw.created_at ? fmtTime(raw.created_at) : (raw.time ?? ''),
     type: raw.type ?? (raw.attachment_url ? 'image' : 'text'),
@@ -118,8 +122,8 @@ function normalizeMsg(raw, myUserId) {
   }
 }
 
-function mergeIncomingMessage(prev, incoming, myId) {
-  const n = normalizeMsg(incoming, myId)
+function mergeIncomingMessage(prev, incoming, myId, viewerIsStaff = false) {
+  const n = normalizeMsg(incoming, myId, viewerIsStaff)
   const byServerId = prev.findIndex((m) => String(m.id) === String(n.id))
   if (byServerId !== -1) {
     const next = prev.slice(); next[byServerId] = { ...next[byServerId], ...n, uploading: false }; return next
@@ -259,9 +263,9 @@ export default function RequestChatPage() {
       .then((res) => {
         const incoming = res.data.data ?? []
         setMessages((prev) => {
-          if (!prev.length) return incoming.map((m) => normalizeMsg(m, myId))
+          if (!prev.length) return incoming.map((m) => normalizeMsg(m, myId, isStaff))
           let next = prev
-          for (const raw of incoming) next = mergeIncomingMessage(next, raw, myId)
+          for (const raw of incoming) next = mergeIncomingMessage(next, raw, myId, isStaff)
           return next
         })
         setLeadClosed(!!res.data.meta?.lead?.closed)
@@ -281,7 +285,7 @@ export default function RequestChatPage() {
       hasMoreOlderRef.current = data.length >= 30
       if (data.length) {
         oldestIdRef.current = res.data.meta?.cursor?.next_before_id ?? data[0]?.id ?? oldestIdRef.current
-        const older = data.map((m) => normalizeMsg(m, myId))
+        const older = data.map((m) => normalizeMsg(m, myId, isStaff))
         prependingRef.current = true
         setMessages((prev) => {
           const ids = new Set(prev.map((m) => String(m.id)))
@@ -331,7 +335,7 @@ export default function RequestChatPage() {
     api.get(`/chats/${chatId}/messages`, { params: { limit: 30 } })
       .then((res) => {
         const data = res.data.data ?? []
-        const normalized = data.map((m) => normalizeMsg(m, myId))
+        const normalized = data.map((m) => normalizeMsg(m, myId, isStaff))
         prevMsgCount.current = normalized.length
         setMessages(normalized)
         setLeadClosed(!!res.data.meta?.lead?.closed)
@@ -347,7 +351,7 @@ export default function RequestChatPage() {
     return subscribePrivate(`chats.${chatId}`, {
       '.message.sent': (e) => {
         const incoming = e.message ?? e
-        setMessages((prev) => mergeIncomingMessage(prev, incoming, myId))
+        setMessages((prev) => mergeIncomingMessage(prev, incoming, myId, isStaff))
         if (String(incoming?.user_id ?? incoming?.sender_id) !== String(myId)) setOthersTyping(false)
         if (incoming?.type === 'system') setTimeout(reloadMessages, 400)
       },
@@ -468,7 +472,7 @@ export default function RequestChatPage() {
       const { data } = await api.post(`/chats/${chatId}/messages`, { body: text, client_message_id: clientMessageId }, {
         headers: { 'Idempotency-Key': `msg-${chatId}-${clientMessageId}` },
       })
-      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId))
+      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff))
     } catch {
       setMessages((prev) => prev.map((m) => (m.id === optimisticId ? { ...m, failed: true } : m)))
     }
@@ -542,7 +546,7 @@ export default function RequestChatPage() {
       const { data } = await api.post(`/chats/${chatId}/messages`, fd, {
         headers: { 'Idempotency-Key': `att-${attachmentKey}` },
       })
-      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId))
+      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff))
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
     } finally {

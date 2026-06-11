@@ -166,8 +166,7 @@ class LeadController extends Controller
 
         $amountMinor = (int) ($message->payload['amount_minor'] ?? 0);
         $currency = (string) ($message->payload['currency'] ?? 'USD');
-        $margin = (float) config('oxapay.margin', 0.025);
-        $withMargin = round(($amountMinor / 100) * (1 + $margin), 2);
+        $payFiat = round($amountMinor / 100, 2);
 
         $rows = LeadCryptoAddress::query()
             ->where('lead_id', $lead->id)
@@ -195,7 +194,7 @@ class LeadController extends Controller
 
         $rate = app(\App\Services\Payments\CryptoRateService::class);
 
-        $coins = array_map(static function (array $c) use ($rows, $rate, $withMargin, $currency): array {
+        $coins = array_map(static function (array $c) use ($rows, $rate, $payFiat, $currency): array {
             $row = $rows->get($c['network']);
             $status = $row->status ?? LeadCryptoAddress::STATUS_PENDING;
             $ready = in_array($status, [LeadCryptoAddress::STATUS_ACTIVE, LeadCryptoAddress::STATUS_PAID], true);
@@ -208,7 +207,7 @@ class LeadController extends Controller
                 'address' => $ready ? $row?->address : null,
                 'memo' => $ready ? $row?->memo : null,
                 'status' => $status,
-                'crypto_amount' => $rate->cryptoAmount($withMargin, $currency, $c['code']),
+                'crypto_amount' => $rate->cryptoAmount($payFiat, $currency, $c['code']),
             ];
         }, (array) config('oxapay.coins', []));
 
@@ -226,8 +225,8 @@ class LeadController extends Controller
         return ApiResponse::ok([
             'message_id' => $message->id,
             'currency' => $currency,
-            'amount' => $withMargin,
-            'amount_display' => $symbol.number_format($withMargin, 2),
+            'amount' => $payFiat,
+            'amount_display' => $symbol.number_format($payFiat, 2),
             'ready' => $ready,
             'confirmed' => ($message->payload['status'] ?? null) === 'confirmed',
             'coins' => $coins,
