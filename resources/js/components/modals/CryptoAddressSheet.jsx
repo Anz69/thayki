@@ -225,7 +225,7 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
               <div className="text-center text-[#C77A12] text-[13px] font-medium bg-[#FFF1DC] rounded-xl px-4 py-3">{t('cryptoPay.unavailable')}</div>
             ) : (
               <>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
                   <div className="flex-1 bg-[#F5F5F7] rounded-full px-4 py-3 min-w-0">
                     <span className="block text-black text-sm/[100%] font-semibold truncate select-text">{sel.address}</span>
                   </div>
