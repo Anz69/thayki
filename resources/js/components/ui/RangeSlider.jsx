@@ -31,6 +31,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
 
   const onMove = useCallback((e) => {
     if (!dragging.current) return
+    if (e.cancelable) e.preventDefault()
     const v = valueFromClientX(e.clientX)
     if (dragging.current === 'auto') {
       if (v === toRef.current) return
@@ -44,10 +45,11 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
   const onUp = useCallback(() => {
     dragging.current = null
     setActive(null)
+    try { window.Telegram?.WebApp?.enableVerticalSwipes?.() } catch {}
   }, [])
 
   useEffect(() => {
-    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointermove', onMove, { passive: false })
     window.addEventListener('pointerup', onUp)
     window.addEventListener('pointercancel', onUp)
     return () => {
@@ -59,6 +61,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
 
   const onTrackDown = (e) => {
     e.preventDefault()
+    try { window.Telegram?.WebApp?.disableVerticalSwipes?.() } catch {}
     const v = valueFromClientX(e.clientX)
     let which = 'to'
     if (!single) {
@@ -104,7 +107,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
     return (
       <div
         key={which}
-        className={`absolute top-1/2 size-7 ${active ? 'transition-none' : 'transition-[left,transform] duration-300 ease-out'}`}
+        className={`absolute top-1/2 size-7 touch-none ${active ? 'transition-none' : 'transition-[left,transform] duration-300 ease-out'}`}
         style={{ left: `${p}%`, transform: `translate(${-p}%, -50%)` }}
       >
         <span className={`absolute inset-0 -m-1.5 rounded-full bg-[#E2319B]/20 transition-all duration-300 ease-out ${on ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`} />
@@ -114,7 +117,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
   }
 
   return (
-    <div className="select-none pt-10">
+    <div className="select-none pt-10 touch-none">
       <div
         ref={trackRef}
         onPointerDown={onTrackDown}
