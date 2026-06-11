@@ -1,4 +1,29 @@
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react'
+
+function Label({ pct, text, on, active, trackRef }) {
+  const ref = useRef(null)
+  const [leftPx, setLeftPx] = useState(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    const track = trackRef.current
+    if (!el || !track) return
+    const tw = track.offsetWidth
+    const half = el.offsetWidth / 2
+    const center = (pct / 100) * tw
+    setLeftPx(Math.min(tw - half, Math.max(half, center)))
+  }, [pct, text, trackRef])
+  return (
+    <div
+      ref={ref}
+      className={`absolute bottom-full mb-3 -translate-x-1/2 pointer-events-none ease-out duration-200 ${active ? 'transition-transform' : 'transition-[transform,left]'} ${on ? '-translate-y-1 scale-110' : ''}`}
+      style={{ left: leftPx == null ? `${pct}%` : `${leftPx}px` }}
+    >
+      <span className={`block px-2.5 py-1 rounded-lg text-[12.5px] font-bold tabular-nums whitespace-nowrap transition-colors duration-200 ${on ? 'bg-[#E2319B] text-white shadow-[0_6px_16px_rgba(226,49,155,0.45)]' : 'bg-[#FCEFF7] text-[#E2319B]'}`}>
+        {text}
+      </span>
+    </div>
+  )
+}
 
 export default function RangeSlider({ min, max, step = 1, from, to, value, onChange, format, single = false }) {
   const trackRef = useRef(null)
@@ -87,20 +112,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
   const toPct = pct(hi)
   const fmt = (v) => (format ? format(v) : v)
   const merged = !single && toPct - fromPct < 16
-  const clampPct = (p) => Math.min(94, Math.max(6, p))
   const ease = active ? 'transition-none' : 'transition-[left,right,width] duration-300 ease-out'
-
-  const label = (key, p, text, on) => (
-    <div
-      key={key}
-      className={`absolute bottom-full mb-3 -translate-x-1/2 pointer-events-none transition-all duration-200 ease-out ${on ? '-translate-y-1 scale-110' : ''} ${active ? '' : 'transition-[left] duration-300'}`}
-      style={{ left: `${clampPct(p)}%` }}
-    >
-      <span className={`block px-2.5 py-1 rounded-lg text-[12.5px] font-bold tabular-nums whitespace-nowrap transition-colors duration-200 ${on ? 'bg-[#E2319B] text-white shadow-[0_6px_16px_rgba(226,49,155,0.45)]' : 'bg-[#FCEFF7] text-[#E2319B]'}`}>
-        {text}
-      </span>
-    </div>
-  )
 
   const knob = (which, p) => {
     const on = active === which
@@ -140,10 +152,10 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
         </div>
 
         {single
-          ? label('v', toPct, fmt(hi), active === 'to')
+          ? <Label pct={toPct} text={fmt(hi)} on={active === 'to'} active={!!active} trackRef={trackRef} />
           : merged
-            ? label('m', (fromPct + toPct) / 2, lo === hi ? `${fmt(lo)}` : `${fmt(lo)} – ${fmt(hi)}`, !!active)
-            : [label('f', fromPct, fmt(lo), active === 'from'), label('t', toPct, fmt(hi), active === 'to')]}
+            ? <Label pct={(fromPct + toPct) / 2} text={lo === hi ? `${fmt(lo)}` : `${fmt(lo)} – ${fmt(hi)}`} on={!!active} active={!!active} trackRef={trackRef} />
+            : (<><Label pct={fromPct} text={fmt(lo)} on={active === 'from'} active={!!active} trackRef={trackRef} /><Label pct={toPct} text={fmt(hi)} on={active === 'to'} active={!!active} trackRef={trackRef} /></>)}
 
         {!single && knob('from', fromPct)}
         {knob('to', toPct)}
