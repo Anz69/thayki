@@ -145,10 +145,15 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
       if (!detailsRef.current || !wrap) { setSelected(null); return }
       const dh = detailsRef.current.offsetHeight + 20
       freezeHeight(wrap)
-      gsap.to(detailsRef.current, { opacity: 0, duration: 0.22, ease: 'power2.in' })
+      gsap.to(detailsRef.current, { opacity: 0, y: -6, duration: 0.2, ease: 'power2.in' })
       gsap.to(wrap, {
-        height: `-=${dh}`, duration: 0.36, ease: 'power3.inOut',
-        onComplete: () => { setSelected(null); gsap.set(wrap, { clearProps: 'height' }) },
+        height: `-=${dh}`, duration: 0.34, ease: 'power3.inOut',
+        onComplete: () => {
+          setSelected(null)
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (wrapRef.current) gsap.set(wrapRef.current, { clearProps: 'height' })
+          }))
+        },
       })
     } else if (wrap) {
       freezeHeight(wrap)
