@@ -31,7 +31,14 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
 
   const onMove = useCallback((e) => {
     if (!dragging.current) return
-    apply(dragging.current, valueFromClientX(e.clientX))
+    const v = valueFromClientX(e.clientX)
+    if (dragging.current === 'auto') {
+      if (v === toRef.current) return
+      const which = v < toRef.current ? 'from' : 'to'
+      dragging.current = which
+      setActive(which)
+    }
+    apply(dragging.current, v)
   }, [apply, valueFromClientX])
 
   const onUp = useCallback(() => {
@@ -55,14 +62,19 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
     const v = valueFromClientX(e.clientX)
     let which = 'to'
     if (!single) {
-      const closerToFrom = Math.abs(v - fromRef.current) < Math.abs(v - toRef.current)
-      which = closerToFrom
-        ? (fromRef.current === toRef.current && v > fromRef.current ? 'to' : 'from')
-        : 'to'
+      if (fromRef.current === toRef.current) {
+        which = 'auto'
+      } else {
+        which = Math.abs(v - fromRef.current) < Math.abs(v - toRef.current) ? 'from' : 'to'
+      }
     }
     dragging.current = which
-    setActive(which)
-    apply(which, v)
+    if (which !== 'auto') {
+      setActive(which)
+      apply(which, v)
+    } else {
+      setActive(null)
+    }
   }
 
   const lo = fromRef.current

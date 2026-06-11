@@ -275,10 +275,10 @@ export default function ModelPage({ preview = false }) {
         </header>
 
         {!loadError && (
-          <div className="-mt-4 w-full bg-[#FBF1F8] border-y border-[#E2319B]/12">
-            <div className="relative flex items-center gap-2.5 px-4 py-2.5 overflow-hidden">
-              <span className="relative z-20 shrink-0 flex items-center justify-center size-6 rounded-full bg-[#E2319B]/12 shadow-[0_2px_6px_rgba(226,49,155,0.15)]">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <div className="-mt-6 w-full bg-[#FBF1F8] border-y border-[#E2319B]/12">
+            <div className="relative flex items-center gap-2 px-3.5 py-1.5 overflow-hidden">
+              <span className="relative z-20 shrink-0 flex items-center justify-center size-5 rounded-full bg-[#E2319B]/12">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <circle cx="12" cy="12" r="9" stroke="#E2319B" strokeWidth="1.9" />
                   <path d="M12 7v.5M11.2 10.5h1.1v6M10.6 16.5h2.8" stroke="#E2319B" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
