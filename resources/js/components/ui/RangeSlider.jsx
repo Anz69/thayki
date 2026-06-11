@@ -54,21 +54,32 @@ export default function RangeSlider({ min, max, step = 1, from, to, onChange, fo
   const fromPct = pct(from)
   const toPct = pct(to)
 
+  const fmt = (v) => (format ? format(v) : v)
+  const merged = toPct - fromPct < 16
+  const clampPct = (p) => Math.min(94, Math.max(6, p))
+
+  const bubble = (key, p, label) => (
+    <div key={key} className="absolute bottom-full mb-2.5 -translate-x-1/2 pointer-events-none" style={{ left: `${clampPct(p)}%` }}>
+      <span className="relative block px-2.5 py-1 rounded-lg bg-[#E2319B] text-white text-[12.5px] font-bold tabular-nums whitespace-nowrap shadow-[0_4px_12px_rgba(226,49,155,0.35)]">
+        {label}
+        <span className="absolute left-1/2 -translate-x-1/2 top-full -mt-px size-2 rotate-45 bg-[#E2319B] rounded-[1px]" />
+      </span>
+    </div>
+  )
+
   return (
-    <div className="select-none">
-      <div className="flex justify-center mb-3">
-        <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FCEFF7] text-[#E2319B] text-[14px] font-bold tabular-nums whitespace-nowrap">
-          {format ? format(from) : from}
-          <span className="text-[#E2319B]/35 font-medium">–</span>
-          {format ? format(to) : to}
-        </span>
-      </div>
+    <div className="select-none pt-9">
       <div ref={trackRef} className="relative h-9 touch-none">
         <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1.5 rounded-full bg-[#EDEAF0]" />
         <div
           className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-[#E2319B]"
           style={{ left: `${fromPct}%`, right: `${100 - toPct}%` }}
         />
+
+        {merged
+          ? bubble('m', (fromPct + toPct) / 2, `${fmt(from)} – ${fmt(to)}`)
+          : [bubble('f', fromPct, fmt(from)), bubble('t', toPct, fmt(to))]}
+
         <button
           type="button"
           onPointerDown={start('from')}
