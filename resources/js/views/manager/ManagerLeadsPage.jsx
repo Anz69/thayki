@@ -52,8 +52,7 @@ function typageRows(v, t) {
   else if (v.height_range) rows.push([U('height'), v.height_range])
 
   if (v.bust_type) {
-    const size = v.bust_size === '6+' ? U('size6plus') : v.bust_size
-    rows.push([U('bust'), `${U(`bustTypes.${v.bust_type}`)}${v.bust_size ? ` · ${size}` : ''}`])
+    rows.push([U('bust'), `${U(`bustTypes.${v.bust_type}`)}${v.bust_size ? ` · ${v.bust_size}` : ''}`])
   }
 
   if (v.weight_from || v.weight_to) rows.push([U('weight'), `${v.weight_from ?? v.weight_to}–${v.weight_to ?? v.weight_from} ${U('unitKg')}`])
