@@ -285,8 +285,12 @@ export default function ModelPage({ preview = false }) {
               </span>
               <div className="relative flex-1 overflow-hidden">
                 <div className="flex w-max marquee-track">
-                  <span className="pr-16 text-[#A05B86] text-[12.5px]/[100%] font-medium tracking-[0.01em] whitespace-nowrap">{t('catalogNotice.p2')}</span>
-                  <span aria-hidden className="pr-16 text-[#A05B86] text-[12.5px]/[100%] font-medium tracking-[0.01em] whitespace-nowrap">{t('catalogNotice.p2')}</span>
+                  {[0, 1].map((i) => (
+                    <span key={i} aria-hidden={i === 1} className="flex items-center text-[#A05B86] text-[12.5px]/[100%] font-medium tracking-[0.01em] whitespace-nowrap">
+                      {t('catalogNotice.ticker')}
+                      <span className="mx-9 text-[#E2319B]/50 text-[15px] leading-none">•</span>
+                    </span>
+                  ))}
                 </div>
                 <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#FBF1F8] to-transparent" />
                 <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#FBF1F8] to-transparent" />
