@@ -167,6 +167,8 @@ class LeadController extends Controller
         $amountMinor = (int) ($message->payload['amount_minor'] ?? 0);
         $currency = (string) ($message->payload['currency'] ?? 'USD');
         $payFiat = round($amountMinor / 100, 2);
+        $margin = (float) config('oxapay.margin', 0.025);
+        $cryptoBasis = $payFiat * (1 + $margin);
 
         $rows = LeadCryptoAddress::query()
             ->where('lead_id', $lead->id)
@@ -207,7 +209,7 @@ class LeadController extends Controller
                 'address' => $ready ? $row?->address : null,
                 'memo' => $ready ? $row?->memo : null,
                 'status' => $status,
-                'crypto_amount' => $rate->cryptoAmount($payFiat, $currency, $c['code']),
+                'crypto_amount' => $rate->cryptoAmount($cryptoBasis, $currency, $c['code']),
             ];
         }, (array) config('oxapay.coins', []));
 

@@ -19,6 +19,8 @@ class OxaPayWebhookController
         $raw = $request->getContent();
         $hmac = (string) $request->header('HMAC', '');
 
+        Log::info('OxaPay webhook hit', ['len' => strlen($raw), 'has_hmac' => $hmac !== '', 'body' => substr($raw, 0, 1000)]);
+
         $service = app(\App\Services\Payments\OxaPayService::class);
         if (! $service->verifyWebhook($raw, $hmac)) {
             Log::warning('OxaPay webhook: invalid HMAC', ['len' => strlen($raw)]);
