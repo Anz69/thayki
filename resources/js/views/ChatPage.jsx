@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, Fragment } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import CopyableContacts from '@/components/ui/CopyableContacts'
 import { useTranslation } from 'react-i18next'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import gsap from 'gsap'
@@ -641,7 +642,7 @@ export default function ChatPage() {
                       ].join(' ')}
                       style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                     >
-                      <p className="text-[16px]/[100%] font-normal whitespace-pre-wrap">{msg.text}</p>
+                      <p className="text-[16px]/[100%] font-normal whitespace-pre-wrap"><CopyableContacts text={msg.text} /></p>
                     </div>
                   </div>
                 </Fragment>

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import CopyableContacts from '@/components/ui/CopyableContacts'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -665,7 +666,7 @@ export default function RequestChatPage() {
               ) : (
                 <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
                   <div className={['max-w-[260px] px-4 py-3 rounded-3xl', isUser ? 'bg-[#1C1C1E] text-[#D2D2D2]' : 'bg-[#F0F0F0] text-black'].join(' ')}>
-                    <p className="text-[15px]/[148%] font-normal" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+                    <p className="text-[15px]/[148%] font-normal" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}><CopyableContacts text={msg.text} /></p>
                   </div>
                   <span className="text-[#ABABAB] text-xs font-medium px-1 inline-flex items-center gap-1">
                     {msg.time}

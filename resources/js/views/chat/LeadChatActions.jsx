@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import ModalMiddle from '@/layout/ModalMiddle'
+import CopyableContacts from '@/components/ui/CopyableContacts'
 import api, { extractErrorMessage } from '@/utils/api'
 import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
@@ -66,7 +67,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
             {p.method !== 'crypto' && p.requisites && (
               <div className="mt-1 bg-[#F5F5F7] rounded-xl px-3 py-2.5">
                 <span className="text-[#7F7F7F] text-[11px] font-medium">{t('leadChat.payRequisites')}</span>
-                <p className="text-black text-[13px]/[150%] font-medium select-text" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{p.requisites}</p>
+                <p className="text-black text-[13px]/[150%] font-medium select-text" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><CopyableContacts text={p.requisites} /></p>
               </div>
             )}
             {p.method === 'crypto' && !confirmed && !isManager && (

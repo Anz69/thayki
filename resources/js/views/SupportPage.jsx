@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
+import CopyableContacts from '@/components/ui/CopyableContacts'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
@@ -500,7 +501,7 @@ export default function SupportPage() {
                         : 'bg-[#F0F0F0] text-black rounded-3xl ',
                     ].join(' ')}>
                       <p className="text-[15px]/[148%] font-normal" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-                        {msg.text}
+                        <CopyableContacts text={msg.text} />
                       </p>
                     </div>
                     <span className="text-[#ABABAB] text-xs font-medium px-1">{msg.time}</span>
