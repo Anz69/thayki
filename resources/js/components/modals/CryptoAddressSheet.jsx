@@ -220,9 +220,6 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
                 <span className="text-[#7F7F7F] text-sm/[100%] font-medium">{t('payment.transferTo')}</span>
                 <span className="inline-flex w-4 h-4"><CoinIcon code={sel.code} sm /></span>
                 <span className="text-[#7F7F7F] text-sm/[100%] font-medium">{sel.name}</span>
-                {sel.showNet && sel.net_label && (
-                  <span className="text-[#B7B6BC] text-[13px]/[100%] font-medium">· {sel.net_label}</span>
-                )}
               </div>
               {!data?.confirmed && (
                 <>
@@ -230,9 +227,10 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
                     <button
                       onClick={() => copyAmount(sel.crypto_amount)}
                       style={{ WebkitTapHighlightColor: 'transparent' }}
-                      className="outline-none active:scale-[0.97] transition-transform"
+                      className="inline-flex items-center gap-2 outline-none active:scale-[0.97] transition-transform"
                     >
                       <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{sel.crypto_amount} {sel.code}</span>
+                      <svg width="17" height="17" viewBox="0 0 18 18" fill="none" className="shrink-0 mt-0.5"><path d="M11.64 2.18H9.16c-2.44 0-3.66 0-4.6.48-.82.42-1.49 1.08-1.91 1.9-.48.94-.48 2.16-.48 4.6v2.48M8.22 15.27h3.56c1.22 0 1.83 0 2.3-.24.4-.21.74-.54.95-.95.24-.47.24-1.08.24-2.3V8.22c0-1.22 0-1.83-.24-2.3a2.18 2.18 0 0 0-.95-.95c-.47-.24-1.08-.24-2.3-.24H8.22c-1.22 0-1.83 0-2.3.24-.41.21-.74.55-.95.95-.24.47-.24 1.08-.24 2.3v3.56c0 1.22 0 1.83.24 2.3.21.41.54.74.95.95.47.24 1.08.24 2.3.24Z" stroke="#C0BFC7" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     </button>
                   ) : (
                     <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{data?.amount_display ?? '—'}</span>
@@ -261,6 +259,17 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
               <div className="text-center text-[#C77A12] text-[13px] font-medium bg-[#FFF1DC] rounded-xl px-4 py-3">{t('cryptoPay.unavailable')}</div>
             ) : (
               <>
+                {sel.showNet && sel.net_label && (
+                  <div className="flex items-center gap-2.5 bg-[#FFF1DC] rounded-2xl px-3.5 py-2.5">
+                    <span className="shrink-0 size-7 rounded-full bg-[#F4B73D] flex items-center justify-center">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18.5A2 2 0 0 0 3.5 21.5h17a2 2 0 0 0 1.7-3l-8.5-14.6a2 2 0 0 0-3.4 0Z" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[#A85E08] text-[14px] font-bold leading-tight">{t('cryptoPay.network')}: {sel.net_label}</span>
+                      <span className="text-[#C77A12] text-[11.5px]/[135%]">{t('cryptoPay.networkWarn')}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5">
                   <div className="flex-1 bg-[#F5F5F7] rounded-full px-4 py-3 min-w-0">
                     <span className="block text-black text-sm/[100%] font-semibold truncate select-text">{sel.address}</span>
