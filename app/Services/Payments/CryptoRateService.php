@@ -51,6 +51,16 @@ class CryptoRateService
         return $amount / (float) $f[$currency];
     }
 
+    public function usdValue(float $cryptoAmount, string $coin): ?float
+    {
+        $price = $this->prices()[strtoupper($coin)] ?? null;
+        if (! $price || (float) $price <= 0) {
+            return null;
+        }
+
+        return $cryptoAmount * (float) $price;
+    }
+
     public function cryptoAmount(float $amountFiat, string $currency, string $coin): ?string
     {
         $usd = $this->toUsd($amountFiat, $currency);

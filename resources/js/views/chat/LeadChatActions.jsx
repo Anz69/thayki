@@ -95,12 +95,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
           <div className={`px-4 py-2.5 text-center text-[13px] font-semibold ${confirmed ? 'bg-[#E6F5EA] text-[#1E9E4E]' : 'bg-[#FFF1DC] text-[#C77A12]'}`}>
             {confirmed ? t('leadChat.payConfirmed') : t('leadChat.payPending')}
           </div>
-          {isManager && !confirmed && p.method === 'crypto' && (
-            <div className="px-4 py-2.5 text-center text-[#9B9AA0] text-[12px] font-medium border-t border-black/[0.05]">
-              {t('leadChat.payCryptoAuto')}
-            </div>
-          )}
-          {isManager && !confirmed && p.method !== 'crypto' && (
+          {isManager && !confirmed && (
             <button
               disabled={busy}
               onClick={async () => {

@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Webhook;
 
-use App\Events\MessageSent;
-use App\Jobs\RevokeLeadCryptoAddressesJob;
 use App\Models\Lead;
 use App\Models\LeadCryptoAddress;
-use App\Models\LeadPayment;
 use App\Models\Message;
 use App\Services\Telegram\Notifier;
 use Illuminate\Http\Request;
@@ -68,10 +65,11 @@ class OxaPayWebhookController
         $txHash = $this->extractTxHash($payload);
 
         $isPaid = in_array($status, ['paid', 'confirmed', 'completed'], true);
-        $isPaying = in_array($status, ['paying', 'confirming', 'waiting'], true);
 
-        if ($isPaid) {
-            if ($row->status !== LeadCryptoAddress::STATUS_PAID) {
+        $this->notifyManager($lead, $row, $coin, $amount, $address, $isPaid, $status);
+
+        if ($isPaid && $row->status !== LeadCryptoAddress::STATUS_PAID) {
+            try {
                 $row->update([
                     'status' => LeadCryptoAddress::STATUS_PAID,
                     'paid_currency' => $coin,
@@ -79,16 +77,9 @@ class OxaPayWebhookController
                     'tx_hash' => $txHash,
                     'paid_at' => now(),
                 ]);
-                $this->confirmPayment($lead, $row);
-                RevokeLeadCryptoAddressesJob::dispatch($lead->id, $row->id)->afterResponse();
+            } catch (\Throwable $e) {
+                Log::warning('OxaPay webhook: address update failed', ['error' => $e->getMessage()]);
             }
-            $this->notifyManager($lead, $coin, $this->fiatAmount($row), $address, true);
-
-            return;
-        }
-
-        if ($isPaying) {
-            $this->notifyManager($lead, $coin, $this->fiatAmount($row), $address, false);
         }
     }
 
@@ -103,40 +94,7 @@ class OxaPayWebhookController
         return $symbol.number_format($amountMinor / 100, 2).' '.$currency;
     }
 
-    private function confirmPayment(Lead $lead, LeadCryptoAddress $row): void
-    {
-        $message = $row->message_id ? Message::query()->find($row->message_id) : null;
-        if ($message === null) {
-            return;
-        }
-
-        $payload = $message->payload ?? [];
-        if (($payload['status'] ?? null) === 'confirmed') {
-            return;
-        }
-
-        $amountMinor = (int) ($payload['amount_minor'] ?? 0);
-        $currency = (string) ($payload['currency'] ?? 'USD');
-
-        LeadPayment::query()->create([
-            'lead_id' => $lead->id,
-            'manager_id' => $lead->manager_id,
-            'amount_minor' => $amountMinor,
-            'currency' => $currency,
-            'method' => 'crypto',
-            'status' => 'confirmed',
-            'confirmed_at' => now(),
-        ]);
-
-        $message->update(['payload' => array_merge($payload, ['status' => 'confirmed'])]);
-        event(new MessageSent($message->fresh()));
-
-        if (in_array($lead->status->value ?? (string) $lead->status, ['new', 'in_progress', 'awaiting_payment'], true)) {
-            $lead->update(['status' => \App\Enums\LeadStatus::Prepaid]);
-        }
-    }
-
-    private function notifyManager(Lead $lead, string $coin, string $fiat, string $address, bool $paid): void
+    private function notifyManager(Lead $lead, LeadCryptoAddress $row, string $coin, string $amount, string $address, bool $paid, string $status): void
     {
         $client = $lead->user;
         $name = trim(($client->first_name ?? '').' '.($client->last_name ?? ''));
@@ -154,20 +112,30 @@ class OxaPayWebhookController
             ? substr($address, 0, 8).'...'.substr($address, -6)
             : $address;
 
+        $received = rtrim(rtrim((string) $amount, '0'), '.').' '.$coin;
+        $usd = app(\App\Services\Payments\CryptoRateService::class)->usdValue((float) $amount, $coin);
+        if ($usd !== null) {
+            $received .= ' (≈ $'.number_format($usd, 2).')';
+        }
+
+        $expected = $this->fiatAmount($row);
+
         $head = $paid ? '✅ Поступил платеж в криптовалюте' : '⏳ Поступил платеж в криптовалюте';
         $statusLine = $paid ? 'Оплачен' : 'В процессе';
 
         $text = $head."\n\n"
             .'Статус: '.$statusLine."\n"
             .'Валюта: '.$coin."\n"
-            .'Сумма: '.$fiat."\n"
+            .'Получено: '.$received."\n"
+            .'Ожидалось: '.$expected."\n"
             .'Адрес: '.$shortAddr."\n\n"
+            .'⚠️ Подтвердите оплату вручную в чате заявки, проверив сумму.'."\n\n"
             .'👤 Пользователь: '.$userLine."\n"
             .'📦 Заявки пользователя:'."\n"
             .$reqLines;
 
         $notifier = Notifier::default();
-        $dedup = 'oxa-'.($paid ? 'paid' : 'pay').'-'.md5($address.$fiat);
+        $dedup = 'oxa-'.$status.'-'.md5($address.$amount);
 
         if ($lead->manager && $lead->manager->tg_chat_id) {
             $notifier->notifyUser($lead->manager, $text, '/manager/leads', 'Открыть', $dedup);
