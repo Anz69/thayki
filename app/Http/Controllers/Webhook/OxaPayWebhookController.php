@@ -63,8 +63,10 @@ class OxaPayWebhookController
         }
 
         $coin = strtoupper((string) ($payload['currency'] ?? $row->network));
-        $amount = (string) ($payload['amount'] ?? '0');
+        $amount = $this->extractAmount($payload);
         $txHash = $this->extractTxHash($payload);
+
+        Log::error('OxaPay webhook payload (diag)', ['status' => $status, 'coin' => $coin, 'amount' => $amount, 'payload' => $payload]);
 
         $isPaid = in_array($status, ['paid', 'confirmed', 'completed'], true);
 
@@ -114,7 +116,11 @@ class OxaPayWebhookController
             ? substr($address, 0, 8).'...'.substr($address, -6)
             : $address;
 
-        $received = rtrim(rtrim((string) $amount, '0'), '.').' '.$coin;
+        $amtStr = rtrim(rtrim(number_format((float) $amount, 8, '.', ''), '0'), '.');
+        if ($amtStr === '') {
+            $amtStr = '0';
+        }
+        $received = $amtStr.' '.$coin;
         $usd = app(\App\Services\Payments\CryptoRateService::class)->usdValue((float) $amount, $coin);
         if ($usd !== null) {
             $received .= ' (≈ $'.number_format($usd, 2).')';
@@ -144,6 +150,32 @@ class OxaPayWebhookController
         } else {
             $notifier->notifyAdmins($text, '/manager/leads', 'Открыть', $dedup);
         }
+    }
+
+    private function extractAmount(array $payload): string
+    {
+        foreach (['amount', 'received_amount', 'pay_amount', 'paid_amount', 'received', 'value'] as $k) {
+            if (isset($payload[$k]) && is_numeric($payload[$k]) && (float) $payload[$k] > 0) {
+                return (string) $payload[$k];
+            }
+        }
+
+        if (! empty($payload['txs']) && is_array($payload['txs'])) {
+            $sum = 0.0;
+            foreach ($payload['txs'] as $tx) {
+                foreach (['amount', 'value', 'received_amount'] as $k) {
+                    if (isset($tx[$k]) && is_numeric($tx[$k])) {
+                        $sum += (float) $tx[$k];
+                        break;
+                    }
+                }
+            }
+            if ($sum > 0) {
+                return (string) $sum;
+            }
+        }
+
+        return (string) ($payload['amount'] ?? '0');
     }
 
     private function extractAddress(array $payload): string
