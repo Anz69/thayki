@@ -142,7 +142,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
         {single
           ? label('v', toPct, fmt(hi), active === 'to')
           : merged
-            ? label('m', 50, `${fmt(lo)} – ${fmt(hi)}`, !!active)
+            ? label('m', 50, lo === hi ? `${fmt(lo)}` : `${fmt(lo)} – ${fmt(hi)}`, !!active)
             : [label('f', fromPct, fmt(lo), active === 'from'), label('t', toPct, fmt(hi), active === 'to')]}
 
         {!single && knob('from', fromPct)}
