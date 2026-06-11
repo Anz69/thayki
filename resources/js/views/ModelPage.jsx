@@ -234,10 +234,10 @@ export default function ModelPage({ preview = false }) {
     <div>
       <section className="flex flex-col gap-10 pt-4">
 
-        <div>
+        <div className="sticky top-0 z-50">
           <header
             ref={headerRef}
-            className="invisible w-full py-5 border-b border-white bg-white/90 backdrop-blur-xs sticky top-0 z-50"
+            className="invisible w-full py-5 border-b border-white bg-white/90 backdrop-blur-xs"
           >
             <div className="container flex items-center relative">
               {preview ? (
@@ -287,9 +287,9 @@ export default function ModelPage({ preview = false }) {
                 <div className="relative flex-1 overflow-hidden">
                   <div className="flex w-max marquee-track">
                     {[0, 1].map((i) => (
-                      <span key={i} aria-hidden={i === 1} className="flex items-center text-[#9C5080] text-[12.5px]/[100%] font-semibold tracking-[0.01em] whitespace-nowrap">
+                      <span key={i} aria-hidden={i === 1} className="flex items-center text-[#9C5080] text-[12.5px]/[100%] font-medium tracking-[0.01em] whitespace-nowrap">
                         {t('catalogNotice.ticker')}
-                        <span className="mx-8 inline-block size-1 rounded-full bg-[#E2319B]/55" />
+                        <span className="mx-2 inline-block size-1 rounded-full bg-[#E2319B]/55" />
                       </span>
                     ))}
                   </div>
