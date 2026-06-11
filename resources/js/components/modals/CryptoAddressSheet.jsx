@@ -78,17 +78,32 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
   const [selected, setSelected] = useState(null)
   const [amountCopied, setAmountCopied] = useState(false)
   const amountTimer = useRef(null)
+  const amountIconTimer = useRef(null)
   const wrapRef = useRef(null)
   const prevHeightRef = useRef(null)
   const detailsRef = useRef(null)
   const copyRef = useRef(null)
   const checkRef = useRef(null)
+  const amountCopyRef = useRef(null)
+  const amountCheckRef = useRef(null)
   const copyTimer = useRef(null)
   const pollRef = useRef(null)
   const aliveRef = useRef(false)
 
   const setCopy = useCallback((el) => { copyRef.current = el; if (el) gsap.set(el, { autoAlpha: 1, scale: 1 }) }, [])
   const setCheck = useCallback((el) => { checkRef.current = el; if (el) gsap.set(el, { autoAlpha: 0, scale: 0.5 }) }, [])
+  const setAmountCopy = useCallback((el) => { amountCopyRef.current = el; if (el) gsap.set(el, { autoAlpha: 1, scale: 1 }) }, [])
+  const setAmountCheck = useCallback((el) => { amountCheckRef.current = el; if (el) gsap.set(el, { autoAlpha: 0, scale: 0.5 }) }, [])
+
+  const morphCopyCheck = useCallback((copyEl, checkEl, timerRef) => {
+    if (copyEl) gsap.to(copyEl, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
+    if (checkEl) gsap.to(checkEl, { autoAlpha: 1, scale: 1, duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      if (checkEl) gsap.to(checkEl, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
+      if (copyEl) gsap.to(copyEl, { autoAlpha: 1, scale: 1, duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
+    }, 1800)
+  }, [])
 
   const load = useCallback(async () => {
     if (!leadId || !messageId) return
@@ -146,10 +161,13 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
 
   const resetCopy = useCallback(() => {
     clearTimeout(copyTimer.current)
-    const a = [copyRef.current, checkRef.current].filter(Boolean)
+    clearTimeout(amountIconTimer.current)
+    const a = [copyRef.current, checkRef.current, amountCopyRef.current, amountCheckRef.current].filter(Boolean)
     if (a.length) gsap.killTweensOf(a)
     if (copyRef.current) gsap.set(copyRef.current, { autoAlpha: 1, scale: 1 })
     if (checkRef.current) gsap.set(checkRef.current, { autoAlpha: 0, scale: 0.5 })
+    if (amountCopyRef.current) gsap.set(amountCopyRef.current, { autoAlpha: 1, scale: 1 })
+    if (amountCheckRef.current) gsap.set(amountCheckRef.current, { autoAlpha: 0, scale: 0.5 })
   }, [])
 
   const handleSelect = useCallback((code) => {
@@ -163,7 +181,8 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
     setAmountCopied(true)
     clearTimeout(amountTimer.current)
     amountTimer.current = setTimeout(() => setAmountCopied(false), 1600)
-  }, [])
+    morphCopyCheck(amountCopyRef.current, amountCheckRef.current, amountIconTimer)
+  }, [morphCopyCheck])
 
   const handleCopy = useCallback((value) => {
     copyText(value)
@@ -221,10 +240,17 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
                     <button
                       onClick={() => copyAmount(sel.crypto_amount)}
                       style={{ WebkitTapHighlightColor: 'transparent' }}
-                      className="inline-flex items-center gap-2 outline-none active:scale-[0.97] transition-transform"
+                      className="relative outline-none active:scale-[0.97] transition-transform"
                     >
                       <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{sel.crypto_amount} {sel.code}</span>
-                      <svg width="17" height="17" viewBox="0 0 18 18" fill="none" className="shrink-0 mt-0.5"><path d="M11.64 2.18H9.16c-2.44 0-3.66 0-4.6.48-.82.42-1.49 1.08-1.91 1.9-.48.94-.48 2.16-.48 4.6v2.48M8.22 15.27h3.56c1.22 0 1.83 0 2.3-.24.4-.21.74-.54.95-.95.24-.47.24-1.08.24-2.3V8.22c0-1.22 0-1.83-.24-2.3a2.18 2.18 0 0 0-.95-.95c-.47-.24-1.08-.24-2.3-.24H8.22c-1.22 0-1.83 0-2.3.24-.41.21-.74.55-.95.95-.24.47-.24 1.08-.24 2.3v3.56c0 1.22 0 1.83.24 2.3.21.41.54.74.95.95.47.24 1.08.24 2.3.24Z" stroke="#C0BFC7" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-[18px] h-[18px]">
+                        <span ref={setAmountCopy} className="absolute inset-0 flex items-center justify-center">
+                          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11.64 2.18H9.16c-2.44 0-3.66 0-4.6.48-.82.42-1.49 1.08-1.91 1.9-.48.94-.48 2.16-.48 4.6v2.48M8.22 15.27h3.56c1.22 0 1.83 0 2.3-.24.4-.21.74-.54.95-.95.24-.47.24-1.08.24-2.3V8.22c0-1.22 0-1.83-.24-2.3a2.18 2.18 0 0 0-.95-.95c-.47-.24-1.08-.24-2.3-.24H8.22c-1.22 0-1.83 0-2.3.24-.41.21-.74.55-.95.95-.24.47-.24 1.08-.24 2.3v3.56c0 1.22 0 1.83.24 2.3.21.41.54.74.95.95.47.24 1.08.24 2.3.24Z" stroke="#C0BFC7" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        </span>
+                        <span ref={setAmountCheck} className="absolute inset-0 flex items-center justify-center">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#1E9E4E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        </span>
+                      </span>
                     </button>
                   ) : (
                     <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{data?.amount_display ?? '—'}</span>
