@@ -166,7 +166,7 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
 
   return (
     <ModalMiddle isOpen={isOpen} onClose={onClose}>
-      <div ref={wrapRef} className="flex flex-col gap-5 p-6 pt-2">
+      <div ref={wrapRef} className="flex flex-col gap-5 p-6 pt-2 overflow-hidden">
         <div className="flex flex-col items-center gap-1.5 text-center pt-1">
           <h2 className="text-black text-xl/[100%] font-semibold">{t('cryptoPay.title')}</h2>
           {data?.confirmed ? (
