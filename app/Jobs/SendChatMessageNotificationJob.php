@@ -99,6 +99,9 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     ->when($isLead && $lead?->manager_id, fn ($q) => $q->where('id', $lead->manager_id))
                     ->get();
                 foreach ($managers as $manager) {
+                    if ($sender !== null && (int) $manager->id === (int) $sender->id) {
+                        continue;
+                    }
                     $mLocale = $this->localeFor($manager);
                     $mText = $isLead
                         ? trans('notifications.new_message_lead', ['id' => $leadId], $mLocale)

@@ -38,6 +38,17 @@ const IconCheck = () => (
   </svg>
 )
 
+function copyText(value) {
+  const fallback = () => {
+    const ta = document.createElement('textarea')
+    ta.value = value; ta.style.position = 'fixed'; ta.style.opacity = '0'
+    document.body.appendChild(ta); ta.select()
+    try { document.execCommand('copy') } catch {}
+    document.body.removeChild(ta)
+  }
+  try { navigator.clipboard?.writeText ? navigator.clipboard.writeText(value).catch(fallback) : fallback() } catch { fallback() }
+}
+
 function CoinIcon({ code, sm = false }) {
   const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -50,7 +61,7 @@ function CoinIcon({ code, sm = false }) {
         </span>
       )}
       <img
-        src={`/img/payments/crypto/${code.toLowerCase()}.svg?v=5`}
+        src={`/img/payments/crypto/${code.toLowerCase()}.${code === 'TON' ? 'jpg' : 'svg'}?v=6`}
         alt={code}
         loading="lazy"
         className="absolute inset-0 w-full h-full object-cover"
@@ -66,6 +77,8 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
   const { t } = useTranslation()
   const [data, setData] = useState(null)
   const [selected, setSelected] = useState(null)
+  const [amountCopied, setAmountCopied] = useState(false)
+  const amountTimer = useRef(null)
   const wrapRef = useRef(null)
   const detailsRef = useRef(null)
   const copyRef = useRef(null)
@@ -130,10 +143,12 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
     const wrap = wrapRef.current
     if (selected === code) {
       if (!detailsRef.current || !wrap) { setSelected(null); return }
+      const dh = detailsRef.current.offsetHeight + 20
       freezeHeight(wrap)
-      gsap.to(detailsRef.current, {
-        opacity: 0, y: 10, scale: 0.97, duration: 0.18, ease: 'power2.in',
-        onComplete: () => { setSelected(null); animateHeightToContent(wrap, { duration: 0.32 }) },
+      gsap.to(detailsRef.current, { opacity: 0, duration: 0.22, ease: 'power2.in' })
+      gsap.to(wrap, {
+        height: `-=${dh}`, duration: 0.36, ease: 'power3.inOut',
+        onComplete: () => { setSelected(null); gsap.set(wrap, { clearProps: 'height' }) },
       })
     } else if (wrap) {
       freezeHeight(wrap)
@@ -144,15 +159,15 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
     }
   }, [selected, resetCopy])
 
+  const copyAmount = useCallback((value) => {
+    copyText(value)
+    setAmountCopied(true)
+    clearTimeout(amountTimer.current)
+    amountTimer.current = setTimeout(() => setAmountCopied(false), 1600)
+  }, [])
+
   const handleCopy = useCallback((value) => {
-    const fallback = () => {
-      const ta = document.createElement('textarea')
-      ta.value = value; ta.style.position = 'fixed'; ta.style.opacity = '0'
-      document.body.appendChild(ta); ta.select()
-      try { document.execCommand('copy') } catch {}
-      document.body.removeChild(ta)
-    }
-    try { navigator.clipboard?.writeText ? navigator.clipboard.writeText(value).catch(fallback) : fallback() } catch { fallback() }
+    copyText(value)
     const c = copyRef.current; const k = checkRef.current
     if (c) gsap.to(c, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
     if (k) gsap.to(k, { autoAlpha: 1, scale: 1, duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
@@ -206,11 +221,24 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
               </div>
               {!data?.confirmed && (
                 <>
-                  <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">
-                    {sel.crypto_amount ? `${sel.crypto_amount} ${sel.code}` : (data?.amount_display ?? '—')}
-                  </span>
+                  {sel.crypto_amount ? (
+                    <button
+                      onClick={() => copyAmount(sel.crypto_amount)}
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
+                      className="flex items-center gap-2 outline-none active:scale-[0.98] transition-transform"
+                    >
+                      <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{sel.crypto_amount} {sel.code}</span>
+                      <span className="shrink-0 text-[#B7B6BC]">
+                        {amountCopied ? <IconCheck /> : <IconCopy />}
+                      </span>
+                    </button>
+                  ) : (
+                    <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{data?.amount_display ?? '—'}</span>
+                  )}
                   {sel.crypto_amount && (
-                    <span className="text-[#9B9AA0] text-sm/[100%] font-[500]">≈ {data?.amount_display ?? '—'}</span>
+                    <span className="text-[#9B9AA0] text-sm/[100%] font-[500]">
+                      {amountCopied ? t('cryptoPay.copied') : `≈ ${data?.amount_display ?? '—'}`}
+                    </span>
                   )}
                 </>
               )}

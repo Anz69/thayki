@@ -82,14 +82,25 @@ class OxaPayWebhookController
                 $this->confirmPayment($lead, $row);
                 RevokeLeadCryptoAddressesJob::dispatch($lead->id, $row->id)->afterResponse();
             }
-            $this->notifyManager($lead, $coin, $amount, $address, true);
+            $this->notifyManager($lead, $coin, $this->fiatAmount($row), $address, true);
 
             return;
         }
 
         if ($isPaying) {
-            $this->notifyManager($lead, $coin, $amount, $address, false);
+            $this->notifyManager($lead, $coin, $this->fiatAmount($row), $address, false);
         }
+    }
+
+    private function fiatAmount(LeadCryptoAddress $row): string
+    {
+        $message = $row->message_id ? Message::query()->find($row->message_id) : null;
+        $amountMinor = (int) ($message?->payload['amount_minor'] ?? 0);
+        $currency = (string) ($message?->payload['currency'] ?? 'USD');
+        $symbols = ['RUB' => '₽', 'USD' => '$', 'EUR' => '€'];
+        $symbol = $symbols[$currency] ?? '';
+
+        return $symbol.number_format($amountMinor / 100, 2).' '.$currency;
     }
 
     private function confirmPayment(Lead $lead, LeadCryptoAddress $row): void
@@ -125,7 +136,7 @@ class OxaPayWebhookController
         }
     }
 
-    private function notifyManager(Lead $lead, string $coin, string $amount, string $address, bool $paid): void
+    private function notifyManager(Lead $lead, string $coin, string $fiat, string $address, bool $paid): void
     {
         $client = $lead->user;
         $name = trim(($client->first_name ?? '').' '.($client->last_name ?? ''));
@@ -149,14 +160,14 @@ class OxaPayWebhookController
         $text = $head."\n\n"
             .'Статус: '.$statusLine."\n"
             .'Валюта: '.$coin."\n"
-            .'Сумма: '.$amount.' '.$coin."\n"
+            .'Сумма: '.$fiat."\n"
             .'Адрес: '.$shortAddr."\n\n"
             .'👤 Пользователь: '.$userLine."\n"
             .'📦 Заявки пользователя:'."\n"
             .$reqLines;
 
         $notifier = Notifier::default();
-        $dedup = 'oxa-'.($paid ? 'paid' : 'pay').'-'.md5($address.$amount);
+        $dedup = 'oxa-'.($paid ? 'paid' : 'pay').'-'.md5($address.$fiat);
 
         if ($lead->manager && $lead->manager->tg_chat_id) {
             $notifier->notifyUser($lead->manager, $text, '/manager/leads', 'Открыть', $dedup);
