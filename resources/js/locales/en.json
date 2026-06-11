@@ -478,6 +478,7 @@
     "memo": "MEMO / Tag",
     "memoWarn": "You must include the MEMO — otherwise the payment will be lost.",
     "unavailable": "Temporarily unavailable",
-    "confirmed": "Payment received ✓"
+    "confirmed": "Payment received ✓",
+    "afterPay": "After payment your request will be confirmed automatically."
   }
 }

@@ -478,6 +478,7 @@
     "memo": "MEMO / 备注",
     "memoWarn": "必须填写 MEMO，否则付款将丢失。",
     "unavailable": "暂不可用",
-    "confirmed": "已收到付款 ✓"
+    "confirmed": "已收到付款 ✓",
+    "afterPay": "付款后，您的申请将自动确认。"
   }
 }
