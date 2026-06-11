@@ -56,10 +56,12 @@ export default function RangeSlider({ min, max, step = 1, from, to, onChange, fo
 
   return (
     <div className="select-none">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-[#E2319B] text-[15px] font-bold tabular-nums">{format ? format(from) : from}</span>
-        <span className="text-[#C4C4CC] text-[13px] font-medium">—</span>
-        <span className="text-[#E2319B] text-[15px] font-bold tabular-nums">{format ? format(to) : to}</span>
+      <div className="flex justify-center mb-3">
+        <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FCEFF7] text-[#E2319B] text-[14px] font-bold tabular-nums whitespace-nowrap">
+          {format ? format(from) : from}
+          <span className="text-[#E2319B]/35 font-medium">–</span>
+          {format ? format(to) : to}
+        </span>
       </div>
       <div ref={trackRef} className="relative h-9 touch-none">
         <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1.5 rounded-full bg-[#EDEAF0]" />
