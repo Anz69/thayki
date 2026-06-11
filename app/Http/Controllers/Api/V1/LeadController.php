@@ -229,7 +229,7 @@ class LeadController extends Controller
 
         $rate = app(\App\Services\Payments\CryptoRateService::class);
 
-        $coins = array_map(static function (array $c) use ($rows, $rate, $payFiat, $currency): array {
+        $coins = array_map(static function (array $c) use ($rows, $rate, $cryptoBasis, $currency): array {
             $row = $rows->get($c['network']);
             $status = $row->status ?? LeadCryptoAddress::STATUS_PENDING;
             $ready = in_array($status, [LeadCryptoAddress::STATUS_ACTIVE, LeadCryptoAddress::STATUS_PAID], true);
