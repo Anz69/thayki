@@ -62,7 +62,7 @@ export default function RequestPage() {
   const [age, setAge] = useState({ from: 20, to: 30 })
   const [height, setHeight] = useState({ from: 160, to: 175 })
   const [bustType, setBustType] = useState(null)
-  const [bustSize, setBustSize] = useState({ from: 2, to: 4 })
+  const [bustSize, setBustSize] = useState(4)
   const [weight, setWeight] = useState({ from: 50, to: 65 })
   const [figure, setFigure] = useState(null)
   const [hair, setHair] = useState(null)
@@ -192,9 +192,7 @@ export default function RequestPage() {
   const fmtHours = (v) => `${v} ${U('unitHour')}`
   const fmtDays = (v) => `${v} ${U('unitDay')}`
   const sizeLabel = (s) => (s === '6+' ? U('size6plus') : s)
-  const bustSizeStr = bustSize.from === bustSize.to
-    ? BUST_SIZES[bustSize.from]
-    : `${BUST_SIZES[bustSize.from]}–${BUST_SIZES[bustSize.to]}`
+  const bustSizeStr = BUST_SIZES[bustSize]
 
   const heightRangeStr = isEn
     ? `${height.from}–${height.to} ${U('unitCm')} (${inch(height.from)}–${inch(height.to)}${U('unitInch')})`
@@ -438,8 +436,8 @@ export default function RequestPage() {
                 ))}
               </div>
               <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mt-1.5 mb-1">{t('request.bustSizeLabel')}</p>
-              <RangeSlider min={0} max={BUST_SIZES.length - 1} from={bustSize.from} to={bustSize.to}
-                onChange={(f, to) => setBustSize({ from: f, to })} format={(i) => sizeLabel(BUST_SIZES[i])} />
+              <RangeSlider single min={0} max={BUST_SIZES.length - 1} value={bustSize}
+                onChange={setBustSize} format={(i) => sizeLabel(BUST_SIZES[i])} />
             </Section>
 
             <Section title={t('request.weight')}>

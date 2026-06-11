@@ -1,12 +1,12 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 
-export default function RangeSlider({ min, max, step = 1, from, to, onChange, format }) {
+export default function RangeSlider({ min, max, step = 1, from, to, value, onChange, format, single = false }) {
   const trackRef = useRef(null)
   const dragging = useRef(null)
-  const fromRef = useRef(from)
-  const toRef = useRef(to)
-  fromRef.current = from
-  toRef.current = to
+  const fromRef = useRef(0)
+  const toRef = useRef(0)
+  fromRef.current = single ? min : from
+  toRef.current = single ? value : to
 
   const [active, setActive] = useState(null)
 
@@ -24,9 +24,10 @@ export default function RangeSlider({ min, max, step = 1, from, to, onChange, fo
   }, [clampSnap, min, max])
 
   const apply = useCallback((which, v) => {
+    if (single) { onChange(v); return }
     if (which === 'from') onChange(Math.min(v, toRef.current), toRef.current)
     else onChange(fromRef.current, Math.max(v, fromRef.current))
-  }, [onChange])
+  }, [onChange, single])
 
   const onMove = useCallback((e) => {
     if (!dragging.current) return
@@ -52,20 +53,25 @@ export default function RangeSlider({ min, max, step = 1, from, to, onChange, fo
   const onTrackDown = (e) => {
     e.preventDefault()
     const v = valueFromClientX(e.clientX)
-    const closerToFrom = Math.abs(v - fromRef.current) < Math.abs(v - toRef.current)
-    const which = closerToFrom
-      ? (fromRef.current === toRef.current && v > fromRef.current ? 'to' : 'from')
-      : 'to'
+    let which = 'to'
+    if (!single) {
+      const closerToFrom = Math.abs(v - fromRef.current) < Math.abs(v - toRef.current)
+      which = closerToFrom
+        ? (fromRef.current === toRef.current && v > fromRef.current ? 'to' : 'from')
+        : 'to'
+    }
     dragging.current = which
     setActive(which)
     apply(which, v)
   }
 
+  const lo = fromRef.current
+  const hi = toRef.current
   const pct = (v) => ((v - min) / (max - min)) * 100
-  const fromPct = pct(from)
-  const toPct = pct(to)
+  const fromPct = pct(lo)
+  const toPct = pct(hi)
   const fmt = (v) => (format ? format(v) : v)
-  const merged = toPct - fromPct < 16
+  const merged = !single && toPct - fromPct < 16
   const clampPct = (p) => Math.min(94, Math.max(6, p))
   const ease = active ? 'transition-none' : 'transition-[left,right,width] duration-300 ease-out'
 
@@ -85,6 +91,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, onChange, fo
     const on = active === which
     return (
       <div
+        key={which}
         className={`absolute top-1/2 -translate-y-1/2 -ml-3.5 size-7 ${ease}`}
         style={{ left: `${p}%` }}
       >
@@ -117,11 +124,13 @@ export default function RangeSlider({ min, max, step = 1, from, to, onChange, fo
           />
         </div>
 
-        {merged
-          ? label('m', (fromPct + toPct) / 2, `${fmt(from)} – ${fmt(to)}`, !!active)
-          : [label('f', fromPct, fmt(from), active === 'from'), label('t', toPct, fmt(to), active === 'to')]}
+        {single
+          ? label('v', toPct, fmt(hi), active === 'to')
+          : merged
+            ? label('m', (fromPct + toPct) / 2, `${fmt(lo)} – ${fmt(hi)}`, !!active)
+            : [label('f', fromPct, fmt(lo), active === 'from'), label('t', toPct, fmt(hi), active === 'to')]}
 
-        {knob('from', fromPct)}
+        {!single && knob('from', fromPct)}
         {knob('to', toPct)}
       </div>
     </div>
