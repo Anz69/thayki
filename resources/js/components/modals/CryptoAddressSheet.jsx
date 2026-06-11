@@ -61,7 +61,7 @@ function CoinIcon({ code, sm = false }) {
         </span>
       )}
       <img
-        src={`/img/payments/crypto/${code.toLowerCase()}.${code === 'TON' ? 'jpg' : 'svg'}?v=6`}
+        src={`/img/payments/crypto/${code.toLowerCase()}.svg?v=7`}
         alt={code}
         loading="lazy"
         className="absolute inset-0 w-full h-full object-cover"
