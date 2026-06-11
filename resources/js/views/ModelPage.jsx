@@ -274,6 +274,27 @@ export default function ModelPage({ preview = false }) {
           </div>
         </header>
 
+        {!loadError && (
+          <div className="-mt-4 w-full bg-[#FBF1F8] border-y border-[#E2319B]/12">
+            <div className="relative flex items-center gap-2.5 px-4 py-2.5 overflow-hidden">
+              <span className="relative z-20 shrink-0 flex items-center justify-center size-6 rounded-full bg-[#E2319B]/12 shadow-[0_2px_6px_rgba(226,49,155,0.15)]">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <circle cx="12" cy="12" r="9" stroke="#E2319B" strokeWidth="1.9" />
+                  <path d="M12 7v.5M11.2 10.5h1.1v6M10.6 16.5h2.8" stroke="#E2319B" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <div className="relative flex-1 overflow-hidden">
+                <div className="flex w-max marquee-track">
+                  <span className="pr-16 text-[#A05B86] text-[12.5px]/[100%] font-medium tracking-[0.01em] whitespace-nowrap">{t('catalogNotice.p2')}</span>
+                  <span aria-hidden className="pr-16 text-[#A05B86] text-[12.5px]/[100%] font-medium tracking-[0.01em] whitespace-nowrap">{t('catalogNotice.p2')}</span>
+                </div>
+                <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#FBF1F8] to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#FBF1F8] to-transparent" />
+              </div>
+            </div>
+          </div>
+        )}
+
         {!preview && createPortal(
           (() => {
             const activeMeeting = ACTIVE_STATUSES.includes(meeting.meeting?.status ?? '')
@@ -340,26 +361,6 @@ export default function ModelPage({ preview = false }) {
               )}
             </div>
           </div>
-
-          {!loadError && (
-            <div className="container">
-              <div className="relative flex items-center gap-2 rounded-full pl-2.5 pr-1 py-1.5 bg-[#FBF2F8] border border-[#E2319B]/15 overflow-hidden">
-                <span className="shrink-0 z-10 flex items-center justify-center size-5 rounded-full bg-[#E2319B]/10">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <circle cx="12" cy="12" r="9" stroke="#E2319B" strokeWidth="1.9" />
-                    <path d="M12 7v.5M11.2 10.5h1.1v6M10.6 16.5h2.8" stroke="#E2319B" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <div className="relative flex-1 overflow-hidden">
-                  <div className="flex w-max marquee-track">
-                    <span className="pr-10 text-[#A05B86] text-[12px]/[100%] font-medium whitespace-nowrap">{t('catalogNotice.p2')}</span>
-                    <span aria-hidden className="pr-10 text-[#A05B86] text-[12px]/[100%] font-medium whitespace-nowrap">{t('catalogNotice.p2')}</span>
-                  </div>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#FBF2F8] to-transparent" />
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="flex flex-col gap-4 text-center container">
             {!preview && (
