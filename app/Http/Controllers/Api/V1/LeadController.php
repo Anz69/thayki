@@ -189,9 +189,13 @@ class LeadController extends Controller
         }
 
         $pending = $rows->filter(static fn ($r) => $r->status === LeadCryptoAddress::STATUS_PENDING);
+        \Illuminate\Support\Facades\Log::info('crypto-addresses GET', [
+            'lead' => $lead->id, 'message' => $message->id, 'rows' => $rows->count(), 'pending' => $pending->count(),
+        ]);
         if ($pending->isNotEmpty()) {
-            $lock = \Illuminate\Support\Facades\Cache::lock('oxa:gen:'.$message->id, 25);
-            if ($lock->get()) {
+            $guard = 'oxa:genlock:'.$message->id;
+            if (\Illuminate\Support\Facades\Cache::add($guard, 1, 30)) {
+                \Illuminate\Support\Facades\Log::info('crypto gen: start', ['pending' => $pending->count()]);
                 try {
                     $oxa = app(\App\Services\Payments\OxaPayService::class);
                     $deadline = microtime(true) + 9;
@@ -208,15 +212,18 @@ class LeadController extends Controller
                                 'track_id' => $res['track_id'],
                                 'status' => $res['address'] !== '' ? LeadCryptoAddress::STATUS_ACTIVE : LeadCryptoAddress::STATUS_FAILED,
                             ]);
+                            \Illuminate\Support\Facades\Log::info('crypto gen: ok', ['network' => $row->network]);
                         } catch (\Throwable $e) {
-                            \Illuminate\Support\Facades\Log::error('crypto address gen failed', ['network' => $row->network, 'lead' => $lead->id, 'error' => $e->getMessage()]);
+                            \Illuminate\Support\Facades\Log::error('crypto gen: failed', ['network' => $row->network, 'lead' => $lead->id, 'error' => $e->getMessage()]);
                             $row->update(['status' => LeadCryptoAddress::STATUS_FAILED]);
                         }
                     }
                 } finally {
-                    $lock->release();
+                    \Illuminate\Support\Facades\Cache::forget($guard);
                 }
                 $rows = $refetch();
+            } else {
+                \Illuminate\Support\Facades\Log::info('crypto gen: guard held, skipped');
             }
         }
 
