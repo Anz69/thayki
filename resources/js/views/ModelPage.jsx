@@ -343,16 +343,20 @@ export default function ModelPage({ preview = false }) {
 
           {!loadError && (
             <div className="container">
-              <div className="flex items-start gap-2.5 rounded-2xl px-3.5 py-3 bg-[#FBF2F8] border border-[#E2319B]/20">
-                <span className="shrink-0 mt-px flex items-center justify-center size-7 rounded-full bg-[#E2319B]/10">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <circle cx="12" cy="12" r="9" stroke="#E2319B" strokeWidth="1.7" />
-                    <path d="M12 7v.5M11.2 10.5h1.1v6M10.6 16.5h2.8" stroke="#E2319B" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <div className="relative flex items-center gap-2 rounded-full pl-2.5 pr-1 py-1.5 bg-[#FBF2F8] border border-[#E2319B]/15 overflow-hidden">
+                <span className="shrink-0 z-10 flex items-center justify-center size-5 rounded-full bg-[#E2319B]/10">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <circle cx="12" cy="12" r="9" stroke="#E2319B" strokeWidth="1.9" />
+                    <path d="M12 7v.5M11.2 10.5h1.1v6M10.6 16.5h2.8" stroke="#E2319B" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
-                <p className="text-[#9B5A86] text-[12.5px]/[150%] font-medium text-left">
-                  {t('catalogNotice.p2')}
-                </p>
+                <div className="relative flex-1 overflow-hidden">
+                  <div className="flex w-max marquee-track">
+                    <span className="pr-10 text-[#A05B86] text-[12px]/[100%] font-medium whitespace-nowrap">{t('catalogNotice.p2')}</span>
+                    <span aria-hidden className="pr-10 text-[#A05B86] text-[12px]/[100%] font-medium whitespace-nowrap">{t('catalogNotice.p2')}</span>
+                  </div>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#FBF2F8] to-transparent" />
+                </div>
               </div>
             </div>
           )}

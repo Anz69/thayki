@@ -124,10 +124,26 @@ html {
   100% { transform: translate(-50%, 8px) scale(0.96); opacity: 0; }
 }
 
+@keyframes marqueeX {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 @layer utilities {
   .balance-shimmer {
     animation: balanceShimmer 1.2s ease-in-out infinite;
   }
+
+  .marquee-track {
+    animation: marqueeX 26s linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
 
   .container {
     max-width: 700px;
