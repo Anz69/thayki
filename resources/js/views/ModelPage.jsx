@@ -341,6 +341,22 @@ export default function ModelPage({ preview = false }) {
             </div>
           </div>
 
+          {!loadError && (
+            <div className="container">
+              <div className="flex items-start gap-2.5 rounded-2xl px-3.5 py-3 bg-[#FBF2F8] border border-[#E2319B]/20">
+                <span className="shrink-0 mt-px flex items-center justify-center size-7 rounded-full bg-[#E2319B]/10">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <circle cx="12" cy="12" r="9" stroke="#E2319B" strokeWidth="1.7" />
+                    <path d="M12 7v.5M11.2 10.5h1.1v6M10.6 16.5h2.8" stroke="#E2319B" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <p className="text-[#9B5A86] text-[12.5px]/[150%] font-medium text-left">
+                  {t('catalogNotice.p2')}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col gap-4 text-center container">
             {!preview && (
               <div className="overflow-hidden">
