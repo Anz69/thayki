@@ -187,8 +187,8 @@ export default function RequestPage() {
   const inch = (cm) => Math.round(cm / 2.54)
   const lb = (kg) => Math.round(kg * 2.2046)
   const fmtAge = (v) => `${v} ${U('unitYear')}`
-  const fmtHeight = (v) => (isEn ? `${v} ${U('unitCm')} (${inch(v)}${U('unitInch')})` : `${v} ${U('unitCm')}`)
-  const fmtWeight = (v) => (isEn ? `${v} ${U('unitKg')} (${lb(v)} ${U('unitLb')})` : `${v} ${U('unitKg')}`)
+  const fmtHeight = (v) => (isEn ? `${inch(v)}${U('unitInch')}` : `${v} ${U('unitCm')}`)
+  const fmtWeight = (v) => (isEn ? `${lb(v)} ${U('unitLb')}` : `${v} ${U('unitKg')}`)
   const fmtHours = (v) => `${v} ${U('unitHour')}`
   const fmtDays = (v) => `${v} ${U('unitDay')}`
   const sizeLabel = (s) => (s === '6+' ? U('size6plus') : s)
