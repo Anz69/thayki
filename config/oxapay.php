@@ -9,6 +9,7 @@ return [
 
     'rate_limit_ms' => (int) env('OXAPAY_RATE_LIMIT_MS', 1300),
     'margin' => (float) env('OXAPAY_MARGIN', 0.025),
+    'address_ttl_hours' => (int) env('OXAPAY_ADDRESS_TTL_HOURS', 72),
 
     'networks' => [
         'Bitcoin',

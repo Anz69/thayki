@@ -21,14 +21,20 @@ class OxaPayCleanupAddressesCommand extends Command
         $dry = (bool) $this->option('dry');
         $revoked = 0;
 
+        $ttlHours = (int) config('oxapay.address_ttl_hours', 72);
+
         $localRows = LeadCryptoAddress::query()
             ->where('status', LeadCryptoAddress::STATUS_ACTIVE)
             ->whereNotNull('address')
-            ->whereHas('lead', fn ($q) => $q->whereIn('status', self::CLOSED_STATUSES))
+            ->where(function ($q) use ($ttlHours) {
+                $q->whereHas('lead', fn ($l) => $l->whereIn('status', self::CLOSED_STATUSES))
+                    ->orWhere('created_at', '<', now()->subHours($ttlHours));
+            })
             ->get();
 
         foreach ($localRows as $row) {
-            $this->line(($dry ? '[dry] ' : '').'revoke (closed lead) '.$row->address);
+            $stale = $row->created_at !== null && $row->created_at->lt(now()->subHours($ttlHours));
+            $this->line(($dry ? '[dry] ' : '').'revoke ('.($stale ? 'stale >'.$ttlHours.'h' : 'closed lead').') '.$row->address);
             if (! $dry && $oxa->revokeStaticAddress((string) $row->address)) {
                 $row->update(['status' => LeadCryptoAddress::STATUS_REVOKED]);
                 $revoked++;

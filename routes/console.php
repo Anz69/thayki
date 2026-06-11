@@ -14,7 +14,7 @@ Schedule::command('meetings:expire-pending')
     ->runInBackground();
 
 Schedule::command('oxapay:cleanup-addresses')
-    ->hourly()
+    ->everyThirtyMinutes()
     ->withoutOverlapping()
     ->runInBackground();
 
