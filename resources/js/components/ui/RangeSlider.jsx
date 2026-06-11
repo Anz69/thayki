@@ -19,8 +19,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
     const el = trackRef.current
     if (!el) return min
     const rect = el.getBoundingClientRect()
-    const usable = rect.width - 40
-    const ratio = usable > 0 ? (clientX - rect.left - 20) / usable : 0
+    const ratio = rect.width > 0 ? (clientX - rect.left) / rect.width : 0
     return clampSnap(min + ratio * (max - min))
   }, [clampSnap, min, max])
 
@@ -105,8 +104,8 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
     return (
       <div
         key={which}
-        className={`absolute top-1/2 -translate-y-1/2 -ml-3.5 size-7 ${ease}`}
-        style={{ left: `${p}%` }}
+        className={`absolute top-1/2 size-7 ${active ? 'transition-none' : 'transition-[left,transform] duration-300 ease-out'}`}
+        style={{ left: `${p}%`, transform: `translate(${-p}%, -50%)` }}
       >
         <span className={`absolute inset-0 -m-1.5 rounded-full bg-[#E2319B]/20 transition-all duration-300 ease-out ${on ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`} />
         <span className={`absolute inset-0 rounded-full bg-white border-2 border-[#E2319B] transition-transform duration-200 ease-out ${on ? 'scale-110 shadow-[0_4px_14px_rgba(226,49,155,0.5)]' : 'shadow-[0_2px_8px_rgba(226,49,155,0.3)]'}`} />
@@ -121,7 +120,6 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
         onPointerDown={onTrackDown}
         className="relative h-9 touch-none cursor-pointer"
       >
-        <div className="absolute inset-x-5 top-0 bottom-0">
         <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1.5 rounded-full bg-[#EDEAF0]" />
 
         <div
@@ -146,7 +144,6 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
 
         {!single && knob('from', fromPct)}
         {knob('to', toPct)}
-        </div>
       </div>
     </div>
   )
