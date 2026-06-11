@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Telegram\WebhookController as TelegramBotWebhookController;
+use App\Http\Controllers\Webhook\OxaPayWebhookController;
 use App\Http\Controllers\Web\BrowserPollController;
 use App\Http\Controllers\Web\TelegramWebAuthController;
 use App\Http\Controllers\Web\TelegramWidgetAuthController;
@@ -36,6 +37,8 @@ Route::get('/auth/browser-poll/{token}', [BrowserPollController::class, 'poll'])
 
 Route::post('/telegram/webhook/{secret}', TelegramBotWebhookController::class)
     ->name('telegram.webhook');
+
+Route::post('/webhook/oxa', OxaPayWebhookController::class)->name('webhook.oxa');
 
 Route::get('/{any}', function () {
     return Inertia::render('App');

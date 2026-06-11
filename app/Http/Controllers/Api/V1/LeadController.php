@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Lead\StoreLeadRequest;
 use App\Models\Lead;
 use App\Events\MessageSent;
+use App\Models\LeadCryptoAddress;
 use App\Models\Message;
 use App\Models\User;
 use App\Services\Telegram\Notifier;
@@ -142,5 +143,73 @@ class LeadController extends Controller
         }
 
         return ApiResponse::ok(['verified' => true]);
+    }
+
+    public function cryptoAddresses(Request $request, Lead $lead): JsonResponse
+    {
+        $user = $request->user();
+        $isParticipant = $lead->chat_id !== null
+            && $lead->chat?->participants()->where('user_id', $user->id)->exists();
+        if ($lead->user_id !== $user->id && ! $isParticipant) {
+            throw DomainException::forbidden('LEAD_FORBIDDEN', 'Not your request.');
+        }
+
+        $messageId = (int) $request->query('message_id', 0);
+        $query = Message::query()->where('chat_id', $lead->chat_id)->where('type', 'payment_request');
+        $message = $messageId > 0
+            ? (clone $query)->whereKey($messageId)->first()
+            : (clone $query)->orderByDesc('id')->first();
+
+        if ($message === null || ($message->payload['method'] ?? null) !== 'crypto') {
+            throw DomainException::invalid('PAYMENT_NOT_FOUND', 'Crypto payment not found.');
+        }
+
+        $amountMinor = (int) ($message->payload['amount_minor'] ?? 0);
+        $currency = (string) ($message->payload['currency'] ?? 'USD');
+        $margin = (float) config('oxapay.margin', 0.025);
+        $withMargin = round(($amountMinor / 100) * (1 + $margin), 2);
+
+        $rows = LeadCryptoAddress::query()
+            ->where('lead_id', $lead->id)
+            ->where('message_id', $message->id)
+            ->get()
+            ->keyBy('network');
+
+        $coins = array_map(static function (array $c) use ($rows): array {
+            $row = $rows->get($c['network']);
+            $status = $row->status ?? LeadCryptoAddress::STATUS_PENDING;
+            $ready = in_array($status, [LeadCryptoAddress::STATUS_ACTIVE, LeadCryptoAddress::STATUS_PAID], true);
+
+            return [
+                'code' => $c['code'],
+                'name' => $c['name'],
+                'network' => $c['network'],
+                'net_label' => $c['net_label'],
+                'address' => $ready ? $row?->address : null,
+                'memo' => $ready ? $row?->memo : null,
+                'status' => $status,
+            ];
+        }, (array) config('oxapay.coins', []));
+
+        $ready = collect($coins)->every(
+            static fn (array $c) => in_array($c['status'], [
+                LeadCryptoAddress::STATUS_ACTIVE,
+                LeadCryptoAddress::STATUS_PAID,
+                LeadCryptoAddress::STATUS_FAILED,
+            ], true)
+        );
+
+        $symbols = ['RUB' => '₽', 'USD' => '$', 'EUR' => '€'];
+        $symbol = $symbols[$currency] ?? ($currency.' ');
+
+        return ApiResponse::ok([
+            'message_id' => $message->id,
+            'currency' => $currency,
+            'amount' => $withMargin,
+            'amount_display' => $symbol.number_format($withMargin, 2),
+            'ready' => $ready,
+            'confirmed' => ($message->payload['status'] ?? null) === 'confirmed',
+            'coins' => $coins,
+        ]);
     }
 }

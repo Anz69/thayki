@@ -10,7 +10,10 @@ use App\Enums\ChatParticipantRole;
 use App\Enums\LeadStatus;
 use App\Exceptions\DomainException;
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateLeadCryptoAddressesJob;
+use App\Jobs\RevokeLeadCryptoAddressesJob;
 use App\Models\Lead;
+use App\Models\LeadCryptoAddress;
 use App\Models\LeadPayment;
 use App\Models\Message;
 use App\Models\ModelProfile;
@@ -101,6 +104,14 @@ class ManagerLeadController extends Controller
 
         $lead->update(['status' => $data['status']]);
 
+        if (in_array($data['status'], [LeadStatus::Completed->value, LeadStatus::Closed->value], true)) {
+            $paid = LeadCryptoAddress::query()
+                ->where('lead_id', $lead->id)
+                ->where('status', LeadCryptoAddress::STATUS_PAID)
+                ->value('id');
+            RevokeLeadCryptoAddressesJob::dispatch($lead->id, $paid)->afterResponse();
+        }
+
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
     }
 
@@ -119,7 +130,7 @@ class ManagerLeadController extends Controller
         $amountMinor = (int) round(((float) $data['amount']) * 100);
         $locale = $this->leadLocale($lead);
 
-        $this->postCard($post, $manager, $lead, 'payment_request', [
+        $message = $this->postCard($post, $manager, $lead, 'payment_request', [
             'amount_minor' => $amountMinor,
             'currency' => $currency,
             'method' => $method,
@@ -128,6 +139,16 @@ class ManagerLeadController extends Controller
             'pay_url' => null,
             'status' => 'pending',
         ], trans('lead.payment_body', ['amount' => $this->money($amountMinor, $currency)], $locale));
+
+        if ($method === 'crypto' && $message !== null) {
+            foreach ((array) config('oxapay.networks', []) as $network) {
+                LeadCryptoAddress::query()->firstOrCreate(
+                    ['lead_id' => $lead->id, 'message_id' => $message->id, 'network' => $network],
+                    ['status' => LeadCryptoAddress::STATUS_PENDING],
+                );
+            }
+            GenerateLeadCryptoAddressesJob::dispatch($lead->id, $message->id)->afterResponse();
+        }
 
         $lead->update(['status' => LeadStatus::AwaitingPayment]);
         $this->pushClient($lead, trans('lead.payment_push', [], $locale));
@@ -291,11 +312,11 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
     }
 
-    private function postCard(PostMessageAction $post, User $manager, Lead $lead, string $type, ?array $payload, ?string $body): void
+    private function postCard(PostMessageAction $post, User $manager, Lead $lead, string $type, ?array $payload, ?string $body): ?Message
     {
         $chat = $lead->chat;
         if ($chat === null) {
-            return;
+            return null;
         }
         if (! $chat->participants()->where('user_id', $manager->id)->exists()) {
             $chat->participants()->create([
@@ -303,7 +324,8 @@ class ManagerLeadController extends Controller
                 'role' => ChatParticipantRole::Support,
             ]);
         }
-        $post->execute($manager, $chat->fresh(['participants']), $body, null, null, $type, $payload);
+
+        return $post->execute($manager, $chat->fresh(['participants']), $body, null, null, $type, $payload);
     }
 
     private function pushClient(Lead $lead, string $text): void

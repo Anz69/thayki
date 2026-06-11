@@ -110,6 +110,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/leads/{lead}/verify-contact', [LeadController::class, 'verifyContact'])
             ->middleware('idempotency')
             ->name('leads.verifyContact');
+        Route::get('/leads/{lead}/crypto-addresses', [LeadController::class, 'cryptoAddresses'])
+            ->name('leads.cryptoAddresses');
 
         Route::get('/complaints',  [ComplaintController::class, 'index'])->name('complaints.index');
         Route::post('/complaints', [ComplaintController::class, 'store'])
