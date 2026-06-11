@@ -40,12 +40,15 @@ const IconCheck = () => (
 
 function CoinIcon({ code, sm = false }) {
   const [loaded, setLoaded] = useState(false)
+  const [failed, setFailed] = useState(false)
   const bg = COIN_COLORS[code] ?? '#888'
   return (
-    <span className="relative block w-full h-full rounded-full overflow-hidden">
-      <span className="absolute inset-0 flex items-center justify-center text-white font-bold select-none" style={{ background: bg, fontSize: sm ? 7 : (code.length > 3 ? 10 : 12), letterSpacing: '-0.03em' }}>
-        {code}
-      </span>
+    <span className="relative block w-full h-full rounded-full overflow-hidden bg-[#ECECF0]">
+      {failed && (
+        <span className="absolute inset-0 flex items-center justify-center text-white font-bold select-none" style={{ background: bg, fontSize: sm ? 7 : (code.length > 3 ? 10 : 12), letterSpacing: '-0.03em' }}>
+          {code}
+        </span>
+      )}
       <img
         src={`/img/payments/crypto/${code.toLowerCase()}.svg`}
         alt={code}
@@ -53,7 +56,7 @@ function CoinIcon({ code, sm = false }) {
         className="absolute inset-0 w-full h-full object-cover"
         style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.25s ease' }}
         onLoad={() => setLoaded(true)}
-        onError={() => {}}
+        onError={() => setFailed(true)}
       />
     </span>
   )
@@ -175,8 +178,8 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
               <button
                 key={c.code}
                 onClick={() => handleSelect(c.code)}
-                style={{ transition: 'opacity 0.2s ease' }}
-                className={['rounded-full aspect-square', isDimmed ? 'opacity-35' : 'opacity-100', isSel ? 'ring-2 ring-[#E2319B] ring-offset-1' : ''].join(' ')}
+                style={{ transition: 'opacity 0.2s ease', WebkitTapHighlightColor: 'transparent' }}
+                className={['rounded-full aspect-square outline-none focus:outline-none', isDimmed ? 'opacity-35' : 'opacity-100', isSel ? 'ring-2 ring-[#E2319B] ring-offset-2 ring-offset-white' : ''].join(' ')}
               >
                 <CoinIcon code={c.code} />
               </button>

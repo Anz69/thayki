@@ -175,6 +175,24 @@ class LeadController extends Controller
             ->get()
             ->keyBy('network');
 
+        $hasReady = $rows->contains(
+            static fn ($r) => in_array($r->status, [LeadCryptoAddress::STATUS_ACTIVE, LeadCryptoAddress::STATUS_PAID], true)
+        );
+        if (! $hasReady && \Illuminate\Support\Facades\Cache::add('oxa:gen:'.$message->id, 1, 90)) {
+            foreach ((array) config('oxapay.networks', []) as $network) {
+                LeadCryptoAddress::query()->firstOrCreate(
+                    ['lead_id' => $lead->id, 'message_id' => $message->id, 'network' => $network],
+                    ['status' => LeadCryptoAddress::STATUS_PENDING],
+                );
+            }
+            \App\Jobs\GenerateLeadCryptoAddressesJob::dispatch($lead->id, $message->id)->afterResponse();
+            $rows = LeadCryptoAddress::query()
+                ->where('lead_id', $lead->id)
+                ->where('message_id', $message->id)
+                ->get()
+                ->keyBy('network');
+        }
+
         $coins = array_map(static function (array $c) use ($rows): array {
             $row = $rows->get($c['network']);
             $status = $row->status ?? LeadCryptoAddress::STATUS_PENDING;
