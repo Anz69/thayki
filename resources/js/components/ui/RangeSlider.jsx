@@ -25,9 +25,10 @@ function Label({ pct, text, on, active, trackRef }) {
   )
 }
 
-export default function RangeSlider({ min, max, step = 1, from, to, value, onChange, format, single = false }) {
+export default function RangeSlider({ min, max, step = 1, from, to, value, onChange, format, formatRange, single = false }) {
   const trackRef = useRef(null)
   const dragging = useRef(null)
+  const startXRef = useRef(0)
   const fromRef = useRef(0)
   const toRef = useRef(0)
   fromRef.current = single ? min : from
@@ -59,8 +60,9 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
     if (e.cancelable) e.preventDefault()
     const v = valueFromClientX(e.clientX)
     if (dragging.current === 'auto') {
-      if (v === toRef.current) return
-      const which = v < toRef.current ? 'from' : 'to'
+      const dx = e.clientX - startXRef.current
+      if (Math.abs(dx) < 4) return
+      const which = dx < 0 ? 'from' : 'to'
       dragging.current = which
       setActive(which)
     }
@@ -87,6 +89,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
   const onTrackDown = (e) => {
     e.preventDefault()
     try { window.Telegram?.WebApp?.disableVerticalSwipes?.() } catch {}
+    startXRef.current = e.clientX
     const v = valueFromClientX(e.clientX)
     let which = 'to'
     if (!single) {
@@ -154,7 +157,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
         {single
           ? <Label pct={toPct} text={fmt(hi)} on={active === 'to'} active={!!active} trackRef={trackRef} />
           : merged
-            ? <Label pct={(fromPct + toPct) / 2} text={lo === hi ? `${fmt(lo)}` : `${fmt(lo)} – ${fmt(hi)}`} on={!!active} active={!!active} trackRef={trackRef} />
+            ? <Label pct={(fromPct + toPct) / 2} text={lo === hi ? `${fmt(lo)}` : (formatRange ? formatRange(lo, hi) : `${fmt(lo)} – ${fmt(hi)}`)} on={!!active} active={!!active} trackRef={trackRef} />
             : (<><Label pct={fromPct} text={fmt(lo)} on={active === 'from'} active={!!active} trackRef={trackRef} /><Label pct={toPct} text={fmt(hi)} on={active === 'to'} active={!!active} trackRef={trackRef} /></>)}
 
         {!single && knob('from', fromPct)}

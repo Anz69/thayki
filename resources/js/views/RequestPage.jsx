@@ -187,10 +187,15 @@ export default function RequestPage() {
   const inch = (cm) => Math.round(cm / 2.54)
   const lb = (kg) => Math.round(kg * 2.2046)
   const fmtAge = (v) => `${v} ${U('unitYear')}`
-  const fmtHeight = (v) => (isEn ? `${inch(v)}${U('unitInch')}` : `${v} ${U('unitCm')}`)
-  const fmtWeight = (v) => (isEn ? `${lb(v)} ${U('unitLb')}` : `${v} ${U('unitKg')}`)
+  const fmtHeight = (v) => (isEn ? `${v} ${U('unitCm')} (${inch(v)}${U('unitInch')})` : `${v} ${U('unitCm')}`)
+  const fmtWeight = (v) => (isEn ? `${v} ${U('unitKg')} (${lb(v)} ${U('unitLb')})` : `${v} ${U('unitKg')}`)
   const fmtHours = (v) => `${v} ${U('unitHour')}`
   const fmtDays = (v) => `${v} ${U('unitDay')}`
+  const rangeAge = (a, b) => `${a}–${b} ${U('unitYear')}`
+  const rangeHeight = (a, b) => (isEn ? `${a}–${b} ${U('unitCm')} (${inch(a)}–${inch(b)}${U('unitInch')})` : `${a}–${b} ${U('unitCm')}`)
+  const rangeWeight = (a, b) => (isEn ? `${a}–${b} ${U('unitKg')} (${lb(a)}–${lb(b)} ${U('unitLb')})` : `${a}–${b} ${U('unitKg')}`)
+  const rangeHours = (a, b) => `${a}–${b} ${U('unitHour')}`
+  const rangeDays = (a, b) => `${a}–${b} ${U('unitDay')}`
   const sizeLabel = (s) => (s === '6+' ? U('size6plus') : s)
   const bustSizeStr = BUST_SIZES[bustSize]
 
@@ -419,12 +424,12 @@ export default function RequestPage() {
           <>
             <Section title={t('request.age')}>
               <RangeSlider min={18} max={60} from={age.from} to={age.to}
-                onChange={(f, to) => setAge({ from: f, to })} format={fmtAge} />
+                onChange={(f, to) => setAge({ from: f, to })} format={fmtAge} formatRange={rangeAge} />
             </Section>
 
             <Section title={t('request.height')}>
               <RangeSlider min={150} max={195} from={height.from} to={height.to}
-                onChange={(f, to) => setHeight({ from: f, to })} format={fmtHeight} />
+                onChange={(f, to) => setHeight({ from: f, to })} format={fmtHeight} formatRange={rangeHeight} />
             </Section>
 
             <Section title={t('request.bust')}>
@@ -442,7 +447,7 @@ export default function RequestPage() {
 
             <Section title={t('request.weight')}>
               <RangeSlider min={40} max={150} from={weight.from} to={weight.to}
-                onChange={(f, to) => setWeight({ from: f, to })} format={fmtWeight} />
+                onChange={(f, to) => setWeight({ from: f, to })} format={fmtWeight} formatRange={rangeWeight} />
             </Section>
 
             <Section title={t('request.figure')}>
@@ -478,7 +483,7 @@ export default function RequestPage() {
                   <div className="mt-1.5 rounded-xl bg-[#F8F7FA] p-3.5">
                     <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2.5">{t('request.duration')}</p>
                     <RangeSlider min={1} max={24} from={eventHours.from} to={eventHours.to}
-                      onChange={(f, to) => setEventHours({ from: f, to })} format={fmtHours} />
+                      onChange={(f, to) => setEventHours({ from: f, to })} format={fmtHours} formatRange={rangeHours} />
                   </div>
                 )}
 
@@ -487,7 +492,7 @@ export default function RequestPage() {
                     <div>
                       <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2.5">{t('request.tripDaysLabel')}</p>
                       <RangeSlider min={1} max={30} from={tripDays.from} to={tripDays.to}
-                        onChange={(f, to) => setTripDays({ from: f, to })} format={fmtDays} />
+                        onChange={(f, to) => setTripDays({ from: f, to })} format={fmtDays} formatRange={rangeDays} />
                     </div>
                     <div onFocusCapture={scrollFieldIntoView} style={{ scrollMarginTop: 80 }}>
                       <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2">
