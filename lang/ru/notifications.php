@@ -11,5 +11,6 @@ return [
     'manager_name' => 'Менеджер',
     'user_fallback' => 'Пользователь',
     'new_lead' => '📩 Новая заявка на подбор — :city',
+    'lead_cancelled' => '❌ :name отменил(а) заявку #:id — :city',
     'open' => 'Открыть',
 ];

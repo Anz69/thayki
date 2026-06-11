@@ -55,7 +55,7 @@ class ManagerResource extends Resource
                         'danger' => UserStatus::Banned->value,
                     ]),
                 Tables\Columns\IconColumn::make('notifications_enabled')->label('TG-уведомления')->boolean(),
-                Tables\Columns\TextColumn::make('last_auth_at')->label('Последний вход')
+                Tables\Columns\TextColumn::make('last_seen_at')->label('Был онлайн')
                     ->dateTime('d.m.Y H:i')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Назначен')
                     ->dateTime('d.m.Y')->sortable()->toggleable(isToggledHiddenByDefault: true),

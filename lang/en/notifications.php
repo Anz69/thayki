@@ -11,5 +11,6 @@ return [
     'manager_name' => 'Manager',
     'user_fallback' => 'User',
     'new_lead' => '📩 New model request — :city',
+    'lead_cancelled' => '❌ :name cancelled request #:id — :city',
     'open' => 'Open',
 ];

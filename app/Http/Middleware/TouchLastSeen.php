@@ -21,7 +21,7 @@ class TouchLastSeen
         $response = $next($request);
 
         try {
-            $user = $request->user();
+            $user = $request->user('sanctum') ?? $request->user();
             if (! $user instanceof User) {
                 return $response;
             }

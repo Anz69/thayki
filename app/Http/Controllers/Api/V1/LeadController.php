@@ -267,4 +267,64 @@ class LeadController extends Controller
             'coins' => $coins,
         ]);
     }
+
+    public function destroy(Request $request, Lead $lead): JsonResponse
+    {
+        $user = $request->user();
+        if ($lead->user_id !== $user->id) {
+            throw DomainException::forbidden('LEAD_FORBIDDEN', 'Not your request.');
+        }
+
+        if ($lead->status->value === 'completed') {
+            throw DomainException::invalid('LEAD_NOT_CANCELABLE', 'Completed request cannot be cancelled.');
+        }
+
+        $leadId = $lead->id;
+        $city = (string) $lead->city;
+        $client = $lead->user;
+
+        try {
+            \App\Jobs\RevokeLeadCryptoAddressesJob::dispatch($leadId);
+        } catch (\Throwable) {
+        }
+
+        $this->notifyManagersLeadCancelled($leadId, $city, $client);
+
+        $chat = $lead->chat;
+        $lead->delete();
+        $chat?->delete();
+
+        return ApiResponse::ok(['cancelled' => true]);
+    }
+
+    private function notifyManagersLeadCancelled(int $leadId, string $city, ?User $client): void
+    {
+        $name = trim(((string) ($client->first_name ?? '')).' '.((string) ($client->last_name ?? '')));
+        if ($name === '') {
+            $name = $client?->username ?? '—';
+        }
+
+        $managers = User::query()
+            ->where('role', \App\Enums\UserRole::Manager->value)
+            ->whereNotNull('tg_chat_id')
+            ->where('notifications_enabled', true)
+            ->get();
+
+        $notifier = Notifier::default();
+        $dedup = 'lead-cancelled:'.$leadId;
+        $params = ['name' => $name, 'id' => $leadId, 'city' => $city];
+
+        foreach ($managers as $manager) {
+            $locale = str_starts_with(strtolower((string) ($manager->language_code ?? '')), 'en') ? 'en' : 'ru';
+            $notifier->notifyUser(
+                $manager,
+                trans('notifications.lead_cancelled', $params, $locale),
+                '/manager/leads',
+                trans('notifications.open', [], $locale),
+                $dedup,
+            );
+        }
+
+        $notifier->notifyAdmins(trans('notifications.lead_cancelled', $params, 'ru'), null, null, $dedup);
+    }
 }

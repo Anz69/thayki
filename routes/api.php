@@ -38,7 +38,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
     });
 
-    Route::middleware(['auth:sanctum', 'throttle:api', 'touch.last_seen'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
 
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
@@ -107,6 +107,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/leads', [LeadController::class, 'store'])
             ->middleware('idempotency')
             ->name('leads.store');
+        Route::delete('/leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
         Route::post('/leads/{lead}/verify-contact', [LeadController::class, 'verifyContact'])
             ->middleware('idempotency')
             ->name('leads.verifyContact');

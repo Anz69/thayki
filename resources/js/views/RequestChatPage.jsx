@@ -15,6 +15,7 @@ import GradientBorder from '@/components/ui/GradientBorder'
 import { logError } from '@/utils/logger'
 import { prepareImageFileForUpload } from '@/utils/prepareImageForUpload'
 import { LeadActionMenu, TypedMessageCard } from '@/views/chat/LeadChatActions'
+import CancelLeadModal from '@/components/modals/CancelLeadModal'
 import { STATUS, StatusChip } from '@/views/manager/kit'
 
 const TYPED = new Set(['payment_request', 'verification_request', 'model_card'])
@@ -176,6 +177,8 @@ export default function RequestChatPage() {
   const [leadClosed, setLeadClosed] = useState(false)
   const [leadStatus, setLeadStatus] = useState(null)
   const [accepting, setAccepting]   = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [cancelBusy, setCancelBusy] = useState(false)
   const [othersTyping, setOthersTyping] = useState(false)
   const typingHideRef = useRef(null)
   const lastTypingSentRef = useRef(0)
@@ -328,6 +331,21 @@ export default function RequestChatPage() {
       setAccepting(false)
     }
   }, [accepting, leadId, reloadMessages])
+
+  const cancelLead = useCallback(async () => {
+    if (cancelBusy || !leadId) return
+    setCancelBusy(true)
+    try {
+      await api.delete(`/leads/${leadId}`)
+      setCancelOpen(false)
+      navigate(backTo, { replace: true })
+    } catch (e) {
+      logError(e)
+      window.alert?.(t('cancelLead.error'))
+    } finally {
+      setCancelBusy(false)
+    }
+  }, [cancelBusy, leadId, navigate, backTo, t])
 
   const mustAccept = isStaff && isLead && leadStatus === 'new'
 
@@ -691,6 +709,20 @@ export default function RequestChatPage() {
                     {bubble}
                   </div>
                   {idx === 0 && isLead && !isStaff && <ManagerNote text={t('requestChat.managerNote')} />}
+                  {idx === 0 && isLead && !isStaff && !leadClosed && (
+                    <div className="flex justify-center mt-1 mb-2" data-msg>
+                      <button
+                        type="button"
+                        onClick={() => setCancelOpen(true)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#E2319B]/40 text-[#E2319B] text-[13px] font-semibold active:scale-95 active:bg-[#E2319B]/5 transition"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+                          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                        </svg>
+                        {t('cancelLead.button')}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -781,6 +813,13 @@ export default function RequestChatPage() {
         </div>
       </div>
       )}
+
+      <CancelLeadModal
+        isOpen={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        onConfirm={cancelLead}
+        busy={cancelBusy}
+      />
     </section>
   )
 }

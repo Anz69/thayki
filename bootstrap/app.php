@@ -61,6 +61,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             EnsureUserIsActive::class,
             EnsureUserIsVerified::class,
+            TouchLastSeen::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

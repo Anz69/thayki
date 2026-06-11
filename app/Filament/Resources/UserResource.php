@@ -102,7 +102,7 @@ class UserResource extends Resource
                 Tables\Columns\IconColumn::make('is_strange')->label('Strange')->boolean(),
                 Tables\Columns\IconColumn::make('notifications_enabled')->label('TG-уведомления')->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('last_auth_at')->label('Последний вход')
+                Tables\Columns\TextColumn::make('last_seen_at')->label('Был онлайн')
                     ->dateTime('d.m.Y H:i')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Зарегистрирован')
                     ->dateTime('d.m.Y')->sortable()->toggleable(isToggledHiddenByDefault: true),

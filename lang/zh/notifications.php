@@ -11,5 +11,6 @@ return [
     'manager_name' => '经理',
     'user_fallback' => '用户',
     'new_lead' => '📩 新的甄选申请 — :city',
+    'lead_cancelled' => '❌ :name 取消了申请 #:id — :city',
     'open' => '打开',
 ];

@@ -198,7 +198,7 @@ class ModelResource extends Resource
                         'danger' => UserStatus::Banned->value,
                     ]),
                 Tables\Columns\IconColumn::make('is_strange')->label('Strange')->boolean(),
-                Tables\Columns\TextColumn::make('last_auth_at')->label('Последний вход')
+                Tables\Columns\TextColumn::make('last_seen_at')->label('Был онлайн')
                     ->dateTime('d.m.Y H:i')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

@@ -460,6 +460,12 @@
     "title": "取消会面",
     "confirm": "确定要取消会面吗？"
   },
+  "cancelLead": {
+    "button": "取消申请",
+    "title": "取消申请",
+    "confirm": "申请将被永久删除。确定吗？",
+    "error": "取消申请失败"
+  },
   "finishMeeting": {
     "title": "结束会面",
     "confirm": "确定要结束会面吗？"
