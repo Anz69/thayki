@@ -50,7 +50,7 @@ function CoinIcon({ code, sm = false }) {
         </span>
       )}
       <img
-        src={`/img/payments/crypto/${code.toLowerCase()}.svg`}
+        src={`/img/payments/crypto/${code.toLowerCase()}.svg?v=4`}
         alt={code}
         loading="lazy"
         className="absolute inset-0 w-full h-full object-cover"
@@ -199,9 +199,11 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
               </div>
               {!data?.confirmed && (
                 <>
-                  <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{data?.amount_display ?? '—'}</span>
+                  <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">
+                    {sel.crypto_amount ? `${sel.crypto_amount} ${sel.code}` : (data?.amount_display ?? '—')}
+                  </span>
                   {sel.crypto_amount && (
-                    <span className="text-[#9B9AA0] text-sm/[100%] font-[500]">≈ {sel.crypto_amount} {sel.code}</span>
+                    <span className="text-[#9B9AA0] text-sm/[100%] font-[500]">≈ {data?.amount_display ?? '—'}</span>
                   )}
                 </>
               )}
