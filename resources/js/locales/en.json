@@ -480,6 +480,6 @@
     "memoWarn": "You must include the MEMO — otherwise the payment will be lost.",
     "unavailable": "Temporarily unavailable",
     "confirmed": "Payment received ✓",
-    "afterPay": "Send the exact amount to this address — the payment will be confirmed automatically."
+    "afterPay": "Send the exact amount to the address"
   }
 }

@@ -480,6 +480,6 @@
     "memoWarn": "必须填写 MEMO，否则付款将丢失。",
     "unavailable": "暂不可用",
     "confirmed": "已收到付款 ✓",
-    "afterPay": "请将准确金额发送到此地址 — 付款将自动确认。"
+    "afterPay": "请将准确金额发送到此地址"
   }
 }

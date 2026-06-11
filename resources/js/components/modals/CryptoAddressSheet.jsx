@@ -225,19 +225,22 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
                     <button
                       onClick={() => copyAmount(sel.crypto_amount)}
                       style={{ WebkitTapHighlightColor: 'transparent' }}
-                      className="flex items-center gap-2 outline-none active:scale-[0.98] transition-transform"
+                      className="outline-none active:scale-[0.97] transition-transform"
                     >
                       <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{sel.crypto_amount} {sel.code}</span>
-                      <span className="shrink-0 text-[#B7B6BC]">
-                        {amountCopied ? <IconCheck /> : <IconCopy />}
-                      </span>
                     </button>
                   ) : (
                     <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{data?.amount_display ?? '—'}</span>
                   )}
                   {sel.crypto_amount && (
-                    <span className="text-[#9B9AA0] text-sm/[100%] font-[500]">
-                      {amountCopied ? t('cryptoPay.copied') : `≈ ${data?.amount_display ?? '—'}`}
+                    <span className="relative block w-full h-[18px] text-sm/[100%] font-[500]">
+                      <span className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out text-[#9B9AA0] ${amountCopied ? 'opacity-0 -translate-y-1.5' : 'opacity-100 translate-y-0'}`}>
+                        ≈ {data?.amount_display ?? '—'}
+                      </span>
+                      <span className={`absolute inset-0 flex items-center justify-center gap-1 transition-all duration-300 ease-out text-[#1E9E4E] ${amountCopied ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1.5'}`}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#1E9E4E" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        {t('cryptoPay.copied')}
+                      </span>
                     </span>
                   )}
                 </>
