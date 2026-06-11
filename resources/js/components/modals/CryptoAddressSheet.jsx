@@ -86,9 +86,10 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
   }, [leadId, messageId])
 
   useEffect(() => {
-    aliveRef.current = isOpen
     clearInterval(pollRef.current)
-    if (!isOpen) { setSelected(null); setData(null); return undefined }
+    if (!isOpen) { aliveRef.current = false; return undefined }
+    aliveRef.current = true
+    setSelected(null)
     load()
     pollRef.current = setInterval(() => {
       if (data?.ready && data?.confirmed) { clearInterval(pollRef.current); return }
@@ -190,17 +191,20 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
         {sel && (
           <div ref={detailsRef} className="flex flex-col gap-3">
             <div className="flex flex-col items-center gap-1.5 text-center">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap justify-center">
                 <span className="text-[#7F7F7F] text-sm/[100%] font-medium">{t('payment.transferTo')}</span>
                 <span className="inline-flex w-4 h-4"><CoinIcon code={sel.code} sm /></span>
                 <span className="text-[#7F7F7F] text-sm/[100%] font-medium">{sel.name}</span>
+                <span className="text-[#B7B6BC] text-[13px]/[100%] font-medium">· {sel.net_label}</span>
               </div>
               {!data?.confirmed && (
-                <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{data?.amount_display ?? '—'}</span>
+                <>
+                  <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{data?.amount_display ?? '—'}</span>
+                  {sel.crypto_amount && (
+                    <span className="text-[#9B9AA0] text-sm/[100%] font-semibold">≈ {sel.crypto_amount} {sel.code}</span>
+                  )}
+                </>
               )}
-              <span className="text-[11px] font-semibold text-[#9B9AA0] uppercase tracking-[0.06em] bg-[#F5F5F7] rounded-full px-2.5 py-1">
-                {t('cryptoPay.network')}: {sel.net_label}
-              </span>
             </div>
 
             {sel.status === 'pending' ? (

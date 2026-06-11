@@ -193,7 +193,9 @@ class LeadController extends Controller
                 ->keyBy('network');
         }
 
-        $coins = array_map(static function (array $c) use ($rows): array {
+        $rate = app(\App\Services\Payments\CryptoRateService::class);
+
+        $coins = array_map(static function (array $c) use ($rows, $rate, $withMargin, $currency): array {
             $row = $rows->get($c['network']);
             $status = $row->status ?? LeadCryptoAddress::STATUS_PENDING;
             $ready = in_array($status, [LeadCryptoAddress::STATUS_ACTIVE, LeadCryptoAddress::STATUS_PAID], true);
@@ -206,6 +208,7 @@ class LeadController extends Controller
                 'address' => $ready ? $row?->address : null,
                 'memo' => $ready ? $row?->memo : null,
                 'status' => $status,
+                'crypto_amount' => $rate->cryptoAmount($withMargin, $currency, $c['code']),
             ];
         }, (array) config('oxapay.coins', []));
 
