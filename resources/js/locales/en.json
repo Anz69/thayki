@@ -468,9 +468,9 @@
     "done": "Done"
   },
   "cryptoPay": {
-    "title": "Pay with crypto",
+    "title": "Choose a cryptocurrency",
     "amountLabel": "To pay:",
-    "hint": "Send the shown amount to the address of your chosen coin. The network is shown for each coin.",
+    "hint": "Pick a coin and send the amount to its address.",
     "generating": "Generating addresses, please wait…",
     "network": "Network",
     "copy": "Copy",
