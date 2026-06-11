@@ -19,7 +19,8 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
     const el = trackRef.current
     if (!el) return min
     const rect = el.getBoundingClientRect()
-    const ratio = rect.width > 0 ? (clientX - rect.left) / rect.width : 0
+    const usable = rect.width - 28
+    const ratio = usable > 0 ? (clientX - rect.left - 14) / usable : 0
     return clampSnap(min + ratio * (max - min))
   }, [clampSnap, min, max])
 
@@ -120,6 +121,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
         onPointerDown={onTrackDown}
         className="relative h-9 touch-none cursor-pointer"
       >
+        <div className="absolute inset-x-3.5 top-0 bottom-0">
         <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1.5 rounded-full bg-[#EDEAF0]" />
 
         <div
@@ -144,6 +146,7 @@ export default function RangeSlider({ min, max, step = 1, from, to, value, onCha
 
         {!single && knob('from', fromPct)}
         {knob('to', toPct)}
+        </div>
       </div>
     </div>
   )

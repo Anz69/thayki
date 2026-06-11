@@ -30,15 +30,15 @@ function normalizePreview(m) {
 }
 
 export default function ModelPage({ preview = false }) {
-  const { t }   = useTranslation()
-  const { id }  = useParams()
-  const store   = useBookingStore()
+  const { t } = useTranslation()
+  const { id } = useParams()
+  const store = useBookingStore()
   const meeting = useMeetingStore()
   const navigate = useTransitionNavigate()
   const previewModel = useModelPreview((s) => s.model)
 
-  const [model,     setModel]     = useState(null)
-  const [loading,   setLoading]   = useState(true)
+  const [model, setModel] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [shareModalOpen, setShareModalOpen] = useState(false)
 
@@ -50,34 +50,34 @@ export default function ModelPage({ preview = false }) {
   const pageReadyFired = useRef(false)
   const modelRef = useRef(null)
 
-  const headerRef          = useRef(null)
-  const backBtnRef         = useRef(null)
-  const headerTitleRef     = useRef(null)
-  const mainPhotoRef       = useRef(null)
-  const leftPhotoRef       = useRef(null)
-  const rightPhotoRef      = useRef(null)
-  const ageRef             = useRef(null)
-  const nameRef            = useRef(null)
-  const descRef            = useRef(null)
-  const bookBtnRef         = useRef(null)
-  const tabSectionRef      = useRef(null)
-  const tab0Ref            = useRef(null)
-  const tab1Ref            = useRef(null)
-  const tabIndicatorRef    = useRef(null)
-  const infoContentRef     = useRef(null)
-  const mediaContentRef    = useRef(null)
-  const activeTab          = useRef(0)
+  const headerRef = useRef(null)
+  const backBtnRef = useRef(null)
+  const headerTitleRef = useRef(null)
+  const mainPhotoRef = useRef(null)
+  const leftPhotoRef = useRef(null)
+  const rightPhotoRef = useRef(null)
+  const ageRef = useRef(null)
+  const nameRef = useRef(null)
+  const descRef = useRef(null)
+  const bookBtnRef = useRef(null)
+  const tabSectionRef = useRef(null)
+  const tab0Ref = useRef(null)
+  const tab1Ref = useRef(null)
+  const tabIndicatorRef = useRef(null)
+  const infoContentRef = useRef(null)
+  const mediaContentRef = useRef(null)
+  const activeTab = useRef(0)
 
   const switchTab = (index) => {
     if (index === activeTab.current) return
     const currentContent = activeTab.current === 0 ? infoContentRef.current : mediaContentRef.current
-    const newContent     = index === 0 ? infoContentRef.current : mediaContentRef.current
-    const targetBtn      = index === 0 ? tab0Ref.current : tab1Ref.current
+    const newContent = index === 0 ? infoContentRef.current : mediaContentRef.current
+    const targetBtn = index === 0 ? tab0Ref.current : tab1Ref.current
     if (!currentContent || !newContent || !targetBtn || !tabIndicatorRef.current) return
     activeTab.current = index
-    ;[tab0Ref.current, tab1Ref.current].forEach((btn, i) => {
-      if (btn) btn.style.color = i === index ? '#000' : '#7F7F7F'
-    })
+      ;[tab0Ref.current, tab1Ref.current].forEach((btn, i) => {
+        if (btn) btn.style.color = i === index ? '#000' : '#7F7F7F'
+      })
     gsap.killTweensOf([currentContent, newContent])
     gsap.to(tabIndicatorRef.current, {
       left: targetBtn.offsetLeft, width: targetBtn.offsetWidth,
@@ -126,8 +126,8 @@ export default function ModelPage({ preview = false }) {
     pageReadyFired.current = true
     const tl = gsap.timeline({ defaults: { force3D: true } })
 
-    tl.to(headerRef.current,      { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
-      .to(backBtnRef.current,     { autoAlpha: 1, x: 0, duration: 0.28, ease: 'expo.out' }, 0.06)
+    tl.to(headerRef.current, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'expo.out' })
+      .to(backBtnRef.current, { autoAlpha: 1, x: 0, duration: 0.28, ease: 'expo.out' }, 0.06)
       .to(headerTitleRef.current, { autoAlpha: 1, y: 0, duration: 0.28, ease: 'expo.out' }, 0.1)
 
     const currentPhotos = modelRef.current?.photos ?? []
@@ -151,13 +151,13 @@ export default function ModelPage({ preview = false }) {
   }
 
   useLayoutEffect(() => {
-    gsap.set(headerRef.current,      { autoAlpha: 0, y: -44 })
-    gsap.set(backBtnRef.current,     { autoAlpha: 0, x: -20 })
+    gsap.set(headerRef.current, { autoAlpha: 0, y: -44 })
+    gsap.set(backBtnRef.current, { autoAlpha: 0, x: -20 })
     gsap.set(headerTitleRef.current, { autoAlpha: 0, y: -10 })
     gsap.set([ageRef.current, nameRef.current].filter(Boolean), { y: '-110%' })
-    gsap.set(descRef.current,        { autoAlpha: 0, y: 12 })
-    gsap.set(tabSectionRef.current,  { autoAlpha: 0, y: 18, willChange: 'transform, opacity' })
-    gsap.set(bookBtnRef.current,     { autoAlpha: 0, scale: 0.72, willChange: 'transform, opacity' })
+    gsap.set(descRef.current, { autoAlpha: 0, y: 12 })
+    gsap.set(tabSectionRef.current, { autoAlpha: 0, y: 18, willChange: 'transform, opacity' })
+    gsap.set(bookBtnRef.current, { autoAlpha: 0, scale: 0.72, willChange: 'transform, opacity' })
     gsap.set(mediaContentRef.current, { display: 'none' })
     if (tab0Ref.current) tab0Ref.current.style.color = '#000'
     if (tab1Ref.current) tab1Ref.current.style.color = '#7F7F7F'
@@ -225,79 +225,82 @@ export default function ModelPage({ preview = false }) {
 
   usePageReady(startAnimations)
 
-  const allPhotos  = model?.photos ?? []
-  const mainPhoto  = allPhotos[0] ?? null
-  const leftPhoto  = allPhotos[1] ?? null
+  const allPhotos = model?.photos ?? []
+  const mainPhoto = allPhotos[0] ?? null
+  const leftPhoto = allPhotos[1] ?? null
   const rightPhoto = allPhotos[2] ?? null
 
   return (
     <div>
-      <section className="flex flex-col gap-7 pt-4">
-        <header
-          ref={headerRef}
-          className="invisible w-full py-5 border-b border-white bg-white/90 backdrop-blur-xs sticky top-0 z-50"
-        >
-          <div className="container flex items-center relative">
-            {preview ? (
-              <button
-                ref={backBtnRef}
-                onClick={() => navigate(-1)}
-                className="invisible px-2.5 py-3 bg-[#EFEEF3] absolute left-4 text-black text-base/[80%] font-medium hover:bg-[#E0DEDF] transition-all duration-300 cursor-pointer rounded-full"
-              >
-                {t('common.back')}
-              </button>
-            ) : (
-              <TransitionLink
-                ref={backBtnRef}
-                to="/home"
-                className="invisible px-2.5 py-3 bg-[#EFEEF3] absolute left-4 text-black text-base/[80%] font-medium hover:bg-[#E0DEDF] transition-all duration-300 cursor-pointer rounded-full"
-              >
-                {t('common.back')}
-              </TransitionLink>
-            )}
-            <div className="w-full flex items-center justify-center">
-              <h1 ref={headerTitleRef} className="invisible text-black text-base/[100%] font-medium">
-                {t('model.headerTitle')}
-              </h1>
-            </div>
-            {!preview && (
-              <button
-                type="button"
-                disabled={!model}
-                onClick={handleShare}
-                className="absolute right-4 px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors disabled:opacity-40"
-                aria-label={t('common.share')}
-              >
-                {t('common.share')}
-              </button>
-            )}
-          </div>
-        </header>
+      <section className="flex flex-col gap-10 pt-4">
 
-        {!loadError && (
-          <div className="-mt-6 w-full bg-[#FBF1F8] border-y border-[#E2319B]/12">
-            <div className="relative flex items-center gap-2 px-3.5 py-1.5 overflow-hidden">
-              <span className="relative z-20 shrink-0 flex items-center justify-center size-5 rounded-full bg-[#E2319B]/12">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <circle cx="12" cy="12" r="9" stroke="#E2319B" strokeWidth="1.9" />
-                  <path d="M12 7v.5M11.2 10.5h1.1v6M10.6 16.5h2.8" stroke="#E2319B" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-              <div className="relative flex-1 overflow-hidden">
-                <div className="flex w-max marquee-track">
-                  {[0, 1].map((i) => (
-                    <span key={i} aria-hidden={i === 1} className="flex items-center text-[#A05B86] text-[12.5px]/[100%] font-medium tracking-[0.01em] whitespace-nowrap">
-                      {t('catalogNotice.ticker')}
-                      <span className="mx-9 text-[#E2319B]/50 text-[15px] leading-none">•</span>
-                    </span>
-                  ))}
+        <div>
+          <header
+            ref={headerRef}
+            className="invisible w-full py-5 border-b border-white bg-white/90 backdrop-blur-xs sticky top-0 z-50"
+          >
+            <div className="container flex items-center relative">
+              {preview ? (
+                <button
+                  ref={backBtnRef}
+                  onClick={() => navigate(-1)}
+                  className="invisible px-2.5 py-3 bg-[#EFEEF3] absolute left-4 text-black text-base/[80%] font-medium hover:bg-[#E0DEDF] transition-all duration-300 cursor-pointer rounded-full"
+                >
+                  {t('common.back')}
+                </button>
+              ) : (
+                <TransitionLink
+                  ref={backBtnRef}
+                  to="/home"
+                  className="invisible px-2.5 py-3 bg-[#EFEEF3] absolute left-4 text-black text-base/[80%] font-medium hover:bg-[#E0DEDF] transition-all duration-300 cursor-pointer rounded-full"
+                >
+                  {t('common.back')}
+                </TransitionLink>
+              )}
+              <div className="w-full flex items-center justify-center">
+                <h1 ref={headerTitleRef} className="invisible text-black text-base/[100%] font-medium">
+                  {t('model.headerTitle')}
+                </h1>
+              </div>
+              {!preview && (
+                <button
+                  type="button"
+                  disabled={!model}
+                  onClick={handleShare}
+                  className="absolute right-4 px-3.5 py-2.5 bg-[#EFEEF3] text-black text-sm/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors disabled:opacity-40"
+                  aria-label={t('common.share')}
+                >
+                  {t('common.share')}
+                </button>
+              )}
+            </div>
+          </header>
+          {!loadError && (
+            <div className="w-full bg-[#FBF1F8] border-y border-[#E2319B]/12">
+              <div className="relative flex items-center gap-2 px-3.5 py-1.5 overflow-hidden">
+                <span className="relative z-20 shrink-0 flex items-center justify-center size-5 rounded-full bg-[#E2319B]/12">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <circle cx="12" cy="12" r="9" stroke="#E2319B" strokeWidth="1.9" />
+                    <path d="M12 7v.5M11.2 10.5h1.1v6M10.6 16.5h2.8" stroke="#E2319B" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <div className="relative flex-1 overflow-hidden">
+                  <div className="flex w-max marquee-track">
+                    {[0, 1].map((i) => (
+                      <span key={i} aria-hidden={i === 1} className="flex items-center text-[#9C5080] text-[12.5px]/[100%] font-semibold tracking-[0.01em] whitespace-nowrap">
+                        {t('catalogNotice.ticker')}
+                        <span className="mx-8 inline-block size-1 rounded-full bg-[#E2319B]/55" />
+                      </span>
+                    ))}
+                  </div>
+                  <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#FBF1F8] via-[#FBF1F8]/80 to-transparent" />
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-[#FBF1F8] via-[#FBF1F8]/80 to-transparent" />
                 </div>
-                <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#FBF1F8] to-transparent" />
-                <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#FBF1F8] to-transparent" />
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+        </div>
 
         {!preview && createPortal(
           (() => {

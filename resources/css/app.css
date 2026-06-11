@@ -135,7 +135,7 @@ html {
   }
 
   .marquee-track {
-    animation: marqueeX 26s linear infinite;
+    animation: marqueeX 15s linear infinite;
   }
 
   .container {
