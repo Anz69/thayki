@@ -6,42 +6,43 @@ import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api from '@/utils/api'
 import { logError } from '@/utils/logger'
-import { buildLeadMessage } from '@/utils/leadMessage'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
 import CitySelect from '@/components/ui/CitySelect'
+import RangeSlider from '@/components/ui/RangeSlider'
 import LottieDiamond from '@/components/ui/LottieDiamond'
 import VipModal from '@/components/modals/VipModal'
 import ru from '@/locales/ru.json'
 
-const GROUPS = [
-  { field: 'hairType', group: 'hair',    labelKey: 'hairType', keys: ['any', 'blonde', 'brunette', 'brown', 'red'] },
-  { field: 'ageRange', group: 'ages',    labelKey: 'age',      keys: ['a1', 'a2', 'a3', 'a4'] },
-  { field: 'height',   group: 'heights', labelKey: 'height',   keys: ['any', 'upTo165', 'h165_175', 'over175'] },
-  { field: 'goal',     group: 'goals',   labelKey: 'goal',     keys: ['date', 'pastime', 'leisure', 'travel', 'events', 'wife', 'undecided'] },
-]
+const BUST_SIZES = ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6+']
+const FIGURES = ['anorexic', 'slim', 'curvy', 'bodybuilder', 'fit', 'siliconeBeauty']
+const HAIRS = ['any', 'blonde', 'brunette', 'brown', 'red']
+const EVENTS = ['oneTime', 'trip', 'relationship']
 
-function Chips({ group, keys, value, onChange, t }) {
+function Chip({ active, onClick, children }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {keys.map((key) => {
-        const active = value === key
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onChange(active ? null : key)}
-            className={[
-              'px-3.5 py-2.5 rounded-full text-[13px]/[100%] font-medium transition-all duration-200 active:scale-95',
-              active
-                ? 'bg-[#E2319B] text-white shadow-[0_6px_16px_rgba(226,49,155,0.28)]'
-                : 'bg-white text-black border border-black/5 active:bg-[#F0EFF4]',
-            ].join(' ')}
-          >
-            {t(`request.${group}.${key}`)}
-          </button>
-        )
-      })}
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        'px-3.5 py-2.5 rounded-full text-[13px]/[100%] font-medium transition-all duration-200 active:scale-95',
+        active
+          ? 'bg-[#E2319B] text-white shadow-[0_6px_16px_rgba(226,49,155,0.28)]'
+          : 'bg-white text-black border border-black/5 active:bg-[#F0EFF4]',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Section({ title, required = true, children }) {
+  return (
+    <div data-anim className="flex flex-col gap-3 bg-white rounded-2xl p-4 border border-black/5">
+      <p className="text-black text-[15px]/[100%] font-semibold">
+        {title}{required && <span className="text-[#E2319B]"> *</span>}
+      </p>
+      {children}
     </div>
   )
 }
@@ -54,10 +55,22 @@ export default function RequestPage() {
   const modelId = params.get('model')
   const isModelFlow = !!modelId
 
+  const isEn = (i18n.language || '').toLowerCase().startsWith('en')
+
   const [model, setModel] = useState(null)
   const [city, setCity] = useState('')
-  const [values, setValues] = useState({ hairType: null, ageRange: null, height: null, goal: null })
-  const [wishes, setWishes] = useState('')
+  const [age, setAge] = useState({ from: 20, to: 30 })
+  const [height, setHeight] = useState({ from: 160, to: 175 })
+  const [bustType, setBustType] = useState(null)
+  const [bustSize, setBustSize] = useState(null)
+  const [weight, setWeight] = useState({ from: 50, to: 65 })
+  const [figure, setFigure] = useState(null)
+  const [hair, setHair] = useState(null)
+  const [eventType, setEventType] = useState(null)
+  const [eventHours, setEventHours] = useState({ from: 2, to: 6 })
+  const [tripDays, setTripDays] = useState({ from: 3, to: 7 })
+  const [tripCity, setTripCity] = useState('')
+  const [comments, setComments] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [vipOpen, setVipOpen] = useState(false)
   const [vipMode, setVipMode] = useState(false)
@@ -70,12 +83,15 @@ export default function RequestPage() {
   const vipSparkRef = useRef(null)
   const vipBadgeRef = useRef(null)
   const vipGemRef = useRef(null)
-  const visibleGroups = vipMode ? GROUPS.filter((g) => g.field !== 'goal') : GROUPS
-  const allGroupsSelected = isModelFlow || visibleGroups.every(({ field }) => values[field] != null)
-  const canSubmit = city.trim().length > 0 && allGroupsSelected && !submitting
+
+  const eventOk = eventType === 'oneTime' || eventType === 'relationship'
+    || (eventType === 'trip' && tripCity.trim().length > 0)
+  const paramsOk = !!bustType && !!bustSize && !!figure && !!hair && (vipMode || (!!eventType && eventOk))
+  const allSelected = isModelFlow || paramsOk
+  const canSubmit = city.trim().length > 0 && allSelected && !submitting
   const formHint = city.trim().length === 0
     ? t('request.cityRequiredHint')
-    : (!allGroupsSelected ? t('request.allRequiredHint') : '')
+    : (!allSelected ? t('request.allRequiredHint') : '')
 
   useEffect(() => {
     if (!modelId) { setModel(null); return undefined }
@@ -99,7 +115,7 @@ export default function RequestPage() {
         y: 0,
         autoAlpha: 1,
         duration: 0.55,
-        stagger: 0.07,
+        stagger: 0.06,
         ease: 'power3.out',
         onComplete: () => gsap.set(els, { clearProps: 'transform,willChange' }),
       })
@@ -150,8 +166,6 @@ export default function RequestPage() {
     return () => { gsap.killTweensOf([badge, gem]); float?.kill() }
   }, [vipMode])
 
-  const setVal = (field, v) => setValues((p) => ({ ...p, [field]: v }))
-
   const cancelVip = () => {
     const el = vipBadgeRef.current
     if (!el) { setVipMode(false); return }
@@ -168,34 +182,100 @@ export default function RequestPage() {
     const card = e.currentTarget
     setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
   }
-  const ruLabel = (group, key) => (key ? ru.request[group]?.[key] ?? key : null)
+
+  const U = (k) => t(`request.${k}`)
+  const inch = (cm) => Math.round(cm / 2.54)
+  const lb = (kg) => Math.round(kg * 2.2046)
+  const fmtAge = (v) => `${v} ${U('unitYear')}`
+  const fmtHeight = (v) => (isEn ? `${v} ${U('unitCm')} (${inch(v)}${U('unitInch')})` : `${v} ${U('unitCm')}`)
+  const fmtWeight = (v) => (isEn ? `${v} ${U('unitKg')} (${lb(v)} ${U('unitLb')})` : `${v} ${U('unitKg')}`)
+  const fmtHours = (v) => `${v} ${U('unitHour')}`
+  const fmtDays = (v) => `${v} ${U('unitDay')}`
+  const sizeLabel = (s) => (s === '6+' ? U('size6plus') : s)
+
+  const heightRangeStr = isEn
+    ? `${height.from}–${height.to} ${U('unitCm')} (${inch(height.from)}–${inch(height.to)}${U('unitInch')})`
+    : `${height.from}–${height.to} ${U('unitCm')}`
+  const weightRangeStr = isEn
+    ? `${weight.from}–${weight.to} ${U('unitKg')} (${lb(weight.from)}–${lb(weight.to)} ${U('unitLb')})`
+    : `${weight.from}–${weight.to} ${U('unitKg')}`
+
+  const eventStr = () => {
+    if (eventType === 'oneTime') return `${U('events.oneTime')} · ${eventHours.from}–${eventHours.to} ${U('unitHour')}`
+    if (eventType === 'trip') return `${U('events.trip')} · ${tripDays.from}–${tripDays.to} ${U('unitDay')} · ${tripCity.trim()}`
+    if (eventType === 'relationship') return U('events.relationship')
+    return null
+  }
+
+  const buildMessage = () => {
+    const rows = [[t('leadMsg.title'), null]]
+    if (model) rows.push([t('leadMsg.interested'), modelName(model)])
+    rows.push([t('leadMsg.city'), city.trim()])
+    if (!isModelFlow) {
+      rows.push([t('leadMsg.age'), `${age.from}–${age.to} ${U('unitYear')}`])
+      rows.push([t('leadMsg.height'), heightRangeStr])
+      rows.push([t('leadMsg.bust'), `${U(`bustTypes.${bustType}`)} · ${sizeLabel(bustSize)}`])
+      rows.push([t('leadMsg.weight'), weightRangeStr])
+      rows.push([t('leadMsg.figure'), U(`figures.${figure}`)])
+      rows.push([t('leadMsg.hair'), U(`hair.${hair}`)])
+      if (!vipMode) rows.push([t('leadMsg.event'), eventStr()])
+    }
+    if (comments.trim()) rows.push([t('leadMsg.comments'), comments.trim()])
+
+    const lines = rows.map(([label, value]) => (value == null ? label : `${label}: ${value}`))
+    lines.splice(1, 0, '')
+    return lines.join('\n')
+  }
+
+  const ruEventStr = () => {
+    const e = ru.request.events
+    if (eventType === 'oneTime') return `${e.oneTime} · ${eventHours.from}–${eventHours.to} ${ru.request.unitHour}`
+    if (eventType === 'trip') return `${e.trip} · ${tripDays.from}–${tripDays.to} ${ru.request.unitDay} · ${tripCity.trim()}`
+    return e.relationship
+  }
 
   const handleSubmit = async () => {
     if (!canSubmit) return
     setSubmitting(true)
     if (!submitKeyRef.current) submitKeyRef.current = `lead-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     try {
-      const goalLabel = isModelFlow ? null : (vipMode ? 'V.I.P модели' : ruLabel('goals', values.goal))
-      let message = buildLeadMessage({
-        t,
-        modelName: model ? modelName(model) : undefined,
-        city: city.trim(),
-        wishes,
-        options: isModelFlow ? {} : { hair: values.hairType, ages: values.ageRange, heights: values.height, goals: vipMode ? null : values.goal },
-      })
+      let message = buildMessage()
       if (vipMode) message = `🌟 ${t('vip.title')}\n${message}`
 
-      const { data } = await api.post('/leads', {
+      const base = {
         model_profile_id: isModelFlow ? Number(modelId) : null,
         city: city.trim(),
-        wishes: wishes.trim() || null,
-        locale: (i18n.language || 'ru').toLowerCase().startsWith('ru') ? 'ru' : 'en',
-        hair_type: isModelFlow ? null : ruLabel('hair', values.hairType),
-        age_range: isModelFlow ? null : ruLabel('ages', values.ageRange),
-        height_range: isModelFlow ? null : ruLabel('heights', values.height),
-        goal: goalLabel,
+        wishes: comments.trim() || null,
+        locale: (i18n.language || 'ru').toLowerCase().startsWith('ru')
+          ? 'ru'
+          : (isEn ? 'en' : 'zh'),
         message,
-      }, { headers: { 'Idempotency-Key': submitKeyRef.current } })
+      }
+
+      const typage = isModelFlow ? {} : {
+        hair_type: ru.request.hair[hair],
+        age_range: `${age.from}–${age.to} ${ru.request.unitYear}`,
+        height_range: `${height.from}–${height.to} ${ru.request.unitCm}`,
+        goal: vipMode ? 'V.I.P модели' : ruEventStr(),
+        age_from: age.from,
+        age_to: age.to,
+        height_from: height.from,
+        height_to: height.to,
+        bust_type: bustType,
+        bust_size: bustSize,
+        weight_from: weight.from,
+        weight_to: weight.to,
+        figure,
+        event_type: vipMode ? null : eventType,
+        event_hours_from: !vipMode && eventType === 'oneTime' ? eventHours.from : null,
+        event_hours_to: !vipMode && eventType === 'oneTime' ? eventHours.to : null,
+        trip_days_from: !vipMode && eventType === 'trip' ? tripDays.from : null,
+        trip_days_to: !vipMode && eventType === 'trip' ? tripDays.to : null,
+        trip_city: !vipMode && eventType === 'trip' ? tripCity.trim() : null,
+      }
+
+      const { data } = await api.post('/leads', { ...base, ...typage },
+        { headers: { 'Idempotency-Key': submitKeyRef.current } })
       const from = encodeURIComponent(isModelFlow ? `/model/${modelId}` : '/home')
       navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}&from=${from}`, { replace: true })
     } catch (err) {
@@ -282,7 +362,6 @@ export default function RequestPage() {
           <div
             ref={vipBadgeRef}
             className="relative flex items-center gap-3.5 rounded-2xl p-4 bg-white border border-black/[0.06]"
-
           >
             <span
               ref={vipGemRef}
@@ -335,14 +414,98 @@ export default function RequestPage() {
           <CitySelect value={city} onChange={setCity} placeholder={t('request.cityPlaceholder')} inline overlay autoDetect />
         </div>
 
-        {!isModelFlow && visibleGroups.map(({ field, group, labelKey, keys }) => (
-          <div key={field} data-anim className="flex flex-col gap-3 bg-white rounded-2xl p-4 border border-black/5">
-            <p className="text-black text-[15px]/[100%] font-semibold">
-              {t(`request.${labelKey}`)} <span className="text-[#E2319B]">*</span>
-            </p>
-            <Chips group={group} keys={keys} value={values[field]} onChange={(v) => setVal(field, v)} t={t} />
-          </div>
-        ))}
+        {!isModelFlow && (
+          <>
+            <Section title={t('request.age')}>
+              <RangeSlider min={18} max={60} from={age.from} to={age.to}
+                onChange={(f, to) => setAge({ from: f, to })} format={fmtAge} />
+            </Section>
+
+            <Section title={t('request.height')}>
+              <RangeSlider min={150} max={195} from={height.from} to={height.to}
+                onChange={(f, to) => setHeight({ from: f, to })} format={fmtHeight} />
+            </Section>
+
+            <Section title={t('request.bust')}>
+              <div className="flex flex-wrap gap-2">
+                {['natural', 'silicone'].map((k) => (
+                  <Chip key={k} active={bustType === k} onClick={() => setBustType(bustType === k ? null : k)}>
+                    {t(`request.bustTypes.${k}`)}
+                  </Chip>
+                ))}
+              </div>
+              <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mt-1">{t('request.bustSizeLabel')}</p>
+              <div className="flex flex-wrap gap-2">
+                {BUST_SIZES.map((s) => (
+                  <Chip key={s} active={bustSize === s} onClick={() => setBustSize(bustSize === s ? null : s)}>
+                    {sizeLabel(s)}
+                  </Chip>
+                ))}
+              </div>
+            </Section>
+
+            <Section title={t('request.weight')}>
+              <RangeSlider min={40} max={150} from={weight.from} to={weight.to}
+                onChange={(f, to) => setWeight({ from: f, to })} format={fmtWeight} />
+            </Section>
+
+            <Section title={t('request.figure')}>
+              <div className="flex flex-wrap gap-2">
+                {FIGURES.map((k) => (
+                  <Chip key={k} active={figure === k} onClick={() => setFigure(figure === k ? null : k)}>
+                    {t(`request.figures.${k}`)}
+                  </Chip>
+                ))}
+              </div>
+            </Section>
+
+            <Section title={t('request.hairLabel')}>
+              <div className="flex flex-wrap gap-2">
+                {HAIRS.map((k) => (
+                  <Chip key={k} active={hair === k} onClick={() => setHair(hair === k ? null : k)}>
+                    {t(`request.hair.${k}`)}
+                  </Chip>
+                ))}
+              </div>
+            </Section>
+
+            {!vipMode && (
+              <Section title={t('request.event')}>
+                <div className="flex flex-wrap gap-2">
+                  {EVENTS.map((k) => (
+                    <Chip key={k} active={eventType === k} onClick={() => setEventType(eventType === k ? null : k)}>
+                      {t(`request.events.${k}`)}
+                    </Chip>
+                  ))}
+                </div>
+
+                {eventType === 'oneTime' && (
+                  <div className="mt-1.5 rounded-xl bg-[#F8F7FA] p-3.5">
+                    <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2.5">{t('request.duration')}</p>
+                    <RangeSlider min={1} max={24} from={eventHours.from} to={eventHours.to}
+                      onChange={(f, to) => setEventHours({ from: f, to })} format={fmtHours} />
+                  </div>
+                )}
+
+                {eventType === 'trip' && (
+                  <div className="mt-1.5 flex flex-col gap-3 rounded-xl bg-[#F8F7FA] p-3.5">
+                    <div>
+                      <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2.5">{t('request.tripDaysLabel')}</p>
+                      <RangeSlider min={1} max={30} from={tripDays.from} to={tripDays.to}
+                        onChange={(f, to) => setTripDays({ from: f, to })} format={fmtDays} />
+                    </div>
+                    <div onFocusCapture={scrollFieldIntoView} style={{ scrollMarginTop: 80 }}>
+                      <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2">
+                        {t('request.tripCity')} <span className="text-[#E2319B]">*</span>
+                      </p>
+                      <CitySelect value={tripCity} onChange={setTripCity} placeholder={t('request.tripCityPlaceholder')} inline overlay />
+                    </div>
+                  </div>
+                )}
+              </Section>
+            )}
+          </>
+        )}
 
         <div
           data-anim
@@ -350,12 +513,12 @@ export default function RequestPage() {
           style={{ scrollMarginTop: 80 }}
           className="flex flex-col gap-2.5 bg-white rounded-2xl p-4 border border-black/5"
         >
-          <p className="text-black text-[15px]/[100%] font-semibold">{isModelFlow ? t('request.wishesExtra') : t('request.wishes')}</p>
+          <p className="text-black text-[15px]/[100%] font-semibold">{t('request.comments')}</p>
           <textarea
-            value={wishes}
-            onChange={(e) => setWishes(e.target.value)}
+            value={comments}
+            onChange={(e) => setComments(e.target.value)}
             rows={4}
-            placeholder={t('request.wishesPlaceholder')}
+            placeholder={t('request.commentsPlaceholder')}
             className="w-full bg-[#F5F5F7] rounded-xl px-4 py-3.5 text-black text-[15px] outline-none placeholder:text-[#ABABAB] resize-none focus:ring-2 focus:ring-[#E2319B]/30 transition-shadow"
           />
         </div>

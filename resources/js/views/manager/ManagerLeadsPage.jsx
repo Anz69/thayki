@@ -39,6 +39,44 @@ function InfoRow({ label, value }) {
   )
 }
 
+const EVENT_KEY = { one_time: 'oneTime', trip: 'trip', relationship: 'relationship' }
+
+function typageRows(v, t) {
+  const U = (k) => t(`request.${k}`)
+  const rows = []
+
+  if (v.age_from || v.age_to) rows.push([U('age'), `${v.age_from ?? v.age_to}–${v.age_to ?? v.age_from} ${U('unitYear')}`])
+  else if (v.age_range) rows.push([U('age'), v.age_range])
+
+  if (v.height_from || v.height_to) rows.push([U('height'), `${v.height_from ?? v.height_to}–${v.height_to ?? v.height_from} ${U('unitCm')}`])
+  else if (v.height_range) rows.push([U('height'), v.height_range])
+
+  if (v.bust_type) {
+    const size = v.bust_size === '6+' ? U('size6plus') : v.bust_size
+    rows.push([U('bust'), `${U(`bustTypes.${v.bust_type}`)}${v.bust_size ? ` · ${size}` : ''}`])
+  }
+
+  if (v.weight_from || v.weight_to) rows.push([U('weight'), `${v.weight_from ?? v.weight_to}–${v.weight_to ?? v.weight_from} ${U('unitKg')}`])
+
+  if (v.figure) rows.push([U('figure'), U(`figures.${v.figure}`)])
+
+  if (v.hair_type) rows.push([U('hairLabel'), localizeLeadValue('hair', v.hair_type)])
+
+  if (v.event_type && EVENT_KEY[v.event_type]) {
+    let s = U(`events.${EVENT_KEY[v.event_type]}`)
+    if (v.event_type === 'one_time' && v.event_hours_from) s += ` · ${v.event_hours_from}–${v.event_hours_to} ${U('unitHour')}`
+    if (v.event_type === 'trip') {
+      if (v.trip_days_from) s += ` · ${v.trip_days_from}–${v.trip_days_to} ${U('unitDay')}`
+      if (v.trip_city) s += ` · ${v.trip_city}`
+    }
+    rows.push([U('event'), s])
+  } else if (v.goal) {
+    rows.push([U('event'), v.goal])
+  }
+
+  return rows
+}
+
 function VipTag({ size = 'sm' }) {
   const dim = size === 'lg' ? 'text-[12px] px-2.5 py-1 gap-1' : 'text-[10px] px-2 py-0.5 gap-1'
   return (
@@ -407,11 +445,8 @@ export default function ManagerLeadsPage() {
                     </span>
                   </button>
                 )}
-                <InfoRow label={t('request.hairType')} value={localizeLeadValue('hair', viewing.hair_type)} />
-                <InfoRow label={t('request.age')} value={localizeLeadValue('ages', viewing.age_range)} />
-                <InfoRow label={t('request.height')} value={localizeLeadValue('heights', viewing.height_range)} />
-                <InfoRow label={t('request.goal')} value={localizeLeadValue('goals', viewing.goal)} />
-                <InfoRow label={t('request.wishes')} value={viewing.wishes} />
+                {typageRows(viewing, t).map(([label, value], i) => <InfoRow key={`${label}-${i}`} label={label} value={value} />)}
+                <InfoRow label={t('request.comments')} value={viewing.wishes} />
                 <InfoRow label={t('manager.created')} value={relTime(viewing.created_at, i18n.language)} />
               </div>
 

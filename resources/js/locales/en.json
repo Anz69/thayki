@@ -122,7 +122,47 @@
       "wife": "Finding a wife",
       "undecided": "Not sure yet"
     },
-    "vipGoal": "V.I.P models"
+    "vipGoal": "V.I.P models",
+    "from": "From",
+    "to": "To",
+    "weight": "Weight",
+    "bust": "Bust",
+    "bustTypeLabel": "Bust type",
+    "bustSizeLabel": "Cup size",
+    "figure": "Body type",
+    "event": "Occasion",
+    "duration": "Meeting duration",
+    "tripDaysLabel": "Number of days",
+    "tripCity": "Trip city",
+    "tripCityPlaceholder": "e.g. Dubai",
+    "comments": "Comments",
+    "commentsPlaceholder": "Any details, preferences, specifics…",
+    "hairLabel": "Hair color",
+    "unitYear": "y.o.",
+    "unitCm": "cm",
+    "unitKg": "kg",
+    "unitHour": "h",
+    "unitDay": "d",
+    "unitInch": "″",
+    "unitLb": "lb",
+    "size6plus": "6+",
+    "bustTypes": {
+      "natural": "Natural",
+      "silicone": "Silicone"
+    },
+    "figures": {
+      "anorexic": "Very slim",
+      "slim": "Slim / athletic",
+      "curvy": "Curvy",
+      "bodybuilder": "Bodybuilder",
+      "fit": "Fit",
+      "siliconeBeauty": "Silicone beauty"
+    },
+    "events": {
+      "oneTime": "One-time meeting",
+      "trip": "Trip",
+      "relationship": "Relationship / arrangement"
+    }
   },
   "share": {
     "title": "Share a selection",
@@ -148,7 +188,15 @@
     "height": "Height",
     "goal": "Purpose",
     "wishes": "Preferences",
-    "wishesExtra": "Additional preferences"
+    "wishesExtra": "Additional preferences",
+    "weight": "Weight",
+    "bust": "Bust",
+    "figure": "Body type",
+    "event": "Occasion",
+    "duration": "Duration",
+    "tripDays": "Trip days",
+    "tripCity": "Trip city",
+    "comments": "Comments"
   },
   "requestModal": {
     "title": "Leave a request",

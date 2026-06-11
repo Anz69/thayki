@@ -122,7 +122,47 @@
       "wife": "寻找伴侣",
       "undecided": "尚未确定"
     },
-    "vipGoal": "V.I.P 模特"
+    "vipGoal": "V.I.P 模特",
+    "from": "从",
+    "to": "到",
+    "weight": "体重",
+    "bust": "胸型",
+    "bustTypeLabel": "胸型",
+    "bustSizeLabel": "罩杯",
+    "figure": "身材",
+    "event": "活动",
+    "duration": "会面时长",
+    "tripDaysLabel": "天数",
+    "tripCity": "旅行城市",
+    "tripCityPlaceholder": "例如 迪拜",
+    "comments": "备注",
+    "commentsPlaceholder": "任何细节、偏好、特殊要求…",
+    "hairLabel": "发色",
+    "unitYear": "岁",
+    "unitCm": "厘米",
+    "unitKg": "公斤",
+    "unitHour": "小时",
+    "unitDay": "天",
+    "unitInch": "″",
+    "unitLb": "磅",
+    "size6plus": "6+",
+    "bustTypes": {
+      "natural": "天然",
+      "silicone": "硅胶"
+    },
+    "figures": {
+      "anorexic": "极瘦",
+      "slim": "苗条 / 运动型",
+      "curvy": "丰满",
+      "bodybuilder": "健美",
+      "fit": "健身型",
+      "siliconeBeauty": "硅胶美人"
+    },
+    "events": {
+      "oneTime": "单次会面",
+      "trip": "旅行",
+      "relationship": "关系 / 包养"
+    }
   },
   "share": {
     "title": "分享精选",
@@ -148,7 +188,15 @@
     "height": "身高",
     "goal": "目的",
     "wishes": "偏好",
-    "wishesExtra": "其他偏好"
+    "wishesExtra": "其他偏好",
+    "weight": "体重",
+    "bust": "胸型",
+    "figure": "身材",
+    "event": "活动",
+    "duration": "时长",
+    "tripDays": "旅行天数",
+    "tripCity": "旅行城市",
+    "comments": "备注"
   },
   "requestModal": {
     "title": "提交预约",

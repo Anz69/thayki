@@ -122,7 +122,47 @@
       "wife": "Подбор жены",
       "undecided": "Не определился"
     },
-    "vipGoal": "V.I.P модели"
+    "vipGoal": "V.I.P модели",
+    "from": "От",
+    "to": "До",
+    "weight": "Вес",
+    "bust": "Бюст",
+    "bustTypeLabel": "Тип бюста",
+    "bustSizeLabel": "Размер груди",
+    "figure": "Фигура",
+    "event": "Мероприятие",
+    "duration": "Продолжительность встречи",
+    "tripDaysLabel": "Количество дней",
+    "tripCity": "Город поездки",
+    "tripCityPlaceholder": "Например, Дубай",
+    "comments": "Комментарии",
+    "commentsPlaceholder": "Любые детали, пожелания, особенности…",
+    "hairLabel": "Цвет волос",
+    "unitYear": "лет",
+    "unitCm": "см",
+    "unitKg": "кг",
+    "unitHour": "ч",
+    "unitDay": "дн.",
+    "unitInch": "″",
+    "unitLb": "lb",
+    "size6plus": "6+",
+    "bustTypes": {
+      "natural": "Натуральный",
+      "silicone": "Силикон"
+    },
+    "figures": {
+      "anorexic": "Анорексик",
+      "slim": "Худая / спортивная",
+      "curvy": "С формами",
+      "bodybuilder": "Бодибилдер",
+      "fit": "Фитоняша",
+      "siliconeBeauty": "Силиконовая красавица"
+    },
+    "events": {
+      "oneTime": "Разовая встреча",
+      "trip": "Поездка",
+      "relationship": "Отношения / содержание"
+    }
   },
   "share": {
     "title": "Поделиться подборкой",
@@ -148,7 +188,15 @@
     "height": "Рост",
     "goal": "Цель",
     "wishes": "Пожелания",
-    "wishesExtra": "Дополнительные пожелания"
+    "wishesExtra": "Дополнительные пожелания",
+    "weight": "Вес",
+    "bust": "Бюст",
+    "figure": "Фигура",
+    "event": "Мероприятие",
+    "duration": "Продолжительность",
+    "tripDays": "Дней в поездке",
+    "tripCity": "Город поездки",
+    "comments": "Комментарии"
   },
   "requestModal": {
     "title": "Оставить заявку",

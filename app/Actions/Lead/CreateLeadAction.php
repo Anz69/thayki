@@ -29,6 +29,13 @@ class CreateLeadAction
                 ? $data['locale']
                 : $this->localeFor($client);
 
+            $int = static fn (string $key) => isset($data[$key]) && $data[$key] !== '' && $data[$key] !== null
+                ? (int) $data[$key]
+                : null;
+            $str = static fn (string $key) => isset($data[$key]) && trim((string) $data[$key]) !== ''
+                ? trim((string) $data[$key])
+                : null;
+
             $lead = Lead::query()->create([
                 'user_id' => $client->id,
                 'model_profile_id' => $profile?->id,
@@ -40,6 +47,22 @@ class CreateLeadAction
                 'wishes' => isset($data['wishes']) ? trim((string) $data['wishes']) : null,
                 'locale' => $locale,
                 'status' => 'new',
+
+                'age_from' => $int('age_from'),
+                'age_to' => $int('age_to'),
+                'height_from' => $int('height_from'),
+                'height_to' => $int('height_to'),
+                'bust_type' => $str('bust_type'),
+                'bust_size' => $str('bust_size'),
+                'weight_from' => $int('weight_from'),
+                'weight_to' => $int('weight_to'),
+                'figure' => $str('figure'),
+                'event_type' => $str('event_type'),
+                'event_hours_from' => $int('event_hours_from'),
+                'event_hours_to' => $int('event_hours_to'),
+                'trip_days_from' => $int('trip_days_from'),
+                'trip_days_to' => $int('trip_days_to'),
+                'trip_city' => $str('trip_city'),
 
                 'identity_verified_at' => $client->phone_verified_at !== null ? now() : null,
             ]);

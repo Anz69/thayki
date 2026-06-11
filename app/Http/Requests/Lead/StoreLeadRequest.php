@@ -28,6 +28,22 @@ class StoreLeadRequest extends FormRequest
             'wishes' => ['nullable', 'string', 'max:4096'],
             'message' => ['nullable', 'string', 'max:4096'],
             'locale' => ['nullable', 'string', 'in:ru,en,zh'],
+
+            'age_from' => ['nullable', 'integer', 'min:18', 'max:99'],
+            'age_to' => ['nullable', 'integer', 'min:18', 'max:99'],
+            'height_from' => ['nullable', 'integer', 'min:120', 'max:220'],
+            'height_to' => ['nullable', 'integer', 'min:120', 'max:220'],
+            'bust_type' => ['nullable', 'string', 'in:natural,silicone'],
+            'bust_size' => ['nullable', 'string', 'max:8'],
+            'weight_from' => ['nullable', 'integer', 'min:30', 'max:200'],
+            'weight_to' => ['nullable', 'integer', 'min:30', 'max:200'],
+            'figure' => ['nullable', 'string', 'max:24'],
+            'event_type' => ['nullable', 'string', 'in:one_time,trip,relationship'],
+            'event_hours_from' => ['nullable', 'integer', 'min:1', 'max:24'],
+            'event_hours_to' => ['nullable', 'integer', 'min:1', 'max:24'],
+            'trip_days_from' => ['nullable', 'integer', 'min:1', 'max:60'],
+            'trip_days_to' => ['nullable', 'integer', 'min:1', 'max:60'],
+            'trip_city' => ['nullable', 'string', 'max:120'],
         ];
     }
 }
