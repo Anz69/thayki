@@ -201,7 +201,7 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
                 <>
                   <span className="text-black text-[28px]/[100%] font-semibold tracking-tight">{data?.amount_display ?? '—'}</span>
                   {sel.crypto_amount && (
-                    <span className="text-[#9B9AA0] text-sm/[100%] font-semibold">≈ {sel.crypto_amount} {sel.code}</span>
+                    <span className="text-[#9B9AA0] text-sm/[100%] font-[500]">≈ {sel.crypto_amount} {sel.code}</span>
                   )}
                 </>
               )}
