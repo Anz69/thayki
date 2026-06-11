@@ -10,7 +10,6 @@ use App\Enums\ChatParticipantRole;
 use App\Enums\LeadStatus;
 use App\Exceptions\DomainException;
 use App\Http\Controllers\Controller;
-use App\Jobs\GenerateLeadCryptoAddressesJob;
 use App\Jobs\RevokeLeadCryptoAddressesJob;
 use App\Models\Lead;
 use App\Models\LeadCryptoAddress;
@@ -147,7 +146,6 @@ class ManagerLeadController extends Controller
                     ['status' => LeadCryptoAddress::STATUS_PENDING],
                 );
             }
-            GenerateLeadCryptoAddressesJob::dispatch($lead->id, $message->id)->afterResponse();
         }
 
         $lead->update(['status' => LeadStatus::AwaitingPayment]);
