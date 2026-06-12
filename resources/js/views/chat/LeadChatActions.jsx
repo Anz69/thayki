@@ -451,6 +451,7 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const [requisites, setRequisites] = useState('')
   const [busy, setBusy] = useState(false)
   const submitRef = useRef(null)
+  const taRef = useRef(null)
 
   const scrollToSubmit = (e) => {
     const sc = e.currentTarget.closest('.modal-middle-scroll')
@@ -470,8 +471,11 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
       const tg = window.Telegram?.WebApp
       if (tg?.readTextFromClipboard) { try { tg.readTextFromClipboard(apply) } catch { /* unavailable */ } }
     }
-    // Read the clipboard directly inside the tap gesture. On iOS this is exactly what
-    // pops the system "Paste" prompt, and the text always lands in the requisites field.
+    // Put the cursor into the requisites field first — so any manual/native paste lands here,
+    // not in the amount field.
+    try { taRef.current?.focus() } catch { /* noop */ }
+    // Then try to read the clipboard directly in the tap gesture (works on Android/desktop and
+    // pops the native iOS "Paste" prompt where allowed).
     try {
       if (navigator.clipboard?.readText) { navigator.clipboard.readText().then(apply).catch(tgPaste); return }
     } catch { /* fall through */ }
@@ -567,7 +571,7 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
                   {t('leadChat.payPaste')}
                 </button>
               </div>
-              <textarea value={requisites} onChange={(e) => setRequisites(e.target.value)} rows={3} placeholder={t('leadChat.payRequisitesPlaceholder')} className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[15px] outline-none resize-none" />
+              <textarea ref={taRef} value={requisites} onChange={(e) => setRequisites(e.target.value)} rows={3} placeholder={t('leadChat.payRequisitesPlaceholder')} className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[15px] outline-none resize-none" />
             </div>
           ) : (
             <p className="text-[#9B9AA0] text-[13px]/[150%]">{t('leadChat.payCryptoSheetHint')}</p>
@@ -577,6 +581,7 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
         <button ref={submitRef} disabled={busy || !valid} onClick={submit} className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50">
           {busy ? '…' : t('leadChat.paySend')}
         </button>
+        <span className="text-center text-[10px] text-[#C8C8CE] select-none">v8</span>
       </div>
     </ModalMiddle>
   )
