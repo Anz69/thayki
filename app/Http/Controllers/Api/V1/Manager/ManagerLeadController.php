@@ -103,6 +103,10 @@ class ManagerLeadController extends Controller
 
         $lead->update(['status' => $data['status']]);
 
+        if ($lead->chat_id !== null) {
+            try { event(new \App\Events\LeadStatusChanged($lead->chat_id, $data['status'])); } catch (\Throwable) {}
+        }
+
         if (in_array($data['status'], [LeadStatus::Completed->value, LeadStatus::Closed->value], true)) {
             $paid = LeadCryptoAddress::query()
                 ->where('lead_id', $lead->id)

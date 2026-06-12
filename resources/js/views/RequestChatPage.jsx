@@ -21,17 +21,11 @@ import { STATUS, StatusChip } from '@/views/manager/kit'
 const TYPED = new Set(['payment_request', 'verification_request', 'model_card'])
 const MANAGER_STATUSES = ['in_progress', 'awaiting_client', 'awaiting_payment', 'prepaid', 'completed', 'closed']
 
-function HeaderLeadStatus({ leadId }) {
+function HeaderLeadStatus({ status, onChange }) {
   const { t } = useTranslation()
-  const [status, setStatus] = useState(null)
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState(null)
   const btnRef = useRef(null)
-
-  useEffect(() => {
-    if (!leadId) return
-    api.get(`/manager/leads/${leadId}`).then((r) => setStatus(r?.data?.data?.status)).catch(logError)
-  }, [leadId])
 
   if (!status || status === 'new') return null
 
@@ -42,11 +36,10 @@ function HeaderLeadStatus({ leadId }) {
     setOpen(true)
   }
 
-  const change = async (s) => {
+  const change = (s) => {
     setOpen(false)
     if (s === status) return
-    setStatus(s)
-    try { await api.patch(`/manager/leads/${leadId}/status`, { status: s }) } catch (e) { logError(e) }
+    onChange?.(s)
   }
 
   return (
@@ -317,6 +310,12 @@ export default function RequestChatPage() {
     return () => { cancelled = true }
   }, [isStaff, leadId])
 
+  const changeLeadStatus = useCallback(async (s) => {
+    setLeadStatus(s)
+    setLeadClosed(s === 'closed' || s === 'completed')
+    try { await api.patch(`/manager/leads/${leadId}/status`, { status: s }) } catch (e) { logError(e) }
+  }, [leadId])
+
   const acceptLead = useCallback(async () => {
     if (accepting || !leadId) return
     setAccepting(true)
@@ -379,6 +378,10 @@ export default function RequestChatPage() {
         if (e.user_id === myId) return
         const readAt = e.read_at ?? new Date().toISOString()
         setMessages((prev) => prev.map((m) => (m.from === 'user' && !m.readAt ? { ...m, readAt } : m)))
+      },
+      '.lead.status': (e) => {
+        setLeadClosed(!!e.closed)
+        if (e.status) setLeadStatus(e.status)
       },
     })
   }, [chatId, myId, reloadMessages])
@@ -603,7 +606,7 @@ export default function RequestChatPage() {
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500] max-w-[50%] truncate">
             {params.get('title') || `${t('requestChat.title')}${leadId ? ` #${leadId}` : ''}`}
           </span>
-          {isStaff && isLead && <HeaderLeadStatus leadId={leadId} />}
+          {isStaff && isLead && <HeaderLeadStatus status={leadStatus} onChange={changeLeadStatus} />}
         </div>
       </header>
 
