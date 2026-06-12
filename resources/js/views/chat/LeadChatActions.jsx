@@ -451,8 +451,6 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const [requisites, setRequisites] = useState('')
   const [busy, setBusy] = useState(false)
   const submitRef = useRef(null)
-  const taRef = useRef(null)
-  const isIOS = (window.Telegram?.WebApp?.platform || '') === 'ios'
 
   const scrollToSubmit = (e) => {
     const sc = e.currentTarget.closest('.modal-middle-scroll')
@@ -465,23 +463,19 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const pasteRequisites = () => {
     const apply = (text) => {
       const v = (text == null ? '' : String(text)).trim()
-      if (!v) return false
+      if (!v) return
       setRequisites((prev) => (prev.trim() ? `${prev}\n${v}` : v))
-      return true
     }
-    const focusField = () => { if (isIOS) { try { taRef.current?.focus() } catch { /* noop */ } } }
-    const tg = window.Telegram?.WebApp
-
-    // 1) Telegram's native clipboard reader — works inside the Mini App across platforms.
-    if (tg?.readTextFromClipboard) {
-      try { tg.readTextFromClipboard((text) => { if (!apply(text)) focusField() }); return } catch { /* fall through */ }
+    const tgPaste = () => {
+      const tg = window.Telegram?.WebApp
+      if (tg?.readTextFromClipboard) { try { tg.readTextFromClipboard(apply) } catch { /* unavailable */ } }
     }
-    // 2) Standard clipboard API — works in browser / Android system webview.
+    // Read the clipboard directly inside the tap gesture. On iOS this is exactly what
+    // pops the system "Paste" prompt, and the text always lands in the requisites field.
     try {
-      if (navigator.clipboard?.readText) { navigator.clipboard.readText().then(apply).catch(focusField); return }
+      if (navigator.clipboard?.readText) { navigator.clipboard.readText().then(apply).catch(tgPaste); return }
     } catch { /* fall through */ }
-    // 3) iOS fallback: focus the field so the native paste affordance appears.
-    focusField()
+    tgPaste()
   }
 
   const submit = async () => {
@@ -550,21 +544,19 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payRequisites')}</span>
-                {!isIOS && (
-                  <button
-                    type="button"
-                    onClick={pasteRequisites}
-                    className="inline-flex items-center gap-1 pl-2 pr-2.5 py-1 rounded-full bg-[#F3EBF4] text-[#E2319B] text-[12px] font-semibold active:scale-95 transition-transform"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
-                      <rect x="8" y="2.8" width="8" height="4" rx="1.3" stroke="currentColor" strokeWidth="1.8" />
-                      <path d="M8 4.8H6.5A1.5 1.5 0 0 0 5 6.3v13.4A1.5 1.5 0 0 0 6.5 21.2h11a1.5 1.5 0 0 0 1.5-1.5V6.3a1.5 1.5 0 0 0-1.5-1.5H16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    </svg>
-                    {t('leadChat.payPaste')}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={pasteRequisites}
+                  className="inline-flex items-center gap-1 pl-2 pr-2.5 py-1 rounded-full bg-[#F3EBF4] text-[#E2319B] text-[12px] font-semibold active:scale-95 transition-transform"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <rect x="8" y="2.8" width="8" height="4" rx="1.3" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M8 4.8H6.5A1.5 1.5 0 0 0 5 6.3v13.4A1.5 1.5 0 0 0 6.5 21.2h11a1.5 1.5 0 0 0 1.5-1.5V6.3a1.5 1.5 0 0 0-1.5-1.5H16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                  {t('leadChat.payPaste')}
+                </button>
               </div>
-              <textarea ref={taRef} value={requisites} onChange={(e) => setRequisites(e.target.value)} rows={3} placeholder={t('leadChat.payRequisitesPlaceholder')} className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[15px] outline-none resize-none" />
+              <textarea value={requisites} onChange={(e) => setRequisites(e.target.value)} rows={3} placeholder={t('leadChat.payRequisitesPlaceholder')} className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[15px] outline-none resize-none" />
             </div>
           ) : (
             <p className="text-[#9B9AA0] text-[13px]/[150%]">{t('leadChat.payCryptoSheetHint')}</p>
