@@ -61,6 +61,7 @@ export function TypedMessageCard({ msg, isManager, leadId, leadClosed = false, o
     const PAY_TTL_MS = 3 * 60 * 60 * 1000
     const expired = !confirmed && msg.createdAt
       && (Date.now() - new Date(msg.createdAt).getTime() > PAY_TTL_MS)
+    const cryptoExpired = expired && p.method === 'crypto'
     return (
       <div data-msg className={`flex ${side} my-3 px-2`}>
         <div className="w-full max-w-[320px] rounded-2xl bg-white border border-black/[0.08] overflow-hidden">
@@ -84,11 +85,6 @@ export function TypedMessageCard({ msg, isManager, leadId, leadClosed = false, o
                 {t('leadChat.payNow')}
               </button>
             )}
-            {p.method === 'crypto' && !confirmed && !isManager && expired && (
-              <div className="mt-1.5 w-full py-2.5 rounded-xl bg-[#F0F0F0] text-[#9B9AA0] text-[14px] font-semibold text-center cursor-not-allowed select-none">
-                {t('leadChat.payExpired')}
-              </div>
-            )}
             {p.method === 'crypto' && isManager && !confirmed && (
               <span className="mt-0.5 text-[#9B9AA0] text-[12px]">{t('leadChat.payCryptoHint')}</span>
             )}
@@ -101,8 +97,8 @@ export function TypedMessageCard({ msg, isManager, leadId, leadClosed = false, o
               messageId={msg.id}
             />
           )}
-          <div className={`px-4 py-2.5 text-center text-[13px] font-semibold ${confirmed ? 'bg-[#E6F5EA] text-[#1E9E4E]' : 'bg-[#FFF1DC] text-[#C77A12]'}`}>
-            {confirmed ? t('leadChat.payConfirmed') : t('leadChat.payPending')}
+          <div className={`px-4 py-2.5 text-center text-[13px] font-semibold ${confirmed ? 'bg-[#E6F5EA] text-[#1E9E4E]' : (cryptoExpired ? 'bg-[#F0F0F0] text-[#9B9AA0]' : 'bg-[#FFF1DC] text-[#C77A12]')}`}>
+            {confirmed ? t('leadChat.payConfirmed') : (cryptoExpired ? t('leadChat.payExpired') : t('leadChat.payPending'))}
           </div>
           {isManager && !confirmed && !leadClosed && (
             <button
@@ -464,10 +460,19 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const reset = () => { setMethod('manual'); setCurrency('RUB'); setAmount(''); setRequisites('') }
   const valid = amount && (method === 'crypto' || requisites.trim())
 
-  const pasteRequisites = async () => {
+  const pasteRequisites = (e) => {
+    e?.preventDefault?.()
+    const apply = (text) => {
+      if (text && String(text).trim()) {
+        setRequisites((prev) => (prev.trim() ? `${prev}\n${String(text).trim()}` : String(text).trim()))
+      }
+    }
+    const tg = window.Telegram?.WebApp
+    if (tg?.readTextFromClipboard) {
+      try { tg.readTextFromClipboard(apply); return } catch { /* fall through */ }
+    }
     try {
-      const text = await navigator.clipboard?.readText?.()
-      if (text && text.trim()) setRequisites((prev) => (prev.trim() ? `${prev}\n${text.trim()}` : text.trim()))
+      if (navigator.clipboard?.readText) navigator.clipboard.readText().then(apply).catch(() => {})
     } catch { /* clipboard unavailable */ }
   }
 
@@ -539,6 +544,7 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
                 <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payRequisites')}</span>
                 <button
                   type="button"
+                  onPointerDown={(e) => e.preventDefault()}
                   onClick={pasteRequisites}
                   className="inline-flex items-center gap-1 pl-2 pr-2.5 py-1 rounded-full bg-[#F3EBF4] text-[#E2319B] text-[12px] font-semibold active:scale-95 transition-transform"
                 >
