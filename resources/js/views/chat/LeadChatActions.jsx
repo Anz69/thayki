@@ -464,18 +464,21 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
     e?.preventDefault?.()
     const apply = (text) => {
       const v = (text == null ? '' : String(text)).trim()
-      if (!v) return false
+      if (!v) return
       setRequisites((prev) => (prev.trim() ? `${prev}\n${v}` : v))
-      return true
     }
-    const fallback = () => {
-      try { navigator.clipboard?.readText?.().then((t) => apply(t)).catch(() => {}) } catch { /* unavailable */ }
+    const tgPaste = () => {
+      const tg = window.Telegram?.WebApp
+      if (tg?.readTextFromClipboard) { try { tg.readTextFromClipboard(apply) } catch { /* unavailable */ } }
     }
-    const tg = window.Telegram?.WebApp
-    if (tg?.readTextFromClipboard) {
-      try { tg.readTextFromClipboard((text) => { if (!apply(text)) fallback() }); return } catch { /* fall through */ }
-    }
-    fallback()
+    // Call the clipboard API directly inside the tap gesture (iOS WKWebView needs this to grant access)
+    try {
+      if (navigator.clipboard?.readText) {
+        navigator.clipboard.readText().then(apply).catch(tgPaste)
+        return
+      }
+    } catch { /* fall through */ }
+    tgPaste()
   }
 
   const submit = async () => {
@@ -546,6 +549,8 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
                 <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payRequisites')}</span>
                 <button
                   type="button"
+                  tabIndex={-1}
+                  onMouseDown={(e) => e.preventDefault()}
                   onPointerDown={(e) => e.preventDefault()}
                   onClick={pasteRequisites}
                   className="inline-flex items-center gap-1 pl-2 pr-2.5 py-1 rounded-full bg-[#F3EBF4] text-[#E2319B] text-[12px] font-semibold active:scale-95 transition-transform"
