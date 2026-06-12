@@ -41,7 +41,7 @@ const onHWheel = (e) => {
   el.scrollLeft += (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX)
 }
 
-export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
+export function TypedMessageCard({ msg, isManager, leadId, leadClosed = false, onPosted }) {
   const { t } = useTranslation()
   const navigate = useTransitionNavigate()
   const setPreviewModel = useModelPreview((s) => s.setModel)
@@ -104,7 +104,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
           <div className={`px-4 py-2.5 text-center text-[13px] font-semibold ${confirmed ? 'bg-[#E6F5EA] text-[#1E9E4E]' : 'bg-[#FFF1DC] text-[#C77A12]'}`}>
             {confirmed ? t('leadChat.payConfirmed') : t('leadChat.payPending')}
           </div>
-          {isManager && !confirmed && (
+          {isManager && !confirmed && !leadClosed && (
             <button
               disabled={busy}
               onClick={async () => {

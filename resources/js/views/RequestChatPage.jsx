@@ -644,6 +644,7 @@ export default function RequestChatPage() {
                     msg={msg}
                     isManager={isStaff}
                     leadId={leadId}
+                    leadClosed={leadClosed}
                     onPosted={reloadMessages}
                   />
                 )

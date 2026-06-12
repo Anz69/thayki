@@ -170,6 +170,10 @@ class ManagerLeadController extends Controller
             throw DomainException::invalid('PAYMENT_NOT_FOUND', 'Платёжный запрос не найден.');
         }
 
+        if (in_array($lead->status->value, ['closed', 'completed'], true)) {
+            throw DomainException::invalid('LEAD_CLOSED', 'Заявка закрыта.');
+        }
+
         if (($req->payload['status'] ?? null) === 'confirmed') {
             return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
         }
