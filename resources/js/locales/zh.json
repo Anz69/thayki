@@ -412,7 +412,8 @@
     "secShort": "秒",
     "payCryptoAuto": "款项到账后将自动确认。",
     "payExpired": "支付时间已过期",
-    "payPaste": "粘贴"
+    "payPaste": "粘贴",
+    "payPasteHint": "长按字段粘贴"
   },
   "chat": {
     "back": "返回",
