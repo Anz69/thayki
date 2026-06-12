@@ -411,7 +411,8 @@
     "minShort": "min",
     "secShort": "s",
     "payCryptoAuto": "Confirms automatically once the payment arrives.",
-    "payExpired": "Payment window expired"
+    "payExpired": "Payment window expired",
+    "payPaste": "Paste"
   },
   "chat": {
     "back": "Back",
