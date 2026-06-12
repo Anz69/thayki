@@ -464,6 +464,13 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const reset = () => { setMethod('manual'); setCurrency('RUB'); setAmount(''); setRequisites('') }
   const valid = amount && (method === 'crypto' || requisites.trim())
 
+  const pasteRequisites = async () => {
+    try {
+      const text = await navigator.clipboard?.readText?.()
+      if (text && text.trim()) setRequisites((prev) => (prev.trim() ? `${prev}\n${text.trim()}` : text.trim()))
+    } catch { /* clipboard unavailable */ }
+  }
+
   const submit = async () => {
     if (!valid || busy) return
     setBusy(true)
@@ -527,10 +534,23 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
 
         <div key={method} style={{ animation: 'pmSwap 0.32s cubic-bezier(0.22,1,0.36,1)' }}>
           {method === 'manual' ? (
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payRequisites')}</span>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payRequisites')}</span>
+                <button
+                  type="button"
+                  onClick={pasteRequisites}
+                  className="inline-flex items-center gap-1 pl-2 pr-2.5 py-1 rounded-full bg-[#F3EBF4] text-[#E2319B] text-[12px] font-semibold active:scale-95 transition-transform"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <rect x="8" y="2.8" width="8" height="4" rx="1.3" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M8 4.8H6.5A1.5 1.5 0 0 0 5 6.3v13.4A1.5 1.5 0 0 0 6.5 21.2h11a1.5 1.5 0 0 0 1.5-1.5V6.3a1.5 1.5 0 0 0-1.5-1.5H16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                  {t('leadChat.payPaste')}
+                </button>
+              </div>
               <textarea value={requisites} onChange={(e) => setRequisites(e.target.value)} rows={3} placeholder={t('leadChat.payRequisitesPlaceholder')} className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[15px] outline-none resize-none" />
-            </label>
+            </div>
           ) : (
             <p className="text-[#9B9AA0] text-[13px]/[150%]">{t('leadChat.payCryptoSheetHint')}</p>
           )}
