@@ -465,18 +465,23 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const pasteRequisites = () => {
     const apply = (text) => {
       const v = (text == null ? '' : String(text)).trim()
-      if (!v) return
+      if (!v) return false
       setRequisites((prev) => (prev.trim() ? `${prev}\n${v}` : v))
+      return true
     }
-    // iOS WKWebView blocks programmatic clipboard reads — focus the field so the
-    // system's native "Paste" affordance shows up (the only legal path on iOS).
-    if (isIOS) { try { taRef.current?.focus() } catch { /* noop */ } return }
-    // Android / desktop / browser: read the clipboard directly in the tap gesture.
-    try {
-      if (navigator.clipboard?.readText) { navigator.clipboard.readText().then(apply).catch(() => {}); return }
-    } catch { /* fall through */ }
+    const focusField = () => { if (isIOS) { try { taRef.current?.focus() } catch { /* noop */ } } }
     const tg = window.Telegram?.WebApp
-    if (tg?.readTextFromClipboard) { try { tg.readTextFromClipboard(apply) } catch { /* unavailable */ } }
+
+    // 1) Telegram's native clipboard reader — works inside the Mini App across platforms.
+    if (tg?.readTextFromClipboard) {
+      try { tg.readTextFromClipboard((text) => { if (!apply(text)) focusField() }); return } catch { /* fall through */ }
+    }
+    // 2) Standard clipboard API — works in browser / Android system webview.
+    try {
+      if (navigator.clipboard?.readText) { navigator.clipboard.readText().then(apply).catch(focusField); return }
+    } catch { /* fall through */ }
+    // 3) iOS fallback: focus the field so the native paste affordance appears.
+    focusField()
   }
 
   const submit = async () => {
