@@ -164,6 +164,13 @@ class LeadController extends Controller
             throw DomainException::invalid('PAYMENT_NOT_FOUND', 'Crypto payment not found.');
         }
 
+        $payTtl = (int) config('oxapay.pay_ttl_hours', 3);
+        if (($message->payload['status'] ?? null) !== 'confirmed'
+            && $message->created_at !== null
+            && $message->created_at->lt(now()->subHours($payTtl))) {
+            throw DomainException::invalid('PAYMENT_EXPIRED', 'Payment window expired.');
+        }
+
         $amountMinor = (int) ($message->payload['amount_minor'] ?? 0);
         $currency = (string) ($message->payload['currency'] ?? 'USD');
         $payFiat = round($amountMinor / 100, 2);

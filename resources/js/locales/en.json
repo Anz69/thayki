@@ -410,7 +410,8 @@
     "parseAlmost": "almost done, a few more seconds…",
     "minShort": "min",
     "secShort": "s",
-    "payCryptoAuto": "Confirms automatically once the payment arrives."
+    "payCryptoAuto": "Confirms automatically once the payment arrives.",
+    "payExpired": "Payment window expired"
   },
   "chat": {
     "back": "Back",

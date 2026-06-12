@@ -410,7 +410,8 @@
     "parseAlmost": "快好了，再等几秒…",
     "minShort": "分",
     "secShort": "秒",
-    "payCryptoAuto": "款项到账后将自动确认。"
+    "payCryptoAuto": "款项到账后将自动确认。",
+    "payExpired": "支付时间已过期"
   },
   "chat": {
     "back": "返回",

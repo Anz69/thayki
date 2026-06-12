@@ -117,6 +117,7 @@ function normalizeMsg(raw, myUserId, viewerIsStaff = false) {
     isSupport: isStaffMsg,
     text: raw.body ?? raw.text ?? '',
     time: raw.created_at ? fmtTime(raw.created_at) : (raw.time ?? ''),
+    createdAt: raw.created_at ?? raw.createdAt ?? null,
     type: raw.type ?? (raw.attachment_url ? 'image' : 'text'),
     payload: raw.payload ?? null,
     attachmentUrl: raw.attachment_url ?? raw.attachmentUrl ?? null,

@@ -58,6 +58,9 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
 
   if (msg.type === 'payment_request') {
     const confirmed = p.status === 'confirmed'
+    const PAY_TTL_MS = 3 * 60 * 60 * 1000
+    const expired = !confirmed && msg.createdAt
+      && (Date.now() - new Date(msg.createdAt).getTime() > PAY_TTL_MS)
     return (
       <div data-msg className={`flex ${side} my-3 px-2`}>
         <div className="w-full max-w-[320px] rounded-2xl bg-white border border-black/[0.08] overflow-hidden">
@@ -70,7 +73,7 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
                 <p className="text-black text-[13px]/[150%] font-medium select-text" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><CopyableContacts text={p.requisites} /></p>
               </div>
             )}
-            {p.method === 'crypto' && !confirmed && !isManager && (
+            {p.method === 'crypto' && !confirmed && !isManager && !expired && (
               <button
                 onClick={() => {
                   if (p.pay_url) { window.Telegram?.WebApp?.openLink ? window.Telegram.WebApp.openLink(p.pay_url) : window.open(p.pay_url, '_blank') }
@@ -80,6 +83,11 @@ export function TypedMessageCard({ msg, isManager, leadId, onPosted }) {
               >
                 {t('leadChat.payNow')}
               </button>
+            )}
+            {p.method === 'crypto' && !confirmed && !isManager && expired && (
+              <div className="mt-1.5 w-full py-2.5 rounded-xl bg-[#F0F0F0] text-[#9B9AA0] text-[14px] font-semibold text-center cursor-not-allowed select-none">
+                {t('leadChat.payExpired')}
+              </div>
             )}
             {p.method === 'crypto' && isManager && !confirmed && (
               <span className="mt-0.5 text-[#9B9AA0] text-[12px]">{t('leadChat.payCryptoHint')}</span>
