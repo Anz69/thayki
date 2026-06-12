@@ -532,6 +532,17 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
           <input
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
+            onPaste={(e) => {
+              const text = (e.clipboardData?.getData('text') || '').trim()
+              if (!text) return
+              const digits = text.replace(/\D/g, '')
+              // card numbers / requisites have spaces, letters or many digits — route them to requisites
+              if (/[^\d\s]/.test(text) || /\s/.test(text) || digits.length >= 11) {
+                e.preventDefault()
+                setMethod('manual')
+                setRequisites((prev) => (prev.trim() ? `${prev}\n${text}` : text))
+              }
+            }}
             inputMode="numeric"
             placeholder="0"
             style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif' }}
