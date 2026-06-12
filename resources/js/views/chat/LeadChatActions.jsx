@@ -463,17 +463,19 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const pasteRequisites = (e) => {
     e?.preventDefault?.()
     const apply = (text) => {
-      if (text && String(text).trim()) {
-        setRequisites((prev) => (prev.trim() ? `${prev}\n${String(text).trim()}` : String(text).trim()))
-      }
+      const v = (text == null ? '' : String(text)).trim()
+      if (!v) return false
+      setRequisites((prev) => (prev.trim() ? `${prev}\n${v}` : v))
+      return true
+    }
+    const fallback = () => {
+      try { navigator.clipboard?.readText?.().then((t) => apply(t)).catch(() => {}) } catch { /* unavailable */ }
     }
     const tg = window.Telegram?.WebApp
     if (tg?.readTextFromClipboard) {
-      try { tg.readTextFromClipboard(apply); return } catch { /* fall through */ }
+      try { tg.readTextFromClipboard((text) => { if (!apply(text)) fallback() }); return } catch { /* fall through */ }
     }
-    try {
-      if (navigator.clipboard?.readText) navigator.clipboard.readText().then(apply).catch(() => {})
-    } catch { /* clipboard unavailable */ }
+    fallback()
   }
 
   const submit = async () => {
