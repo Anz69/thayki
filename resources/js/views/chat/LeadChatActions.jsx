@@ -550,17 +550,19 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[#9B9AA0] text-[13px]">{t('leadChat.payRequisites')}</span>
-                <button
-                  type="button"
-                  onClick={pasteRequisites}
-                  className="inline-flex items-center gap-1 pl-2 pr-2.5 py-1 rounded-full bg-[#F3EBF4] text-[#E2319B] text-[12px] font-semibold active:scale-95 transition-transform"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <rect x="8" y="2.8" width="8" height="4" rx="1.3" stroke="currentColor" strokeWidth="1.8" />
-                    <path d="M8 4.8H6.5A1.5 1.5 0 0 0 5 6.3v13.4A1.5 1.5 0 0 0 6.5 21.2h11a1.5 1.5 0 0 0 1.5-1.5V6.3a1.5 1.5 0 0 0-1.5-1.5H16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                  {t('leadChat.payPaste')}
-                </button>
+                {!isIOS && (
+                  <button
+                    type="button"
+                    onClick={pasteRequisites}
+                    className="inline-flex items-center gap-1 pl-2 pr-2.5 py-1 rounded-full bg-[#F3EBF4] text-[#E2319B] text-[12px] font-semibold active:scale-95 transition-transform"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <rect x="8" y="2.8" width="8" height="4" rx="1.3" stroke="currentColor" strokeWidth="1.8" />
+                      <path d="M8 4.8H6.5A1.5 1.5 0 0 0 5 6.3v13.4A1.5 1.5 0 0 0 6.5 21.2h11a1.5 1.5 0 0 0 1.5-1.5V6.3a1.5 1.5 0 0 0-1.5-1.5H16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                    {t('leadChat.payPaste')}
+                  </button>
+                )}
               </div>
               <textarea ref={taRef} value={requisites} onChange={(e) => setRequisites(e.target.value)} rows={3} placeholder={t('leadChat.payRequisitesPlaceholder')} className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[15px] outline-none resize-none" />
             </div>
