@@ -84,13 +84,12 @@ class SendChatMessageNotificationJob implements ShouldQueue
             $notified = [];
 
             if ($isSupport && ! $senderIsSupport && ! $senderIsStaff) {
-                $notifier->notifyAdmins(
-                    ($isLead ? '📩 Новое сообщение по заявке от <b>' : '💬 Новое сообщение в поддержке от <b>')
-                        .$this->senderDisplayName($sender, 'ru').'</b>',
-                    null,
-                    null,
-                    $dedupToken,
-                );
+                $adminText = ($isLead ? '📩 Новое сообщение по заявке от <b>' : '💬 Новое сообщение в поддержку от <b>')
+                    .e($this->senderDisplayName($sender, 'ru')).'</b>';
+                if ($preview !== '') {
+                    $adminText .= "\n\n".$preview;
+                }
+                $notifier->notifyAdmins($adminText, null, null, $dedupToken);
 
                 $managers = User::query()
                     ->where('role', UserRole::Manager->value)
@@ -105,8 +104,8 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     $mLocale = $this->localeFor($manager);
                     $mText = $isLead
                         ? trans('notifications.new_message_lead', ['id' => $leadId], $mLocale)
-                        : trans('notifications.new_message_support', [], $mLocale);
-                    if ($isLead && $preview !== '') {
+                        : trans('notifications.new_message_support_in', ['name' => e($this->senderDisplayName($sender, $mLocale))], $mLocale);
+                    if ($preview !== '') {
                         $mText .= "\n\n".$preview;
                     }
                     $notifier->notifyUser(

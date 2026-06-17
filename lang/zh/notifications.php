@@ -6,6 +6,7 @@ return [
     'new_message' => '✉️ 您有一条来自 <b>:name</b> 的新消息',
     'new_message_lead' => '📩 申请 #:id 有新消息',
     'new_message_support' => '🛟 客服发来新消息',
+    'new_message_support_in' => '🛟 <b>:name</b> 发来新的客服消息',
     'open_chat' => '打开聊天',
     'support' => '客服',
     'manager_name' => '经理',
