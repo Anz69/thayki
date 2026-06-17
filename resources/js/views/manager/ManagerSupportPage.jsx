@@ -26,13 +26,16 @@ export default function ManagerSupportPage() {
   const navigate = useTransitionNavigate()
   const [items, setItems] = useState(null)
   const [search, setSearch] = useState('')
+  const [tab, setTab] = useState('unanswered')
   const rootRef = useRef(null)
   const animatedOnce = useRef(false)
 
   const q = search.trim().toLowerCase()
+  const awaitingCount = items?.filter((it) => it.awaiting).length ?? 0
   const visible = items === null ? null : items.filter((it) => {
     const hasClient = !!(it.client?.name || it.client?.username || it.client?.id)
     if (!hasClient && !it.last_message) return false
+    if (tab === 'unanswered' && !it.awaiting) return false
     if (!q) return true
     const hay = [it.client?.name, it.client?.username, it.last_message?.preview]
       .filter(Boolean).join(' ').toLowerCase()
@@ -100,6 +103,32 @@ export default function ManagerSupportPage() {
             )}
           </div>
         </div>
+
+        <div className="container mt-3">
+          <div className="relative grid grid-cols-2 bg-[#EFEEF3] rounded-full p-1">
+            <span
+              className="absolute top-1 bottom-1 left-1 rounded-full bg-white shadow-sm"
+              style={{
+                width: 'calc(50% - 4px)',
+                transform: tab === 'all' ? 'translateX(100%)' : 'translateX(0)',
+                transition: 'transform 0.32s cubic-bezier(0.34,1.45,0.5,1)',
+              }}
+            />
+            {[['unanswered', t('manager.supportTab.unanswered')], ['all', t('manager.supportTab.all')]].map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setTab(k)}
+                className="relative z-10 py-2 text-[13px] font-semibold transition-colors duration-200 inline-flex items-center justify-center gap-1.5"
+                style={{ color: tab === k ? '#111' : '#9B9AA0' }}
+              >
+                {label}
+                {k === 'unanswered' && awaitingCount > 0 && (
+                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#E2319B] text-white text-[11px] font-bold inline-flex items-center justify-center">{awaitingCount}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
       </header>
 
       <div className="container flex flex-col gap-2.5 pt-3 pb-24">
@@ -115,9 +144,9 @@ export default function ManagerSupportPage() {
 
         {items !== null && visible.length === 0 && (
           <div className="flex flex-col items-center text-center gap-3 pt-24">
-            <div className="size-16 rounded-full bg-[#E9F0FF] flex items-center justify-center text-3xl">{q ? '🔍' : '💬'}</div>
+            <div className="size-16 rounded-full bg-[#E9F0FF] flex items-center justify-center text-3xl">{q ? '🔍' : (tab === 'unanswered' ? '🎉' : '💬')}</div>
             <p className="text-[#9B9AA0] text-sm">
-              {q ? t('manager.searchEmpty') : t('manager.supportEmpty')}
+              {q ? t('manager.searchEmpty') : (tab === 'unanswered' ? t('manager.supportAllAnswered') : t('manager.supportEmpty'))}
             </p>
           </div>
         )}
@@ -135,6 +164,7 @@ export default function ManagerSupportPage() {
                 {photo
                   ? <img src={photo} alt="" className="w-full h-full object-cover" />
                   : <span className="text-[#E2319B] text-base font-bold">{(it.client?.name || '?')[0]?.toUpperCase()}</span>}
+                {it.awaiting && <span className="absolute top-0 right-0 size-3 rounded-full bg-[#E2319B] ring-2 ring-white" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -142,7 +172,7 @@ export default function ManagerSupportPage() {
                   <span className="ml-auto text-[#ABABAB] text-[12px] shrink-0">{relTime(it.last_message?.at, i18n.language)}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[#9B9AA0] text-[13px] truncate">{it.last_message?.preview ?? '—'}</span>
+                  <span className={`text-[13px] truncate ${it.awaiting ? 'text-black font-medium' : 'text-[#9B9AA0]'}`}>{it.last_message?.preview ?? '—'}</span>
                 </div>
               </div>
             </button>
