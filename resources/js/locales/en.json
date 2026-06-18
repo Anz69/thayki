@@ -559,9 +559,10 @@
     "networkWarn": "Send only on this network — otherwise funds will be lost."
   },
   "requisites": {
-    "title": "Manager chats",
-    "empty": "No manager messages yet",
-    "chatTitle": "Chat with managers"
+    "title": "Requisites chats",
+    "empty": "No messages yet",
+    "chatTitle": "Chat with requisites",
+    "chatTitleRequisite": "Chat with managers"
   },
   "requisitesChat": {
     "tagRequisites": "Requisites",

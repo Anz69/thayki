@@ -191,6 +191,12 @@ export default function RequestChatPage() {
   const [initialLoad, setInitialLoad] = useState(true)
   const [viewerSrc, setViewerSrc] = useState(null)
 
+  const groupChatTitle = role === 'requisite' ? t('requisites.chatTitleRequisite') : t('requisites.chatTitle')
+
+  const chatHeaderTitle = isGroup
+    ? (params.get('title') || groupChatTitle)
+    : `${t('requestChat.title')}${leadId ? ` #${leadId}` : ''}`
+
   const hasText = inputText.trim().length > 0
 
   const sendingRef     = useRef(false)
@@ -609,7 +615,7 @@ export default function RequestChatPage() {
             </button>
           )}
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500] max-w-[50%] truncate">
-            {params.get('title') || (isGroup ? t('requisites.chatTitle') : `${t('requestChat.title')}${leadId ? ` #${leadId}` : ''}`)}
+            {chatHeaderTitle}
           </span>
           {isStaff && isLead && <HeaderLeadStatus status={leadStatus} onChange={changeLeadStatus} />}
         </div>
