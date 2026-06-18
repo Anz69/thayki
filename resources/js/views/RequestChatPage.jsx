@@ -664,9 +664,12 @@ export default function RequestChatPage() {
               const gap = isFirstInGroup && idx > 0 ? 'mt-3' : 'mt-1'
 
               const isReq = msg.senderRole === 'requisite'
+              const hideManagerName = role === 'requisite' && !isReq
               const senderHeader = isGroup && !isUser && isFirstInGroup && msg.senderName ? (
                 <div className="flex items-center gap-1.5 px-1 mb-1">
-                  <span className="text-[12.5px] font-semibold" style={{ color: isReq ? '#E2319B' : '#3E6CC4' }}>{msg.senderName}</span>
+                  {!hideManagerName && (
+                    <span className="text-[12.5px] font-semibold" style={{ color: isReq ? '#E2319B' : '#3E6CC4' }}>{msg.senderName}</span>
+                  )}
                   <span className={`px-1.5 py-[1px] rounded-full text-[10px] font-semibold ${isReq ? 'bg-[#FDE8F5] text-[#E2319B]' : 'bg-[#E9F0FF] text-[#3E6CC4]'}`}>
                     {t(isReq ? 'requisitesChat.tagRequisites' : 'requisitesChat.tagManager')}
                   </span>
