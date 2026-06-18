@@ -55,6 +55,8 @@ function typageRows(v, t) {
     rows.push([U('bust'), `${U(`bustTypes.${v.bust_type}`)}${v.bust_size ? ` · ${v.bust_size}` : ''}`])
   }
 
+  if (v.hips) rows.push([U('hipsLabel'), U(`hipsTypes.${v.hips}`)])
+
   if (v.weight_from || v.weight_to) rows.push([U('weight'), `${v.weight_from ?? v.weight_to}–${v.weight_to ?? v.weight_from} ${U('unitKg')}`])
 
   if (v.figure) rows.push([U('figure'), U(`figures.${v.figure}`)])

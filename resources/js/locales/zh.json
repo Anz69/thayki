@@ -163,6 +163,12 @@
       "oneTime": "单次会面",
       "trip": "旅行",
       "relationship": "关系 / 包养"
+    },
+    "hipsLabel": "臀型",
+    "hipsTypes": {
+      "narrow": "窄",
+      "medium": "中等",
+      "wide": "宽"
     }
   },
   "share": {
@@ -197,7 +203,8 @@
     "duration": "时长",
     "tripDays": "旅行天数",
     "tripCity": "旅行城市",
-    "comments": "备注"
+    "comments": "备注",
+    "hips": "臀部"
   },
   "requestModal": {
     "title": "提交预约",

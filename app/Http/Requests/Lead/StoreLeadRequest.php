@@ -38,6 +38,7 @@ class StoreLeadRequest extends FormRequest
             'weight_from' => ['nullable', 'integer', 'min:30', 'max:200'],
             'weight_to' => ['nullable', 'integer', 'min:30', 'max:200'],
             'figure' => ['nullable', 'string', 'max:24'],
+            'hips' => ['nullable', 'string', 'in:narrow,medium,wide'],
             'event_type' => ['nullable', 'string', 'in:one_time,trip,relationship'],
             'event_hours_from' => ['nullable', 'integer', 'min:1', 'max:24'],
             'event_hours_to' => ['nullable', 'integer', 'min:1', 'max:24'],

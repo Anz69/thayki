@@ -57,6 +57,7 @@ class CreateLeadAction
                 'weight_from' => $int('weight_from'),
                 'weight_to' => $int('weight_to'),
                 'figure' => $str('figure'),
+                'hips' => $str('hips'),
                 'event_type' => $str('event_type'),
                 'event_hours_from' => $int('event_hours_from'),
                 'event_hours_to' => $int('event_hours_to'),

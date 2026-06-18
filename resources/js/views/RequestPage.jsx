@@ -16,6 +16,7 @@ import ru from '@/locales/ru.json'
 
 const BUST_SIZES = ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6+']
 const FIGURES = ['anorexic', 'slim', 'curvy', 'bodybuilder', 'fit', 'siliconeBeauty']
+const HIPS = ['narrow', 'medium', 'wide']
 const HAIRS = ['any', 'blonde', 'brunette', 'brown', 'red']
 const EVENTS = ['oneTime', 'trip', 'relationship']
 
@@ -65,6 +66,7 @@ export default function RequestPage() {
   const [bustSize, setBustSize] = useState(4)
   const [weight, setWeight] = useState({ from: 50, to: 65 })
   const [figure, setFigure] = useState(null)
+  const [hips, setHips] = useState(null)
   const [hair, setHair] = useState(null)
   const [eventType, setEventType] = useState(null)
   const [eventHours, setEventHours] = useState({ from: 2, to: 6 })
@@ -86,7 +88,7 @@ export default function RequestPage() {
 
   const eventOk = eventType === 'oneTime' || eventType === 'relationship'
     || (eventType === 'trip' && tripCity.trim().length > 0)
-  const paramsOk = !!bustType && !!figure && !!hair && !!eventType && eventOk
+  const paramsOk = !!bustType && !!hips && !!figure && !!hair && !!eventType && eventOk
   const allSelected = isModelFlow || paramsOk
   const canSubmit = city.trim().length > 0 && allSelected && !submitting
   const formHint = city.trim().length === 0
@@ -221,6 +223,7 @@ export default function RequestPage() {
       rows.push([t('leadMsg.age'), `${age.from}–${age.to} ${U('unitYear')}`])
       rows.push([t('leadMsg.height'), heightRangeStr])
       rows.push([t('leadMsg.bust'), `${U(`bustTypes.${bustType}`)} · ${bustSizeStr}`])
+      rows.push([t('leadMsg.hips'), U(`hipsTypes.${hips}`)])
       rows.push([t('leadMsg.weight'), weightRangeStr])
       rows.push([t('leadMsg.figure'), U(`figures.${figure}`)])
       rows.push([t('leadMsg.hair'), U(`hair.${hair}`)])
@@ -272,6 +275,7 @@ export default function RequestPage() {
         weight_from: weight.from,
         weight_to: weight.to,
         figure,
+        hips,
         event_type: eventType === 'oneTime' ? 'one_time' : eventType,
         event_hours_from: eventType === 'oneTime' ? eventHours.from : null,
         event_hours_to: eventType === 'oneTime' ? eventHours.to : null,
@@ -443,6 +447,16 @@ export default function RequestPage() {
               <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mt-1.5 mb-1">{t('request.bustSizeLabel')}</p>
               <RangeSlider single min={0} max={BUST_SIZES.length - 1} value={bustSize}
                 onChange={setBustSize} format={(i) => sizeLabel(BUST_SIZES[i])} />
+            </Section>
+
+            <Section title={t('request.hipsLabel')}>
+              <div className="flex flex-wrap gap-2">
+                {HIPS.map((k) => (
+                  <Chip key={k} active={hips === k} onClick={() => setHips(hips === k ? null : k)}>
+                    {t(`request.hipsTypes.${k}`)}
+                  </Chip>
+                ))}
+              </div>
             </Section>
 
             <Section title={t('request.weight')}>

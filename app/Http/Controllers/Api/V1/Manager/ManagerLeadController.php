@@ -421,6 +421,7 @@ class ManagerLeadController extends Controller
             'weight_from' => $lead->weight_from,
             'weight_to' => $lead->weight_to,
             'figure' => $lead->figure,
+            'hips' => $lead->hips,
             'event_type' => $lead->event_type,
             'event_hours_from' => $lead->event_hours_from,
             'event_hours_to' => $lead->event_hours_to,

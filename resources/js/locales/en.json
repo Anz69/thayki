@@ -163,6 +163,12 @@
       "oneTime": "One-time meeting",
       "trip": "Trip",
       "relationship": "Relationship / arrangement"
+    },
+    "hipsLabel": "Hip type",
+    "hipsTypes": {
+      "narrow": "Narrow",
+      "medium": "Medium",
+      "wide": "Wide"
     }
   },
   "share": {
@@ -197,7 +203,8 @@
     "duration": "Duration",
     "tripDays": "Trip days",
     "tripCity": "Trip city",
-    "comments": "Comments"
+    "comments": "Comments",
+    "hips": "Hips"
   },
   "requestModal": {
     "title": "Leave a request",
