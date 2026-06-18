@@ -256,22 +256,44 @@ class ChatController extends Controller
 
         $now = now();
 
-        if ($chat->isParticipant($user)) {
-            $chat->participants()
-                ->where('user_id', $user->id)
-                ->update(['last_read_at' => $now]);
-        }
+        $this->ensureRequisitesParticipant($chat, $user);
 
-        Message::query()
-            ->where('chat_id', $chat->id)
-            ->whereNull('read_at')
-            ->where('sender_id', '!=', $user->id)
-            ->update(['read_at' => $now]);
+        $chat->participants()
+            ->where('user_id', $user->id)
+            ->update(['last_read_at' => $now]);
+
+        // Shared requisites inbox: read state is per participant only. A global
+        // messages.read_at would let one manager's read cancel everyone else's notifications.
+        if ($chat->type !== ChatType::Requisites) {
+            Message::query()
+                ->where('chat_id', $chat->id)
+                ->whereNull('read_at')
+                ->where('sender_id', '!=', $user->id)
+                ->update(['read_at' => $now]);
+        }
 
         try {
             event(new MessagesRead($chat->id, $user->id, $now->toIso8601String()));
         } catch (\Throwable) {}
 
         return ApiResponse::noContent();
+    }
+
+    private function ensureRequisitesParticipant(Chat $chat, User $user): void
+    {
+        if ($chat->type !== ChatType::Requisites || $chat->isParticipant($user)) {
+            return;
+        }
+
+        if (! in_array($user->role, [UserRole::Requisite, UserRole::Manager, UserRole::Admin], true)) {
+            return;
+        }
+
+        $chat->participants()->create([
+            'user_id' => $user->id,
+            'role' => $user->role === UserRole::Requisite
+                ? \App\Enums\ChatParticipantRole::Requisites
+                : \App\Enums\ChatParticipantRole::Support,
+        ]);
     }
 }

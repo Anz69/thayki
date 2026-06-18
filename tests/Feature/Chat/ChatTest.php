@@ -49,3 +49,32 @@ it('creates a support chat for the user', function (): void {
     $response->assertOk();
     $response->assertJsonPath('data.type', 'support');
 });
+
+it('marks requisites chat read per participant without global message read_at', function (): void {
+    $managerA = User::factory()->create(['role' => \App\Enums\UserRole::Manager]);
+    $managerB = User::factory()->create(['role' => \App\Enums\UserRole::Manager]);
+    $requisite = User::factory()->create(['role' => \App\Enums\UserRole::Requisite]);
+
+    $chat = Chat::query()->create(['type' => ChatType::Requisites]);
+    $chat->participants()->create(['user_id' => $managerA->id, 'role' => ChatParticipantRole::Support]);
+    $chat->participants()->create(['user_id' => $requisite->id, 'role' => ChatParticipantRole::Requisites]);
+
+    $message = \App\Models\Message::query()->create([
+        'chat_id' => $chat->id,
+        'sender_id' => $requisite->id,
+        'body' => 'Payment details',
+        'type' => 'text',
+    ]);
+
+    Sanctum::actingAs($managerA, ['role:manager']);
+    $this->postJson("/api/v1/chats/{$chat->id}/read")->assertNoContent();
+
+    $message->refresh();
+    expect($message->read_at)->toBeNull();
+
+    $managerAParticipant = $chat->participants()->where('user_id', $managerA->id)->first();
+    expect($managerAParticipant->fresh()->last_read_at)->not->toBeNull();
+
+    $managerBParticipant = $chat->participants()->where('user_id', $managerB->id)->first();
+    expect($managerBParticipant)->toBeNull();
+});

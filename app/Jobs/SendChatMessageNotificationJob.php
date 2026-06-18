@@ -8,6 +8,7 @@ use App\Enums\ChatType;
 use App\Enums\UserRole;
 use App\Models\Chat;
 use App\Models\Lead;
+use App\Models\ChatParticipant;
 use App\Models\Message;
 use App\Models\User;
 use App\Services\Telegram\Notifier;
@@ -43,16 +44,18 @@ class SendChatMessageNotificationJob implements ShouldQueue
             Sleep::for(self::READ_DEBOUNCE_SECONDS)->seconds();
 
             $message->refresh();
-            if ($message->read_at !== null) {
-                return;
-            }
-
-            $dedupToken = 'msg:'.$message->id;
 
             $chat = Chat::with(['participants.user', 'meeting'])->find($message->chat_id);
             if ($chat === null) {
                 return;
             }
+
+            // Global read_at is for 1:1 chats only; shared requisites uses per-participant cursors.
+            if ($chat->type !== ChatType::Requisites && $message->read_at !== null) {
+                return;
+            }
+
+            $dedupToken = 'msg:'.$message->id;
 
             $sender = $message->sender;
 
@@ -84,27 +87,40 @@ class SendChatMessageNotificationJob implements ShouldQueue
             $notified = [];
 
             if ($chat->type === ChatType::Requisites) {
-                // Resolve through the gate so the link always lands on the live shared
-                // chat (the id may have been folded away) with the right title/back state.
                 $openPath = '/requisites/open';
 
-                // Only managers are pinged about the requisites desk. Requisites staff
-                // live inside this chat full-time, so they don't get notifications — and
-                // managers are never told which manager wrote (no sender name).
-                $recipients = $chat->participants->pluck('user')->filter()
-                    ->filter(fn ($u) => $u?->role === UserRole::Manager)
-                    ->unique('id');
-
-                foreach ($recipients as $recipient) {
-                    if ($this->isSameUser($sender, $recipient)) {
+                foreach ($chat->participants as $participant) {
+                    $recipient = $participant->user;
+                    if ($recipient === null || $this->isSameUser($sender, $recipient)) {
                         continue;
                     }
+
+                    if (! in_array($recipient->role, [UserRole::Manager, UserRole::Requisite, UserRole::Admin], true)) {
+                        continue;
+                    }
+
+                    if ($this->participantAlreadyRead($participant, $message)) {
+                        continue;
+                    }
+
                     $locale = $this->localeFor($recipient);
-                    $text = trans('notifications.new_message_requisites', [], $locale);
+                    if ($recipient->role === UserRole::Requisite) {
+                        $text = trans('notifications.new_message_requisites_in', [
+                            'name' => e($this->senderDisplayName($sender, $locale)),
+                        ], $locale);
+                    } else {
+                        $text = trans('notifications.new_message_requisites', [], $locale);
+                    }
                     if ($preview !== '') {
                         $text .= "\n\n".$preview;
                     }
-                    $notifier->notifyUser($recipient, $text, $openPath, trans('notifications.open_chat', [], $locale), $dedupToken.':u'.$recipient->id);
+                    $notifier->notifyUser(
+                        $recipient,
+                        $text,
+                        $openPath,
+                        trans('notifications.open_chat', [], $locale),
+                        $dedupToken.':u'.$recipient->id,
+                    );
                 }
 
                 return;
@@ -161,9 +177,7 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     continue;
                 }
 
-                if ($participant->last_read_at !== null
-                    && $message->created_at !== null
-                    && $participant->last_read_at->greaterThanOrEqualTo($message->created_at)) {
+                if ($this->participantAlreadyRead($participant, $message)) {
                     continue;
                 }
 
@@ -189,6 +203,13 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    private function participantAlreadyRead(ChatParticipant $participant, Message $message): bool
+    {
+        return $participant->last_read_at !== null
+            && $message->created_at !== null
+            && $participant->last_read_at->greaterThanOrEqualTo($message->created_at);
     }
 
     private function isSameUser(?User $a, ?User $b): bool

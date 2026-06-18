@@ -194,7 +194,7 @@ export default function RequestChatPage() {
   const groupChatTitle = role === 'requisite' ? t('requisites.chatTitleRequisite') : t('requisites.chatTitle')
 
   const chatHeaderTitle = isGroup
-    ? (params.get('title') || groupChatTitle)
+    ? groupChatTitle
     : `${t('requestChat.title')}${leadId ? ` #${leadId}` : ''}`
 
   const hasText = inputText.trim().length > 0
@@ -384,7 +384,7 @@ export default function RequestChatPage() {
         if (incoming?.type === 'system') setTimeout(reloadMessages, 400)
       },
       '.messages.read': (e) => {
-        if (e.user_id === myId) return
+        if (isGroup || e.user_id === myId) return
         const readAt = e.read_at ?? new Date().toISOString()
         setMessages((prev) => prev.map((m) => (m.from === 'user' && !m.readAt ? { ...m, readAt } : m)))
       },
@@ -702,7 +702,7 @@ export default function RequestChatPage() {
                       <button type="button" onClick={() => retryMessage(msg)} className="inline-flex items-center text-[#E5484D] active:scale-90 transition-transform" aria-label="retry">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
                       </button>
-                    ) : isUser && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
+                    ) : isUser && !isGroup && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
                       <svg key={msg.readAt ? 'read' : 'sent'} width="17" height="13" viewBox="0 0 24 24" fill="currentColor" className={`tick-anim ${msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'}`} aria-hidden>
                         {msg.readAt
                           ? <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
@@ -723,7 +723,7 @@ export default function RequestChatPage() {
                       <button type="button" onClick={() => retryMessage(msg)} className="inline-flex items-center text-[#E5484D] active:scale-90 transition-transform" aria-label="retry">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
                       </button>
-                    ) : isUser && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
+                    ) : isUser && !isGroup && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
                       <svg key={msg.readAt ? 'read' : 'sent'} width="17" height="13" viewBox="0 0 24 24" fill="currentColor" className={`tick-anim ${msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'}`} aria-hidden>
                         {msg.readAt
                           ? <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />

@@ -67,7 +67,7 @@ export default function ManagerHomePage() {
     api.get('/chats/requisites')
       .then((r) => {
         const id = r?.data?.data?.id
-        if (id) navigate(`/request/chat?id=${id}&kind=requisites&from=${encodeURIComponent('/home')}&title=${encodeURIComponent(t('requisites.chatTitle'))}`)
+        if (id) navigate(`/request/chat?id=${id}&kind=requisites&from=${encodeURIComponent('/home')}`)
       })
       .catch(logError)
   }

@@ -17,7 +17,7 @@ export default function RequisitesChatGate() {
         const id = r?.data?.data?.id
         if (!id) { setFailed(true); return }
         done.current = true
-        navigate(`/request/chat?id=${id}&kind=requisites&from=${encodeURIComponent('/home')}&title=${encodeURIComponent(t('requisites.chatTitleRequisite'))}`, { replace: true })
+        navigate(`/request/chat?id=${id}&kind=requisites&from=${encodeURIComponent('/home')}`, { replace: true })
       })
       .catch((e) => { logError(e); setFailed(true) })
   }
