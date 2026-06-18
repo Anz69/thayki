@@ -23,6 +23,16 @@ Broadcast::channel('chats.{id}', function (User $user, int $id): bool {
         return true;
     }
 
+    // Managers may follow any lead/support chat (collaborate on each other's leads);
+    // requisites staff may follow the shared requisites chat.
+    if ($user->role === UserRole::Manager
+        && in_array($chat->type, [\App\Enums\ChatType::Lead, \App\Enums\ChatType::Support, \App\Enums\ChatType::Requisites], true)) {
+        return true;
+    }
+    if ($user->role === UserRole::Requisite && $chat->type === \App\Enums\ChatType::Requisites) {
+        return true;
+    }
+
     return $chat->isParticipant($user);
 });
 

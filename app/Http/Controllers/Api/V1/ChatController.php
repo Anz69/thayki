@@ -170,28 +170,14 @@ class ChatController extends Controller
             }
         }
 
-        if (! $chat->isParticipant($user) && $user->role === UserRole::Manager) {
-            if ($chat->type === ChatType::Lead) {
-
-                $lead = Lead::query()->where('chat_id', $chat->id)->first();
-                if ($lead === null || $lead->manager_id !== $user->id) {
-                    throw DomainException::forbidden(
-                        'LEAD_NOT_ACCEPTED',
-                        'Сначала примите заявку, чтобы ответить клиенту.',
-                    );
-                }
-                $chat->participants()->create([
-                    'user_id' => $user->id,
-                    'role' => \App\Enums\ChatParticipantRole::Support,
-                ]);
-                $chat->load('participants');
-            } elseif ($chat->type === ChatType::Support) {
-                $chat->participants()->create([
-                    'user_id' => $user->id,
-                    'role' => \App\Enums\ChatParticipantRole::Support,
-                ]);
-                $chat->load('participants');
-            }
+        if (! $chat->isParticipant($user) && $user->role === UserRole::Manager
+            && in_array($chat->type, [ChatType::Lead, ChatType::Support], true)) {
+            // Any manager may join and reply in any lead/support chat (collaboration).
+            $chat->participants()->create([
+                'user_id' => $user->id,
+                'role' => \App\Enums\ChatParticipantRole::Support,
+            ]);
+            $chat->load('participants');
         }
 
         if (! $chat->isParticipant($user)

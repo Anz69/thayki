@@ -122,6 +122,8 @@ export default function ManagerLeadsPage() {
   tabRef.current = tab
   const queryRef = useRef(query)
   queryRef.current = query
+  const pageStateRef = useRef(1)
+  pageStateRef.current = page
 
   const keyFor = (which, q) => `${which}|${q}`
   const reqParams = (which, q, pageNum) => {
@@ -184,6 +186,17 @@ export default function ManagerLeadsPage() {
   }, [search])
 
   useEffect(() => { loadFirst(tab) }, [tab, query, loadFirst])
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.hidden) return
+      if (appendingRef.current) return
+      if (pageStateRef.current !== 1) return
+      if (queryRef.current) return
+      loadFirst(tabRef.current, { refresh: true })
+    }, 15000)
+    return () => clearInterval(id)
+  }, [loadFirst])
 
   useLayoutEffect(() => {
     const el = tabRefs.current[tab]
