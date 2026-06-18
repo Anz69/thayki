@@ -7,6 +7,7 @@ import GradientBorder from '@/components/ui/GradientBorder'
 import useAuthStore from '@/stores/useAuthStore'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import api from '@/utils/api'
+import { logError } from '@/utils/logger'
 import { SectionLabel, Chevron } from './kit'
 
 const fmtMoney = (minor) => '$ ' + Math.round((minor || 0) / 100).toLocaleString()
@@ -68,7 +69,7 @@ export default function ManagerHomePage() {
         const id = r?.data?.data?.id
         if (id) navigate(`/request/chat?id=${id}&from=${encodeURIComponent('/home')}&title=${encodeURIComponent(t('manager.requisitesLink'))}`)
       })
-      .catch(() => {})
+      .catch(logError)
   }
 
   const name = auth.user?.first_name || t('manager.title')
