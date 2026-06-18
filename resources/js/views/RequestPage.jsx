@@ -272,7 +272,7 @@ export default function RequestPage() {
         weight_from: weight.from,
         weight_to: weight.to,
         figure,
-        event_type: eventType,
+        event_type: eventType === 'oneTime' ? 'one_time' : eventType,
         event_hours_from: eventType === 'oneTime' ? eventHours.from : null,
         event_hours_to: eventType === 'oneTime' ? eventHours.to : null,
         trip_days_from: eventType === 'trip' ? tripDays.from : null,
