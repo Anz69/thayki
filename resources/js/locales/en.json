@@ -167,7 +167,7 @@
     "hipsLabel": "Hip type",
     "hipsTypes": {
       "narrow": "Narrow",
-      "medium": "Medium",
+      "medium": "Normal",
       "wide": "Wide"
     },
     "tripPurposeLabel": "Trip purpose",
