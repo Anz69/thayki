@@ -87,6 +87,7 @@ const useAuthStore = create((set, get) => ({
   isClient:  () => get().user?.role === 'client',
   isAdmin:   () => get().user?.role === 'admin',
   isManager: () => get().user?.role === 'manager',
+  isRequisite: () => get().user?.role === 'requisite',
 
   displayName: () => {
     const u = get().user

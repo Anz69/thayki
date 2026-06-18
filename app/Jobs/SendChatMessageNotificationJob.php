@@ -83,6 +83,50 @@ class SendChatMessageNotificationJob implements ShouldQueue
 
             $notified = [];
 
+            if ($chat->type === ChatType::Requisites) {
+                $openPath = "/request/chat?id={$chat->id}&from=".rawurlencode('/home');
+                $senderIsRequisitesStaff = in_array($sender?->role, [UserRole::Requisite, UserRole::Admin], true);
+
+                if ($senderIsRequisitesStaff) {
+                    // Requisites replied → notify the owner manager(s) in the chat.
+                    foreach ($chat->participants as $participant) {
+                        $recipient = $participant->user;
+                        if ($recipient === null || $this->isSameUser($sender, $recipient)) {
+                            continue;
+                        }
+                        if ($recipient->role === UserRole::Requisite) {
+                            continue;
+                        }
+                        $locale = $this->localeFor($recipient);
+                        $text = trans('notifications.new_message_requisites', [], $locale);
+                        if ($preview !== '') {
+                            $text .= "\n\n".$preview;
+                        }
+                        $notifier->notifyUser($recipient, $text, $openPath, trans('notifications.open_chat', [], $locale), $dedupToken.':u'.$recipient->id);
+                    }
+                } else {
+                    // Manager wrote → notify all requisites staff (shared desk).
+                    $staff = User::query()
+                        ->where('role', UserRole::Requisite->value)
+                        ->whereNotNull('tg_chat_id')
+                        ->where('notifications_enabled', true)
+                        ->get();
+                    foreach ($staff as $u) {
+                        if ($sender !== null && (int) $u->id === (int) $sender->id) {
+                            continue;
+                        }
+                        $locale = $this->localeFor($u);
+                        $text = trans('notifications.new_message_requisites_in', ['name' => e($this->senderDisplayName($sender, $locale))], $locale);
+                        if ($preview !== '') {
+                            $text .= "\n\n".$preview;
+                        }
+                        $notifier->notifyUser($u, $text, $openPath, trans('notifications.open_chat', [], $locale), $dedupToken.':r'.$u->id);
+                    }
+                }
+
+                return;
+            }
+
             if ($isSupport && ! $senderIsSupport && ! $senderIsStaff) {
                 $adminText = ($isLead ? '📩 Новое сообщение по заявке от <b>' : '💬 Новое сообщение в поддержку от <b>')
                     .e($this->senderDisplayName($sender, 'ru')).'</b>';

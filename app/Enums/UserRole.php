@@ -10,10 +10,16 @@ enum UserRole: string
     case Model = 'model';
     case Manager = 'manager';
     case Admin = 'admin';
+    case Requisite = 'requisite';
 
     public function isAdmin(): bool
     {
         return $this === self::Admin;
+    }
+
+    public function isRequisite(): bool
+    {
+        return $this === self::Requisite;
     }
 
     public function isManager(): bool

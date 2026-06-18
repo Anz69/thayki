@@ -10,4 +10,5 @@ enum ChatParticipantRole: string
     case Model = 'model';
     case Support = 'support';
     case Admin = 'admin';
+    case Requisites = 'requisites';
 }

@@ -359,7 +359,8 @@
     "supportTab": {
       "unanswered": "未回复",
       "all": "全部"
-    }
+    },
+    "requisitesLink": "联系账务"
   },
   "payment": {
     "title": "支付",
@@ -556,5 +557,9 @@
     "confirmed": "已收到付款 ✓",
     "afterPay": "请将准确金额发送到此地址",
     "networkWarn": "请仅在此网络转账，否则资金将丢失。"
+  },
+  "requisites": {
+    "title": "经理对话",
+    "empty": "暂无经理消息"
   }
 }

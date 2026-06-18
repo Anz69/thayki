@@ -359,7 +359,8 @@
     "supportTab": {
       "unanswered": "Unanswered",
       "all": "All"
-    }
+    },
+    "requisitesLink": "Contact requisites"
   },
   "payment": {
     "title": "Payment",
@@ -556,5 +557,9 @@
     "confirmed": "Payment received ✓",
     "afterPay": "Send the exact amount to the address",
     "networkWarn": "Send only on this network — otherwise funds will be lost."
+  },
+  "requisites": {
+    "title": "Manager chats",
+    "empty": "No manager messages yet"
   }
 }

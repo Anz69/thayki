@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Chat\EnsureMeetingChatAction;
+use App\Actions\Chat\EnsureRequisitesChatAction;
 use App\Actions\Chat\EnsureSupportChatAction;
 use App\Actions\Chat\PostMessageAction;
 use App\Enums\ChatType;
@@ -110,6 +111,15 @@ class ChatController extends Controller
         return ApiResponse::ok(new ChatResource($chat));
     }
 
+    public function requisites(Request $request, EnsureRequisitesChatAction $action): JsonResponse
+    {
+        $user = $request->user();
+
+        $chat = $action->execute($user)->load('participants.user');
+
+        return ApiResponse::ok(new ChatResource($chat));
+    }
+
     public function messages(Request $request, Chat $chat): JsonResponse
     {
 
@@ -184,6 +194,16 @@ class ChatController extends Controller
             }
         }
 
+        if (! $chat->isParticipant($user)
+            && $chat->type === ChatType::Requisites
+            && in_array($user->role, [UserRole::Requisite, UserRole::Admin], true)) {
+            $chat->participants()->create([
+                'user_id' => $user->id,
+                'role' => \App\Enums\ChatParticipantRole::Requisites,
+            ]);
+            $chat->load('participants');
+        }
+
         $message = $action->execute(
             $user,
             $chat,
@@ -225,6 +245,11 @@ class ChatController extends Controller
             return true;
         }
         if ($user->role === UserRole::Admin) {
+            return true;
+        }
+
+        // Requisites staff may read/answer any requisites chat (shared desk).
+        if ($user->role === UserRole::Requisite && $chat->type === ChatType::Requisites) {
             return true;
         }
 

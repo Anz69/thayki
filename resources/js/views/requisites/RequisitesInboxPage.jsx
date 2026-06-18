@@ -1,0 +1,118 @@
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import gsap from 'gsap'
+import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
+import api from '@/utils/api'
+import { logError } from '@/utils/logger'
+import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
+
+function relTime(iso, lang) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const diff = (Date.now() - d.getTime()) / 1000
+  const code = (lang || 'ru').slice(0, 2)
+  const loc = code === 'en' ? 'en' : code === 'zh' ? 'zh' : 'ru'
+  const dateLoc = loc === 'en' ? 'en-US' : loc === 'zh' ? 'zh-CN' : 'ru-RU'
+  const rtf = new Intl.RelativeTimeFormat(loc, { numeric: 'auto' })
+  if (diff < 60) return rtf.format(-Math.round(diff), 'second')
+  if (diff < 3600) return rtf.format(-Math.round(diff / 60), 'minute')
+  if (diff < 86400) return rtf.format(-Math.round(diff / 3600), 'hour')
+  if (diff < 604800) return rtf.format(-Math.round(diff / 86400), 'day')
+  return d.toLocaleDateString(dateLoc, { day: 'numeric', month: 'short' })
+}
+
+export default function RequisitesInboxPage() {
+  const { t, i18n } = useTranslation()
+  const navigate = useTransitionNavigate()
+  const [items, setItems] = useState(null)
+  const rootRef = useRef(null)
+  const animatedOnce = useRef(false)
+  const autoOpened = useRef(false)
+
+  const open = useCallback((it) => {
+    if (!it?.chat_id) return
+    const title = it.client?.name || t('requisites.title')
+    navigate(`/request/chat?id=${it.chat_id}&from=${encodeURIComponent('/home')}&title=${encodeURIComponent(title)}`)
+  }, [navigate, t])
+
+  const load = useCallback(() => {
+    api.get('/requisites/chats')
+      .then((r) => {
+        const list = Array.isArray(r?.data?.data) ? r.data.data : []
+        setItems(list)
+        // If there's exactly one manager chat — open it straight away.
+        if (!autoOpened.current && list.length === 1) {
+          autoOpened.current = true
+          open(list[0])
+        }
+      })
+      .catch((e) => { logError(e); setItems([]) })
+  }, [open])
+
+  useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (!items?.length || animatedOnce.current) return
+    animatedOnce.current = true
+    const cards = rootRef.current?.querySelectorAll('[data-card]') ?? []
+    gsap.fromTo(cards, { y: 10, autoAlpha: 0 },
+      { y: 0, autoAlpha: 1, duration: 0.32, stagger: 0.035, ease: 'power2.out', clearProps: 'transform' })
+  }, [items])
+
+  return (
+    <main ref={rootRef} className="flex flex-col min-h-screen bg-[#FAFAFB]">
+      <header className="w-full pt-4 pb-3 bg-[#FAFAFB]/95 backdrop-blur-sm sticky top-0 z-40">
+        <div className="container flex items-center justify-center relative">
+          <span className="text-black text-base/[100%] font-[500]">{t('requisites.title')}</span>
+        </div>
+      </header>
+
+      <div className="container flex flex-col gap-2.5 pt-3 pb-24">
+        {items === null && [0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-3 bg-white rounded-2xl p-3.5 border border-black/[0.06]">
+            <div className="size-12 rounded-full bg-[#ECEAF0] animate-pulse shrink-0" />
+            <div className="flex-1 flex flex-col gap-2">
+              <div className="h-3.5 w-1/2 rounded-full bg-[#ECEAF0] animate-pulse" />
+              <div className="h-3 w-2/3 rounded-full bg-[#F0EFF4] animate-pulse" />
+            </div>
+          </div>
+        ))}
+
+        {items !== null && items.length === 0 && (
+          <div className="flex flex-col items-center text-center gap-3 pt-24">
+            <div className="size-16 rounded-full bg-[#E9F0FF] flex items-center justify-center text-3xl">💳</div>
+            <p className="text-[#9B9AA0] text-sm">{t('requisites.empty')}</p>
+          </div>
+        )}
+
+        {items?.map((it) => {
+          const photo = it.client?.photo ? resolveMediaUrl(it.client.photo) : null
+          return (
+            <button
+              key={it.chat_id}
+              data-card
+              onClick={() => open(it)}
+              className="text-left bg-white rounded-2xl p-3.5 border border-black/[0.06] active:bg-[#FBFAFC] transition-colors flex items-center gap-3"
+            >
+              <div className="relative size-12 rounded-full overflow-hidden bg-[#EFEAEE] shrink-0 flex items-center justify-center">
+                {photo
+                  ? <img src={photo} alt="" className="w-full h-full object-cover" />
+                  : <span className="text-[#E2319B] text-base font-bold">{(it.client?.name || '?')[0]?.toUpperCase()}</span>}
+                {it.awaiting && <span className="absolute top-0 right-0 size-3 rounded-full bg-[#E2319B] ring-2 ring-white" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-black text-[15px] font-semibold truncate">{it.client?.name ?? '—'}</span>
+                  <span className="ml-auto text-[#ABABAB] text-[12px] shrink-0">{relTime(it.last_message?.at, i18n.language)}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={`text-[13px] truncate ${it.awaiting ? 'text-black font-medium' : 'text-[#9B9AA0]'}`}>{it.last_message?.preview ?? '—'}</span>
+                </div>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </main>
+  )
+}

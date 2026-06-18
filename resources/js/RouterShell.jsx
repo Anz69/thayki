@@ -31,6 +31,7 @@ import ManagerHomePage from '@/views/manager/ManagerHomePage'
 import ManagerMorePage from '@/views/manager/ManagerMorePage'
 import ManagerLeadsPage from '@/views/manager/ManagerLeadsPage'
 import ManagerSupportPage from '@/views/manager/ManagerSupportPage'
+import RequisitesInboxPage from '@/views/requisites/RequisitesInboxPage'
 import ModelMeetingPage from '@/views/ModelMeetingPage'
 import RoadmapPage from '@/views/RoadmapPage'
 import ModelMorePage from '@/views/ModelMorePage'
@@ -81,7 +82,7 @@ function prefetchHotRoutes() {
 function LandingRoute() {
   const { user } = useAuthStore()
   if (!user) return <LandingPage />
-  if (user?.role === 'model' || user?.role === 'manager') return <Navigate to="/home" replace />
+  if (user?.role === 'model' || user?.role === 'manager' || user?.role === 'requisite') return <Navigate to="/home" replace />
   return <LandingPage />
 }
 
@@ -89,11 +90,13 @@ function MainPage() {
   const { user } = useAuthStore()
   if (user?.role === 'model') return <ClientPage />
   if (user?.role === 'manager') return <ManagerHomePage />
+  if (user?.role === 'requisite') return <RequisitesInboxPage />
   return <HomePage />
 }
 
 function MoreRolePage() {
   const { user } = useAuthStore()
+  if (user?.role === 'requisite') return <Navigate to="/home" replace />
   if (user?.role === 'model') return <ModelMorePage />
   if (user?.role === 'manager') return <ManagerMorePage />
   return <MorePage />
@@ -101,6 +104,7 @@ function MoreRolePage() {
 
 function MeetingRolePage() {
   const { user } = useAuthStore()
+  if (user?.role === 'requisite') return <Navigate to="/home" replace />
   return user?.role === 'model' ? <ModelMeetingPage /> : <MeetingPage />
 }
 

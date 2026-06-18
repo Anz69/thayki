@@ -57,6 +57,7 @@ export default function BottomNav() {
 
   const isModel = auth.isModel()
   const isManager = auth.isManager?.() ?? false
+  const isRequisite = auth.isRequisite?.() ?? false
 
   const initialSlot = getSlot(pathname, meeting.status, modelMeeting.status, isModel)
   const [renderedSlot, setRenderedSlot] = useState(initialSlot)
@@ -318,7 +319,7 @@ export default function BottomNav() {
     return () => cancelAnimationFrame(id)
   }, [i18n.language, activeIndex, renderedSlot]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (isHiddenPath) return null
+  if (isHiddenPath || isRequisite) return null
 
   return (
     <div

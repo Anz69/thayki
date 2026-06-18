@@ -62,6 +62,15 @@ export default function ManagerHomePage() {
       { y: 0, autoAlpha: 1, duration: 0.45, stagger: 0.08, ease: 'power3.out', clearProps: 'transform' })
   })
 
+  const openRequisites = () => {
+    api.get('/chats/requisites')
+      .then((r) => {
+        const id = r?.data?.data?.id
+        if (id) navigate(`/request/chat?id=${id}&from=${encodeURIComponent('/home')}&title=${encodeURIComponent(t('manager.requisitesLink'))}`)
+      })
+      .catch(() => {})
+  }
+
   const name = auth.user?.first_name || t('manager.title')
   const photo = auth.user?.photo_url ? resolveMediaUrl(auth.user.photo_url) : null
 
@@ -111,6 +120,11 @@ export default function ManagerHomePage() {
             icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2.5" stroke="#777779" strokeWidth="1.6" /><circle cx="12" cy="12" r="2.3" stroke="#777779" strokeWidth="1.6" /><path d="M6 9.5h.01M18 14.5h.01" stroke="#777779" strokeWidth="1.7" strokeLinecap="round" /></svg>}
             label={t('manager.earnings')}
             onClick={() => navigate('/manager/earnings')}
+          />
+          <MenuItem
+            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2.5" stroke="#777779" strokeWidth="1.6" /><path d="M3 9h18" stroke="#777779" strokeWidth="1.6" /><path d="M6.5 15h4" stroke="#777779" strokeWidth="1.7" strokeLinecap="round" /></svg>}
+            label={t('manager.requisitesLink')}
+            onClick={openRequisites}
           />
         </div>
       </div>
