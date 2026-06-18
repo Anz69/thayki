@@ -12,15 +12,22 @@ const api = axios.create({
 })
 
 const TOKEN_KEY = '_tg_auth_token'
+const AUTH_UID_KEY = '_tg_auth_uid'
 
 export function storeToken(token) {
   try { localStorage.setItem(TOKEN_KEY, token) } catch {}
 }
 export function clearToken() {
-  try { localStorage.removeItem(TOKEN_KEY) } catch {}
+  try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(AUTH_UID_KEY) } catch {}
 }
 export function getStoredToken() {
   try { return localStorage.getItem(TOKEN_KEY) } catch { return null }
+}
+export function storeAuthUid(uid) {
+  try { if (uid != null) localStorage.setItem(AUTH_UID_KEY, String(uid)) } catch {}
+}
+export function getStoredAuthUid() {
+  try { return localStorage.getItem(AUTH_UID_KEY) } catch { return null }
 }
 
 api.interceptors.request.use((config) => {

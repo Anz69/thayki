@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import RouterShell from '@/RouterShell'
 import useAuthStore from '@/stores/useAuthStore'
 import useMeetingStore from '@/stores/useMeetingStore'
-import api, { getStoredToken, clearToken } from '@/utils/api'
+import api, { getStoredToken, clearToken, getStoredAuthUid, storeAuthUid } from '@/utils/api'
 import { logWarn } from '@/utils/logger'
 import { parseTelegramStartParam, buildDevInitData, getOrCreateDevTelegramId } from '@/utils/telegramAuth'
 
@@ -24,23 +24,32 @@ export default function App() {
     authStore.setAuthPending()
 
     async function resolveAuth() {
+      const tg       = window.Telegram?.WebApp
+      const initData = tg?.initData
+      const currentTgId = tg?.initDataUnsafe?.user?.id ?? null
+
       const storedToken = getStoredToken()
-      if (storedToken) {
+      const storedUid = getStoredAuthUid()
+      // Only trust a stored token if it was issued for the Telegram account that is
+      // open right now. Otherwise a second account opened in the same WebView would
+      // resume the first account's session (its verification, chats, etc.).
+      const accountMatches = currentTgId == null || storedUid == null || storedUid === String(currentTgId)
+      if (storedToken && accountMatches) {
         try {
           const { data } = await api.get('/auth/me')
           const user = data?.data
           if (user) {
             authStore.setUser(user)
+            storeAuthUid(currentTgId)
             meetingStore.loadLatest()
             return
           }
         } catch {
         }
         clearToken()
+      } else if (storedToken) {
+        clearToken()
       }
-
-      const tg       = window.Telegram?.WebApp
-      const initData = tg?.initData
 
       if (initData) {
         const startParam   = tg?.initDataUnsafe?.start_param ?? ''
@@ -60,6 +69,7 @@ export default function App() {
 
             if (data.ok && data.data?.token && data.data?.user) {
               authStore.setUser(data.data.user, data.data.token)
+              storeAuthUid(currentTgId)
               meetingStore.loadLatest()
               return
             }
@@ -106,6 +116,7 @@ export default function App() {
           })
           if (data.ok && data.data?.token && data.data?.user) {
             authStore.setUser(data.data.user, data.data.token)
+            storeAuthUid(devId)
             meetingStore.loadLatest()
             return
           }
