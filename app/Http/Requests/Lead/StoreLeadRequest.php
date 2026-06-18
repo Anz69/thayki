@@ -45,6 +45,7 @@ class StoreLeadRequest extends FormRequest
             'trip_days_from' => ['nullable', 'integer', 'min:1', 'max:60'],
             'trip_days_to' => ['nullable', 'integer', 'min:1', 'max:60'],
             'trip_city' => ['nullable', 'string', 'max:120'],
+            'trip_purpose' => ['nullable', 'string', 'in:leisure,business,event,companion'],
         ];
     }
 }

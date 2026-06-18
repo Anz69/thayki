@@ -169,6 +169,13 @@
       "narrow": "Narrow",
       "medium": "Medium",
       "wide": "Wide"
+    },
+    "tripPurposeLabel": "Trip purpose",
+    "tripPurposes": {
+      "leisure": "Leisure",
+      "business": "Business",
+      "event": "Event",
+      "companion": "Companionship"
     }
   },
   "share": {
@@ -204,7 +211,8 @@
     "tripDays": "Trip days",
     "tripCity": "Trip city",
     "comments": "Comments",
-    "hips": "Hips"
+    "hips": "Hips",
+    "tripPurpose": "Trip purpose"
   },
   "requestModal": {
     "title": "Leave a request",

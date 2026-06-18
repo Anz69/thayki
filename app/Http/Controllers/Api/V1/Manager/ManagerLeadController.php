@@ -428,6 +428,7 @@ class ManagerLeadController extends Controller
             'trip_days_from' => $lead->trip_days_from,
             'trip_days_to' => $lead->trip_days_to,
             'trip_city' => $lead->trip_city,
+            'trip_purpose' => $lead->trip_purpose,
             'created_at' => $lead->created_at?->toIso8601String(),
             'manager_id' => $lead->manager_id,
             'identity_verified' => $lead->identity_verified_at !== null,

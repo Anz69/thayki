@@ -169,6 +169,13 @@
       "narrow": "Узкие",
       "medium": "Средние",
       "wide": "Большие"
+    },
+    "tripPurposeLabel": "Цель поездки",
+    "tripPurposes": {
+      "leisure": "Отдых",
+      "business": "Деловая",
+      "event": "Мероприятие",
+      "companion": "Сопровождение"
     }
   },
   "share": {
@@ -204,7 +211,8 @@
     "tripDays": "Дней в поездке",
     "tripCity": "Город поездки",
     "comments": "Комментарии",
-    "hips": "Бёдра"
+    "hips": "Бёдра",
+    "tripPurpose": "Цель поездки"
   },
   "requestModal": {
     "title": "Оставить заявку",

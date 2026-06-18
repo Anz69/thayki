@@ -69,6 +69,7 @@ function typageRows(v, t) {
     if (v.event_type === 'trip') {
       if (v.trip_days_from) s += ` · ${v.trip_days_from}–${v.trip_days_to} ${U('unitDay')}`
       if (v.trip_city) s += ` · ${v.trip_city}`
+      if (v.trip_purpose) s += ` · ${U(`tripPurposes.${v.trip_purpose}`)}`
     }
     rows.push([U('event'), s])
   } else if (v.goal) {

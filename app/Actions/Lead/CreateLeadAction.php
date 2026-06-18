@@ -64,6 +64,7 @@ class CreateLeadAction
                 'trip_days_from' => $int('trip_days_from'),
                 'trip_days_to' => $int('trip_days_to'),
                 'trip_city' => $str('trip_city'),
+                'trip_purpose' => $str('trip_purpose'),
 
                 'identity_verified_at' => $client->phone_verified_at !== null ? now() : null,
             ]);
