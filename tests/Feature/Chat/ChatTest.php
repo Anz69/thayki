@@ -78,3 +78,19 @@ it('marks requisites chat read per participant without global message read_at', 
     $managerBParticipant = $chat->participants()->where('user_id', $managerB->id)->first();
     expect($managerBParticipant)->toBeNull();
 });
+
+it('returns support chat client name in messages meta for managers', function (): void {
+    $client = User::factory()->create(['first_name' => 'Ivan', 'last_name' => 'Petrov']);
+    $manager = User::factory()->create(['role' => \App\Enums\UserRole::Manager]);
+
+    $chat = Chat::query()->create(['type' => ChatType::Support]);
+    $chat->participants()->create(['user_id' => $client->id, 'role' => ChatParticipantRole::Client]);
+    $chat->participants()->create(['user_id' => $manager->id, 'role' => ChatParticipantRole::Support]);
+
+    Sanctum::actingAs($manager, ['role:manager']);
+
+    $response = $this->getJson("/api/v1/chats/{$chat->id}/messages");
+    $response->assertOk();
+    $response->assertJsonPath('meta.chat.type', 'support');
+    $response->assertJsonPath('meta.chat.title', 'Ivan Petrov');
+});

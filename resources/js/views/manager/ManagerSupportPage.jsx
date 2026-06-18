@@ -61,7 +61,7 @@ export default function ManagerSupportPage() {
   const open = (it) => {
     if (!it.chat_id) return
     const title = it.client?.name || t('manager.support')
-    navigate(`/request/chat?id=${it.chat_id}&from=${encodeURIComponent('/manager/support')}&title=${encodeURIComponent(title)}`)
+    navigate(`/request/chat?id=${it.chat_id}&kind=support&from=${encodeURIComponent('/manager/support')}&title=${encodeURIComponent(title)}`)
   }
 
   return (

@@ -198,12 +198,17 @@ export default function RequestChatPage() {
 
   const chatId  = Number(params.get('id') || 0) || null
   const leadId  = params.get('lead')
+  const chatKind = params.get('kind')
+  const urlTitle = params.get('title')
   const backTo  = params.get('from') || '/home'
-  const isGroup = params.get('kind') === 'requisites'
+  const isGroup = chatKind === 'requisites'
 
   const role     = auth.user?.role
   const isStaff  = role === 'manager' || role === 'admin'
-  const isLead   = !!leadId
+  const [chatInfo, setChatInfo] = useState(null)
+  const [leadMeta, setLeadMeta] = useState(null)
+  const isLead   = !!leadId || chatInfo?.type === 'lead' || leadMeta?.id != null
+  const resolvedLeadId = leadId || (leadMeta?.id != null ? String(leadMeta.id) : null)
 
   const [messages, setMessages]   = useState([])
   const [leadClosed, setLeadClosed] = useState(false)
@@ -229,9 +234,33 @@ export default function RequestChatPage() {
 
   const groupChatTitle = role === 'requisite' ? t('requisites.chatTitleRequisite') : t('requisites.chatTitle')
 
-  const chatHeaderTitle = isGroup
-    ? groupChatTitle
-    : `${t('requestChat.title')}${leadId ? ` #${leadId}` : ''}`
+  const chatHeaderTitle = useMemo(() => {
+    const type = chatInfo?.type ?? (isGroup ? 'requisites' : chatKind)
+
+    if (type === 'requisites' || isGroup) {
+      return groupChatTitle
+    }
+
+    if (type === 'lead' || isLead) {
+      return resolvedLeadId ? `${t('requestChat.title')} #${resolvedLeadId}` : t('requestChat.title')
+    }
+
+    if (type === 'support' || chatKind === 'support') {
+      if (isStaff) return chatInfo?.title || urlTitle || t('manager.support')
+      return t('support.title')
+    }
+
+    if (isStaff && urlTitle) return urlTitle
+
+    return t('support.title')
+  }, [chatInfo, isGroup, chatKind, isLead, resolvedLeadId, isStaff, urlTitle, groupChatTitle, t])
+
+  const ingestChatMeta = useCallback((meta) => {
+    if (meta?.chat) setChatInfo(meta.chat)
+    if (meta?.lead) setLeadMeta(meta.lead)
+    if (meta?.lead?.status) setLeadStatus(meta.lead.status)
+    if (meta?.lead?.closed != null) setLeadClosed(!!meta.lead.closed)
+  }, [])
 
   const ingestParticipantsRead = useCallback((meta) => {
     if (!isGroup || !meta?.participants_read) return
@@ -322,10 +351,11 @@ export default function RequestChatPage() {
           return next
         })
         ingestParticipantsRead(res.data.meta)
+        ingestChatMeta(res.data.meta)
         setLeadClosed(!!res.data.meta?.lead?.closed)
       })
       .catch(logError)
-  }, [chatId, myId, isGroup, isStaff, ingestParticipantsRead])
+  }, [chatId, myId, isGroup, isStaff, ingestParticipantsRead, ingestChatMeta])
 
   const loadOlder = useCallback(async () => {
     if (loadingOlderRef.current || !hasMoreOlderRef.current || !chatId || oldestIdRef.current == null) return
@@ -406,6 +436,11 @@ export default function RequestChatPage() {
   const mustAccept = isStaff && isLead && leadStatus === 'new'
 
   useEffect(() => {
+    setChatInfo(null)
+    setLeadMeta(null)
+  }, [chatId])
+
+  useEffect(() => {
     if (!chatId) { navigate('/home', { replace: true }); return }
     api.get(`/chats/${chatId}/messages`, { params: { limit: 30 } })
       .then((res) => {
@@ -413,6 +448,7 @@ export default function RequestChatPage() {
         const normalized = data.map((m) => normalizeMsg(m, myId, isStaff, isGroup))
         prevMsgCount.current = normalized.length
         setMessages(normalized)
+        ingestChatMeta(res.data.meta)
         setLeadClosed(!!res.data.meta?.lead?.closed)
         ingestParticipantsRead(res.data.meta)
         oldestIdRef.current = res.data.meta?.cursor?.next_before_id ?? data[0]?.id ?? null
@@ -420,7 +456,7 @@ export default function RequestChatPage() {
       })
       .catch(logError)
       .finally(() => { setInitialLoad(false); loadDone.current = true; tryShowContent() })
-  }, [chatId, myId, navigate, isGroup, isStaff, ingestParticipantsRead])
+  }, [chatId, myId, navigate, isGroup, isStaff, ingestParticipantsRead, ingestChatMeta])
 
   useEffect(() => {
     if (!chatId) return undefined

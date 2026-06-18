@@ -139,7 +139,7 @@ class ChatController extends Controller
         $messages = $query->limit($limit)->get();
         $next = $messages->last()?->id;
 
-        $meta = ['cursor' => ['next_before_id' => $next, 'limit' => $limit]];
+        $meta = ['cursor' => ['next_before_id' => $next, 'limit' => $limit], 'chat' => ['type' => $chat->type->value]];
 
         if ($chat->type === ChatType::Lead) {
             $lead = Lead::query()->where('chat_id', $chat->id)->first();
@@ -150,6 +150,11 @@ class ChatController extends Controller
                     'closed' => in_array($lead->status, [LeadStatus::Closed, LeadStatus::Completed], true),
                 ];
             }
+        }
+
+        if ($chat->type === ChatType::Support
+            && in_array($user->role, [UserRole::Manager, UserRole::Admin], true)) {
+            $meta['chat']['title'] = $this->supportChatClientName($chat);
         }
 
         if ($chat->type === ChatType::Requisites) {
@@ -307,5 +312,19 @@ class ChatController extends Controller
                 ? \App\Enums\ChatParticipantRole::Requisites
                 : \App\Enums\ChatParticipantRole::Support,
         ]);
+    }
+
+    private function supportChatClientName(Chat $chat): string
+    {
+        $chat->loadMissing('participants.user');
+        $participant = $chat->participants->first(
+            fn ($p) => ! in_array($p->user?->role, [UserRole::Admin, UserRole::Manager], true)
+        );
+        $user = $participant?->user;
+        if ($user === null) {
+            return '—';
+        }
+
+        return trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: ($user->username ?? '—');
     }
 }
