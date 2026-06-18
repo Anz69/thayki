@@ -45,45 +45,57 @@ export default function App() {
       if (initData) {
         const startParam   = tg?.initDataUnsafe?.start_param ?? ''
         const { browserToken, inviteToken } = parseTelegramStartParam(startParam)
-
-        try {
-          const { data } = await api.post('/auth/telegram', {
-            init_data: initData,
-            ...(browserToken ? { browser_token: browserToken } : {}),
-            ...(inviteToken  ? { invite_token:  inviteToken  } : {}),
-          })
-
-          if (data.ok && data.data?.token && data.data?.user) {
-            authStore.setUser(data.data.user, data.data.token)
-            meetingStore.loadLatest()
-            return
-          }
-        } catch (err) {
-          logWarn('[App auth] /auth/telegram failed', {
-            hasInitData: !!initData,
-            hasBrowserToken: !!browserToken,
-            hasInviteToken: !!inviteToken,
-            error: err?.message,
-          })
-          const code = err?.response?.data?.error?.code
-          if (code === 'USER_BANNED') {
-            authStore.setBanned()
-            return
-          }
-          const detail = {
-            step: 'POST /auth/telegram',
-            status: err?.response?.status ?? null,
-            code: code ?? null,
-            message: err?.response?.data?.error?.message ?? err?.message ?? null,
-            hasBrowserToken: !!browserToken,
-            hasInviteToken: !!inviteToken,
-          }
-          authStore.setNeedsLogin('Telegram вернул ошибку авторизации. Попробуйте перезагрузить через несколько секунд.', detail)
-          return
+        const payload = {
+          init_data: initData,
+          ...(browserToken ? { browser_token: browserToken } : {}),
+          ...(inviteToken  ? { invite_token:  inviteToken  } : {}),
         }
 
-        authStore.setNeedsLogin(null, { step: 'POST /auth/telegram', message: 'Ответ сервера не содержал токен' })
-        return
+        // Boot login is a POST, so the global retry interceptor skips it. Retry transient
+        // network/5xx failures here so a momentary connection blip (common when opening from a
+        // notification) doesn't dead-end on a blank/error screen.
+        for (let attempt = 0; ; attempt++) {
+          try {
+            const { data } = await api.post('/auth/telegram', payload, { timeout: 12000 })
+
+            if (data.ok && data.data?.token && data.data?.user) {
+              authStore.setUser(data.data.user, data.data.token)
+              meetingStore.loadLatest()
+              return
+            }
+            authStore.setNeedsLogin(null, { step: 'POST /auth/telegram', message: 'Ответ сервера не содержал токен' })
+            return
+          } catch (err) {
+            const status = err?.response?.status ?? null
+            const code = err?.response?.data?.error?.code
+            if (code === 'USER_BANNED') {
+              authStore.setBanned()
+              return
+            }
+            const transient = !err?.response || (status >= 500 && status <= 599)
+            if (transient && attempt < 3) {
+              await new Promise((res) => setTimeout(res, 800 * (attempt + 1)))
+              continue
+            }
+            logWarn('[App auth] /auth/telegram failed', {
+              hasInitData: !!initData,
+              hasBrowserToken: !!browserToken,
+              hasInviteToken: !!inviteToken,
+              attempt,
+              error: err?.message,
+            })
+            const detail = {
+              step: 'POST /auth/telegram',
+              status,
+              code: code ?? null,
+              message: err?.response?.data?.error?.message ?? err?.message ?? null,
+              hasBrowserToken: !!browserToken,
+              hasInviteToken: !!inviteToken,
+            }
+            authStore.setNeedsLogin('Telegram вернул ошибку авторизации. Попробуйте перезагрузить через несколько секунд.', detail)
+            return
+          }
+        }
       }
 
       if (appEnv === 'local') {

@@ -150,6 +150,9 @@ class ManagerLeadController extends Controller
                     ['status' => LeadCryptoAddress::STATUS_PENDING],
                 );
             }
+            // Pre-generate addresses in the background so the client's payment sheet opens fast
+            // instead of waiting on lazy, rate-limited generation. Lazy generation stays as fallback.
+            \App\Jobs\GenerateLeadCryptoAddressesJob::dispatch($lead->id, $message->id);
         }
 
         $lead->update(['status' => LeadStatus::AwaitingPayment]);
