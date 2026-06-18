@@ -560,6 +560,11 @@
   },
   "requisites": {
     "title": "Manager chats",
-    "empty": "No manager messages yet"
+    "empty": "No manager messages yet",
+    "chatTitle": "Chat with managers"
+  },
+  "requisitesChat": {
+    "tagRequisites": "Requisites",
+    "tagManager": "Manager"
   }
 }

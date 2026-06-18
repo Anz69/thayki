@@ -560,6 +560,11 @@
   },
   "requisites": {
     "title": "经理对话",
-    "empty": "暂无经理消息"
+    "empty": "暂无经理消息",
+    "chatTitle": "与经理的聊天"
+  },
+  "requisitesChat": {
+    "tagRequisites": "账务",
+    "tagManager": "经理"
   }
 }

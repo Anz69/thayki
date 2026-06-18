@@ -97,9 +97,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
         Route::get('/chats/support', [ChatController::class, 'support'])->name('chats.support');
         Route::get('/chats/requisites', [ChatController::class, 'requisites'])
-            ->middleware('role:manager,admin')->name('chats.requisites');
-        Route::get('/requisites/chats', [\App\Http\Controllers\Api\V1\Requisites\RequisitesInboxController::class, 'index'])
-            ->middleware('role:requisite,admin')->name('requisites.chats');
+            ->middleware('role:manager,admin,requisite')->name('chats.requisites');
         Route::get('/chats/meetings/{meeting}', [ChatController::class, 'showForMeeting'])->name('chats.meeting');
         Route::get('/chats/{chat}/messages', [ChatController::class, 'messages'])->name('chats.messages');
         Route::post('/chats/{chat}/messages', [ChatController::class, 'postMessage'])

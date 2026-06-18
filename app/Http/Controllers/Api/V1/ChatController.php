@@ -196,10 +196,12 @@ class ChatController extends Controller
 
         if (! $chat->isParticipant($user)
             && $chat->type === ChatType::Requisites
-            && in_array($user->role, [UserRole::Requisite, UserRole::Admin], true)) {
+            && in_array($user->role, [UserRole::Requisite, UserRole::Manager, UserRole::Admin], true)) {
             $chat->participants()->create([
                 'user_id' => $user->id,
-                'role' => \App\Enums\ChatParticipantRole::Requisites,
+                'role' => $user->role === UserRole::Requisite
+                    ? \App\Enums\ChatParticipantRole::Requisites
+                    : \App\Enums\ChatParticipantRole::Support,
             ]);
             $chat->load('participants');
         }
@@ -248,8 +250,9 @@ class ChatController extends Controller
             return true;
         }
 
-        // Requisites staff may read/answer any requisites chat (shared desk).
-        if ($user->role === UserRole::Requisite && $chat->type === ChatType::Requisites) {
+        // The shared requisites chat is open to managers, admins and requisites staff.
+        if ($chat->type === ChatType::Requisites
+            && in_array($user->role, [UserRole::Manager, UserRole::Admin, UserRole::Requisite], true)) {
             return true;
         }
 

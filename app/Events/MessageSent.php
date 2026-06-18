@@ -49,10 +49,12 @@ class MessageSent implements ShouldBroadcastNow
             'attachment_url'  => $this->message->attachmentUrl(),
             'attachment_mime' => $this->message->attachment_mime,
             'created_at'      => $this->message->created_at?->toIso8601String(),
+            'sender_role'     => $sender?->role?->value,
             'user'            => $sender ? [
                 'id'     => $sender->id,
                 'name'   => trim(($sender->first_name ?? '').' '.($sender->last_name ?? '')) ?: ($sender->username ?? 'User'),
                 'avatar' => $sender->photo_url,
+                'role'   => $sender->role?->value,
             ] : null,
         ];
     }

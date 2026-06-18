@@ -39,6 +39,7 @@ class MessageResource extends JsonResource
             'is_support'      => $this->whenLoaded('sender', fn () =>
                 in_array($this->sender?->role?->value, ['admin', 'support', 'manager'])
             ),
+            'sender_role'     => $this->whenLoaded('sender', fn () => $this->sender?->role?->value),
         ];
     }
 }

@@ -97,17 +97,19 @@ function fmtTime(iso) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-function normalizeMsg(raw, myUserId, viewerIsStaff = false) {
+function normalizeMsg(raw, myUserId, viewerIsStaff = false, group = false) {
   const isMe = raw.user_id === myUserId || raw.sender_id === myUserId
   const isStaffMsg = raw.is_support === true || (isMe && viewerIsStaff)
-  const from = viewerIsStaff
-    ? (isStaffMsg ? 'user' : 'them')
-    : (isMe ? 'user' : 'them')
+  const from = group
+    ? (isMe ? 'user' : 'them')
+    : (viewerIsStaff ? (isStaffMsg ? 'user' : 'them') : (isMe ? 'user' : 'them'))
   return {
     id: raw.id,
     clientMessageId: raw.client_message_id ?? raw.clientMessageId ?? null,
     from,
     isSupport: isStaffMsg,
+    senderName: raw.user?.name ?? raw.senderName ?? null,
+    senderRole: raw.sender_role ?? raw.user?.role ?? raw.senderRole ?? null,
     text: raw.body ?? raw.text ?? '',
     time: raw.created_at ? fmtTime(raw.created_at) : (raw.time ?? ''),
     createdAt: raw.created_at ?? raw.createdAt ?? null,
@@ -118,8 +120,8 @@ function normalizeMsg(raw, myUserId, viewerIsStaff = false) {
   }
 }
 
-function mergeIncomingMessage(prev, incoming, myId, viewerIsStaff = false) {
-  const n = normalizeMsg(incoming, myId, viewerIsStaff)
+function mergeIncomingMessage(prev, incoming, myId, viewerIsStaff = false, group = false) {
+  const n = normalizeMsg(incoming, myId, viewerIsStaff, group)
   const byServerId = prev.findIndex((m) => String(m.id) === String(n.id))
   if (byServerId !== -1) {
     const next = prev.slice(); next[byServerId] = { ...next[byServerId], ...n, uploading: false }; return next
@@ -162,6 +164,7 @@ export default function RequestChatPage() {
   const chatId  = Number(params.get('id') || 0) || null
   const leadId  = params.get('lead')
   const backTo  = params.get('from') || '/home'
+  const isGroup = params.get('kind') === 'requisites'
 
   const role     = auth.user?.role
   const isStaff  = role === 'manager' || role === 'admin'
@@ -261,9 +264,9 @@ export default function RequestChatPage() {
       .then((res) => {
         const incoming = res.data.data ?? []
         setMessages((prev) => {
-          if (!prev.length) return incoming.map((m) => normalizeMsg(m, myId, isStaff))
+          if (!prev.length) return incoming.map((m) => normalizeMsg(m, myId, isStaff, isGroup))
           let next = prev
-          for (const raw of incoming) next = mergeIncomingMessage(next, raw, myId, isStaff)
+          for (const raw of incoming) next = mergeIncomingMessage(next, raw, myId, isStaff, isGroup)
           return next
         })
         setLeadClosed(!!res.data.meta?.lead?.closed)
@@ -283,7 +286,7 @@ export default function RequestChatPage() {
       hasMoreOlderRef.current = data.length >= 30
       if (data.length) {
         oldestIdRef.current = res.data.meta?.cursor?.next_before_id ?? data[0]?.id ?? oldestIdRef.current
-        const older = data.map((m) => normalizeMsg(m, myId, isStaff))
+        const older = data.map((m) => normalizeMsg(m, myId, isStaff, isGroup))
         prependingRef.current = true
         setMessages((prev) => {
           const ids = new Set(prev.map((m) => String(m.id)))
@@ -354,7 +357,7 @@ export default function RequestChatPage() {
     api.get(`/chats/${chatId}/messages`, { params: { limit: 30 } })
       .then((res) => {
         const data = res.data.data ?? []
-        const normalized = data.map((m) => normalizeMsg(m, myId, isStaff))
+        const normalized = data.map((m) => normalizeMsg(m, myId, isStaff, isGroup))
         prevMsgCount.current = normalized.length
         setMessages(normalized)
         setLeadClosed(!!res.data.meta?.lead?.closed)
@@ -370,7 +373,7 @@ export default function RequestChatPage() {
     return subscribePrivate(`chats.${chatId}`, {
       '.message.sent': (e) => {
         const incoming = e.message ?? e
-        setMessages((prev) => mergeIncomingMessage(prev, incoming, myId, isStaff))
+        setMessages((prev) => mergeIncomingMessage(prev, incoming, myId, isStaff, isGroup))
         if (String(incoming?.user_id ?? incoming?.sender_id) !== String(myId)) setOthersTyping(false)
         if (incoming?.type === 'system') setTimeout(reloadMessages, 400)
       },
@@ -495,7 +498,7 @@ export default function RequestChatPage() {
       const { data } = await api.post(`/chats/${chatId}/messages`, { body: text, client_message_id: clientMessageId }, {
         headers: { 'Idempotency-Key': `msg-${chatId}-${clientMessageId}` },
       })
-      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff))
+      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff, isGroup))
     } catch {
       setMessages((prev) => prev.map((m) => (m.id === optimisticId ? { ...m, failed: true } : m)))
     }
@@ -569,7 +572,7 @@ export default function RequestChatPage() {
       const { data } = await api.post(`/chats/${chatId}/messages`, fd, {
         headers: { 'Idempotency-Key': `att-${attachmentKey}` },
       })
-      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff))
+      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff, isGroup))
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
     } finally {
@@ -655,11 +658,22 @@ export default function RequestChatPage() {
 
               const isUser = msg.from === 'user'
               const prevMsg = messages[idx - 1]
-              const isFirstInGroup = !prevMsg || prevMsg.from !== msg.from
+              const isFirstInGroup = !prevMsg || prevMsg.from !== msg.from || prevMsg.senderName !== msg.senderName
               const gap = isFirstInGroup && idx > 0 ? 'mt-3' : 'mt-1'
+
+              const isReq = msg.senderRole === 'requisite'
+              const senderHeader = isGroup && !isUser && isFirstInGroup && msg.senderName ? (
+                <div className="flex items-center gap-1.5 px-1 mb-1">
+                  <span className="text-[12.5px] font-semibold" style={{ color: isReq ? '#E2319B' : '#3E6CC4' }}>{msg.senderName}</span>
+                  <span className={`px-1.5 py-[1px] rounded-full text-[10px] font-semibold ${isReq ? 'bg-[#FDE8F5] text-[#E2319B]' : 'bg-[#E9F0FF] text-[#3E6CC4]'}`}>
+                    {t(isReq ? 'requisitesChat.tagRequisites' : 'requisitesChat.tagManager')}
+                  </span>
+                </div>
+              ) : null
 
               const bubble = msg.type === 'image' ? (
                 <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+                  {senderHeader}
                   <div
                     className="w-[180px] h-[160px] rounded-2xl overflow-hidden bg-[#F0F0F0] relative cursor-pointer active:opacity-80 transition-opacity"
                     onClick={() => msg.attachmentUrl && !msg.uploading && setViewerSrc(msg.attachmentUrl)}
@@ -688,7 +702,8 @@ export default function RequestChatPage() {
                 </div>
               ) : (
                 <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
-                  <div className={['max-w-[260px] px-4 py-3 rounded-3xl', isUser ? 'bg-[#1C1C1E] text-[#D2D2D2]' : 'bg-[#F0F0F0] text-black'].join(' ')}>
+                  {senderHeader}
+                  <div className={['max-w-[260px] px-4 py-3 rounded-3xl', isUser ? 'bg-[#1C1C1E] text-[#D2D2D2]' : (isGroup && isReq ? 'bg-[#FDE8F5] text-black' : 'bg-[#F0F0F0] text-black')].join(' ')}>
                     <p className="text-[15px]/[148%] font-normal" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}><CopyableContacts text={msg.text} /></p>
                   </div>
                   <span className="text-[#ABABAB] text-xs font-medium px-1 inline-flex items-center gap-1">

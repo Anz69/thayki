@@ -6,6 +6,7 @@ namespace App\Actions\Chat;
 
 use App\Enums\ChatParticipantRole;
 use App\Enums\ChatType;
+use App\Enums\UserRole;
 use App\Models\Chat;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -13,28 +14,30 @@ use Illuminate\Support\Facades\DB;
 class EnsureRequisitesChatAction
 {
     /**
-     * Find or create the requisites chat owned by the given manager.
-     * Requisites staff are added as participants when they first reply.
+     * Find (or create) the single shared requisites chat and make sure the
+     * given user (manager / admin / requisites) is a participant of it.
      */
-    public function execute(User $manager): Chat
+    public function execute(User $user): Chat
     {
-        return DB::transaction(function () use ($manager): Chat {
+        return DB::transaction(function () use ($user): Chat {
 
             $chat = Chat::query()
                 ->where('type', ChatType::Requisites)
-                ->whereHas('participants', fn ($q) => $q->where('user_id', $manager->id))
                 ->lockForUpdate()
                 ->first();
 
-            if ($chat !== null) {
-                return $chat;
+            if ($chat === null) {
+                $chat = Chat::query()->create(['type' => ChatType::Requisites]);
             }
 
-            $chat = Chat::query()->create(['type' => ChatType::Requisites]);
-            $chat->participants()->create([
-                'user_id' => $manager->id,
-                'role' => ChatParticipantRole::Support,
-            ]);
+            if (! $chat->participants()->where('user_id', $user->id)->exists()) {
+                $chat->participants()->create([
+                    'user_id' => $user->id,
+                    'role' => $user->role === UserRole::Requisite
+                        ? ChatParticipantRole::Requisites
+                        : ChatParticipantRole::Support,
+                ]);
+            }
 
             return $chat;
         });
