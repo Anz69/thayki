@@ -738,7 +738,7 @@ export default function RequestChatPage() {
               const isReq = msg.senderRole === 'requisite'
               const hideManagerName = role === 'requisite' && !isReq
               const showSenderName = isFirstInGroup && msg.senderName && !hideManagerName
-              const senderHeader = isGroup && !isUser ? (
+              const senderHeader = isGroup && !isUser && isFirstInGroup ? (
                 <div className="flex items-center gap-1.5 px-1 mb-1">
                   {showSenderName && (
                     <span className="text-[12.5px] font-semibold" style={{ color: isReq ? '#E2319B' : '#3E6CC4' }}>{msg.senderName}</span>
