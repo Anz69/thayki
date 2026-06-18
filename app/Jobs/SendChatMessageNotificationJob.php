@@ -85,22 +85,20 @@ class SendChatMessageNotificationJob implements ShouldQueue
 
             if ($chat->type === ChatType::Requisites) {
                 $openPath = "/request/chat?id={$chat->id}&kind=requisites&from=".rawurlencode('/home');
-                $senderIsRequisites = $sender?->role === UserRole::Requisite;
 
-                // Shared chat: ping everyone involved — current participants plus every
-                // requisites-staff user — except the sender.
+                // Only managers are pinged about the requisites desk. Requisites staff
+                // live inside this chat full-time, so they don't get notifications — and
+                // managers are never told which manager wrote (no sender name).
                 $recipients = $chat->participants->pluck('user')->filter()
-                    ->concat(User::query()->where('role', UserRole::Requisite->value)->get())
+                    ->filter(fn ($u) => $u?->role === UserRole::Manager)
                     ->unique('id');
 
                 foreach ($recipients as $recipient) {
-                    if ($recipient === null || $this->isSameUser($sender, $recipient)) {
+                    if ($this->isSameUser($sender, $recipient)) {
                         continue;
                     }
                     $locale = $this->localeFor($recipient);
-                    $text = $senderIsRequisites
-                        ? trans('notifications.new_message_requisites', [], $locale)
-                        : trans('notifications.new_message_requisites_in', ['name' => e($this->senderDisplayName($sender, $locale))], $locale);
+                    $text = trans('notifications.new_message_requisites', [], $locale);
                     if ($preview !== '') {
                         $text .= "\n\n".$preview;
                     }
