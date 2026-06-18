@@ -152,6 +152,18 @@ class ChatController extends Controller
             }
         }
 
+        if ($chat->type === ChatType::Requisites) {
+            $this->ensureRequisitesParticipant($chat, $user);
+            $meta['participants_read'] = $chat->participants()
+                ->get(['user_id', 'last_read_at'])
+                ->map(fn ($p) => [
+                    'user_id'      => $p->user_id,
+                    'last_read_at' => $p->last_read_at?->toIso8601String(),
+                ])
+                ->values()
+                ->all();
+        }
+
         return ApiResponse::ok(
             MessageResource::collection($messages->reverse()->values())->resolve(),
             $meta,

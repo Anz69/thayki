@@ -104,13 +104,7 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     }
 
                     $locale = $this->localeFor($recipient);
-                    if ($recipient->role === UserRole::Requisite) {
-                        $text = trans('notifications.new_message_requisites_in', [
-                            'name' => e($this->senderDisplayName($sender, $locale)),
-                        ], $locale);
-                    } else {
-                        $text = trans('notifications.new_message_requisites', [], $locale);
-                    }
+                    $text = trans('notifications.new_message_requisites', [], $locale);
                     if ($preview !== '') {
                         $text .= "\n\n".$preview;
                     }

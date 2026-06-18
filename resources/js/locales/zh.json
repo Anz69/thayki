@@ -561,7 +561,7 @@
   "requisites": {
     "title": "收款信息对话",
     "empty": "暂无消息",
-    "chatTitle": "与收款信息的聊天",
+    "chatTitle": "收款信息聊天",
     "chatTitleRequisite": "与经理的聊天"
   },
   "requisitesChat": {

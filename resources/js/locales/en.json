@@ -561,7 +561,7 @@
   "requisites": {
     "title": "Requisites chats",
     "empty": "No messages yet",
-    "chatTitle": "Chat with requisites",
+    "chatTitle": "Requisites chat",
     "chatTitleRequisite": "Chat with managers"
   },
   "requisitesChat": {

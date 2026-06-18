@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import CopyableContacts from '@/components/ui/CopyableContacts'
 import { useSearchParams } from 'react-router-dom'
@@ -109,6 +109,7 @@ function normalizeMsg(raw, myUserId, viewerIsStaff = false, group = false) {
     from,
     isSupport: isStaffMsg,
     senderName: raw.user?.name ?? raw.senderName ?? null,
+    senderId: raw.sender_id ?? raw.user_id ?? raw.user?.id ?? null,
     senderRole: raw.sender_role ?? raw.user?.role ?? raw.senderRole ?? null,
     text: raw.body ?? raw.text ?? '',
     time: raw.created_at ? fmtTime(raw.created_at) : (raw.time ?? ''),
@@ -140,6 +141,40 @@ function mergeIncomingMessage(prev, incoming, myId, viewerIsStaff = false, group
     if (i !== -1) { const next = prev.slice(); next[i] = { ...next[i], ...n, uploading: false }; return next }
   }
   return [...prev, n]
+}
+
+function parseParticipantsRead(list) {
+  const map = {}
+  if (!Array.isArray(list)) return map
+  for (const p of list) {
+    if (p?.user_id != null && p?.last_read_at) {
+      map[String(p.user_id)] = p.last_read_at
+    }
+  }
+  return map
+}
+
+function peerReadAtForMessage(msg, myId, peerReadAt) {
+  if (msg.from !== 'user' || !msg.createdAt) return null
+  const created = new Date(msg.createdAt).getTime()
+  let best = null
+  for (const [uid, at] of Object.entries(peerReadAt)) {
+    if (String(uid) === String(myId)) continue
+    const ts = new Date(at).getTime()
+    if (Number.isNaN(ts) || ts < created) continue
+    if (!best || ts > new Date(best).getTime()) best = at
+  }
+  return best
+}
+
+function applyGroupReadState(messages, myId, peerReadAt) {
+  return messages.map((m) => {
+    if (m.from !== 'user') return m
+    const peerAt = peerReadAtForMessage(m, myId, peerReadAt)
+    if (!peerAt) return m
+    if (m.readAt && new Date(m.readAt).getTime() >= new Date(peerAt).getTime()) return m
+    return { ...m, readAt: peerAt }
+  })
 }
 
 function ManagerNote({ text }) {
@@ -177,6 +212,7 @@ export default function RequestChatPage() {
   const [cancelOpen, setCancelOpen] = useState(false)
   const [cancelBusy, setCancelBusy] = useState(false)
   const [othersTyping, setOthersTyping] = useState(false)
+  const [peerReadAt, setPeerReadAt] = useState({})
   const typingHideRef = useRef(null)
   const lastTypingSentRef = useRef(0)
   const typingPingRef = useRef(null)
@@ -196,6 +232,16 @@ export default function RequestChatPage() {
   const chatHeaderTitle = isGroup
     ? groupChatTitle
     : `${t('requestChat.title')}${leadId ? ` #${leadId}` : ''}`
+
+  const ingestParticipantsRead = useCallback((meta) => {
+    if (!isGroup || !meta?.participants_read) return
+    setPeerReadAt(parseParticipantsRead(meta.participants_read))
+  }, [isGroup])
+
+  const displayMessages = useMemo(
+    () => (isGroup ? applyGroupReadState(messages, myId, peerReadAt) : messages),
+    [messages, isGroup, myId, peerReadAt],
+  )
 
   const hasText = inputText.trim().length > 0
 
@@ -275,10 +321,11 @@ export default function RequestChatPage() {
           for (const raw of incoming) next = mergeIncomingMessage(next, raw, myId, isStaff, isGroup)
           return next
         })
+        ingestParticipantsRead(res.data.meta)
         setLeadClosed(!!res.data.meta?.lead?.closed)
       })
       .catch(logError)
-  }, [chatId, myId])
+  }, [chatId, myId, isGroup, isStaff, ingestParticipantsRead])
 
   const loadOlder = useCallback(async () => {
     if (loadingOlderRef.current || !hasMoreOlderRef.current || !chatId || oldestIdRef.current == null) return
@@ -367,12 +414,13 @@ export default function RequestChatPage() {
         prevMsgCount.current = normalized.length
         setMessages(normalized)
         setLeadClosed(!!res.data.meta?.lead?.closed)
+        ingestParticipantsRead(res.data.meta)
         oldestIdRef.current = res.data.meta?.cursor?.next_before_id ?? data[0]?.id ?? null
         hasMoreOlderRef.current = data.length >= 30
       })
       .catch(logError)
       .finally(() => { setInitialLoad(false); loadDone.current = true; tryShowContent() })
-  }, [chatId, myId, navigate])
+  }, [chatId, myId, navigate, isGroup, isStaff, ingestParticipantsRead])
 
   useEffect(() => {
     if (!chatId) return undefined
@@ -384,7 +432,14 @@ export default function RequestChatPage() {
         if (incoming?.type === 'system') setTimeout(reloadMessages, 400)
       },
       '.messages.read': (e) => {
-        if (isGroup || e.user_id === myId) return
+        if (e.user_id === myId) return
+        if (isGroup) {
+          setPeerReadAt((prev) => ({
+            ...prev,
+            [String(e.user_id)]: e.read_at ?? new Date().toISOString(),
+          }))
+          return
+        }
         const readAt = e.read_at ?? new Date().toISOString()
         setMessages((prev) => prev.map((m) => (m.from === 'user' && !m.readAt ? { ...m, readAt } : m)))
       },
@@ -393,18 +448,27 @@ export default function RequestChatPage() {
         if (e.status) setLeadStatus(e.status)
       },
     })
-  }, [chatId, myId, reloadMessages])
+  }, [chatId, myId, reloadMessages, isGroup, isStaff])
 
   useEffect(() => {
     if (!chatId) return undefined
     const ch = privateChannel(`chats.${chatId}`)
     if (!ch || typeof ch.listenForWhisper !== 'function') return undefined
-    const onTyping = () => {
+    const isSelf = (payload) => {
+      const from = payload?.from ?? payload?.user_id
+      return from != null && String(from) === String(myId)
+    }
+    const onTyping = (payload) => {
+      if (isSelf(payload)) return
       setOthersTyping(true)
       clearTimeout(typingHideRef.current)
       typingHideRef.current = setTimeout(() => setOthersTyping(false), 6000)
     }
-    const onStop = () => { clearTimeout(typingHideRef.current); setOthersTyping(false) }
+    const onStop = (payload) => {
+      if (isSelf(payload)) return
+      clearTimeout(typingHideRef.current)
+      setOthersTyping(false)
+    }
     try { ch.listenForWhisper('typing', onTyping) } catch {}
     try { ch.listenForWhisper('typing-stop', onStop) } catch {}
     return () => {
@@ -418,10 +482,10 @@ export default function RequestChatPage() {
     const now = Date.now()
     if (now - lastTypingSentRef.current < 1500) return
     lastTypingSentRef.current = now
-    try { privateChannel(`chats.${chatId}`)?.whisper?.('typing', { from: myId }) } catch {}
+    try { privateChannel(`chats.${chatId}`)?.whisper?.('typing', { from: myId, role }) } catch {}
     clearTimeout(typingPingRef.current)
     typingPingRef.current = setTimeout(() => sendStopTyping(), 15000)
-  }, [chatId, myId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [chatId, myId, role]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendStopTyping = useCallback(() => {
     clearTimeout(typingPingRef.current)
@@ -635,7 +699,7 @@ export default function RequestChatPage() {
                 <div className="w-5 h-5 rounded-full border-2 border-[#E2319B] border-t-transparent animate-spin" />
               </div>
             )}
-            {messages.map((msg, idx) => {
+            {displayMessages.map((msg, idx) => {
               if (msg.type === 'system') {
                 const ok = typeof msg.text === 'string' && msg.text.trimStart().startsWith('✅')
                 const text = ok ? msg.text.replace(/^\s*✅\s*/, '') : msg.text
@@ -665,15 +729,18 @@ export default function RequestChatPage() {
               }
 
               const isUser = msg.from === 'user'
-              const prevMsg = messages[idx - 1]
-              const isFirstInGroup = !prevMsg || prevMsg.from !== msg.from || prevMsg.senderName !== msg.senderName
+              const prevMsg = displayMessages[idx - 1]
+              const isFirstInGroup = !prevMsg
+                || prevMsg.from !== msg.from
+                || prevMsg.senderId !== msg.senderId
               const gap = isFirstInGroup && idx > 0 ? 'mt-3' : 'mt-1'
 
               const isReq = msg.senderRole === 'requisite'
               const hideManagerName = role === 'requisite' && !isReq
-              const senderHeader = isGroup && !isUser && isFirstInGroup && msg.senderName ? (
+              const showSenderName = isFirstInGroup && msg.senderName && !hideManagerName
+              const senderHeader = isGroup && !isUser ? (
                 <div className="flex items-center gap-1.5 px-1 mb-1">
-                  {!hideManagerName && (
+                  {showSenderName && (
                     <span className="text-[12.5px] font-semibold" style={{ color: isReq ? '#E2319B' : '#3E6CC4' }}>{msg.senderName}</span>
                   )}
                   <span className={`px-1.5 py-[1px] rounded-full text-[10px] font-semibold ${isReq ? 'bg-[#FDE8F5] text-[#E2319B]' : 'bg-[#E9F0FF] text-[#3E6CC4]'}`}>
@@ -702,7 +769,7 @@ export default function RequestChatPage() {
                       <button type="button" onClick={() => retryMessage(msg)} className="inline-flex items-center text-[#E5484D] active:scale-90 transition-transform" aria-label="retry">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
                       </button>
-                    ) : isUser && !isGroup && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
+                    ) : isUser && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
                       <svg key={msg.readAt ? 'read' : 'sent'} width="17" height="13" viewBox="0 0 24 24" fill="currentColor" className={`tick-anim ${msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'}`} aria-hidden>
                         {msg.readAt
                           ? <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
@@ -723,7 +790,7 @@ export default function RequestChatPage() {
                       <button type="button" onClick={() => retryMessage(msg)} className="inline-flex items-center text-[#E5484D] active:scale-90 transition-transform" aria-label="retry">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5v5M12 15.6v.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" /></svg>
                       </button>
-                    ) : isUser && !isGroup && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
+                    ) : isUser && !msg.uploading && !String(msg.id).startsWith('opt-') ? (
                       <svg key={msg.readAt ? 'read' : 'sent'} width="17" height="13" viewBox="0 0 24 24" fill="currentColor" className={`tick-anim ${msg.readAt ? 'text-[#E2319B]' : 'text-[#ABABAB]'}`} aria-hidden>
                         {msg.readAt
                           ? <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
@@ -758,11 +825,16 @@ export default function RequestChatPage() {
               )
             })}
             {othersTyping && (
-              <div className="flex justify-start mt-2">
-                <div className="typing-bubble bg-[#F0F0F0] rounded-3xl rounded-bl-lg px-4 py-3 inline-flex items-center gap-1.5" role="status" aria-label={t('requestChat.typing')}>
-                  <span className="typing-dot" style={{ animationDelay: '0ms' }} />
-                  <span className="typing-dot" style={{ animationDelay: '180ms' }} />
-                  <span className="typing-dot" style={{ animationDelay: '360ms' }} />
+              <div className={`flex mt-2 ${isGroup ? 'justify-start' : 'justify-start'}`}>
+                <div className={`typing-bubble rounded-3xl rounded-bl-lg px-4 py-3 inline-flex items-center gap-2 ${isGroup ? 'bg-[#F0F0F0]' : 'bg-[#F0F0F0]'}`} role="status" aria-label={t('requestChat.typing')}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="typing-dot" style={{ animationDelay: '0ms' }} />
+                    <span className="typing-dot" style={{ animationDelay: '180ms' }} />
+                    <span className="typing-dot" style={{ animationDelay: '360ms' }} />
+                  </span>
+                  {isGroup && (
+                    <span className="text-[#9B9AA0] text-[12px] font-medium">{t('requestChat.typing')}</span>
+                  )}
                 </div>
               </div>
             )}

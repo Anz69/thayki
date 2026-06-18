@@ -7,7 +7,6 @@ return [
     'new_message_lead' => '📩 申请 #:id 有新消息',
     'new_message_support' => '🛟 客服发来新消息',
     'new_message_support_in' => '🛟 <b>:name</b> 发来新的客服消息',
-    'new_message_requisites_in' => '💳 <b>:name</b> 发来账务消息',
     'new_message_requisites' => '💳 账务部门发来新消息',
     'open_chat' => '打开聊天',
     'support' => '客服',

@@ -561,7 +561,7 @@
   "requisites": {
     "title": "Чаты с реквизитами",
     "empty": "Пока нет сообщений",
-    "chatTitle": "Чат с реквизитами",
+    "chatTitle": "Чат по реквизитам",
     "chatTitleRequisite": "Чат с менеджерами"
   },
   "requisitesChat": {

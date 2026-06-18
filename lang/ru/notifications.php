@@ -7,7 +7,6 @@ return [
     'new_message_lead' => '📩 Новое сообщение в заявке #:id',
     'new_message_support' => '🛟 Новое сообщение от поддержки',
     'new_message_support_in' => '🛟 Новое сообщение в поддержку от <b>:name</b>',
-    'new_message_requisites_in' => '💳 Сообщение по реквизитам от <b>:name</b>',
     'new_message_requisites' => '💳 Новое сообщение по реквизитам',
     'open_chat' => 'Открыть чат',
     'support' => 'Поддержка',
