@@ -609,7 +609,7 @@ export default function RequestChatPage() {
             </button>
           )}
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500] max-w-[50%] truncate">
-            {params.get('title') || `${t('requestChat.title')}${leadId ? ` #${leadId}` : ''}`}
+            {params.get('title') || (isGroup ? t('requisites.chatTitle') : `${t('requestChat.title')}${leadId ? ` #${leadId}` : ''}`)}
           </span>
           {isStaff && isLead && <HeaderLeadStatus status={leadStatus} onChange={changeLeadStatus} />}
         </div>

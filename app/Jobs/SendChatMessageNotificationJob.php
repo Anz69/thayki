@@ -84,7 +84,9 @@ class SendChatMessageNotificationJob implements ShouldQueue
             $notified = [];
 
             if ($chat->type === ChatType::Requisites) {
-                $openPath = "/request/chat?id={$chat->id}&kind=requisites&from=".rawurlencode('/home');
+                // Resolve through the gate so the link always lands on the live shared
+                // chat (the id may have been folded away) with the right title/back state.
+                $openPath = '/requisites/open';
 
                 // Only managers are pinged about the requisites desk. Requisites staff
                 // live inside this chat full-time, so they don't get notifications — and

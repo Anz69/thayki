@@ -430,6 +430,7 @@ export default function App() {
                         <Route path="/support" element={<SupportPage />} />
                         <Route path="/request" element={<RequestPage />} />
                         <Route path="/request/chat" element={<RequestChatPage />} />
+                        <Route path="/requisites/open" element={<RequisitesChatGate />} />
                         <Route path="/requests" element={<RequestsPage />} />
                         <Route path="/manager" element={<Navigate to="/home" replace />} />
                         <Route path="/manager/leads" element={<ManagerLeadsPage />} />
