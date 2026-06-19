@@ -21,3 +21,16 @@ yarn-error.log
 /.zed
 .DS_Store
 **/.DS_Store
+
+# Source media dump (kept locally / in ~/Downloads/mds), not used by the app
+/mds
+
+# AI assistant scaffolding — kept locally, not tracked
+/.agents
+/.augment
+/.bob
+/.codebuddy
+/.commandcode
+/.cortex
+/.crush
+/.qoder
