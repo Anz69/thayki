@@ -14,7 +14,6 @@ use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MeetingController;
 use App\Http\Controllers\Api\V1\ModelApplicationController;
 use App\Http\Controllers\Api\V1\PaymentController;
-use App\Http\Controllers\Api\V1\RoadmapController;
 use App\Http\Controllers\Api\V1\WalletController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,7 +28,6 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/catalog/models/{id}', [CatalogController::class, 'show'])->name('catalog.show');
         Route::get('/catalog/models/{id}/booked-slots', [CatalogController::class, 'bookedSlots'])
             ->name('catalog.bookedSlots');
-        Route::get('/roadmap', [RoadmapController::class, 'index'])->name('roadmap.index');
         Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
     });
 

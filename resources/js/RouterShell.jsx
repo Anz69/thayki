@@ -33,7 +33,6 @@ import ManagerLeadsPage from '@/views/manager/ManagerLeadsPage'
 import ManagerSupportPage from '@/views/manager/ManagerSupportPage'
 import RequisitesChatGate from '@/views/requisites/RequisitesChatGate'
 import ModelMeetingPage from '@/views/ModelMeetingPage'
-import RoadmapPage from '@/views/RoadmapPage'
 import ModelMorePage from '@/views/ModelMorePage'
 import ProfilePage from '@/views/ProfilePage'
 import ClientPage from '@/views/ClientPage'
@@ -456,7 +455,6 @@ export default function App() {
                         <Route path="/manager/leads" element={<RoleRoute roles={['manager']}><ManagerLeadsPage /></RoleRoute>} />
                         <Route path="/manager/earnings" element={<RoleRoute roles={['manager']}><ManagerEarningsPage /></RoleRoute>} />
                         <Route path="/manager/support" element={<RoleRoute roles={['manager']}><ManagerSupportPage /></RoleRoute>} />
-                        <Route path="/roadmap" element={<RoleRoute roles={['manager']}><RoadmapPage /></RoleRoute>} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/become-model" element={<BecomeModelPage />} />
                         <Route path="/application-pending" element={<ApplicationPendingPage />} />
