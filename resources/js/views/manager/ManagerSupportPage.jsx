@@ -34,6 +34,7 @@ export default function ManagerSupportPage() {
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [awaitingTotal, setAwaitingTotal] = useState(0)
+  const [error, setError] = useState(false)
   const rootRef = useRef(null)
   const sentinelRef = useRef(null)
   const animatedOnce = useRef(false)
@@ -70,10 +71,11 @@ export default function ManagerSupportPage() {
       const more = meta ? meta.page < meta.last_page : false
       const awaiting = data?.meta?.awaiting_total ?? 0
       cacheRef.current[key] = { items: list, page: 1, hasMore: more, awaiting }
+      setError(false)
       setItems(list); setPage(1); setHasMore(more); setAwaitingTotal(awaiting)
     } catch (e) {
       logError(e)
-      if (token === reqIdRef.current && !cached) setItems([])
+      if (token === reqIdRef.current && !cached) { setError(true); setItems([]) }
     }
   }, [])
 
@@ -221,7 +223,20 @@ export default function ManagerSupportPage() {
           </div>
         ))}
 
-        {visible !== null && visible.length === 0 && (
+        {error && visible !== null && visible.length === 0 && (
+          <div className="flex flex-col items-center text-center gap-3 pt-24">
+            <div className="size-16 rounded-full bg-[#F0F0F0] flex items-center justify-center text-3xl">⚠️</div>
+            <p className="text-[#9B9AA0] text-sm">{t('manager.loadError')}</p>
+            <button
+              onClick={() => loadFirst(tabRef.current, { refresh: true })}
+              className="mt-1 px-5 py-2.5 rounded-full bg-[#E2319B] text-white text-sm font-semibold active:opacity-80 transition-opacity"
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
+
+        {!error && visible !== null && visible.length === 0 && (
           <div className="flex flex-col items-center text-center gap-3 pt-24">
             <div className="size-16 rounded-full bg-[#E9F0FF] flex items-center justify-center text-3xl">{q ? '🔍' : (tab === 'unanswered' ? '🎉' : '💬')}</div>
             <p className="text-[#9B9AA0] text-sm">

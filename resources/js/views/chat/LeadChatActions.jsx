@@ -47,7 +47,24 @@ export function TypedMessageCard({ msg, isManager, leadId, leadClosed = false, o
   const setPreviewModel = useModelPreview((s) => s.setModel)
   const [busy, setBusy] = useState(false)
   const [payOpen, setPayOpen] = useState(false)
+  const [confirmPayOpen, setConfirmPayOpen] = useState(false)
+  const [payErr, setPayErr] = useState(null)
   const p = msg.payload || {}
+
+  const doConfirmPayment = async () => {
+    setBusy(true)
+    setPayErr(null)
+    try {
+      await api.post(`/manager/leads/${leadId}/payment-confirm`, { message_id: msg.id }, { headers: { 'Idempotency-Key': `payconf-${leadId}-${msg.id}` } })
+      setConfirmPayOpen(false)
+      onPosted?.()
+    } catch (e) {
+      logError(e)
+      setPayErr(extractErrorMessage(e, t('leadChat.payConfirmError')))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   useEffect(() => {
     if (msg.type === 'model_card') import('@/views/ModelPage').catch(() => {})
@@ -102,18 +119,36 @@ export function TypedMessageCard({ msg, isManager, leadId, leadClosed = false, o
           </div>
           {isManager && !confirmed && !leadClosed && (
             <button
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true)
-                try { await api.post(`/manager/leads/${leadId}/payment-confirm`, { message_id: msg.id }, { headers: { 'Idempotency-Key': `payconf-${leadId}-${msg.id}` } }); onPosted?.() }
-                catch (e) { logError(e) } finally { setBusy(false) }
-              }}
+              onClick={() => { setPayErr(null); setConfirmPayOpen(true) }}
               className="w-full py-3 bg-[#E2319B] text-white text-[14px] font-semibold active:opacity-80 transition-opacity disabled:opacity-50"
             >
-              {busy ? '…' : t('leadChat.payConfirmBtn')}
+              {t('leadChat.payConfirmBtn')}
             </button>
           )}
         </div>
+
+        <ModalMiddle isOpen={confirmPayOpen} onClose={() => !busy && setConfirmPayOpen(false)}>
+          <div className="flex flex-col px-5 pt-1 pb-6 gap-4 text-center">
+            <p className="text-black text-[15px]/[150%] font-medium">{t('leadChat.payConfirmAsk')}</p>
+            {payErr && <p className="text-[#E2483B] text-[13px]">{payErr}</p>}
+            <div className="flex flex-col gap-2">
+              <button
+                disabled={busy}
+                onClick={doConfirmPayment}
+                className="w-full py-3.5 rounded-full bg-[#E2319B] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+              >
+                {busy ? '…' : t('leadChat.payConfirmBtn')}
+              </button>
+              <button
+                disabled={busy}
+                onClick={() => setConfirmPayOpen(false)}
+                className="w-full py-3.5 rounded-full bg-[#F0F0F0] text-black text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </ModalMiddle>
       </div>
     )
   }

@@ -31,6 +31,7 @@ export default function RequestsPage() {
   const navigate = useTransitionNavigate()
 
   const [leads, setLeads] = useState(null)
+  const [error, setError] = useState(false)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -47,10 +48,16 @@ export default function RequestsPage() {
       const { data } = await api.get('/leads', { params: { page: pageNum, per_page: 20 } })
       const items = Array.isArray(data?.data) ? data.data : []
       const meta = data?.meta?.pagination
+      setError(false)
       setLeads((prev) => (pageNum === 1 ? items : [...(prev ?? []), ...items]))
       setHasMore(meta ? meta.page < meta.last_page : false)
       setPage(pageNum)
-    } catch (e) { logError(e); if (pageNum === 1) setLeads([]) }
+    } catch (e) {
+      logError(e)
+      // Don't fake an empty state on a failed first load — that reads as "no
+      // requests" and tempts the user into creating a duplicate.
+      if (pageNum === 1) { setError(true); setLeads([]) }
+    }
     finally { loadingRef.current = false; setLoadingMore(false) }
   }, [])
 
@@ -121,7 +128,20 @@ export default function RequestsPage() {
           </div>
         )}
 
-        {leads !== null && leads.length === 0 && (
+        {error && leads !== null && leads.length === 0 && (
+          <div className="flex flex-col items-center text-center gap-4 pt-24">
+            <div className="size-16 rounded-full bg-[#F0F0F0] flex items-center justify-center text-3xl">⚠️</div>
+            <p className="text-[#8A8A8A] text-sm max-w-[260px]">{t('requests.loadError')}</p>
+            <button
+              onClick={() => fetchPage(1)}
+              className="mt-1 px-6 py-3 rounded-full bg-[#E2319B] text-white text-sm font-semibold active:opacity-80 transition"
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
+
+        {!error && leads !== null && leads.length === 0 && (
           <div data-empty className="flex flex-col items-center text-center gap-4 pt-24">
             <div className="size-16 rounded-full bg-[#FDE8F5] flex items-center justify-center text-3xl">📩</div>
             <div className="flex flex-col gap-1">

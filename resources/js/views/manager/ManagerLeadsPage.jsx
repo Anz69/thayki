@@ -110,6 +110,7 @@ export default function ManagerLeadsPage() {
   const [viewing, setViewing] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
+  const [error, setError] = useState(false)
   const [toast, setToast] = useState(null)
   const toastTimerRef = useRef(null)
   const showToast = useCallback((message) => {
@@ -156,10 +157,11 @@ export default function ManagerLeadsPage() {
       const meta = data?.meta?.pagination
       const more = meta ? meta.page < meta.last_page : false
       cacheRef.current[key] = { leads: items, page: 1, hasMore: more }
+      setError(false)
       setLeads(items); setPage(1); setHasMore(more)
     } catch (e) {
       logError(e)
-      if (token === reqIdRef.current && !cached) setLeads([])
+      if (token === reqIdRef.current && !cached) { setError(true); setLeads([]) }
     }
   }, [])
 
@@ -354,7 +356,20 @@ export default function ManagerLeadsPage() {
           </div>
         ))}
 
-        {leads !== null && leads.length === 0 && (
+        {error && leads !== null && leads.length === 0 && (
+          <div className="flex flex-col items-center text-center gap-3 pt-24">
+            <div className="size-16 rounded-full bg-[#F0F0F0] flex items-center justify-center text-3xl">⚠️</div>
+            <p className="text-[#9B9AA0] text-sm">{t('manager.loadError')}</p>
+            <button
+              onClick={reload}
+              className="mt-1 px-5 py-2.5 rounded-full bg-[#E2319B] text-white text-sm font-semibold active:opacity-80 transition-opacity"
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
+
+        {!error && leads !== null && leads.length === 0 && (
           <div className="flex flex-col items-center text-center gap-3 pt-24">
             <div className="size-16 rounded-full bg-[#FDE8F5] flex items-center justify-center text-3xl">{query ? '🔍' : '📭'}</div>
             <p className="text-[#9B9AA0] text-sm">{query ? t('manager.searchEmpty') : t('manager.empty')}</p>

@@ -75,6 +75,7 @@ function CoinIcon({ code, sm = false }) {
 export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId }) {
   const { t } = useTranslation()
   const [data, setData] = useState(null)
+  const [loadError, setLoadError] = useState(false)
   const [selected, setSelected] = useState(null)
   const [amountCopied, setAmountCopied] = useState(false)
   const amountTimer = useRef(null)
@@ -109,8 +110,10 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
     if (!leadId || !messageId) return
     try {
       const r = await api.get(`/leads/${leadId}/crypto-addresses`, { params: { message_id: messageId } })
-      if (aliveRef.current) setData(r?.data?.data ?? null)
-    } catch (e) { if (aliveRef.current) logError(e) }
+      if (aliveRef.current) { setData(r?.data?.data ?? null); setLoadError(false) }
+    } catch (e) {
+      if (aliveRef.current) { logError(e); setLoadError(true) }
+    }
   }, [leadId, messageId])
 
   useEffect(() => {
@@ -118,6 +121,7 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
     if (!isOpen) { aliveRef.current = false; return undefined }
     aliveRef.current = true
     setSelected(null)
+    setLoadError(false)
     load()
     pollRef.current = setInterval(() => {
       if (data?.ready && data?.confirmed) { clearInterval(pollRef.current); return }
@@ -209,6 +213,17 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
           )}
         </div>
 
+        {loadError && !data && (
+          <div className="flex flex-col items-center gap-3 py-5 text-center">
+            <span className="size-12 rounded-full bg-[#F0F0F0] flex items-center justify-center text-2xl">⚠️</span>
+            <p className="text-[#7F7F7F] text-sm">{t('cryptoPay.loadError')}</p>
+            <button onClick={load} className="px-5 py-2.5 rounded-full bg-[#E2319B] text-white text-sm font-semibold active:opacity-80 transition-opacity">
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
+
+        {!(loadError && !data) && (
         <div className="grid grid-cols-6 gap-2.5">
           {coins.map((c) => {
             const isSel = selected === c.code
@@ -225,6 +240,7 @@ export default function CryptoAddressSheet({ isOpen, onClose, leadId, messageId 
             )
           })}
         </div>
+        )}
 
         {sel && (
           <div ref={detailsRef} className="flex flex-col gap-3">

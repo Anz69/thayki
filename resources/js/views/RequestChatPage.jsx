@@ -286,6 +286,7 @@ export default function RequestChatPage() {
   const uploadingRef   = useRef(false)
   const fileInputRef   = useRef(null)
   const lastAttachmentKeyRef = useRef({ key: null, ts: 0 })
+  const lastSendRef    = useRef({ text: '', ts: 0 })
   const messagesEndRef = useRef(null)
   const headerRef      = useRef(null)
   const messagesRef    = useRef(null)
@@ -630,6 +631,11 @@ export default function RequestChatPage() {
   const handleSend = () => {
     const text = inputText.trim()
     if (!text || !chatId) return
+    // Guard against a double-tap firing twice before the input state clears
+    // (slow render / slow network) — same text within 1.2s is one message.
+    const nowTs = Date.now()
+    if (lastSendRef.current.text === text && nowTs - lastSendRef.current.ts < 1200) return
+    lastSendRef.current = { text, ts: nowTs }
     setInputText('')
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
     const clientMessageId = `cmsg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`

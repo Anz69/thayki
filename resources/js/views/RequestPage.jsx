@@ -76,6 +76,7 @@ export default function RequestPage() {
   const [tripPurpose, setTripPurpose] = useState(null)
   const [comments, setComments] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
   const [vipOpen, setVipOpen] = useState(false)
   const [vipMode, setVipMode] = useState(false)
 
@@ -247,6 +248,7 @@ export default function RequestPage() {
 
   const handleSubmit = async () => {
     if (!canSubmit) return
+    setSubmitError(null)
     setSubmitting(true)
     if (!submitKeyRef.current) submitKeyRef.current = `lead-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     try {
@@ -293,6 +295,7 @@ export default function RequestPage() {
       navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}&from=${from}`, { replace: true })
     } catch (err) {
       logError(err)
+      setSubmitError(t('request.submitError'))
       setSubmitting(false)
     }
   }
@@ -567,6 +570,9 @@ export default function RequestPage() {
           >
             {formHint || t('request.cityRequiredHint')}
           </span>
+          {submitError && (
+            <span className="text-[#E2483B] text-[12.5px] font-medium text-center -mt-1">{submitError}</span>
+          )}
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}

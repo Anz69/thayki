@@ -263,14 +263,34 @@ function AuthErrorScreen() {
   )
 }
 
+function AuthPendingScreen() {
+  return (
+    <main className="flex items-center justify-center min-h-[100dvh] bg-white">
+      <div className="size-9 rounded-full border-[3px] border-[#E2319B] border-t-transparent animate-spin" />
+    </main>
+  )
+}
+
 function AuthGuard({ children }) {
   const { user, needsLogin, authPending, isBanned } = useAuthStore()
 
-  if (authPending) return null
+  // Never render null while auth is in flight — the splash AppLoader force-hides
+  // after a few seconds, so on a slow /auth/telegram that would leave a blank
+  // white screen. Show a spinner instead.
+  if (authPending) return <AuthPendingScreen />
   if (isBanned) return <BannedPage />
   if (!user && needsLogin) return <AuthErrorScreen />
+  if (!user) return <AuthPendingScreen />
 
   return children
+}
+
+// Frontend role gate (defense-in-depth on top of API 403s): keeps manager/admin
+// surfaces from rendering for clients who hit a direct URL.
+function RoleRoute({ roles, children }) {
+  const { user } = useAuthStore()
+  if (user && roles.includes(user.role)) return children
+  return <Navigate to="/home" replace />
 }
 
 function StrangeGuard({ children }) {
@@ -433,10 +453,10 @@ export default function App() {
                         <Route path="/requisites/open" element={<RequisitesChatGate />} />
                         <Route path="/requests" element={<RequestsPage />} />
                         <Route path="/manager" element={<Navigate to="/home" replace />} />
-                        <Route path="/manager/leads" element={<ManagerLeadsPage />} />
-                        <Route path="/manager/earnings" element={<ManagerEarningsPage />} />
-                        <Route path="/manager/support" element={<ManagerSupportPage />} />
-                        <Route path="/roadmap" element={<RoadmapPage />} />
+                        <Route path="/manager/leads" element={<RoleRoute roles={['manager', 'admin']}><ManagerLeadsPage /></RoleRoute>} />
+                        <Route path="/manager/earnings" element={<RoleRoute roles={['manager', 'admin']}><ManagerEarningsPage /></RoleRoute>} />
+                        <Route path="/manager/support" element={<RoleRoute roles={['manager', 'admin']}><ManagerSupportPage /></RoleRoute>} />
+                        <Route path="/roadmap" element={<RoleRoute roles={['admin']}><RoadmapPage /></RoleRoute>} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/become-model" element={<BecomeModelPage />} />
                         <Route path="/application-pending" element={<ApplicationPendingPage />} />

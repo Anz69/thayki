@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
@@ -25,13 +25,17 @@ export default function ManagerEarningsPage() {
   const { t, i18n } = useTranslation()
   const navigate = useTransitionNavigate()
   const [data, setData] = useState(null)
+  const [loadError, setLoadError] = useState(false)
   const rootRef = useRef(null)
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoadError(false)
     api.get('/manager/earnings')
-      .then((r) => setData(r?.data?.data ?? null))
-      .catch((e) => { logError(e); setData({ today: 0, week: 0, month: 0, total: 0, count: 0, series: [] }) })
+      .then((r) => { setData(r?.data?.data ?? null); setLoadError(false) })
+      .catch((e) => { logError(e); setLoadError(true) })
   }, [])
+
+  useEffect(() => { load() }, [load])
 
   usePageReady(() => {
     const els = rootRef.current?.querySelectorAll('[data-anim]') ?? []
@@ -70,6 +74,15 @@ export default function ManagerEarningsPage() {
       </header>
 
       <div className="container flex flex-col gap-3 pt-2 pb-24">
+        {loadError && data === null && (
+          <div className="flex flex-col items-center text-center gap-3 py-10">
+            <div className="size-16 rounded-full bg-[#F0F0F0] flex items-center justify-center text-3xl">⚠️</div>
+            <p className="text-[#9B9AA0] text-sm">{t('manager.loadError')}</p>
+            <button onClick={load} className="mt-1 px-5 py-2.5 rounded-full bg-[#E2319B] text-white text-sm font-semibold active:opacity-80 transition-opacity">
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
         <div data-anim>
           <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-5 flex flex-col gap-1.5">
             <span className="text-[#ABABAB] text-[12px]/[100%] font-medium">{t('manager.earn.total')}</span>

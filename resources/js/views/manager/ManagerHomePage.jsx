@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
@@ -44,18 +44,22 @@ export default function ManagerHomePage() {
   const [newCount, setNewCount] = useState(null)
   const [earnToday, setEarnToday] = useState(null)
   const [supportCount, setSupportCount] = useState(null)
+  const [loadError, setLoadError] = useState(false)
   const rootRef = useRef(null)
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoadError(false)
     api.get('/manager/leads', { params: { tab: 'new', per_page: 1 } })
       .then((r) => setNewCount(r?.data?.meta?.pagination?.total ?? (Array.isArray(r?.data?.data) ? r.data.data.length : 0)))
-      .catch(() => setNewCount(0))
+      .catch((e) => { logError(e); setLoadError(true) })
     api.get('/manager/earnings')
-      .then((r) => setEarnToday(r?.data?.data?.today ?? 0)).catch(() => setEarnToday(0))
-    api.get('/manager/support')
-      .then((r) => setSupportCount((Array.isArray(r?.data?.data) ? r.data.data : []).filter((c) => c.awaiting).length))
-      .catch(() => setSupportCount(0))
+      .then((r) => setEarnToday(r?.data?.data?.today ?? 0)).catch((e) => { logError(e); setLoadError(true) })
+    api.get('/manager/support', { params: { tab: 'unanswered', per_page: 1 } })
+      .then((r) => setSupportCount(r?.data?.meta?.awaiting_total ?? (Array.isArray(r?.data?.data) ? r.data.data : []).filter((c) => c.awaiting).length))
+      .catch((e) => { logError(e); setLoadError(true) })
   }, [])
+
+  useEffect(() => { load() }, [load])
 
   usePageReady(() => {
     const els = rootRef.current?.querySelectorAll('[data-anim]') ?? []
@@ -78,6 +82,14 @@ export default function ManagerHomePage() {
   return (
     <section ref={rootRef} className="flex flex-col min-h-screen bg-white">
       <div className="flex flex-col gap-5 container pt-[40px] pb-[120px]">
+        {loadError && (
+          <div className="flex items-center justify-between gap-3 bg-[#FFF1DC] text-[#C77A12] rounded-2xl px-4 py-3">
+            <span className="text-[13px] font-medium">{t('manager.loadError')}</span>
+            <button onClick={load} className="shrink-0 px-3 py-1.5 rounded-full bg-[#E2319B] text-white text-[12px] font-semibold active:opacity-80 transition-opacity">
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
 
         <div data-anim className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5 min-w-0">
