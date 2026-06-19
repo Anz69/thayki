@@ -19,6 +19,10 @@ function detectLanguage() {
   return 'ru'
 }
 
+function applyHtmlLang(lng) {
+  try { document.documentElement.lang = lng } catch {}
+}
+
 i18n.use(initReactI18next).init({
   resources: {
     ru: { translation: ru },
@@ -30,6 +34,9 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
   returnNull: false,
 })
+
+applyHtmlLang(i18n.language)
+i18n.on('languageChanged', applyHtmlLang)
 
 export function setLanguage(lng) {
   if (!SUPPORTED.includes(lng)) return
