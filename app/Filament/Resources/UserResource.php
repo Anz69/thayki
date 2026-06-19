@@ -43,7 +43,6 @@ class UserResource extends Resource
                     UserRole::Client->value => 'Клиент',
                     UserRole::Manager->value => 'Менеджер',
                     UserRole::Requisite->value => 'Реквизиты',
-                    UserRole::Admin->value => 'Администратор',
                 ])
                 ->required(fn (string $operation): bool => $operation === 'create'),
             Forms\Components\Select::make('status')->label('Статус')
@@ -112,7 +111,8 @@ class UserResource extends Resource
                 Tables\Filters\SelectFilter::make('role')->label('Роль')
                     ->options([
                         UserRole::Client->value => 'Клиент',
-                        UserRole::Admin->value => 'Администратор',
+                        UserRole::Manager->value => 'Менеджер',
+                        UserRole::Requisite->value => 'Реквизиты',
                     ]),
                 Tables\Filters\SelectFilter::make('status')->label('Статус')
                     ->options([

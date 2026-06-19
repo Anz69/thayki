@@ -204,7 +204,7 @@ export default function RequestChatPage() {
   const isGroup = chatKind === 'requisites'
 
   const role     = auth.user?.role
-  const isStaff  = role === 'manager' || role === 'admin'
+  const isStaff  = role === 'manager'
   const [chatInfo, setChatInfo] = useState(null)
   const [leadMeta, setLeadMeta] = useState(null)
   const isLead   = !!leadId || chatInfo?.type === 'lead' || leadMeta?.id != null

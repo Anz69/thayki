@@ -453,10 +453,10 @@ export default function App() {
                         <Route path="/requisites/open" element={<RequisitesChatGate />} />
                         <Route path="/requests" element={<RequestsPage />} />
                         <Route path="/manager" element={<Navigate to="/home" replace />} />
-                        <Route path="/manager/leads" element={<RoleRoute roles={['manager', 'admin']}><ManagerLeadsPage /></RoleRoute>} />
-                        <Route path="/manager/earnings" element={<RoleRoute roles={['manager', 'admin']}><ManagerEarningsPage /></RoleRoute>} />
-                        <Route path="/manager/support" element={<RoleRoute roles={['manager', 'admin']}><ManagerSupportPage /></RoleRoute>} />
-                        <Route path="/roadmap" element={<RoleRoute roles={['admin']}><RoadmapPage /></RoleRoute>} />
+                        <Route path="/manager/leads" element={<RoleRoute roles={['manager']}><ManagerLeadsPage /></RoleRoute>} />
+                        <Route path="/manager/earnings" element={<RoleRoute roles={['manager']}><ManagerEarningsPage /></RoleRoute>} />
+                        <Route path="/manager/support" element={<RoleRoute roles={['manager']}><ManagerSupportPage /></RoleRoute>} />
+                        <Route path="/roadmap" element={<RoleRoute roles={['manager']}><RoadmapPage /></RoleRoute>} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/become-model" element={<BecomeModelPage />} />
                         <Route path="/application-pending" element={<ApplicationPendingPage />} />

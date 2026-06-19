@@ -2,11 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Api\V1\Admin\AuditController;
-use App\Http\Controllers\Api\V1\Admin\ModelApplicationAdminController;
-use App\Http\Controllers\Api\V1\Admin\PaymentAdminController;
-use App\Http\Controllers\Api\V1\Admin\RoadmapAdminController;
-use App\Http\Controllers\Api\V1\Admin\WithdrawalAdminController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\FaqController;
 use App\Http\Controllers\Api\V1\PhotoUploadController;
@@ -97,7 +92,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
         Route::get('/chats/support', [ChatController::class, 'support'])->name('chats.support');
         Route::get('/chats/requisites', [ChatController::class, 'requisites'])
-            ->middleware('role:manager,admin,requisite')->name('chats.requisites');
+            ->middleware('role:manager,requisite')->name('chats.requisites');
         Route::get('/chats/meetings/{meeting}', [ChatController::class, 'showForMeeting'])->name('chats.meeting');
         Route::get('/chats/{chat}/messages', [ChatController::class, 'messages'])->name('chats.messages');
         Route::post('/chats/{chat}/messages', [ChatController::class, 'postMessage'])
@@ -135,27 +130,7 @@ Route::prefix('v1')->group(function (): void {
                 ->name('withdrawals.store');
         });
 
-        Route::middleware('role:admin')->prefix('admin')->group(function (): void {
-            Route::get('/model-applications', [ModelApplicationAdminController::class, 'index'])->name('admin.applications.index');
-            Route::post('/model-applications/{application}/approve', [ModelApplicationAdminController::class, 'approve'])->name('admin.applications.approve');
-            Route::post('/model-applications/{application}/reject', [ModelApplicationAdminController::class, 'reject'])->name('admin.applications.reject');
-
-            Route::get('/payments', [PaymentAdminController::class, 'index'])->name('admin.payments.index');
-            Route::post('/payments/{payment}/confirm', [PaymentAdminController::class, 'confirm'])->name('admin.payments.confirm');
-
-            Route::get('/withdrawals', [WithdrawalAdminController::class, 'index'])->name('admin.withdrawals.index');
-            Route::post('/withdrawals/{withdrawal}/approve', [WithdrawalAdminController::class, 'approve'])->name('admin.withdrawals.approve');
-            Route::post('/withdrawals/{withdrawal}/mark-paid', [WithdrawalAdminController::class, 'markPaid'])->name('admin.withdrawals.markPaid');
-            Route::post('/withdrawals/{withdrawal}/reject', [WithdrawalAdminController::class, 'reject'])->name('admin.withdrawals.reject');
-
-            Route::post('/roadmap', [RoadmapAdminController::class, 'store'])->name('admin.roadmap.store');
-            Route::patch('/roadmap/{item}', [RoadmapAdminController::class, 'update'])->name('admin.roadmap.update');
-            Route::delete('/roadmap/{item}', [RoadmapAdminController::class, 'destroy'])->name('admin.roadmap.destroy');
-
-            Route::get('/audit', [AuditController::class, 'index'])->name('admin.audit.index');
-        });
-
-        Route::middleware('role:manager,admin')->prefix('manager')->group(function (): void {
+        Route::middleware('role:manager')->prefix('manager')->group(function (): void {
             Route::get('/leads', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'index'])->name('manager.leads.index');
             Route::get('/leads/{lead}', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'show'])->name('manager.leads.show');
             Route::post('/leads/{lead}/accept', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'accept'])
