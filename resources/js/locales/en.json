@@ -224,7 +224,11 @@
     "placeholder": "Message...",
     "closedNotice": "This request is closed — messaging is unavailable.",
     "acceptToReply": "Accept the request to reply to the client.",
-    "typing": "typing…"
+    "typing": "typing…",
+    "statusError": "Couldn't change status",
+    "uploadError": "Couldn't send the file",
+    "uploadTooLarge": "File exceeds 10 MB",
+    "uploadBadType": "Unsupported file type"
   },
   "support": {
     "title": "Support",

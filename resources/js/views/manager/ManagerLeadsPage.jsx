@@ -110,6 +110,13 @@ export default function ManagerLeadsPage() {
   const [viewing, setViewing] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
+  const [toast, setToast] = useState(null)
+  const toastTimerRef = useRef(null)
+  const showToast = useCallback((message) => {
+    setToast(message)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setToast(null), 2800)
+  }, [])
   const tabRefs = useRef({})
   const [pill, setPill] = useState({ left: 0, width: 0, ready: false })
   const rootRef = useRef(null)
@@ -233,12 +240,19 @@ export default function ManagerLeadsPage() {
     const lead = viewing
     setStatusOpen(false)
     if (!lead || lead.status === status) return
-    setViewing((v) => (v ? { ...v, status } : v))
+    const prevStatus = lead.status
+    setViewing((v) => (v && v.id === lead.id ? { ...v, status } : v))
     setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, status } : l)))
-    try { await api.patch(`/manager/leads/${lead.id}/status`, { status }) }
-    catch (e) { logError(e) }
-    cacheRef.current = {}
-    reload()
+    try {
+      await api.patch(`/manager/leads/${lead.id}/status`, { status })
+      cacheRef.current = {}
+      reload()
+    } catch (e) {
+      logError(e)
+      setViewing((v) => (v && v.id === lead.id ? { ...v, status: prevStatus } : v))
+      setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, status: prevStatus } : l)))
+      showToast(t('requestChat.statusError'))
+    }
   }
 
   const openModal = (lead) => { setViewing(lead); setStatusOpen(false); setModalOpen(true) }
@@ -502,6 +516,12 @@ export default function ManagerLeadsPage() {
           )
         })()}
       </ModalMiddle>
+
+      {toast && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[100] px-4 py-2.5 rounded-full bg-[#1C1C1E] text-white text-[13px] font-medium shadow-lg max-w-[80%] text-center pointer-events-none">
+          {toast}
+        </div>
+      )}
     </main>
   )
 }

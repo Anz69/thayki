@@ -231,6 +231,14 @@ export default function RequestChatPage() {
   const [uploading, setUploading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
   const [viewerSrc, setViewerSrc] = useState(null)
+  const [toast, setToast] = useState(null)
+  const toastTimerRef = useRef(null)
+  const showToast = useCallback((message) => {
+    setToast(message)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setToast(null), 2800)
+  }, [])
+  useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current) }, [])
 
   const groupChatTitle = role === 'requisite' ? t('requisites.chatTitleRequisite') : t('requisites.chatTitle')
 
@@ -397,10 +405,19 @@ export default function RequestChatPage() {
   }, [isStaff, leadId])
 
   const changeLeadStatus = useCallback(async (s) => {
+    const prevStatus = leadStatus
+    const prevClosed = leadClosed
     setLeadStatus(s)
     setLeadClosed(s === 'closed' || s === 'completed')
-    try { await api.patch(`/manager/leads/${leadId}/status`, { status: s }) } catch (e) { logError(e) }
-  }, [leadId])
+    try {
+      await api.patch(`/manager/leads/${leadId}/status`, { status: s })
+    } catch (e) {
+      logError(e)
+      setLeadStatus(prevStatus)
+      setLeadClosed(prevClosed)
+      showToast(t('requestChat.statusError'))
+    }
+  }, [leadId, leadStatus, leadClosed, showToast, t])
 
   const acceptLead = useCallback(async () => {
     if (accepting || !leadId) return
@@ -643,6 +660,13 @@ export default function RequestChatPage() {
     e.target.value = ''
     if (!file || !chatId || uploadingRef.current) return
 
+    const isImage = (file.type || '').startsWith('image/') || /\.(heic|heif|jpe?g|png|webp)$/i.test(file.name || '')
+
+    // Mirror the server rules (PostMessageRequest): max 10 MB, limited mime set.
+    const ALLOWED = /\.(jpe?g|png|webp|heic|heif|pdf|mp4|mp3|ogg|wav)$/i
+    if (!isImage && !ALLOWED.test(file.name || '')) { showToast(t('requestChat.uploadBadType')); return }
+    if (file.size > 10 * 1024 * 1024) { showToast(t('requestChat.uploadTooLarge')); return }
+
     const attachmentKey = `${chatId}:${file.name}:${file.size}:${file.lastModified}`
     const nowTs = Date.now()
     if (lastAttachmentKeyRef.current.key === attachmentKey && nowTs - lastAttachmentKeyRef.current.ts < 5000) return
@@ -651,7 +675,6 @@ export default function RequestChatPage() {
     uploadingRef.current = true
     setUploading(true)
 
-    const isImage = (file.type || '').startsWith('image/') || /\.(heic|heif|jpe?g|png|webp)$/i.test(file.name || '')
     let upload = file
     if (isImage) {
       try { upload = await prepareImageFileForUpload(file) } catch { upload = file }
@@ -679,8 +702,11 @@ export default function RequestChatPage() {
         headers: { 'Idempotency-Key': `att-${attachmentKey}` },
       })
       setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff, isGroup))
-    } catch {
+    } catch (e) {
+      logError(e)
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
+      const st = e?.response?.status
+      showToast(t(st === 413 ? 'requestChat.uploadTooLarge' : st === 422 ? 'requestChat.uploadBadType' : 'requestChat.uploadError'))
     } finally {
       try { URL.revokeObjectURL(previewUrl) } catch {}
       uploadingRef.current = false
@@ -959,6 +985,12 @@ export default function RequestChatPage() {
         onConfirm={cancelLead}
         busy={cancelBusy}
       />
+
+      {toast && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[100] px-4 py-2.5 rounded-full bg-[#1C1C1E] text-white text-[13px] font-medium shadow-lg max-w-[80%] text-center pointer-events-none">
+          {toast}
+        </div>
+      )}
     </section>
   )
 }

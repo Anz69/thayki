@@ -237,8 +237,16 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
   const swipeX = useRef(null)
+  const abortRef = useRef(null)
 
   const reset = () => { setUrls(''); setDrafts(null); setIdx(0); setProgress(null); setEta(null); setOvertime(false); setErr(null) }
+
+  // Cancel any in-flight parsing when the sheet closes or unmounts — otherwise
+  // the sequential requests (up to 120s each) keep hammering the backend.
+  useEffect(() => {
+    if (!open) { abortRef.current?.abort(); abortRef.current = null }
+  }, [open])
+  useEffect(() => () => { abortRef.current?.abort() }, [])
 
   useEffect(() => {
     if (!progress) { setOvertime(false); return undefined }
@@ -256,14 +264,20 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
     const EST_PER_LINK = 30
     const startedAt = Date.now()
     setErr(null); setProgress({ done: 0, total: links.length }); setEta(links.length * EST_PER_LINK)
+    const controller = new AbortController()
+    abortRef.current = controller
     const out = []
     let failed = 0
     let lastErr = null
     for (let i = 0; i < links.length; i++) {
+      if (controller.signal.aborted) break
       try {
-        const { data } = await api.post(`/manager/leads/${leadId}/parse-model`, { url: links[i] }, { timeout: 120000 })
+        const { data } = await api.post(`/manager/leads/${leadId}/parse-model`, { url: links[i] }, { timeout: 120000, signal: controller.signal })
         out.push({ ...data.data, photos: data.data.photos ?? [], videos: data.data.videos ?? [] })
-      } catch (e) { logError(e); failed++; lastErr = e }
+      } catch (e) {
+        if (controller.signal.aborted || e?.code === 'ERR_CANCELED' || e?.name === 'CanceledError') break
+        logError(e); failed++; lastErr = e
+      }
       const done = i + 1
       const avg = (Date.now() - startedAt) / 1000 / done
       setProgress({ done, total: links.length })
@@ -271,7 +285,9 @@ function ParsedModelSheet({ open, onClose, leadId, onPosted }) {
       setEta(nextEta)
       if (nextEta != null) setOvertime(false)
     }
+    abortRef.current = null
     setProgress(null); setEta(null); setOvertime(false)
+    if (controller.signal.aborted) return
     if (!out.length) { setErr(extractErrorMessage(lastErr, t('leadChat.parseError'))); return }
     if (failed) setErr(t('leadChat.parseSomeFailed', { n: failed }))
     setDrafts(out); setIdx(0)

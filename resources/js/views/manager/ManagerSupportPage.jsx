@@ -21,34 +21,110 @@ function relTime(iso, lang) {
   return d.toLocaleDateString(dateLoc, { day: 'numeric', month: 'short' })
 }
 
+const hasClient = (it) => !!(it.client?.name || it.client?.username || it.last_message)
+
 export default function ManagerSupportPage() {
   const { t, i18n } = useTranslation()
   const navigate = useTransitionNavigate()
   const [items, setItems] = useState(null)
   const [search, setSearch] = useState('')
+  const [query, setQuery] = useState('')
   const [tab, setTab] = useState('unanswered')
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [awaitingTotal, setAwaitingTotal] = useState(0)
   const rootRef = useRef(null)
+  const sentinelRef = useRef(null)
   const animatedOnce = useRef(false)
 
-  const q = search.trim().toLowerCase()
-  const awaitingCount = items?.filter((it) => it.awaiting).length ?? 0
-  const visible = items === null ? null : items.filter((it) => {
-    const hasClient = !!(it.client?.name || it.client?.username || it.client?.id)
-    if (!hasClient && !it.last_message) return false
-    if (tab === 'unanswered' && !it.awaiting) return false
-    if (!q) return true
-    const hay = [it.client?.name, it.client?.username, it.last_message?.preview]
-      .filter(Boolean).join(' ').toLowerCase()
-    return hay.includes(q)
-  })
+  const reqIdRef = useRef(0)
+  const appendingRef = useRef(false)
+  const cacheRef = useRef({})
+  const tabRef = useRef(tab); tabRef.current = tab
+  const queryRef = useRef(query); queryRef.current = query
+  const pageStateRef = useRef(1); pageStateRef.current = page
 
-  const load = useCallback(() => {
-    api.get('/manager/support')
-      .then((r) => setItems(Array.isArray(r?.data?.data) ? r.data.data : []))
-      .catch((e) => { logError(e); setItems([]) })
+  const keyFor = (which, q) => `${which}|${q}`
+  const reqParams = (which, q, pageNum) => {
+    const p = { tab: which, page: pageNum, per_page: 20 }
+    if (q) p.q = q
+    return p
+  }
+
+  const loadFirst = useCallback(async (which, { refresh = false } = {}) => {
+    const token = ++reqIdRef.current
+    const q = queryRef.current
+    const key = keyFor(which, q)
+    const cached = cacheRef.current[key]
+    if (cached && !refresh) {
+      setItems(cached.items); setPage(cached.page); setHasMore(cached.hasMore); setAwaitingTotal(cached.awaiting)
+    } else if (!cached && !refresh) {
+      setItems(null); setPage(1); setHasMore(false)
+    }
+    try {
+      const { data } = await api.get('/manager/support', { params: reqParams(which, q, 1) })
+      if (token !== reqIdRef.current) return
+      const list = Array.isArray(data?.data) ? data.data : []
+      const meta = data?.meta?.pagination
+      const more = meta ? meta.page < meta.last_page : false
+      const awaiting = data?.meta?.awaiting_total ?? 0
+      cacheRef.current[key] = { items: list, page: 1, hasMore: more, awaiting }
+      setItems(list); setPage(1); setHasMore(more); setAwaitingTotal(awaiting)
+    } catch (e) {
+      logError(e)
+      if (token === reqIdRef.current && !cached) setItems([])
+    }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  const loadMore = useCallback(async () => {
+    const which = tabRef.current
+    const q = queryRef.current
+    const key = keyFor(which, q)
+    const cur = cacheRef.current[key]
+    if (appendingRef.current || !cur?.hasMore) return
+    appendingRef.current = true
+    setLoadingMore(true)
+    const nextPage = cur.page + 1
+    try {
+      const { data } = await api.get('/manager/support', { params: reqParams(which, q, nextPage) })
+      if (which !== tabRef.current || q !== queryRef.current) return
+      const list = Array.isArray(data?.data) ? data.data : []
+      const meta = data?.meta?.pagination
+      const more = meta ? meta.page < meta.last_page : false
+      const merged = [...cur.items, ...list]
+      cacheRef.current[key] = { ...cur, items: merged, page: nextPage, hasMore: more }
+      setItems(merged); setPage(nextPage); setHasMore(more)
+    } catch (e) { logError(e) }
+    finally { appendingRef.current = false; setLoadingMore(false) }
+  }, [])
+
+  useEffect(() => {
+    const id = setTimeout(() => setQuery(search.trim()), 280)
+    return () => clearTimeout(id)
+  }, [search])
+
+  useEffect(() => { loadFirst(tab) }, [tab, query, loadFirst])
+
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return undefined
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) loadMore()
+    }, { rootMargin: '400px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [hasMore, loadMore])
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.hidden) return
+      if (appendingRef.current) return
+      if (pageStateRef.current !== 1) return
+      loadFirst(tabRef.current, { refresh: true })
+    }, 15000)
+    return () => clearInterval(id)
+  }, [loadFirst])
 
   useEffect(() => {
     if (!items?.length || animatedOnce.current) return
@@ -63,6 +139,9 @@ export default function ManagerSupportPage() {
     const title = it.client?.name || t('manager.support')
     navigate(`/request/chat?id=${it.chat_id}&kind=support&from=${encodeURIComponent('/manager/support')}&title=${encodeURIComponent(title)}`)
   }
+
+  const visible = items === null ? null : items.filter(hasClient)
+  const q = query
 
   return (
     <main ref={rootRef} className="flex flex-col min-h-screen bg-[#FAFAFB]">
@@ -122,8 +201,8 @@ export default function ManagerSupportPage() {
                 style={{ color: tab === k ? '#111' : '#9B9AA0' }}
               >
                 {label}
-                {k === 'unanswered' && awaitingCount > 0 && (
-                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#E2319B] text-white text-[11px] font-bold inline-flex items-center justify-center">{awaitingCount}</span>
+                {k === 'unanswered' && awaitingTotal > 0 && (
+                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#E2319B] text-white text-[11px] font-bold inline-flex items-center justify-center">{awaitingTotal}</span>
                 )}
               </button>
             ))}
@@ -142,7 +221,7 @@ export default function ManagerSupportPage() {
           </div>
         ))}
 
-        {items !== null && visible.length === 0 && (
+        {visible !== null && visible.length === 0 && (
           <div className="flex flex-col items-center text-center gap-3 pt-24">
             <div className="size-16 rounded-full bg-[#E9F0FF] flex items-center justify-center text-3xl">{q ? '🔍' : (tab === 'unanswered' ? '🎉' : '💬')}</div>
             <p className="text-[#9B9AA0] text-sm">
@@ -178,6 +257,13 @@ export default function ManagerSupportPage() {
             </button>
           )
         })}
+
+        <div ref={sentinelRef} className="h-1" />
+        {loadingMore && (
+          <div className="flex justify-center py-3">
+            <div className="size-6 rounded-full border-[3px] border-[#E2319B] border-t-transparent animate-spin" />
+          </div>
+        )}
       </div>
     </main>
   )

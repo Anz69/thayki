@@ -224,7 +224,11 @@
     "placeholder": "消息…",
     "closedNotice": "该预约已关闭 — 无法发送消息。",
     "acceptToReply": "接受预约后即可回复客户。",
-    "typing": "正在输入…"
+    "typing": "正在输入…",
+    "statusError": "无法更改状态",
+    "uploadError": "文件发送失败",
+    "uploadTooLarge": "文件超过 10 MB",
+    "uploadBadType": "不支持的文件类型"
   },
   "support": {
     "title": "客服",
