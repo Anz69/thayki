@@ -81,11 +81,40 @@
   unicode-range: U+0000-00FF, U+0100-024F, U+0259, U+0300-036F, U+0370-03FF, U+0400-052F, U+1E00-1EFF, U+2000-206F, U+2070-20BF, U+2100-214F, U+2C60-2C7F, U+A720-A7FF, U+FB00-FB4F;
 }
 
+/* Self-hosted Simplified-Chinese font (chinese-simplified subset). Guarantees CJK
+   renders identically on every OS — no dependency on the user having PingFang /
+   YaHei, and no Google Fonts (blocked in China). Scoped to CJK unicode-range so
+   it only ever draws Chinese; Latin/Cyrillic stay on SF Pro. */
+@font-face {
+  font-family: 'Noto Sans SC';
+  src: url('/fonts/noto-sans-sc-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+2E80-2EFF, U+3000-303F, U+31C0-31EF, U+3200-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF;
+}
+@font-face {
+  font-family: 'Noto Sans SC';
+  src: url('/fonts/noto-sans-sc-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+2E80-2EFF, U+3000-303F, U+31C0-31EF, U+3200-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF;
+}
+@font-face {
+  font-family: 'Noto Sans SC';
+  src: url('/fonts/noto-sans-sc-700.woff2') format('woff2');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+2E80-2EFF, U+3000-303F, U+31C0-31EF, U+3200-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF;
+}
+
 @theme {
-  /* System fonts must come BEFORE the emoji fonts: when a glyph (e.g. a bold
-     digit) isn't drawn from 'SF Pro Display', the fallback should be the OS
-     San Francisco — not an emoji font, which renders digits invisibly. */
-  --font-sans: 'SF Pro Display', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', 'Noto Sans CJK SC', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  /* SF Pro draws Latin/Cyrillic; 'Noto Sans SC' (self-hosted, CJK unicode-range)
+     draws every Chinese glyph next — so CJK never falls onto SF Pro's broken
+     partial coverage. System CJK fonts and emoji round out the tail. */
+  --font-sans: 'SF Pro Display', 'Noto Sans SC', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   --font-weight-semibold: 590;
   --font-weight-medium: 400;
 }
@@ -99,7 +128,7 @@ body {
    tofu on Windows) win any glyph — drop it entirely and lead with real CJK fonts.
    Overrides the --font-sans token for every element that uses font-sans. */
 html[lang='zh'] {
-  --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Microsoft YaHei UI', 'Noto Sans SC', 'Noto Sans CJK SC', 'Source Han Sans SC', 'WenQuanYi Micro Hei', ui-sans-serif, system-ui, 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  --font-sans: 'SF Pro Display', 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Microsoft YaHei UI', 'Noto Sans CJK SC', ui-sans-serif, system-ui, 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
 }
 
 /* Prevent iOS Safari auto-zoom on input focus (triggers when font-size < 16px) */
