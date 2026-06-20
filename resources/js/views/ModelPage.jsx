@@ -312,6 +312,12 @@ export default function ModelPage({ preview = false }) {
         )}
 
         <main className="flex flex-col gap-6 items-center relative pb-28">
+          {loading && !model && !preview && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center pt-24">
+              <div className="size-9 rounded-full border-[3px] border-[#E2319B] border-t-transparent animate-spin" />
+            </div>
+          )}
+
           {loadError && !loading && !model && (
             <div className="flex flex-col items-center gap-3 py-20 container">
               <div className="text-[#7F7F7F] text-sm text-center max-w-[260px]">
