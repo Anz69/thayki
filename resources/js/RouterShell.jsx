@@ -7,7 +7,6 @@ import BottomNav from '@/components/ui/BottomNav'
 import AppLoader from '@/components/ui/AppLoader'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import useAuthStore from '@/stores/useAuthStore'
-import useMeetingStore from '@/stores/useMeetingStore'
 import api, { getStoredToken, clearToken } from '@/utils/api'
 import { logWarn } from '@/utils/logger'
 import { parseTelegramStartParam } from '@/utils/telegramAuth'
@@ -19,8 +18,6 @@ import ModalMiddle from '@/layout/ModalMiddle'
 
 import HomePage from '@/views/HomePage'
 import ModelPage from '@/views/ModelPage'
-import MeetingPage from '@/views/MeetingPage'
-import ChatPage from '@/views/ChatPage'
 import MorePage from '@/views/MorePage'
 import RequestPage from '@/views/RequestPage'
 import RequestChatPage from '@/views/RequestChatPage'
@@ -30,14 +27,8 @@ import ManagerMorePage from '@/views/manager/ManagerMorePage'
 import ManagerLeadsPage from '@/views/manager/ManagerLeadsPage'
 import ManagerSupportPage from '@/views/manager/ManagerSupportPage'
 import RequisitesChatGate from '@/views/requisites/RequisitesChatGate'
-import ModelMeetingPage from '@/views/ModelMeetingPage'
-import ModelMorePage from '@/views/ModelMorePage'
 import ProfilePage from '@/views/ProfilePage'
-import ClientPage from '@/views/ClientPage'
-import BecomeModelPage from '@/views/BecomeModelPage'
-import ApplicationPendingPage from '@/views/ApplicationPendingPage'
 import SupportPage from '@/views/SupportPage'
-import FeedbackPage from '@/views/FeedbackPage'
 
 function importWithRetry(importer, attempt = 0) {
   return importer().catch((err) => {
@@ -79,13 +70,12 @@ function prefetchHotRoutes() {
 function LandingRoute() {
   const { user } = useAuthStore()
   if (!user) return <LandingPage />
-  if (user?.role === 'model' || user?.role === 'manager' || user?.role === 'requisite') return <Navigate to="/home" replace />
+  if (user?.role === 'manager' || user?.role === 'requisite') return <Navigate to="/home" replace />
   return <LandingPage />
 }
 
 function MainPage() {
   const { user } = useAuthStore()
-  if (user?.role === 'model') return <ClientPage />
   if (user?.role === 'manager') return <ManagerHomePage />
   if (user?.role === 'requisite') return <RequisitesChatGate />
   return <HomePage />
@@ -94,15 +84,8 @@ function MainPage() {
 function MoreRolePage() {
   const { user } = useAuthStore()
   if (user?.role === 'requisite') return <Navigate to="/home" replace />
-  if (user?.role === 'model') return <ModelMorePage />
   if (user?.role === 'manager') return <ManagerMorePage />
   return <MorePage />
-}
-
-function MeetingRolePage() {
-  const { user } = useAuthStore()
-  if (user?.role === 'requisite') return <Navigate to="/home" replace />
-  return user?.role === 'model' ? <ModelMeetingPage /> : <MeetingPage />
 }
 
 function PageFallback() {
@@ -110,18 +93,10 @@ function PageFallback() {
 }
 
 let authRetried = false
-const MODEL_APP_GUARD_TTL_MS = 10000
-const MODEL_APP_GATE_PATHS = new Set(['/become-model', '/application-pending', '/home'])
-let modelAppGuardCache = { userId: null, outcome: null, checkedAt: 0 }
-
-export function resetModelAppGuardCache() {
-  modelAppGuardCache = { userId: null, outcome: null, checkedAt: 0 }
-}
 
 function AuthErrorScreen() {
   const { t } = useTranslation()
   const authStore = useAuthStore()
-  const meetingStore = useMeetingStore()
   const hint = authStore.authErrorHint
   const detail = authStore.authErrorDetail
   const [showDetail, setShowDetail] = useState(false)
@@ -139,7 +114,6 @@ function AuthErrorScreen() {
           const { data } = await api.get('/auth/me')
           if (data?.data) {
             authStore.setUser(data.data)
-            meetingStore.loadLatest()
             return
           }
         } catch (e) {
@@ -163,7 +137,6 @@ function AuthErrorScreen() {
           const { data } = await api.post('/auth/telegram', loginPayload)
           if (data.ok && data.data?.token && data.data?.user) {
             authStore.setUser(data.data.user, data.data.token)
-            meetingStore.loadLatest()
             return
           }
         } catch (err) {
@@ -173,7 +146,6 @@ function AuthErrorScreen() {
               const data = second?.data
               if (data?.ok && data?.data?.token && data?.data?.user) {
                 authStore.setUser(data.data.user, data.data.token)
-                meetingStore.loadLatest()
                 return
               }
             } catch {
@@ -296,110 +268,10 @@ function StrangeGuard({ children }) {
 
   if (!user || user.is_strange !== true) return children
 
-  const allowed = new Set(['/welcome', '/application-pending', '/become-model'])
+  const allowed = new Set(['/welcome'])
   if (allowed.has(location.pathname)) return children
 
   return <Navigate to="/welcome" replace />
-}
-
-function ModelApplicationPendingGuard({ children }) {
-  const { user } = useAuthStore()
-  const location = useLocation()
-  const [gateReady, setGateReady] = useState(false)
-  const [applicationOutcome, setApplicationOutcome] = useState(
- (null),
-  )
-  const [outcomeForKey, setOutcomeForKey] = useState(null)
-
-  const modelAppGateRefetchKey = MODEL_APP_GATE_PATHS.has(location.pathname)
-    ? location.pathname
-    : '_'
-
-  useEffect(() => {
-    let cancelled = false
-
-    if (!user) {
-      setApplicationOutcome('absent')
-      setOutcomeForKey(modelAppGateRefetchKey)
-      setGateReady(true)
-      return () => { cancelled = true }
-    }
-
-    const skipTtl = MODEL_APP_GATE_PATHS.has(location.pathname)
-    const now = Date.now()
-    if (
-      !skipTtl
-      && modelAppGuardCache.userId === user.id
-      && modelAppGuardCache.outcome !== null
-      && now - modelAppGuardCache.checkedAt < MODEL_APP_GUARD_TTL_MS
-    ) {
-      setApplicationOutcome(modelAppGuardCache.outcome)
-      setOutcomeForKey(modelAppGateRefetchKey)
-      setGateReady(true)
-      return () => { cancelled = true }
-    }
-
-    setGateReady(false)
-    api.get('/model-application')
-      .then((res) => {
-        if (cancelled) return
-        const status = res?.data?.data?.status
-        let outcome
-        if (status === 'submitted') {
-          outcome = 'pending_review'
-        } else if (status === 'approved' || status === 'rejected') {
-          outcome = 'finished'
-        } else {
-          outcome = 'draft_or_unknown'
-        }
-        setApplicationOutcome(outcome)
-        setOutcomeForKey(modelAppGateRefetchKey)
-        modelAppGuardCache = { userId: user.id, outcome, checkedAt: Date.now() }
-        setGateReady(true)
-      })
-      .catch((err) => {
-        if (cancelled) return
-        const httpStatus = err?.response?.status
-        if (httpStatus === 404) {
-          const outcome = 'absent'
-          setApplicationOutcome(outcome)
-          modelAppGuardCache = { userId: user.id, outcome, checkedAt: Date.now() }
-        } else {
-          const outcome = 'error'
-          setApplicationOutcome(outcome)
-          modelAppGuardCache = { userId: user.id, outcome, checkedAt: Date.now() }
-        }
-        setOutcomeForKey(modelAppGateRefetchKey)
-        setGateReady(true)
-      })
-
-    return () => { cancelled = true }
-  }, [user?.id, modelAppGateRefetchKey])
-
-  if (!gateReady || outcomeForKey !== modelAppGateRefetchKey) {
-    return children
-  }
-
-  if (applicationOutcome === 'pending_review' && location.pathname !== '/application-pending') {
-    return <Navigate to="/application-pending" replace />
-  }
-
-  if (
-    user?.role === 'model'
-    && applicationOutcome === 'absent'
-    && location.pathname !== '/become-model'
-  ) {
-    return <Navigate to="/become-model" replace />
-  }
-
-  if (
-    applicationOutcome === 'absent'
-    && location.pathname === '/application-pending'
-  ) {
-    return <Navigate to="/home" replace />
-  }
-
-  return children
 }
 
 export default function App() {
@@ -430,34 +302,27 @@ export default function App() {
             <Suspense fallback={<PageFallback />}>
               <AuthGuard>
                 <StrangeGuard>
-                  <ModelApplicationPendingGuard>
-                    <>
-                      <Routes>
-                        <Route path="/welcome" element={<StrangeWelcomePage />} />
-                        <Route path="/" element={<LandingRoute />} />
-                        <Route path="/home" element={<MainPage />} />
-                        <Route path="/more" element={<MoreRolePage />} />
-                        <Route path="/model/:id" element={<ModelPage />} />
-                        <Route path="/model-view" element={<ModelPage preview />} />
-                        <Route path="/meeting" element={<MeetingRolePage />} />
-                        <Route path="/chat" element={<ChatPage />} />
-                        <Route path="/support" element={<SupportPage />} />
-                        <Route path="/request" element={<RequestPage />} />
-                        <Route path="/request/chat" element={<RequestChatPage />} />
-                        <Route path="/requisites/open" element={<RequisitesChatGate />} />
-                        <Route path="/requests" element={<RequestsPage />} />
-                        <Route path="/manager/leads" element={<RoleRoute roles={['manager']}><ManagerLeadsPage /></RoleRoute>} />
-                        <Route path="/manager/earnings" element={<RoleRoute roles={['manager']}><ManagerEarningsPage /></RoleRoute>} />
-                        <Route path="/manager/support" element={<RoleRoute roles={['manager']}><ManagerSupportPage /></RoleRoute>} />
-                        <Route path="/profile" element={<ProfilePage />} />
-                        <Route path="/become-model" element={<BecomeModelPage />} />
-                        <Route path="/application-pending" element={<ApplicationPendingPage />} />
-                        <Route path="/feedback" element={<FeedbackPage />} />
-                        <Route path="*" element={<Navigate to="/home" replace />} />
-                      </Routes>
-                      <BottomNav />
-                    </>
-                  </ModelApplicationPendingGuard>
+                  <>
+                    <Routes>
+                      <Route path="/welcome" element={<StrangeWelcomePage />} />
+                      <Route path="/" element={<LandingRoute />} />
+                      <Route path="/home" element={<MainPage />} />
+                      <Route path="/more" element={<MoreRolePage />} />
+                      <Route path="/model/:id" element={<ModelPage />} />
+                      <Route path="/model-view" element={<ModelPage preview />} />
+                      <Route path="/support" element={<SupportPage />} />
+                      <Route path="/request" element={<RequestPage />} />
+                      <Route path="/request/chat" element={<RequestChatPage />} />
+                      <Route path="/requisites/open" element={<RequisitesChatGate />} />
+                      <Route path="/requests" element={<RequestsPage />} />
+                      <Route path="/manager/leads" element={<RoleRoute roles={['manager']}><ManagerLeadsPage /></RoleRoute>} />
+                      <Route path="/manager/earnings" element={<RoleRoute roles={['manager']}><ManagerEarningsPage /></RoleRoute>} />
+                      <Route path="/manager/support" element={<RoleRoute roles={['manager']}><ManagerSupportPage /></RoleRoute>} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="*" element={<Navigate to="/home" replace />} />
+                    </Routes>
+                    <BottomNav />
+                  </>
                 </StrangeGuard>
               </AuthGuard>
             </Suspense>

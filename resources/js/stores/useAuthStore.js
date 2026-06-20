@@ -24,10 +24,7 @@ function syncLanguageFromUser(user) {
 
 async function resetDependentStores() {
   const stores = await Promise.all([
-    import('@/stores/useMeetingStore').catch(() => null),
-    import('@/stores/useBookingStore').catch(() => null),
     import('@/stores/useProfileStore').catch(() => null),
-    import('@/stores/useModelMeetingStore').catch(() => null),
   ])
   for (const m of stores) {
     try { m?.default?.getState?.().reset?.() } catch {}

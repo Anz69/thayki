@@ -7,8 +7,6 @@ import { usePageReady } from '@/composables/usePageReady'
 import TransitionLink from '@/components/TransitionLink'
 import Info from '@/components/sections/modelSelectInfo/Info'
 import Media from '@/components/sections/modelSelectInfo/Media'
-import useBookingStore from '@/stores/useBookingStore'
-import useMeetingStore from '@/stores/useMeetingStore'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api, { extractErrorMessage } from '@/utils/api'
 import ShareModelsModal from '@/components/modals/ShareModelsModal'
@@ -17,8 +15,6 @@ import { declAge } from '@/utils/datetime'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
 import useModelPreview from '@/stores/useModelPreview'
-
-const ACTIVE_STATUSES = ['pending', 'accepted', 'paid', 'confirmed']
 
 function normalizePreview(m) {
   if (!m) return null
@@ -32,8 +28,6 @@ function normalizePreview(m) {
 export default function ModelPage({ preview = false }) {
   const { t } = useTranslation()
   const { id } = useParams()
-  const store = useBookingStore()
-  const meeting = useMeetingStore()
   const navigate = useTransitionNavigate()
   const previewModel = useModelPreview((s) => s.model)
 
@@ -303,36 +297,17 @@ export default function ModelPage({ preview = false }) {
         </div>
 
         {!preview && createPortal(
-          (() => {
-            const activeMeeting = ACTIVE_STATUSES.includes(meeting.meeting?.status ?? '')
-              ? meeting.meeting
-              : null
-
-            return activeMeeting ? (
-              <button
-                ref={bookBtnRef}
-                onClick={() => navigate(`/meeting?id=${activeMeeting.id}`)}
-                className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto"
-                style={{ willChange: 'transform, opacity' }}
-              >
-                <div className="p-3 bg-[#232323] rounded-full text-white text-base/[100%] font-medium">
-                  {t('model.goToMeeting')}
-                </div>
-              </button>
-            ) : (
-              <button
-                ref={bookBtnRef}
-                onClick={() => navigate(`/request?model=${id}`)}
-                disabled={!model}
-                className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto disabled:opacity-50"
-                style={{ willChange: 'transform, opacity' }}
-              >
-                <div className="p-3 bg-[#E2319B] rounded-full text-white text-base/[100%] font-medium">
-                  {t('model.cta')}
-                </div>
-              </button>
-            )
-          })(),
+          <button
+            ref={bookBtnRef}
+            onClick={() => navigate(`/request?model=${id}`)}
+            disabled={!model}
+            className="invisible fixed bottom-6 left-1/2 -translate-x-1/2 w-max p-1 bg-[#DFDBDF] rounded-full z-[9000] pointer-events-auto disabled:opacity-50"
+            style={{ willChange: 'transform, opacity' }}
+          >
+            <div className="p-3 bg-[#E2319B] rounded-full text-white text-base/[100%] font-medium">
+              {t('model.cta')}
+            </div>
+          </button>,
           document.body,
         )}
 

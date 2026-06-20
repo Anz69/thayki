@@ -2,7 +2,6 @@ import { usePage } from '@inertiajs/react'
 import { useEffect } from 'react'
 import RouterShell from '@/RouterShell'
 import useAuthStore from '@/stores/useAuthStore'
-import useMeetingStore from '@/stores/useMeetingStore'
 import api, { getStoredToken, clearToken, getStoredAuthUid, storeAuthUid } from '@/utils/api'
 import { logWarn } from '@/utils/logger'
 import { parseTelegramStartParam, buildDevInitData, getOrCreateDevTelegramId } from '@/utils/telegramAuth'
@@ -10,14 +9,12 @@ import { parseTelegramStartParam, buildDevInitData, getOrCreateDevTelegramId } f
 export default function App() {
   const { auth, appEnv } = usePage().props
   const authStore    = useAuthStore()
-  const meetingStore = useMeetingStore()
 
   useEffect(() => {
     window.Telegram?.WebApp?.expand?.()
 
     if (auth?.user) {
       authStore.setUser(auth.user)
-      meetingStore.loadLatest()
       return
     }
 
@@ -41,7 +38,6 @@ export default function App() {
           if (user) {
             authStore.setUser(user)
             storeAuthUid(currentTgId)
-            meetingStore.loadLatest()
             return
           }
         } catch {
@@ -70,7 +66,6 @@ export default function App() {
             if (data.ok && data.data?.token && data.data?.user) {
               authStore.setUser(data.data.user, data.data.token)
               storeAuthUid(currentTgId)
-              meetingStore.loadLatest()
               return
             }
             authStore.setNeedsLogin(null, { step: 'POST /auth/telegram', message: 'Ответ сервера не содержал токен' })
@@ -117,7 +112,6 @@ export default function App() {
           if (data.ok && data.data?.token && data.data?.user) {
             authStore.setUser(data.data.user, data.data.token)
             storeAuthUid(devId)
-            meetingStore.loadLatest()
             return
           }
         } catch (err) {
