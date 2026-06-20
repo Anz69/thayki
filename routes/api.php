@@ -8,13 +8,8 @@ use App\Http\Controllers\Api\V1\PhotoUploadController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\Api\V1\LeadController;
-use App\Http\Controllers\Api\V1\ComplaintController;
 use App\Http\Controllers\Api\V1\InviteController;
 use App\Http\Controllers\Api\V1\MeController;
-use App\Http\Controllers\Api\V1\MeetingController;
-use App\Http\Controllers\Api\V1\ModelApplicationController;
-use App\Http\Controllers\Api\V1\PaymentController;
-use App\Http\Controllers\Api\V1\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -58,40 +53,10 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('throttle:30,1')
             ->name('uploads.photo');
 
-        Route::get('/model-application', [ModelApplicationController::class, 'show'])->name('model-application.show');
-        Route::post('/model-application', [ModelApplicationController::class, 'store'])
-            ->middleware('idempotency')
-            ->name('model-application.store');
-
-        Route::get('/meetings', [MeetingController::class, 'index'])->name('meetings.index');
-        Route::get('/meetings/latest', [MeetingController::class, 'latest'])->name('meetings.latest');
-        Route::post('/meetings', [MeetingController::class, 'store'])
-            ->middleware('idempotency')
-            ->name('meetings.store');
-        Route::get('/meetings/{meeting}', [MeetingController::class, 'show'])->name('meetings.show');
-        Route::middleware('throttle:meetings')->group(function (): void {
-            Route::post('/meetings/{meeting}/accept', [MeetingController::class, 'accept'])->name('meetings.accept');
-            Route::post('/meetings/{meeting}/reject', [MeetingController::class, 'reject'])->name('meetings.reject');
-            Route::post('/meetings/{meeting}/cancel', [MeetingController::class, 'cancel'])->name('meetings.cancel');
-            Route::post('/meetings/{meeting}/confirm', [MeetingController::class, 'confirm'])->name('meetings.confirm');
-            Route::post('/meetings/{meeting}/complete', [MeetingController::class, 'complete'])->name('meetings.complete');
-        });
-
-        Route::middleware('throttle:payments')->group(function (): void {
-            Route::post('/payments', [PaymentController::class, 'store'])
-                ->middleware('idempotency')
-                ->name('payments.store');
-            Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
-            Route::post('/payments/{payment}/submit', [PaymentController::class, 'submit'])
-                ->middleware('idempotency')
-                ->name('payments.submit');
-        });
-
         Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
         Route::get('/chats/support', [ChatController::class, 'support'])->name('chats.support');
         Route::get('/chats/requisites', [ChatController::class, 'requisites'])
             ->middleware('role:manager,requisite')->name('chats.requisites');
-        Route::get('/chats/meetings/{meeting}', [ChatController::class, 'showForMeeting'])->name('chats.meeting');
         Route::get('/chats/{chat}/messages', [ChatController::class, 'messages'])->name('chats.messages');
         Route::post('/chats/{chat}/messages', [ChatController::class, 'postMessage'])
             ->middleware(['throttle:messages', 'idempotency'])
@@ -109,24 +74,10 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/leads/{lead}/crypto-addresses', [LeadController::class, 'cryptoAddresses'])
             ->name('leads.cryptoAddresses');
 
-        Route::get('/complaints',  [ComplaintController::class, 'index'])->name('complaints.index');
-        Route::post('/complaints', [ComplaintController::class, 'store'])
-            ->middleware('idempotency')
-            ->name('complaints.store');
 
         Route::post('/invites/share', [InviteController::class, 'share'])
             ->middleware(['throttle:10,1', 'idempotency'])
             ->name('invites.share');
-
-        Route::get('/wallet', [WalletController::class, 'show'])->name('wallet.show');
-        Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('wallet.transactions');
-        Route::get('/withdrawals', [WalletController::class, 'withdrawals'])->name('withdrawals.index');
-        Route::get('/withdrawals/status', [WalletController::class, 'withdrawalStatus'])->name('withdrawals.status');
-        Route::middleware('throttle:withdrawals')->group(function (): void {
-            Route::post('/withdrawals', [WalletController::class, 'requestWithdrawal'])
-                ->middleware('idempotency')
-                ->name('withdrawals.store');
-        });
 
         Route::middleware('role:manager')->prefix('manager')->group(function (): void {
             Route::get('/leads', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'index'])->name('manager.leads.index');

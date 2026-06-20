@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Actions\Chat\EnsureMeetingChatAction;
 use App\Actions\Chat\EnsureRequisitesChatAction;
 use App\Actions\Chat\EnsureSupportChatAction;
 use App\Actions\Chat\PostMessageAction;
@@ -19,7 +18,6 @@ use App\Http\Resources\ChatResource;
 use App\Http\Resources\MessageResource;
 use App\Models\Chat;
 use App\Models\Lead;
-use App\Models\Meeting;
 use App\Models\Message;
 use App\Models\User;
 use App\Support\ApiResponse;
@@ -81,24 +79,6 @@ class ChatController extends Controller
                 ],
             ],
         );
-    }
-
-    public function showForMeeting(Request $request, Meeting $meeting, EnsureMeetingChatAction $action): JsonResponse
-    {
-
-        $user = $request->user();
-
-        $profile = $user->modelProfile()->first();
-        $canAccess = $user->role === UserRole::Admin
-            || $meeting->client_id === $user->id
-            || ($profile !== null && $profile->id === $meeting->model_profile_id);
-        if (! $canAccess) {
-            throw DomainException::forbidden('CHAT_FORBIDDEN', 'Not a participant.');
-        }
-
-        $chat = $action->execute($meeting)->load(['participants.user', 'meeting']);
-
-        return ApiResponse::ok(new ChatResource($chat));
     }
 
     public function support(Request $request, EnsureSupportChatAction $action): JsonResponse

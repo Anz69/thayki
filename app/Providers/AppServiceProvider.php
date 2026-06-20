@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Events\MeetingStatusChanged;
 use App\Events\MessageSent;
-use App\Listeners\SendMeetingStatusNotification;
 use App\Listeners\SendMessageNotification;
-use App\Models\Meeting;
-use App\Observers\MeetingObserver;
 use App\Services\Payments\Contracts\PaymentGateway;
 use App\Services\Payments\PaymentGatewayManager;
 use App\Services\Telegram\Notifier;
@@ -40,13 +36,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiters();
         $this->registerEventListeners();
-
-        Meeting::observe(MeetingObserver::class);
     }
 
     private function registerEventListeners(): void
     {
-        Event::listen(MeetingStatusChanged::class, SendMeetingStatusNotification::class);
         Event::listen(MessageSent::class, SendMessageNotification::class);
     }
 
@@ -69,22 +62,6 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
-        RateLimiter::for('payments', static function (Request $request) {
-            $user = $request->user();
-
-            return Limit::perMinute(30)->by($user !== null
-                ? 'pay:'.$user->getAuthIdentifier()
-                : 'pay-ip:'.$request->ip());
-        });
-
-        RateLimiter::for('withdrawals', static function (Request $request) {
-            $user = $request->user();
-
-            return Limit::perMinute(30)->by($user !== null
-                ? 'wd:'.$user->getAuthIdentifier()
-                : 'wd-ip:'.$request->ip());
-        });
-
         RateLimiter::for('messages', static function (Request $request) {
             $user = $request->user();
 
@@ -93,12 +70,5 @@ class AppServiceProvider extends ServiceProvider
                 : 'msg-ip:'.$request->ip());
         });
 
-        RateLimiter::for('meetings', static function (Request $request) {
-            $user = $request->user();
-
-            return Limit::perMinute(30)->by($user !== null
-                ? 'mt:'.$user->getAuthIdentifier()
-                : 'mt-ip:'.$request->ip());
-        });
     }
 }
