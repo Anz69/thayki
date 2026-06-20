@@ -4,8 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { registerOverlay, registerPageRoot } from '@/utils/pageTransition'
 import RouteChangeEffect from '@/components/RouteChangeEffect'
 import BottomNav from '@/components/ui/BottomNav'
-import PhotoViewer from '@/components/modals/PhotoViewer'
-import RegistrationModal from '@/components/modals/RegistrationModal'
 import AppLoader from '@/components/ui/AppLoader'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import useAuthStore from '@/stores/useAuthStore'
@@ -439,19 +437,15 @@ export default function App() {
                         <Route path="/" element={<LandingRoute />} />
                         <Route path="/home" element={<MainPage />} />
                         <Route path="/more" element={<MoreRolePage />} />
-                        <Route path="/models" element={<Navigate to="/home" replace />} />
-                        <Route path="/model-more" element={<Navigate to="/more" replace />} />
                         <Route path="/model/:id" element={<ModelPage />} />
                         <Route path="/model-view" element={<ModelPage preview />} />
                         <Route path="/meeting" element={<MeetingRolePage />} />
-                        <Route path="/model-meeting" element={<Navigate to="/meeting" replace />} />
                         <Route path="/chat" element={<ChatPage />} />
                         <Route path="/support" element={<SupportPage />} />
                         <Route path="/request" element={<RequestPage />} />
                         <Route path="/request/chat" element={<RequestChatPage />} />
                         <Route path="/requisites/open" element={<RequisitesChatGate />} />
                         <Route path="/requests" element={<RequestsPage />} />
-                        <Route path="/manager" element={<Navigate to="/home" replace />} />
                         <Route path="/manager/leads" element={<RoleRoute roles={['manager']}><ManagerLeadsPage /></RoleRoute>} />
                         <Route path="/manager/earnings" element={<RoleRoute roles={['manager']}><ManagerEarningsPage /></RoleRoute>} />
                         <Route path="/manager/support" element={<RoleRoute roles={['manager']}><ManagerSupportPage /></RoleRoute>} />
@@ -469,9 +463,6 @@ export default function App() {
             </Suspense>
           </ErrorBoundary>
         </div>
-
-        <PhotoViewer />
-        <RegistrationModal />
 
         <div
           ref={overlayRef}

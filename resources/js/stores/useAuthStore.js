@@ -28,7 +28,6 @@ async function resetDependentStores() {
     import('@/stores/useBookingStore').catch(() => null),
     import('@/stores/useProfileStore').catch(() => null),
     import('@/stores/useModelMeetingStore').catch(() => null),
-    import('@/stores/usePhotoViewerStore').catch(() => null),
   ])
   for (const m of stores) {
     try { m?.default?.getState?.().reset?.() } catch {}

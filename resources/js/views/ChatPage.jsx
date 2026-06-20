@@ -201,7 +201,7 @@ export default function ChatPage() {
   }, [])
 
   useEffect(() => {
-    if (!chatId) { setLoading(false); setInitialLoad(false); setLoadError(null); return }
+    if (!chatId) { setLoading(false); setLoadError(null); return }
 
     setLoading(true)
     setLoadError(null)
@@ -507,7 +507,7 @@ export default function ChatPage() {
       <header ref={headerRef} className="w-full py-5 bg-white shrink-0">
         <div className="container flex items-center justify-between relative">
           <button
-            onClick={() => navigate(-1) ? navigate('/home') : null}
+            onClick={() => navigate(-1)}
             className="px-3.5 py-2.5 bg-[#EFEEF3] text-black text-base/[100%] font-medium rounded-full active:bg-[#E4E4E4] transition-colors"
           >
             {t('chat.back')}

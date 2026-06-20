@@ -1,12 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { transitionOut, setPageReady } from '@/utils/pageTransition'
-import usePhotoViewerStore from '@/stores/usePhotoViewerStore'
 import useBookingStore from '@/stores/useBookingStore'
 let isFirstNavigation = true
 
 function closeGlobalModals() {
-  try { if (usePhotoViewerStore.getState().isOpen) usePhotoViewerStore.getState().close() } catch { }
   try { if (useBookingStore.getState().isOpen) useBookingStore.getState().close() } catch { }
 }
 
