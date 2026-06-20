@@ -230,6 +230,7 @@ export default function RequestChatPage() {
   const [sending, setSending]     = useState(false)
   const [uploading, setUploading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [viewerSrc, setViewerSrc] = useState(null)
   const [toast, setToast] = useState(null)
   const toastTimerRef = useRef(null)
@@ -458,8 +459,10 @@ export default function RequestChatPage() {
     setLeadMeta(null)
   }, [chatId])
 
-  useEffect(() => {
-    if (!chatId) { navigate('/home', { replace: true }); return }
+  const loadInitial = useCallback(() => {
+    if (!chatId) return
+    setLoadError(false)
+    setInitialLoad(true)
     api.get(`/chats/${chatId}/messages`, { params: { limit: 30 } })
       .then((res) => {
         const data = res.data.data ?? []
@@ -472,9 +475,14 @@ export default function RequestChatPage() {
         oldestIdRef.current = res.data.meta?.cursor?.next_before_id ?? data[0]?.id ?? null
         hasMoreOlderRef.current = data.length >= 30
       })
-      .catch(logError)
+      .catch((e) => { logError(e); setLoadError(true) })
       .finally(() => { setInitialLoad(false); loadDone.current = true; tryShowContent() })
-  }, [chatId, myId, navigate, isGroup, isStaff, ingestParticipantsRead, ingestChatMeta])
+  }, [chatId, myId, isGroup, isStaff, ingestParticipantsRead, ingestChatMeta])
+
+  useEffect(() => {
+    if (!chatId) { navigate('/home', { replace: true }); return }
+    loadInitial()
+  }, [chatId, navigate, loadInitial])
 
   useEffect(() => {
     if (!chatId) return undefined
@@ -757,6 +765,19 @@ export default function RequestChatPage() {
         {initialLoad && (
           <div className="absolute inset-0 z-10 bg-white flex flex-col pt-4">
             <ChatLoadingSkeleton />
+          </div>
+        )}
+
+        {!initialLoad && loadError && (
+          <div className="absolute inset-0 z-20 bg-white flex flex-col items-center justify-center gap-4 px-8 text-center">
+            <div className="size-16 rounded-full bg-[#F0F0F0] flex items-center justify-center text-3xl">⚠️</div>
+            <p className="text-[#7F7F7F] text-sm">{t('common.somethingWrong')}</p>
+            <button
+              onClick={loadInitial}
+              className="px-5 py-3 rounded-full bg-[#E2319B] text-white text-sm font-semibold active:opacity-80 transition-opacity"
+            >
+              {t('common.retry')}
+            </button>
           </div>
         )}
 

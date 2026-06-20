@@ -105,6 +105,7 @@ export default function SupportPage() {
   const [sending,   setSending]   = useState(false)
   const [uploading, setUploading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [viewerSrc, setViewerSrc] = useState(null)
 
   const hasText = inputText.trim().length > 0
@@ -216,7 +217,9 @@ export default function SupportPage() {
       }, 0.12)
   })
 
-  useEffect(() => {
+  const loadSupport = useCallback(() => {
+    setLoadError(false)
+    setInitialLoad(true)
     api.get('/chats/support')
       .then(({ data }) => {
         const id = data.data?.id
@@ -230,13 +233,15 @@ export default function SupportPage() {
         prevMsgCount.current = normalized.length
         setMessages(normalized)
       })
-      .catch(logError)
+      .catch((e) => { logError(e); setLoadError(true) })
       .finally(() => {
         loadDone.current = true
         setInitialLoad(false)
         tryShowContent()
       })
   }, [myId])
+
+  useEffect(() => { loadSupport() }, [loadSupport])
 
   useEffect(() => {
     if (!chatId) return undefined
@@ -425,6 +430,19 @@ export default function SupportPage() {
         {initialLoad && (
           <div className="absolute inset-0 z-10 bg-white flex flex-col pt-4">
             <ChatLoadingSkeleton />
+          </div>
+        )}
+
+        {!initialLoad && loadError && (
+          <div className="absolute inset-0 z-20 bg-white flex flex-col items-center justify-center gap-4 px-8 text-center">
+            <div className="size-16 rounded-full bg-[#F0F0F0] flex items-center justify-center text-3xl">⚠️</div>
+            <p className="text-[#7F7F7F] text-sm">{t('common.somethingWrong')}</p>
+            <button
+              onClick={loadSupport}
+              className="px-5 py-3 rounded-full bg-[#E2319B] text-white text-sm font-semibold active:opacity-80 transition-opacity"
+            >
+              {t('common.retry')}
+            </button>
           </div>
         )}
 
