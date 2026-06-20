@@ -53,83 +53,15 @@ response.
 | DELETE | `/me/model-profile/photos/{photoId}`                | Delete photo. |
 | POST   | `/me/model-profile/photos/{photoId}/main`           | Set as main photo. |
 
-## Model Application ("Become a model")
-
-| Method | Path                      | Notes |
-| ------ | ------------------------- | ----- |
-| GET    | `/model-application`      | Current application status. |
-| POST   | `/model-application` (I)  | Submit new application. |
-
-## Meetings (bookings)
-
-| Method | Path                                 | Notes |
-| ------ | ------------------------------------ | ----- |
-| GET    | `/meetings`                          | List with filters: `status`, pagination. |
-| POST   | `/meetings` (I)                      | Body: `{model_profile_id, scheduled_at, duration_hours}`. |
-| GET    | `/meetings/{meeting}`                | Show single. |
-| POST   | `/meetings/{meeting}/accept`         | Model accepts. |
-| POST   | `/meetings/{meeting}/reject`         | Model rejects. |
-| POST   | `/meetings/{meeting}/cancel`         | Any participant cancels. |
-| POST   | `/meetings/{meeting}/confirm`        | Model confirms after payment. |
-| POST   | `/meetings/{meeting}/complete`       | Any participant marks completed. |
-
-State machine: `pending → accepted | rejected | expired | cancelled`,
-`accepted → paid | cancelled | expired`, `paid → confirmed | cancelled`,
-`confirmed → completed | cancelled`.
-
-## Payments
-
-All under `throttle:payments` (60/min per user).
-
-| Method | Path                                | Notes |
-| ------ | ----------------------------------- | ----- |
-| POST   | `/payments` (I)                     | Body: `{meeting_id, method}`. Returns payment + `intent`. |
-| GET    | `/payments/{payment}`               | Show single. |
-| POST   | `/payments/{payment}/submit` (I)    | Body: `{tx_hash}`. |
-
 ## Chats
 
 | Method | Path                                         | Notes |
 | ------ | -------------------------------------------- | ----- |
 | GET    | `/chats`                                     | List chats where user is a participant. |
 | GET    | `/chats/support`                             | Lazy-creates a support chat. |
-| GET    | `/chats/meetings/{meeting}`                  | Lazy-creates a chat for a meeting. |
 | GET    | `/chats/{chat}/messages`                     | Cursor pagination: `limit` (default 30), `before_id`. |
 | POST   | `/chats/{chat}/messages`                     | Body: `{body?, attachment?}`. Throttled `messages` (120/min). |
 | POST   | `/chats/{chat}/read`                         | Update `last_read_at` marker. |
-
-## Wallet & Withdrawals
-
-| Method | Path                      | Notes |
-| ------ | ------------------------- | ----- |
-| GET    | `/wallet`                 | Wallet (balance + locked + version). |
-| GET    | `/wallet/transactions`    | Paginated history. |
-| GET    | `/withdrawals`            | Current user's withdrawals. |
-| POST   | `/withdrawals` (I)        | Body: `{amount_minor, method, wallet_address}`. Throttled `withdrawals`. |
-
-## Roadmap
-
-| Method | Path          | Notes |
-| ------ | ------------- | ----- |
-| GET    | `/roadmap`    | Public list. |
-
-## Admin (role=admin)
-
-| Method | Path                                                  |
-| ------ | ----------------------------------------------------- |
-| GET    | `/admin/model-applications`                           |
-| POST   | `/admin/model-applications/{application}/approve`     |
-| POST   | `/admin/model-applications/{application}/reject`      |
-| GET    | `/admin/payments`                                     |
-| POST   | `/admin/payments/{payment}/confirm`                   |
-| GET    | `/admin/withdrawals`                                  |
-| POST   | `/admin/withdrawals/{withdrawal}/approve`             |
-| POST   | `/admin/withdrawals/{withdrawal}/mark-paid`           |
-| POST   | `/admin/withdrawals/{withdrawal}/reject`              |
-| POST   | `/admin/roadmap`                                      |
-| PATCH  | `/admin/roadmap/{item}`                               |
-| DELETE | `/admin/roadmap/{item}`                               |
-| GET    | `/admin/audit`                                        |
 
 ## Real-time channels (Reverb)
 

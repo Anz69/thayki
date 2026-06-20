@@ -27,11 +27,6 @@ class Chat extends Model
         ];
     }
 
-    public function meeting(): BelongsTo
-    {
-        return $this->belongsTo(Meeting::class);
-    }
-
     public function participants(): HasMany
     {
         return $this->hasMany(ChatParticipant::class);

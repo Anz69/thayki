@@ -53,11 +53,6 @@ class ModelProfile extends Model
         return $this->hasMany(ModelPriceOption::class)->orderBy('hours');
     }
 
-    public function meetings(): HasMany
-    {
-        return $this->hasMany(Meeting::class);
-    }
-
     public function leads(): HasMany
     {
         return $this->hasMany(Lead::class)->latest();

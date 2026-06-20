@@ -27,9 +27,4 @@ class Complaint extends Model
     {
         return $this->belongsTo(User::class);
     }
-
-    public function meeting(): BelongsTo
-    {
-        return $this->belongsTo(Meeting::class);
-    }
 }

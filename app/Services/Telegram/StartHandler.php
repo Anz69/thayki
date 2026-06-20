@@ -269,7 +269,7 @@ class StartHandler
         $this->bot->sendMessage(
             $chatId,
             trans('start.model_invite', ['greeting' => $this->greeting($firstName, $locale)], $locale),
-            openPath: '/become-model',
+            openPath: '/',
             buttonLabel: trans('start.become_model', [], $locale),
         );
     }

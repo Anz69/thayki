@@ -9,7 +9,6 @@ use App\Models\ModelPhoto;
 use App\Models\ModelPriceOption;
 use App\Models\ModelProfile;
 use App\Models\User;
-use App\Models\Wallet;
 use Illuminate\Database\Seeder;
 
 class DemoSeeder extends Seeder
@@ -22,14 +21,12 @@ class DemoSeeder extends Seeder
             'last_name' => 'Root',
             'username' => 'admin',
         ]);
-        Wallet::factory()->for($admin)->create();
 
         User::factory()
             ->count(10)
             ->model()
             ->create()
             ->each(function (User $user): void {
-                Wallet::factory()->for($user)->create();
                 $profile = ModelProfile::factory()->create(['user_id' => $user->id]);
                 ModelPhoto::factory()->count(3)->create([
                     'model_profile_id' => $profile->id,
@@ -49,7 +46,6 @@ class DemoSeeder extends Seeder
 
         User::factory()
             ->count(5)
-            ->create(['role' => UserRole::Client])
-            ->each(fn (User $u) => Wallet::factory()->for($u)->create());
+            ->create(['role' => UserRole::Client]);
     }
 }

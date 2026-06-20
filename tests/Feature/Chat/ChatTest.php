@@ -5,23 +5,14 @@ declare(strict_types=1);
 use App\Enums\ChatParticipantRole;
 use App\Enums\ChatType;
 use App\Models\Chat;
-use App\Models\Meeting;
-use App\Models\ModelProfile;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
 
 it('allows participants to post and read messages', function (): void {
-    $modelUser = User::factory()->model()->create();
-    $profile = ModelProfile::factory()->create(['user_id' => $modelUser->id]);
     $client = User::factory()->create();
-    $meeting = Meeting::factory()->create([
-        'client_id' => $client->id,
-        'model_profile_id' => $profile->id,
-    ]);
 
-    $chat = Chat::query()->create(['type' => ChatType::Meeting, 'meeting_id' => $meeting->id]);
+    $chat = Chat::query()->create(['type' => ChatType::Support]);
     $chat->participants()->create(['user_id' => $client->id, 'role' => ChatParticipantRole::Client]);
-    $chat->participants()->create(['user_id' => $modelUser->id, 'role' => ChatParticipantRole::Model]);
 
     Sanctum::actingAs($client, ['role:client']);
 

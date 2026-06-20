@@ -45,7 +45,7 @@ class SendChatMessageNotificationJob implements ShouldQueue
 
             $message->refresh();
 
-            $chat = Chat::with(['participants.user', 'meeting'])->find($message->chat_id);
+            $chat = Chat::with(['participants.user'])->find($message->chat_id);
             if ($chat === null) {
                 return;
             }
@@ -156,7 +156,7 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 }
             }
 
-            $openPath = $isLead ? "/request/chat?id={$chat->id}".($leadId ? "&lead={$leadId}" : '') : ($isSupport ? '/support' : "/chat?id={$chat->id}");
+            $openPath = $isLead ? "/request/chat?id={$chat->id}".($leadId ? "&lead={$leadId}" : '') : ($isSupport ? '/support' : '/home');
 
             foreach ($chat->participants as $participant) {
                 $recipient = $participant->user;
