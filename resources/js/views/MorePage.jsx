@@ -1,18 +1,14 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
-import { useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import FaqModal from '@/components/modals/FaqModal'
 import HowItWorksModal from '@/components/modals/HowItWorksModal'
-import WithdrawModal from '@/components/modals/WithdrawModal'
 import GradientBorder from '@/components/ui/GradientBorder'
 import useAuthStore from '@/stores/useAuthStore'
 import { useTranslation } from 'react-i18next'
 import i18n, { setLanguage } from '@/i18n'
 import api from '@/utils/api'
-import { subscribeActiveMeetingsRefresh } from '@/utils/activeMeetingsBus'
-import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 
 const IconQuestion = () => (
@@ -59,77 +55,12 @@ function Toggle({ value, onChange }) {
   )
 }
 
-function formatDate(iso) {
-  if (!iso) return '—'
-  try {
-    const d = new Date(iso)
-    if (isNaN(d)) return '—'
-    const days = i18n.t('weekdaysShort', { returnObjects: true })
-    const day = Array.isArray(days) ? days[d.getDay()] : ''
-    const dd = String(d.getDate()).padStart(2, '0')
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const hh = String(d.getHours()).padStart(2, '0')
-    const min = String(d.getMinutes()).padStart(2, '0')
-    return `${day}, ${dd}.${mm}, ${hh}:${min}`
-  } catch { return '—' }
-}
-
-function OrderCard({ meeting, currentUserId, onClick }) {
-  const { t } = useTranslation()
-  const [imgFailed, setImgFailed] = useState(false)
-
-  const isClient = meeting.client_id === currentUserId
-  const counterName = isClient
-    ? (meeting.model_profile?.display_name ?? '—')
-    : (meeting.client?.first_name ?? meeting.client?.username ?? t('common.client'))
-  const counterPhotoRaw = isClient
-    ? (meeting.model_profile?.user?.photo_url ?? meeting.model_profile?.photos?.find(p => p.is_main)?.url ?? meeting.model_profile?.photos?.[0]?.url ?? null)
-    : (meeting.client?.photo_url ?? null)
-  const counterPhoto = counterPhotoRaw ? resolveMediaUrl(counterPhotoRaw) : null
-
-  const statusLabel = t(`orderStatus.${meeting.status}`, t(`moreStatus.${meeting.status}`, meeting.status))
-  const price = meeting.price_thb ?? 0
-  const duration = meeting.duration_hours ? `${meeting.duration_hours} ${t('common.hoursShort')}` : '—'
-
-  return (
-    <button
-      onClick={onClick}
-      className="w-full text-left bg-[#F5F5F7] rounded-2xl px-4 py-3.5 flex flex-col gap-2.5 active:bg-[#ECEAEC] transition-colors"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="size-5 rounded-full shrink-0 overflow-hidden flex items-center justify-center" {...(!counterPhoto ? { style: { background: '#E2319B' } } : {})}>
-            {counterPhoto && !imgFailed
-              ? <img src={counterPhoto} alt="" className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
-              : <span className="text-white text-[10px] font-bold">{counterName[0]?.toUpperCase()}</span>
-            }
-          </div>
-          <span className="text-black text-[15px]/[100%] font-[500]">{counterName}</span>
-        </div>
-        <span className="text-[#777779] text-xs/[100%] font-medium">{formatDate(meeting.scheduled_at)}</span>
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-[#777779] text-sm/[100%] font-medium">{statusLabel}</span>
-        <span className="text-black text-sm/[100%] font-[500]">฿ {price.toLocaleString()} / {duration}</span>
-      </div>
-    </button>
-  )
-}
-
-const IconWithdraw = () => (
-  <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-    <path d="M9.6665 9.33366C12.0597 9.33366 13.9998 7.39356 13.9998 5.00033C13.9998 2.60709 12.0597 0.666992 9.6665 0.666992C7.27327 0.666992 5.33317 2.60709 5.33317 5.00033M4.08048 7.83366H5.08048V11.5003M4.08048 11.5003H6.08048M0.666504 9.66699C0.666504 12.0602 2.6066 14.0003 4.99984 14.0003C7.39307 14.0003 9.33317 12.0602 9.33317 9.66699C9.33317 7.27376 7.39307 5.33366 4.99984 5.33366C2.6066 5.33366 0.666504 7.27376 0.666504 9.66699Z" stroke="white" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
-
 export default function MorePage() {
   const navigate = useTransitionNavigate()
-  const location = useLocation()
   const auth = useAuthStore()
   const { t } = useTranslation()
   const [howItWorksOpen, setHowItWorksOpen] = useState(false)
   const [faqOpen, setFaqOpen] = useState(false)
-  const [withdrawOpen, setWithdrawOpen] = useState(false)
   const [notifications, setNotifications] = useState(
     auth.user?.notifications_enabled ?? true
   )
@@ -143,78 +74,10 @@ export default function MorePage() {
       setNotifications((v) => !v)
     }
   }, [auth])
-  const [meetings, setMeetings] = useState([])
-  const [loadingMeetings, setLoadingMeetings] = useState(true)
-  const [balance, setBalance] = useState(auth.user?.balance ?? 0)
-  const [pendingWithdrawal, setPendingWithdrawal] = useState(0)
-  const [withdrawMethods, setWithdrawMethods] = useState(['usdt', 'btc', 'ton'])
-
-  const balanceRef = useRef(null)
-  const ordersRef = useRef(null)
   const section1Ref = useRef(null)
   const section2Ref = useRef(null)
 
-  const fetchMeetings = useCallback((silent = false) => {
-    if (!silent) setLoadingMeetings(true)
-    api.get('/meetings', {
-      params: { per_page: 20, statuses: 'pending,accepted,paid,confirmed' },
-    })
-      .then(r => setMeetings(r.data.data ?? []))
-      .catch(logError)
-      .finally(() => { if (!silent) setLoadingMeetings(false) })
-  }, [])
-
-  const fetchBalance = useCallback(() => {
-    api.get('/wallet')
-      .then(r => {
-        const w = r.data.data
-        setBalance(Math.floor((w?.available_minor ?? w?.balance_minor ?? 0) / 100))
-        setPendingWithdrawal(Math.floor((w?.pending_withdrawal_minor ?? 0) / 100))
-        const methods = Array.isArray(w?.withdrawal_methods) ? w.withdrawal_methods : []
-        setWithdrawMethods(methods.length ? methods : ['usdt', 'btc', 'ton'])
-      })
-      .catch(() => setBalance(0))
-  }, [])
-
-  useEffect(() => {
-    fetchMeetings(false)
-  }, [location.key, fetchMeetings])
-
-  useEffect(() => {
-    return subscribeActiveMeetingsRefresh(() => {
-      fetchMeetings(true)
-      fetchBalance()
-    })
-  }, [fetchMeetings, fetchBalance])
-
-  useEffect(() => {
-    const onPageShow = (e) => {
-      if (e.persisted) {
-        fetchMeetings(true)
-        fetchBalance()
-      }
-    }
-    window.addEventListener('pageshow', onPageShow)
-    return () => window.removeEventListener('pageshow', onPageShow)
-  }, [fetchMeetings, fetchBalance])
-
-  useEffect(() => {
-    fetchBalance()
-
-    const onVisibility = () => {
-      if (!document.hidden) {
-        fetchBalance()
-        fetchMeetings(true)
-      }
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [fetchMeetings, fetchBalance])
-
-  const balanceAnimatedRef = useRef(false)
-
   useLayoutEffect(() => {
-    if (ordersRef.current) gsap.set(ordersRef.current, { autoAlpha: 0, y: 20 })
     if (section1Ref.current) gsap.set(section1Ref.current, { autoAlpha: 0, y: 24 })
     if (section2Ref.current) gsap.set(section2Ref.current, { autoAlpha: 0, y: 24 })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -227,33 +90,6 @@ export default function MorePage() {
       .to(s1, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0)
       .to(s2, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.1)
   })
-
-  useEffect(() => {
-    if (!balanceRef.current || balance < 0.01) return
-    if (balanceAnimatedRef.current) return
-    balanceAnimatedRef.current = true
-    gsap.fromTo(
-      balanceRef.current,
-      { autoAlpha: 0, y: 18 },
-      { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' },
-    )
-  }, [balance])
-
-  const activeMeetings = meetings
-
-  useEffect(() => {
-    const ordersEl = ordersRef.current
-    if (!ordersEl) return
-    if (!loadingMeetings && activeMeetings.length > 0) {
-      gsap.fromTo(
-        ordersEl,
-        { autoAlpha: 0, y: 16 },
-        { autoAlpha: 1, y: 0, duration: 0.45, ease: 'expo.out' },
-      )
-    } else if (!loadingMeetings && activeMeetings.length === 0) {
-      gsap.to(ordersEl, { autoAlpha: 0, duration: 0.25 })
-    }
-  }, [loadingMeetings, activeMeetings.length])
 
   return (
     <>
@@ -279,63 +115,8 @@ export default function MorePage() {
             </GradientBorder>
           )}
 
-          {balance >= 0.01 && (
-            <div ref={balanceRef} >
-              <GradientBorder radius={16} borderWidth={1.5} innerClass="px-4 py-4 flex items-center justify-between gap-3">
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className="text-[#ABABAB] text-[11px]/[100%] font-medium">{t('more.balance')}</span>
-                  <span className="text-black text-xl/[100%] font-semibold">฿ {balance.toLocaleString()}</span>
-                  {pendingWithdrawal > 0 && (
-                    <span className="text-[#E2319B] text-[11px]/[140%] font-medium mt-0.5">
-                      {t('more.pendingWithdrawal', { amount: `฿ ${pendingWithdrawal.toLocaleString()}` })}
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setWithdrawOpen(true)}
-                  className="shrink-0 flex items-center gap-1.5 bg-[#1B1B1B] text-white text-sm/[100%] font-medium px-4 py-2.5 rounded-full active:opacity-70 transition-opacity"
-                >
-                  <IconWithdraw />
-                  {t('more.withdraw')}
-                </button>
-              </GradientBorder>
-            </div>
-          )}
-
-          <div ref={ordersRef} className="flex flex-col gap-3">
-            {activeMeetings.length > 0 && (
-              <>
-                <SectionLabel>{t('more.orders')}</SectionLabel>
-                <div className="flex flex-col gap-2 rounded-2xl overflow-hidden">
-                  {activeMeetings.map(m => (
-                    <OrderCard
-                      key={m.id}
-                      meeting={m}
-                      currentUserId={auth.user?.id}
-                      onClick={() => navigate(`/meeting?id=${m.id}`)}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
           <div ref={section1Ref} className="flex flex-col gap-4">
             <SectionLabel>{t('more.important')}</SectionLabel>
-
-            {auth.isManager?.() && (
-              <button
-                onClick={() => navigate('/manager')}
-                className="w-full flex items-center gap-2.5 bg-[#E2319B] rounded-xl px-4 py-4.5 active:opacity-90 transition-opacity"
-              >
-                <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 13h4l2 3h6l2-3h4M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <span className="text-white text-[16px]/[100%] font-semibold">{t('manager.title')}</span>
-              </button>
-            )}
 
             <button
               onClick={() => navigate('/requests')}
@@ -434,12 +215,6 @@ export default function MorePage() {
 
       <HowItWorksModal isOpen={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
       <FaqModal isOpen={faqOpen} onClose={() => setFaqOpen(false)} />
-      <WithdrawModal
-        isOpen={withdrawOpen}
-        onClose={() => setWithdrawOpen(false)}
-        balance={balance}
-        methods={withdrawMethods}
-      />
     </>
   )
 }
