@@ -408,6 +408,7 @@
     "verifySheetText": "客户将看到「验证身份」按钮，并通过其 Telegram 联系方式确认。",
     "verifySheetBtn": "请求验证",
     "modelsTitle": "模特精选（{{n}}）",
+    "profileExpired": "该资料已不可用 — 24 小时查看期已过。",
     "modelsSheetTitle": "挑选模特",
     "modelsSend": "发送（{{n}}）",
     "modelLink": "通过链接添加模特",

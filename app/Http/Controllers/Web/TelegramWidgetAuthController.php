@@ -9,7 +9,6 @@ use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Models\Wallet;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -64,11 +63,6 @@ class TelegramWidgetAuthController extends Controller
                     : ($data['photo_url'] ?? $user->photo_url),
                 'last_auth_at' => now(),
             ])->save();
-
-            Wallet::query()->firstOrCreate(
-                ['user_id' => $user->id],
-                ['balance_minor' => 0, 'locked_minor' => 0, 'currency' => 'THB', 'version' => 0],
-            );
 
             return $user;
         });

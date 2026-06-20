@@ -408,6 +408,7 @@
     "verifySheetText": "The client will get a «Verify identity» button and confirm via their Telegram contact.",
     "verifySheetBtn": "Request verification",
     "modelsTitle": "Model selection ({{n}})",
+    "profileExpired": "This profile is no longer available — the 24h viewing window has expired.",
     "modelsSheetTitle": "Pick models",
     "modelsSend": "Send ({{n}})",
     "modelLink": "Model by link",

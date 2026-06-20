@@ -9,7 +9,6 @@ use App\Enums\UserStatus;
 use App\Exceptions\DomainException;
 use App\Exceptions\InvalidInitDataException;
 use App\Models\User;
-use App\Models\Wallet;
 use App\Services\Audit\AuditLogger;
 use App\Services\Telegram\InitDataValidator;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
@@ -93,11 +92,6 @@ class AuthenticateTelegramUserAction
                 'tg_chat_id' => $user->tg_chat_id ?? $telegramId,
                 'last_auth_at' => now(),
             ])->save();
-
-            Wallet::query()->firstOrCreate(
-                ['user_id' => $user->id],
-                ['balance_minor' => 0, 'locked_minor' => 0, 'currency' => 'THB', 'version' => 0],
-            );
 
             if ($this->config->get('app.env') === 'local' && $user->is_strange !== false) {
                 $user->is_strange = false;

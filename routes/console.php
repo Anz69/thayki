@@ -8,13 +8,13 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('meetings:expire-pending')
-    ->everyMinute()
+Schedule::command('oxapay:cleanup-addresses')
+    ->everyThirtyMinutes()
     ->withoutOverlapping()
     ->runInBackground();
 
-Schedule::command('oxapay:cleanup-addresses')
-    ->everyThirtyMinutes()
+Schedule::command('model-cards:cleanup')
+    ->hourly()
     ->withoutOverlapping()
     ->runInBackground();
 

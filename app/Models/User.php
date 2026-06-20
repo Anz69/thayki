@@ -65,25 +65,6 @@ class User extends Authenticatable
         return $this->hasOne(ModelProfile::class);
     }
 
-    public function wallet(): HasOne
-    {
-        return $this->hasOne(Wallet::class);
-    }
-
-    public function modelApplication(): HasOne
-    {
-        return $this->hasOne(ModelApplication::class);
-    }
-
-    public function meetingsAsClient(): HasMany
-    {
-        return $this->hasMany(Meeting::class, 'client_id');
-    }
-
-    public function withdrawals(): HasMany
-    {
-        return $this->hasMany(Withdrawal::class);
-    }
 
     public function isAdmin(): bool
     {

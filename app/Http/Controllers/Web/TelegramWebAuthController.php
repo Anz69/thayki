@@ -9,7 +9,6 @@ use App\Enums\UserStatus;
 use App\Exceptions\InvalidInitDataException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Wallet;
 use App\Services\Telegram\InitDataValidator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -75,11 +74,6 @@ class TelegramWebAuthController extends Controller
                 'is_premium'    => (bool) ($payload['is_premium'] ?? $user->is_premium),
                 'last_auth_at'  => now(),
             ])->save();
-
-            Wallet::query()->firstOrCreate(
-                ['user_id' => $user->id],
-                ['balance_minor' => 0, 'locked_minor' => 0, 'currency' => 'THB', 'version' => 0],
-            );
 
             return $user;
         });

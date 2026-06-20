@@ -199,6 +199,19 @@ export function TypedMessageCard({ msg, isManager, leadId, leadClosed = false, o
 
   if (msg.type === 'model_card') {
     const models = Array.isArray(p.models) ? p.models : []
+    const CARD_TTL_MS = 24 * 60 * 60 * 1000
+    const expired = p.expired === true
+      || (msg.createdAt && Date.now() - new Date(msg.createdAt).getTime() > CARD_TTL_MS)
+    if (expired) {
+      return (
+        <div data-msg className={`flex ${side} my-3 px-2 w-full`}>
+          <div className="w-full max-w-[340px] rounded-2xl bg-[#F5F5F7] border border-black/[0.06] px-4 py-5 flex flex-col items-center gap-1.5 text-center">
+            <span className="text-2xl">⌛</span>
+            <span className="text-[#7F7F7F] text-[13px]/[150%] font-medium">{t('leadChat.profileExpired')}</span>
+          </div>
+        </div>
+      )
+    }
     if (!models.length) return null
     return (
       <div data-msg className={`flex ${side} my-3 px-2 w-full`}>

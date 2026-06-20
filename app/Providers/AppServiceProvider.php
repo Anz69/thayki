@@ -6,8 +6,6 @@ namespace App\Providers;
 
 use App\Events\MessageSent;
 use App\Listeners\SendMessageNotification;
-use App\Services\Payments\Contracts\PaymentGateway;
-use App\Services\Payments\PaymentGatewayManager;
 use App\Services\Telegram\Notifier;
 use App\Services\Telegram\StartHandler;
 use App\Services\Telegram\TelegramBotService;
@@ -21,12 +19,6 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(PaymentGatewayManager::class);
-        $this->app->bind(
-            PaymentGateway::class,
-            static fn ($app): PaymentGateway => $app->make(PaymentGatewayManager::class)->default(),
-        );
-
         $this->app->singleton(TelegramBotService::class, static fn (): TelegramBotService => TelegramBotService::fromConfig());
         $this->app->singleton(StartHandler::class, static fn ($app): StartHandler => new StartHandler($app->make(TelegramBotService::class)));
         $this->app->singleton(Notifier::class, static fn ($app): Notifier => new Notifier($app->make(TelegramBotService::class)));
