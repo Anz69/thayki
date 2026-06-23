@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <div class="w-full max-w-2xl space-y-6">
+    <div class="w-full space-y-6">
         <x-filament::section icon="heroicon-o-key" icon-color="primary">
             <x-slot name="heading">Смена пароля</x-slot>
             <x-slot name="description">Поменяйте пароль входа в админ-панель.</x-slot>
