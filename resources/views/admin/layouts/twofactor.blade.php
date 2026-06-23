@@ -73,6 +73,8 @@
         .warn code, .sub code { background: var(--ring); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
         .foot { margin-top: 22px; }
         .foot button, .link-btn { background: none; border: 0; color: var(--muted2); font-size: 12.5px; cursor: pointer; text-decoration: underline; font-family: inherit; padding: 0; }
+        a.link-btn { text-decoration: underline; }
+        .timer { color: var(--muted2); font-size: 12.5px; }
         form.inline { display: inline; }
     </style>
 </head>

@@ -66,7 +66,7 @@ class Admin2FAController extends Controller
             $request->session()->put('admin_2fa_resend_count', 0);
         }
 
-        return view('admin.twofactor');
+        return view('admin.twofactor', ['resendIn' => $this->resendRemaining($request)]);
     }
 
     public function verify(Request $request): RedirectResponse
@@ -95,20 +95,12 @@ class Admin2FAController extends Controller
             return redirect($this->panelUrl());
         }
 
-        $count = (int) $request->session()->get('admin_2fa_resend_count', 0);
-        $burst = (int) config('admin.twofactor.resend_burst', 3);
-        $cooldown = $count >= $burst
-            ? (int) config('admin.twofactor.resend_cooldown_long', 180)
-            : (int) config('admin.twofactor.resend_cooldown', 60);
-
-        $lastSent = (int) $request->session()->get('admin_2fa_sent_at', 0);
-        $elapsed = now()->timestamp - $lastSent;
-        if ($lastSent > 0 && $elapsed < $cooldown) {
-            $wait = $cooldown - $elapsed;
-
-            return back()->with('status', "Код уже отправлен. Запросить новый можно через {$this->humanWait($wait)}.");
+        // Still cooling down — ignore (the UI shows a live countdown anyway).
+        if ($this->resendRemaining($request) > 0) {
+            return back();
         }
 
+        $count = (int) $request->session()->get('admin_2fa_resend_count', 0);
         $this->twoFactor->sendCode($admin, IpGeo::clientIp($request));
         $request->session()->put('admin_2fa_sent_at', now()->timestamp);
         $request->session()->put('admin_2fa_resend_count', $count + 1);
@@ -116,15 +108,24 @@ class Admin2FAController extends Controller
         return back()->with('status', 'Новый код отправлен в Telegram.');
     }
 
-    private function humanWait(int $seconds): string
+    private function cooldownSeconds(Request $request): int
     {
-        if ($seconds >= 60) {
-            $min = (int) ceil($seconds / 60);
+        $count = (int) $request->session()->get('admin_2fa_resend_count', 0);
+        $burst = (int) config('admin.twofactor.resend_burst', 3);
 
-            return $min.' '.($min === 1 ? 'минуту' : ($min < 5 ? 'минуты' : 'минут'));
+        return $count >= $burst
+            ? (int) config('admin.twofactor.resend_cooldown_long', 180)
+            : (int) config('admin.twofactor.resend_cooldown', 60);
+    }
+
+    private function resendRemaining(Request $request): int
+    {
+        $lastSent = (int) $request->session()->get('admin_2fa_sent_at', 0);
+        if ($lastSent === 0) {
+            return 0;
         }
 
-        return $seconds.' сек.';
+        return max(0, $this->cooldownSeconds($request) - (now()->timestamp - $lastSent));
     }
 
     public function logout(Request $request): RedirectResponse
