@@ -1,5 +1,15 @@
 <x-filament-panels::page>
-    <div class="w-full max-w-2xl">
+    <div class="w-full max-w-2xl space-y-6">
+        <x-filament::section icon="heroicon-o-key" icon-color="primary">
+            <x-slot name="heading">Смена пароля</x-slot>
+            <x-slot name="description">Поменяйте пароль входа в админ-панель.</x-slot>
+
+            <form wire:submit="changePassword" class="space-y-4">
+                {{ $this->form }}
+                <x-filament::button type="submit">Сменить пароль</x-filament::button>
+            </form>
+        </x-filament::section>
+
         <x-filament::section icon="heroicon-o-shield-check" icon-color="primary">
             <x-slot name="heading">Двухфакторная аутентификация</x-slot>
             <x-slot name="description">Вход в админ-панель защищён одноразовым кодом из Telegram.</x-slot>

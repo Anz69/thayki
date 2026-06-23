@@ -29,7 +29,13 @@ class EnsureAdminTwoFactor
 
         $verifiedAt = (int) $request->session()->get('admin_2fa_verified_at', 0);
         $trustTtl = (int) config('admin.twofactor.trust_ttl', 43200);
-        if ($verifiedAt > 0 && (now()->timestamp - $verifiedAt) < $trustTtl) {
+        $securityVersion = $admin->tfa_reset_at ? $admin->tfa_reset_at->getTimestamp() : 0;
+
+        $trusted = $verifiedAt > 0
+            && $verifiedAt >= $securityVersion          // not invalidated by a (re)bind/unbind
+            && (now()->timestamp - $verifiedAt) < $trustTtl;
+
+        if ($trusted) {
             return $next($request);
         }
 

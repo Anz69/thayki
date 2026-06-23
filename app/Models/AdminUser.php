@@ -24,6 +24,7 @@ class AdminUser extends Authenticatable implements FilamentUser
     {
         return [
             'password' => 'hashed',
+            'tfa_reset_at' => 'datetime',
         ];
     }
 

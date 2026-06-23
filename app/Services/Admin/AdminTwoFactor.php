@@ -38,12 +38,21 @@ class AdminTwoFactor
 
     public function bind(AdminUser $admin, int $chatId): void
     {
-        $admin->forceFill(['tg_chat_id' => $chatId])->save();
+        // Bump the security version so every other already-trusted session must
+        // pass 2FA again; the session that completes this binding re-verifies via
+        // the code screen and gets the newest timestamp, so it stays in.
+        $admin->forceFill(['tg_chat_id' => $chatId, 'tfa_reset_at' => now()])->save();
     }
 
     public function unbind(AdminUser $admin): void
     {
-        $admin->forceFill(['tg_chat_id' => null])->save();
+        $admin->forceFill(['tg_chat_id' => null, 'tfa_reset_at' => now()])->save();
+    }
+
+    /** Sessions verified before this timestamp are no longer trusted. */
+    public function securityVersion(AdminUser $admin): int
+    {
+        return $admin->tfa_reset_at ? $admin->tfa_reset_at->getTimestamp() : 0;
     }
 
     /* ------------------------------ Codes ------------------------------- */
