@@ -110,13 +110,15 @@ function normalizeMsg(raw, myUserId, viewerIsStaff = false, group = false, owner
   if (group) {
     from = isMe ? 'user' : 'them'
   } else if (ownerId != null) {
-    // Align around the chat owner (help-seeker / lead client), not the global
-    // role — so a manager who wrote to support sits on the client side in their
-    // own chat, while staff replies sit on the other side for everyone.
+    // The chat owner is the help-seeker / lead client. Identify them by id, not
+    // global role, so a manager who wrote to support is treated as the client of
+    // their own ticket. A staff agent always sees the owner on the left and any
+    // staff reply on the right; a client sees their own messages on the right.
     const senderId = raw.sender_id ?? raw.user_id ?? raw.user?.id ?? null
     const senderIsOwner = senderId != null && String(senderId) === String(ownerId)
-    const viewerIsOwner = String(myUserId) === String(ownerId)
-    from = senderIsOwner === viewerIsOwner ? 'user' : 'them'
+    from = viewerIsStaff
+      ? (senderIsOwner ? 'them' : 'user')
+      : (isMe ? 'user' : 'them')
   } else {
     from = viewerIsStaff ? (isStaffMsg ? 'user' : 'them') : (isMe ? 'user' : 'them')
   }
