@@ -63,8 +63,7 @@ class AdminTwoFactor
         $text = "🔐 <b>Вход в админ-панель</b>\n\n"
             ."IP: <code>".e($ip)."</code>\n"
             ."Время: {$when}\n\n"
-            ."Код подтверждения (нажмите, чтобы скопировать):\n"
-            ."<code>{$code}</code>\n\n"
+            ."Код подтверждения: <code>{$code}</code>\n\n"
             ."Если это были не вы — никому не сообщайте код.";
 
         return $this->bot->sendMessage((int) $admin->tg_chat_id, $text);
