@@ -25,7 +25,9 @@ const SendIcon = () => (
 
 function normalizeMsg(raw, myUserId) {
   const isSupport = raw.is_support === true
-  const isMe = !isSupport && (raw.user_id === myUserId || raw.sender_id === myUserId)
+  // This is the viewer's OWN support chat (/chats/support), so their messages
+  // are always "me" (right) — even a manager who is the help-seeker here.
+  const isMe = raw.user_id === myUserId || raw.sender_id === myUserId
   const time = raw.created_at
     ? (() => {
         const d = new Date(raw.created_at)
