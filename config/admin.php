@@ -20,5 +20,11 @@ return [
     'twofactor' => [
         'code_ttl' => (int) env('ADMIN_2FA_CODE_TTL', 300),
         'trust_ttl' => (int) env('ADMIN_2FA_TRUST_TTL', 43200),
+
+        // Resend throttle: first `resend_burst` resends wait `resend_cooldown`
+        // seconds; after that, `resend_cooldown_long` seconds.
+        'resend_cooldown' => (int) env('ADMIN_2FA_RESEND_COOLDOWN', 60),
+        'resend_cooldown_long' => (int) env('ADMIN_2FA_RESEND_COOLDOWN_LONG', 180),
+        'resend_burst' => (int) env('ADMIN_2FA_RESEND_BURST', 3),
     ],
 ];
