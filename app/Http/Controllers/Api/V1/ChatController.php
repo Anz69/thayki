@@ -132,6 +132,18 @@ class ChatController extends Controller
             }
         }
 
+        // The chat "owner" (help-seeker / lead client) — message sides are aligned
+        // around this, not the sender's global role, so a manager who wrote to
+        // support is shown on the client side in their own chat.
+        if (in_array($chat->type, [ChatType::Lead, ChatType::Support], true)) {
+            $meta['owner_id'] = $chat->participants()
+                ->whereIn('role', [
+                    \App\Enums\ChatParticipantRole::Client->value,
+                    \App\Enums\ChatParticipantRole::Model->value,
+                ])
+                ->value('user_id');
+        }
+
         if ($chat->type === ChatType::Support
             && in_array($user->role, [UserRole::Manager, UserRole::Admin], true)) {
             $meta['chat']['title'] = $this->supportChatClientName($chat);

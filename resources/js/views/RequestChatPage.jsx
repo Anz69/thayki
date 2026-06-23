@@ -98,16 +98,28 @@ function fmtTime(iso) {
 }
 
 const STAFF_ROLES = ['admin', 'support', 'manager']
-function normalizeMsg(raw, myUserId, viewerIsStaff = false, group = false) {
+function normalizeMsg(raw, myUserId, viewerIsStaff = false, group = false, ownerId = null) {
   const isMe = raw.user_id === myUserId || raw.sender_id === myUserId
   // Derive staff-ness from sender_role too: it's present in both the messages
   // endpoint and the realtime broadcast, whereas is_support is omitted from the
   // broadcast — otherwise another manager's live reply lands on the client side.
   const senderRole = raw.sender_role ?? raw.user?.role ?? raw.senderRole ?? null
   const isStaffMsg = raw.is_support === true || STAFF_ROLES.includes(senderRole) || (isMe && viewerIsStaff)
-  const from = group
-    ? (isMe ? 'user' : 'them')
-    : (viewerIsStaff ? (isStaffMsg ? 'user' : 'them') : (isMe ? 'user' : 'them'))
+
+  let from
+  if (group) {
+    from = isMe ? 'user' : 'them'
+  } else if (ownerId != null) {
+    // Align around the chat owner (help-seeker / lead client), not the global
+    // role — so a manager who wrote to support sits on the client side in their
+    // own chat, while staff replies sit on the other side for everyone.
+    const senderId = raw.sender_id ?? raw.user_id ?? raw.user?.id ?? null
+    const senderIsOwner = senderId != null && String(senderId) === String(ownerId)
+    const viewerIsOwner = String(myUserId) === String(ownerId)
+    from = senderIsOwner === viewerIsOwner ? 'user' : 'them'
+  } else {
+    from = viewerIsStaff ? (isStaffMsg ? 'user' : 'them') : (isMe ? 'user' : 'them')
+  }
   return {
     id: raw.id,
     clientMessageId: raw.client_message_id ?? raw.clientMessageId ?? null,
@@ -126,8 +138,8 @@ function normalizeMsg(raw, myUserId, viewerIsStaff = false, group = false) {
   }
 }
 
-function mergeIncomingMessage(prev, incoming, myId, viewerIsStaff = false, group = false) {
-  const n = normalizeMsg(incoming, myId, viewerIsStaff, group)
+function mergeIncomingMessage(prev, incoming, myId, viewerIsStaff = false, group = false, ownerId = null) {
+  const n = normalizeMsg(incoming, myId, viewerIsStaff, group, ownerId)
   const byServerId = prev.findIndex((m) => String(m.id) === String(n.id))
   if (byServerId !== -1) {
     const next = prev.slice(); next[byServerId] = { ...next[byServerId], ...n, uploading: false }; return next
@@ -228,6 +240,7 @@ export default function RequestChatPage() {
   const typingPingRef = useRef(null)
   const [loadingOlder, setLoadingOlder] = useState(false)
   const oldestIdRef = useRef(null)
+  const ownerIdRef = useRef(null)
   const hasMoreOlderRef = useRef(true)
   const loadingOlderRef = useRef(false)
   const prependingRef = useRef(false)
@@ -270,6 +283,7 @@ export default function RequestChatPage() {
   }, [chatInfo, isGroup, chatKind, isLead, resolvedLeadId, isStaff, urlTitle, groupChatTitle, t])
 
   const ingestChatMeta = useCallback((meta) => {
+    if (meta?.owner_id != null) ownerIdRef.current = meta.owner_id
     if (meta?.chat) setChatInfo(meta.chat)
     if (meta?.lead) setLeadMeta(meta.lead)
     if (meta?.lead?.status) setLeadStatus(meta.lead.status)
@@ -358,11 +372,13 @@ export default function RequestChatPage() {
     if (!chatId) return
     api.get(`/chats/${chatId}/messages`, { params: { limit: 30 } })
       .then((res) => {
+        if (res.data.meta?.owner_id != null) ownerIdRef.current = res.data.meta.owner_id
+        const oid = ownerIdRef.current
         const incoming = res.data.data ?? []
         setMessages((prev) => {
-          if (!prev.length) return incoming.map((m) => normalizeMsg(m, myId, isStaff, isGroup))
+          if (!prev.length) return incoming.map((m) => normalizeMsg(m, myId, isStaff, isGroup, oid))
           let next = prev
-          for (const raw of incoming) next = mergeIncomingMessage(next, raw, myId, isStaff, isGroup)
+          for (const raw of incoming) next = mergeIncomingMessage(next, raw, myId, isStaff, isGroup, oid)
           return next
         })
         ingestParticipantsRead(res.data.meta)
@@ -384,7 +400,7 @@ export default function RequestChatPage() {
       hasMoreOlderRef.current = data.length >= 30
       if (data.length) {
         oldestIdRef.current = res.data.meta?.cursor?.next_before_id ?? data[0]?.id ?? oldestIdRef.current
-        const older = data.map((m) => normalizeMsg(m, myId, isStaff, isGroup))
+        const older = data.map((m) => normalizeMsg(m, myId, isStaff, isGroup, ownerIdRef.current))
         prependingRef.current = true
         setMessages((prev) => {
           const ids = new Set(prev.map((m) => String(m.id)))
@@ -470,8 +486,9 @@ export default function RequestChatPage() {
     setInitialLoad(true)
     api.get(`/chats/${chatId}/messages`, { params: { limit: 30 } })
       .then((res) => {
+        if (res.data.meta?.owner_id != null) ownerIdRef.current = res.data.meta.owner_id
         const data = res.data.data ?? []
-        const normalized = data.map((m) => normalizeMsg(m, myId, isStaff, isGroup))
+        const normalized = data.map((m) => normalizeMsg(m, myId, isStaff, isGroup, ownerIdRef.current))
         prevMsgCount.current = normalized.length
         setMessages(normalized)
         ingestChatMeta(res.data.meta)
@@ -494,7 +511,7 @@ export default function RequestChatPage() {
     return subscribePrivate(`chats.${chatId}`, {
       '.message.sent': (e) => {
         const incoming = e.message ?? e
-        setMessages((prev) => mergeIncomingMessage(prev, incoming, myId, isStaff, isGroup))
+        setMessages((prev) => mergeIncomingMessage(prev, incoming, myId, isStaff, isGroup, ownerIdRef.current))
         if (String(incoming?.user_id ?? incoming?.sender_id) !== String(myId)) setOthersTyping(false)
         if (incoming?.type === 'system') setTimeout(reloadMessages, 400)
       },
@@ -635,7 +652,7 @@ export default function RequestChatPage() {
       const { data } = await api.post(`/chats/${chatId}/messages`, { body: text, client_message_id: clientMessageId }, {
         headers: { 'Idempotency-Key': `msg-${chatId}-${clientMessageId}` },
       })
-      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff, isGroup))
+      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff, isGroup, ownerIdRef.current))
     } catch {
       setMessages((prev) => prev.map((m) => (m.id === optimisticId ? { ...m, failed: true } : m)))
     }
@@ -720,7 +737,7 @@ export default function RequestChatPage() {
       const { data } = await api.post(`/chats/${chatId}/messages`, fd, {
         headers: { 'Idempotency-Key': `att-${attachmentKey}` },
       })
-      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff, isGroup))
+      setMessages((prev) => mergeIncomingMessage(prev, data.data, myId, isStaff, isGroup, ownerIdRef.current))
     } catch (e) {
       logError(e)
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
