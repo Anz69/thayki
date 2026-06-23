@@ -23,9 +23,9 @@ class Security extends Page implements HasForms
 
     protected static ?string $navigationGroup = 'Система';
 
-    protected static ?string $navigationLabel = 'Защита (2FA)';
+    protected static ?string $navigationLabel = 'Безопасность';
 
-    protected static ?string $title = 'Двухфакторная защита';
+    protected static ?string $title = 'Безопасность';
 
     protected static string $view = 'filament.pages.security';
 
