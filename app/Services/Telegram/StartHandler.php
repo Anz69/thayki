@@ -291,7 +291,7 @@ class StartHandler
             return;
         }
 
-        $who = (string) ($admin->name ?? $admin->email ?? 'администратор');
+        $who = (string) ($admin->email ?? $admin->name ?? 'администратор');
         $this->bot->sendButtons(
             $chatId,
             "🔐 <b>Привязка админ-панели</b>\n\nПривязать вход в админку (<b>".e($who)."</b>) к этому Telegram-аккаунту?\n\nПосле привязки сюда будут приходить коды двухфакторной аутентификации.",
