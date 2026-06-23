@@ -97,9 +97,14 @@ function fmtTime(iso) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
+const STAFF_ROLES = ['admin', 'support', 'manager']
 function normalizeMsg(raw, myUserId, viewerIsStaff = false, group = false) {
   const isMe = raw.user_id === myUserId || raw.sender_id === myUserId
-  const isStaffMsg = raw.is_support === true || (isMe && viewerIsStaff)
+  // Derive staff-ness from sender_role too: it's present in both the messages
+  // endpoint and the realtime broadcast, whereas is_support is omitted from the
+  // broadcast — otherwise another manager's live reply lands on the client side.
+  const senderRole = raw.sender_role ?? raw.user?.role ?? raw.senderRole ?? null
+  const isStaffMsg = raw.is_support === true || STAFF_ROLES.includes(senderRole) || (isMe && viewerIsStaff)
   const from = group
     ? (isMe ? 'user' : 'them')
     : (viewerIsStaff ? (isStaffMsg ? 'user' : 'them') : (isMe ? 'user' : 'them'))
