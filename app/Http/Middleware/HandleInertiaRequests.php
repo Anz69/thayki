@@ -29,7 +29,7 @@ class HandleInertiaRequests extends Middleware
                     'last_name'  => $user->last_name,
                     'username'   => $user->username,
                     'photo_url'  => $user->photo_url,
-                    'role'       => $user->role->value,
+                    'role'       => $user->role?->value,
                     'is_premium' => $user->is_premium,
                     'is_strange' => (bool) $user->is_strange,
                 ] : null,
