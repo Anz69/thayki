@@ -10,7 +10,7 @@
         <ol class="steps">
             <li>Нажмите кнопку ниже — откроется бот.</li>
             <li>В боте нажмите <b>«Да, привязать»</b>.</li>
-            <li>Эта страница продолжит автоматически.</li>
+            <li>Вернитесь на эту вкладку — вход продолжится сам.</li>
         </ol>
 
         <a class="btn" href="{{ $link }}" target="_blank" rel="noopener">
@@ -26,10 +26,7 @@
     @endif
 
     <div class="foot">
-        <form method="POST" action="{{ route('admin.2fa.logout') }}" class="inline">
-            @csrf
-            <button type="submit">Выйти</button>
-        </form>
+        <a class="link-btn" href="{{ route('admin.2fa.logout') }}">Выйти</a>
     </div>
 @endsection
 
