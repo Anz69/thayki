@@ -26,7 +26,7 @@
     @endif
 
     <div class="foot">
-        <form method="POST" action="{{ url('/'.ltrim(config('admin.path','admin'),'/').'/logout') }}" class="inline">
+        <form method="POST" action="{{ route('filament.admin.auth.logout') }}" class="inline">
             @csrf
             <button type="submit">Выйти</button>
         </form>
