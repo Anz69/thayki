@@ -25,6 +25,8 @@ Route::post('/admin/broadcasting/auth', function (Request $request) {
 })->middleware(['web', 'auth:admin']);
 
 Route::middleware(['web', 'auth:admin'])->group(function (): void {
+    Route::get('/admin-2fa/setup', [\App\Http\Controllers\Admin\Admin2FAController::class, 'setup'])->name('admin.2fa.setup');
+    Route::get('/admin-2fa/status', [\App\Http\Controllers\Admin\Admin2FAController::class, 'status'])->name('admin.2fa.status');
     Route::get('/admin-2fa', [\App\Http\Controllers\Admin\Admin2FAController::class, 'show'])->name('admin.2fa.show');
     Route::post('/admin-2fa', [\App\Http\Controllers\Admin\Admin2FAController::class, 'verify'])->name('admin.2fa.verify');
     Route::post('/admin-2fa/resend', [\App\Http\Controllers\Admin\Admin2FAController::class, 'resend'])->name('admin.2fa.resend');

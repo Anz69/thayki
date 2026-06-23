@@ -17,11 +17,43 @@ class Admin2FAController extends Controller
 {
     public function __construct(private readonly AdminTwoFactor $twoFactor) {}
 
+    public function setup(Request $request): View|RedirectResponse
+    {
+        $admin = Auth::guard('admin')->user();
+        if (! $admin instanceof AdminUser) {
+            return redirect($this->panelUrl());
+        }
+        if ($admin->tg_chat_id) {
+            return redirect()->route('admin.2fa.show');
+        }
+
+        $bot = trim((string) config('telegram.bot_username'));
+        $link = null;
+        if ($bot !== '') {
+            $token = $this->twoFactor->createLinkToken($admin);
+            $link = "https://t.me/{$bot}?start=adminlink-{$token}";
+        }
+
+        return view('admin.twofactor-setup', ['link' => $link, 'botConfigured' => $bot !== '']);
+    }
+
+    public function status(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $admin = Auth::guard('admin')->user();
+
+        return response()->json([
+            'linked' => $admin instanceof AdminUser && (bool) $admin->tg_chat_id,
+        ]);
+    }
+
     public function show(Request $request): View|RedirectResponse
     {
         $admin = Auth::guard('admin')->user();
-        if (! $admin instanceof AdminUser || ! $admin->tg_chat_id) {
+        if (! $admin instanceof AdminUser) {
             return redirect($this->panelUrl());
+        }
+        if (! $admin->tg_chat_id) {
+            return redirect()->route('admin.2fa.setup');
         }
         if ($this->alreadyTrusted($request)) {
             return redirect($this->panelUrl());

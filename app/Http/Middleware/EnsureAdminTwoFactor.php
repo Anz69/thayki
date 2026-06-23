@@ -16,10 +16,15 @@ class EnsureAdminTwoFactor
     {
         $admin = Auth::guard('admin')->user();
 
-        // Not authenticated, or not enrolled in Telegram 2FA → don't gate
-        // (enrolling happens inside the panel, so never lock anyone out).
-        if (! $admin instanceof AdminUser || ! $admin->tg_chat_id) {
+        // Not authenticated → let the auth layer handle it.
+        if (! $admin instanceof AdminUser) {
             return $next($request);
+        }
+
+        // Two-factor is mandatory: an admin that hasn't linked Telegram yet is
+        // forced to the enrollment screen before any panel page is reachable.
+        if (! $admin->tg_chat_id) {
+            return redirect()->route('admin.2fa.setup');
         }
 
         $verifiedAt = (int) $request->session()->get('admin_2fa_verified_at', 0);
