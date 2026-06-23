@@ -34,6 +34,12 @@ class StartHandler
             return;
         }
 
+        if (is_string($startParam) && str_starts_with($startParam, 'adminlink-')) {
+            $this->handleAdminLink($chatId, substr($startParam, strlen('adminlink-')));
+
+            return;
+        }
+
         $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
 
         if (($startParam === null || $startParam === '') && ! $user->language_chosen) {
@@ -271,6 +277,28 @@ class StartHandler
             trans('start.model_invite', ['greeting' => $this->greeting($firstName, $locale)], $locale),
             openPath: '/',
             buttonLabel: trans('start.become_model', [], $locale),
+        );
+    }
+
+    private function handleAdminLink(int $chatId, string $token): void
+    {
+        $twoFactor = app(\App\Services\Admin\AdminTwoFactor::class);
+        $admin = $twoFactor->resolveLinkToken($token);
+
+        if ($admin === null) {
+            $this->bot->sendMessage($chatId, '🔐 Ссылка для привязки админ-панели устарела или недействительна. Сгенерируйте новую в панели.');
+
+            return;
+        }
+
+        $who = (string) ($admin->name ?? $admin->email ?? 'администратор');
+        $this->bot->sendButtons(
+            $chatId,
+            "🔐 <b>Привязка админ-панели</b>\n\nПривязать вход в админку (<b>".e($who)."</b>) к этому Telegram-аккаунту?\n\nПосле привязки сюда будут приходить коды двухфакторной аутентификации.",
+            [[
+                ['text' => '✅ Да, привязать', 'data' => 'adminlink_ok:'.$token],
+                ['text' => '✖ Нет', 'data' => 'adminlink_no:'.$token],
+            ]],
         );
     }
 

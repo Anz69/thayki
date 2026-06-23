@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\AdminUser;
+use App\Services\Admin\AdminTwoFactor;
+use App\Support\IpGeo;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+
+class Admin2FAController extends Controller
+{
+    public function __construct(private readonly AdminTwoFactor $twoFactor) {}
+
+    public function show(Request $request): View|RedirectResponse
+    {
+        $admin = Auth::guard('admin')->user();
+        if (! $admin instanceof AdminUser || ! $admin->tg_chat_id) {
+            return redirect($this->panelUrl());
+        }
+        if ($this->alreadyTrusted($request)) {
+            return redirect($this->panelUrl());
+        }
+
+        // Auto-send a code on first view (throttled so a refresh doesn't spam).
+        $lastSent = (int) $request->session()->get('admin_2fa_sent_at', 0);
+        if ($lastSent === 0 || (now()->timestamp - $lastSent) > 30) {
+            $this->twoFactor->sendCode($admin, IpGeo::clientIp($request));
+            $request->session()->put('admin_2fa_sent_at', now()->timestamp);
+        }
+
+        return view('admin.twofactor');
+    }
+
+    public function verify(Request $request): RedirectResponse
+    {
+        $admin = Auth::guard('admin')->user();
+        if (! $admin instanceof AdminUser || ! $admin->tg_chat_id) {
+            return redirect($this->panelUrl());
+        }
+
+        $data = $request->validate(['code' => ['required', 'string', 'max:10']]);
+
+        if ($this->twoFactor->verify($admin, $data['code'])) {
+            $request->session()->put('admin_2fa_verified_at', now()->timestamp);
+            $request->session()->forget('admin_2fa_sent_at');
+
+            return redirect($this->panelUrl());
+        }
+
+        return back()->withErrors(['code' => 'Неверный или просроченный код.']);
+    }
+
+    public function resend(Request $request): RedirectResponse
+    {
+        $admin = Auth::guard('admin')->user();
+        if ($admin instanceof AdminUser && $admin->tg_chat_id) {
+            $lastSent = (int) $request->session()->get('admin_2fa_sent_at', 0);
+            if ($lastSent === 0 || (now()->timestamp - $lastSent) > 30) {
+                $this->twoFactor->sendCode($admin, IpGeo::clientIp($request));
+                $request->session()->put('admin_2fa_sent_at', now()->timestamp);
+
+                return back()->with('status', 'Новый код отправлен в Telegram.');
+            }
+
+            return back()->with('status', 'Код уже отправлен — подождите немного.');
+        }
+
+        return redirect($this->panelUrl());
+    }
+
+    private function alreadyTrusted(Request $request): bool
+    {
+        $verifiedAt = (int) $request->session()->get('admin_2fa_verified_at', 0);
+        $trustTtl = (int) config('admin.twofactor.trust_ttl', 43200);
+
+        return $verifiedAt > 0 && (now()->timestamp - $verifiedAt) < $trustTtl;
+    }
+
+    private function panelUrl(): string
+    {
+        return url('/'.ltrim((string) config('admin.path', 'admin'), '/'));
+    }
+}

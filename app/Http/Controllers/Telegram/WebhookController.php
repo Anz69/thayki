@@ -47,6 +47,8 @@ class WebhookController extends Controller
                         $start->bot()->deleteMessage($cbChat, $cbMsgId);
                     }
                     $start->chooseLanguage($cbChat, $cbFrom, $lang);
+                } elseif ((str_starts_with($data, 'adminlink_ok:') || str_starts_with($data, 'adminlink_no:')) && $cbChat > 0) {
+                    $this->handleAdminLinkCallback($start, $data, $cbId, $cbChat, (int) ($callback['message']['message_id'] ?? 0));
                 } elseif ($cbId !== '') {
                     $start->bot()->answerCallback($cbId);
                 }
@@ -95,5 +97,38 @@ class WebhookController extends Controller
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    private function handleAdminLinkCallback(StartHandler $start, string $data, string $cbId, int $cbChat, int $cbMsgId): void
+    {
+        [$action, $token] = array_pad(explode(':', $data, 2), 2, '');
+        $twoFactor = app(\App\Services\Admin\AdminTwoFactor::class);
+        $admin = $token !== '' ? $twoFactor->resolveLinkToken($token) : null;
+
+        if ($cbMsgId > 0) {
+            $start->bot()->deleteMessage($cbChat, $cbMsgId);
+        }
+
+        if ($action === 'adminlink_no') {
+            if ($token !== '') {
+                $twoFactor->consumeLinkToken($token);
+            }
+            $start->bot()->answerCallback($cbId, 'Отменено');
+            $start->bot()->sendMessage($cbChat, '✖ Привязка отменена.');
+
+            return;
+        }
+
+        if ($admin === null) {
+            $start->bot()->answerCallback($cbId, 'Ссылка устарела');
+            $start->bot()->sendMessage($cbChat, '🔐 Ссылка устарела. Сгенерируйте новую в админ-панели.');
+
+            return;
+        }
+
+        $twoFactor->bind($admin, $cbChat);
+        $twoFactor->consumeLinkToken($token);
+        $start->bot()->answerCallback($cbId, 'Привязано ✓');
+        $start->bot()->sendMessage($cbChat, '✅ Готово! Этот Telegram привязан к админ-панели. Теперь при входе сюда будут приходить коды подтверждения.');
     }
 }
