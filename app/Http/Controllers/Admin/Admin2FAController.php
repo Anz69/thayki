@@ -106,6 +106,19 @@ class Admin2FAController extends Controller
         return redirect($this->panelUrl());
     }
 
+    public function logout(Request $request): RedirectResponse
+    {
+        Auth::guard('admin')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        $login = \Illuminate\Support\Facades\Route::has('filament.admin.auth.login')
+            ? route('filament.admin.auth.login')
+            : $this->panelUrl();
+
+        return redirect()->to($login);
+    }
+
     private function alreadyTrusted(Request $request): bool
     {
         $verifiedAt = (int) $request->session()->get('admin_2fa_verified_at', 0);

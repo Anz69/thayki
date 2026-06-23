@@ -30,6 +30,7 @@ Route::middleware(['web', 'auth:admin'])->group(function (): void {
     Route::get('/admin-2fa', [\App\Http\Controllers\Admin\Admin2FAController::class, 'show'])->name('admin.2fa.show');
     Route::post('/admin-2fa', [\App\Http\Controllers\Admin\Admin2FAController::class, 'verify'])->name('admin.2fa.verify');
     Route::post('/admin-2fa/resend', [\App\Http\Controllers\Admin\Admin2FAController::class, 'resend'])->name('admin.2fa.resend');
+    Route::post('/admin-2fa/logout', [\App\Http\Controllers\Admin\Admin2FAController::class, 'logout'])->name('admin.2fa.logout');
 });
 
 Route::post('/auth/telegram', [TelegramWebAuthController::class, 'handle'])
