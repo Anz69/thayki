@@ -85,6 +85,10 @@ class UserResource extends Resource
                 Tables\Columns\IconColumn::make('is_strange')->label('Strange')->boolean(),
                 Tables\Columns\IconColumn::make('notifications_enabled')->label('TG-уведомления')->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('location')->label('Откуда')
+                    ->getStateUsing(fn (User $record): string => trim(implode(', ', array_filter([$record->country, $record->city]))) ?: '—')
+                    ->description(fn (User $record): ?string => $record->last_ip)
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('last_seen_at')->label('Был онлайн')
                     ->dateTime('d.m.Y H:i')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Зарегистрирован')

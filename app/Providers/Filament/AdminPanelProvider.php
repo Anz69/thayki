@@ -26,7 +26,7 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
-            ->path('admin')
+            ->path((string) config('admin.path', 'admin'))
             ->login()
             ->authGuard('admin')
             ->brandName('Админка')
