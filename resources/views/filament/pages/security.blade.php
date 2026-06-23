@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <div class="mx-auto w-full max-w-2xl">
+    <div class="w-full max-w-2xl">
         <x-filament::section icon="heroicon-o-shield-check" icon-color="primary">
             <x-slot name="heading">Двухфакторная аутентификация</x-slot>
             <x-slot name="description">Вход в админ-панель защищён одноразовым кодом из Telegram.</x-slot>
