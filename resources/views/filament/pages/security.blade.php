@@ -1,41 +1,60 @@
 <x-filament-panels::page>
-    <div class="max-w-xl space-y-6">
-        @if ($linked)
-            <div class="rounded-xl border border-green-200 bg-green-50 p-5 dark:border-green-900/40 dark:bg-green-900/10">
-                <p class="text-base font-semibold text-green-700 dark:text-green-400">✅ Telegram привязан</p>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    При входе в админ-панель код подтверждения приходит в ваш Telegram (с IP и временем попытки).
+    <div class="mx-auto w-full max-w-2xl">
+        <x-filament::section icon="heroicon-o-shield-check" icon-color="primary">
+            <x-slot name="heading">Двухфакторная аутентификация</x-slot>
+            <x-slot name="description">Вход в админ-панель защищён одноразовым кодом из Telegram.</x-slot>
+
+            @if ($linked)
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center gap-3">
+                        <x-filament::icon icon="heroicon-s-check-circle" class="h-7 w-7 text-success-500" />
+                        <div>
+                            <p class="text-sm font-semibold text-gray-950 dark:text-white">Telegram привязан</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                При каждом входе код подтверждения приходит в ваш Telegram — с IP и временем попытки.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <x-filament::button
+                            color="danger"
+                            icon="heroicon-m-link-slash"
+                            wire:click="unbind"
+                            wire:confirm="Отвязать Telegram? Чтобы снова войти в панель, привязку придётся пройти заново."
+                        >
+                            Отвязать
+                        </x-filament::button>
+                    </div>
+                </div>
+            @elseif (! $botConfigured)
+                <p class="text-sm text-warning-600 dark:text-warning-400">
+                    Не задан <code class="rounded bg-gray-100 px-1 py-0.5 text-xs dark:bg-white/10">TELEGRAM_BOT_USERNAME</code>
+                    в <code class="rounded bg-gray-100 px-1 py-0.5 text-xs dark:bg-white/10">.env</code> — без него нельзя сформировать ссылку привязки.
                 </p>
-                <x-filament::button
-                    color="danger"
-                    size="sm"
-                    class="mt-4"
-                    wire:click="unbind"
-                    wire:confirm="Отвязать Telegram? Двухфакторная защита перестанет работать."
-                >
-                    Отвязать
-                </x-filament::button>
-            </div>
-        @elseif (! $botConfigured)
-            <div class="rounded-xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/40 dark:bg-amber-900/10">
-                <p class="text-sm text-amber-700 dark:text-amber-400">
-                    Не задан <code>TELEGRAM_BOT_USERNAME</code> в <code>.env</code> — без него нельзя сформировать ссылку привязки.
-                </p>
-            </div>
-        @else
-            <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-white/5">
-                <p class="text-base font-semibold">Двухфакторная аутентификация через Telegram</p>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    Нажмите кнопку — откроется бот. Подтвердите привязку («Да»), и при каждом входе в админку
-                    сюда будет приходить одноразовый код.
-                </p>
-                <a href="{{ $link }}" target="_blank" rel="noopener">
-                    <x-filament::button tag="span" color="primary" class="mt-4">
-                        Привязать Telegram
-                    </x-filament::button>
-                </a>
-                <p class="mt-3 text-xs text-gray-400">Ссылка действует 10 минут. После привязки обновите страницу.</p>
-            </div>
-        @endif
+            @else
+                <div class="flex flex-col gap-4">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Нажмите кнопку — откроется бот. Подтвердите привязку («Да»), и при каждом входе сюда будет приходить одноразовый код.
+                    </p>
+
+                    <div>
+                        <x-filament::button
+                            tag="a"
+                            href="{{ $link }}"
+                            target="_blank"
+                            rel="noopener"
+                            icon="heroicon-m-paper-airplane"
+                        >
+                            Привязать Telegram
+                        </x-filament::button>
+                    </div>
+
+                    <p class="text-xs text-gray-400 dark:text-gray-500">
+                        Ссылка действует 10 минут. После привязки обновите страницу.
+                    </p>
+                </div>
+            @endif
+        </x-filament::section>
     </div>
 </x-filament-panels::page>
