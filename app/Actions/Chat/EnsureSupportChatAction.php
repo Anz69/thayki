@@ -17,9 +17,17 @@ class EnsureSupportChatAction
     {
         return DB::transaction(function () use ($user): Chat {
 
+            // Match only the chat the user OWNS (their participant role is
+            // Client/Model) — never one where they're staff. Managers get added
+            // to clients' support chats as Support when they reply, so a plain
+            // "is a participant" match would hand them someone else's history.
+            $ownerRoles = [ChatParticipantRole::Client->value, ChatParticipantRole::Model->value];
+
             $chat = Chat::query()
                 ->where('type', ChatType::Support)
-                ->whereHas('participants', fn ($q) => $q->where('user_id', $user->id))
+                ->whereHas('participants', fn ($q) => $q
+                    ->where('user_id', $user->id)
+                    ->whereIn('role', $ownerRoles))
                 ->lockForUpdate()
                 ->first();
 
