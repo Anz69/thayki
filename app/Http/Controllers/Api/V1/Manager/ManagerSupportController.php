@@ -102,7 +102,11 @@ class ManagerSupportController extends Controller
                 'unread' => $unread[$chat->id] ?? 0,
                 'awaiting' => $awaiting,
             ];
-        })->values();
+        })
+            // Drop staff-owned support chats (no real client participant) — they
+            // show up as nameless "—" rows and aren't real tickets.
+            ->filter(fn ($row) => $row['client'] !== null)
+            ->values();
 
         return ApiResponse::ok($data, [
             'pagination' => [

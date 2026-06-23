@@ -2,7 +2,6 @@ import { useState, useRef, useCallback, useLayoutEffect } from 'react'
 import gsap from 'gsap'
 import { useTranslation } from 'react-i18next'
 import { usePageReady } from '@/composables/usePageReady'
-import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import FaqModal from '@/components/modals/FaqModal'
 import i18n, { setLanguage } from '@/i18n'
 import useAuthStore from '@/stores/useAuthStore'
@@ -14,10 +13,6 @@ const IconQuestion = () => (
     <path d="M7.36 7.31c.07-.19.17-.37.3-.52.12-.15.27-.27.44-.37.34-.2.74-.27 1.14-.21.39.07.75.27 1 .58.26.3.4.69.4 1.09 0 1.12-1.69 1.69-1.69 1.69v.15M8.97 11.81h.01M16.5 9A7.5 7.5 0 1 1 1.5 9a7.5 7.5 0 0 1 15 0Z" stroke="#777779" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
-const IconSupport = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none"><g clipPath="url(#clip_sup_more)"><path d="M4.875 15.2462L7.59984 12.5213M5.41959 10.459L2.81934 13.0592M5.41959 7.54085L2.75368 4.87493M4.91103 2.78965L7.37132 5.24993M13.0377 15.1589L10.5173 12.6386M12.5803 10.459L15.1736 13.0523M13.125 2.75354L10.5173 5.36124M12.6213 7.49993L15.1913 4.92984M16.5 9C16.5 13.1421 13.1421 16.5 9 16.5C4.85786 16.5 1.5 13.1421 1.5 9C1.5 4.85786 4.85786 1.5 9 1.5C13.1421 1.5 16.5 4.85786 16.5 9ZM12.75 8.99998C12.75 11.071 11.0711 12.75 9 12.75C6.92893 12.75 5.25 11.071 5.25 8.99998C5.25 6.92891 6.92893 5.24998 9 5.24998C11.0711 5.24998 12.75 6.92891 12.75 8.99998Z" stroke="#777779" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></g><defs><clipPath id="clip_sup_more"><rect width="18" height="18" fill="white"></rect></clipPath></defs></svg>
-)
-
 function Toggle({ value, onChange }) {
   return (
     <button
@@ -31,7 +26,6 @@ function Toggle({ value, onChange }) {
 
 export default function ManagerMorePage() {
   const { t } = useTranslation()
-  const navigate = useTransitionNavigate()
   const auth = useAuthStore()
   const [faqOpen, setFaqOpen] = useState(false)
   const [notifications, setNotifications] = useState(auth.user?.notifications_enabled ?? true)
@@ -89,10 +83,6 @@ export default function ManagerMorePage() {
             <button onClick={() => setFaqOpen(true)} className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors">
               <span className="flex items-center justify-center w-5 h-5"><IconQuestion /></span>
               <span className="text-black text-[16px]/[100%] font-medium">{t('more.faq')}</span>
-            </button>
-            <button onClick={() => navigate('/support')} className="w-full flex items-center gap-3 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors">
-              <span className="flex items-center justify-center w-5 h-5"><IconSupport /></span>
-              <span className="text-black text-[16px]/[100%] font-medium">{t('more.support')}</span>
             </button>
           </div>
         </div>
