@@ -62,7 +62,11 @@
     "goToMeeting": "Go to meeting →",
     "loadError": "Failed to load the model",
     "toList": "Back to models",
-    "photosEmpty": "No photos added yet"
+    "photosEmpty": "No photos added yet",
+    "confirmSelect": "Confirm",
+    "confirmTitle": "Choose this model?",
+    "confirmAsk": "Do you want to choose model “{{name}}”? The manager will be notified of your choice.",
+    "selectedMsg": "I'm choosing this model: {{name}}"
   },
   "modelInfo": {
     "age": "Age",
@@ -226,6 +230,9 @@
     "closedNotice": "This request is closed — messaging is unavailable.",
     "acceptToReply": "Accept the request to reply to the client.",
     "typing": "typing…",
+    "managerTyping": "Manager is typing…",
+    "deleteConfirm": "Delete this message?",
+    "deleteConfirmBtn": "Delete",
     "statusError": "Couldn't change status",
     "uploadError": "Couldn't send the file",
     "uploadTooLarge": "File exceeds 10 MB",
@@ -358,6 +365,8 @@
     "statToday": "Today",
     "created": "Created",
     "interested": "Requested type",
+    "pastLeads": "Past requests",
+    "pastLeadsEmpty": "No past requests",
     "supportEmpty": "No conversations yet",
     "searchPlaceholder": "Search: name, city, #id, model",
     "searchSupportPlaceholder": "Search by name or message",

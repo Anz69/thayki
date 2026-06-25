@@ -288,6 +288,43 @@ class ChatController extends Controller
         return ApiResponse::noContent();
     }
 
+    public function deleteMessage(Request $request, Chat $chat, Message $message): JsonResponse
+    {
+        $user = $request->user();
+        if (! $this->canAccessChat($user, $chat)) {
+            throw DomainException::forbidden('CHAT_FORBIDDEN', 'Not a participant.');
+        }
+        if ($message->chat_id !== $chat->id) {
+            throw DomainException::forbidden('MESSAGE_FORBIDDEN', 'Message does not belong to this chat.');
+        }
+
+        $isStaff = in_array($user->role, [UserRole::Manager, UserRole::Admin], true);
+        if (! $isStaff && $message->sender_id !== $user->id) {
+            throw DomainException::forbidden('MESSAGE_FORBIDDEN', 'You can only delete your own messages.');
+        }
+
+        $messageId = $message->id;
+
+        if ($message->attachment_path !== null && $message->attachment_disk !== null) {
+            try {
+                \Illuminate\Support\Facades\Storage::disk($message->attachment_disk)->delete($message->attachment_path);
+            } catch (\Throwable) {
+            }
+        }
+
+        $message->delete();
+
+        $last = Message::query()->where('chat_id', $chat->id)->latest('id')->first();
+        $chat->forceFill(['last_message_at' => $last?->created_at])->save();
+
+        try {
+            event(new \App\Events\MessageDeleted($chat->id, $messageId));
+        } catch (\Throwable) {
+        }
+
+        return ApiResponse::noContent();
+    }
+
     private function ensureRequisitesParticipant(Chat $chat, User $user): void
     {
         if ($chat->type !== ChatType::Requisites || $chat->isParticipant($user)) {

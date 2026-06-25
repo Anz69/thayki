@@ -64,7 +64,7 @@ export default function RequestPage() {
   const [age, setAge] = useState({ from: 20, to: 30 })
   const [height, setHeight] = useState({ from: 160, to: 175 })
   const [bustType, setBustType] = useState(null)
-  const [bustSize, setBustSize] = useState(4)
+  const [bustSize, setBustSize] = useState({ from: 2, to: 6 })
   const [weight, setWeight] = useState({ from: 50, to: 65 })
   const [figure, setFigure] = useState(null)
   const [hips, setHips] = useState(null)
@@ -202,7 +202,9 @@ export default function RequestPage() {
   const rangeHours = (a, b) => `${a}–${b} ${U('unitHour')}`
   const rangeDays = (a, b) => `${a}–${b} ${U('unitDay')}`
   const sizeLabel = (s) => (s === '6+' ? U('size6plus') : s)
-  const bustSizeStr = BUST_SIZES[bustSize]
+  const bustSizeStr = bustSize.from === bustSize.to
+    ? sizeLabel(BUST_SIZES[bustSize.from])
+    : `${sizeLabel(BUST_SIZES[bustSize.from])}–${sizeLabel(BUST_SIZES[bustSize.to])}`
 
   const heightRangeStr = isEn
     ? `${height.from}–${height.to} ${U('unitCm')} (${inch(height.from)}–${inch(height.to)}${U('unitInch')})`
@@ -377,26 +379,32 @@ export default function RequestPage() {
         {!isModelFlow && vipMode && (
           <div
             ref={vipBadgeRef}
-            className="relative flex items-center gap-3.5 rounded-2xl p-4 bg-white border border-black/[0.06]"
+            className="relative flex items-center gap-3.5 rounded-2xl p-4 border border-[#E7C66B]/60 overflow-hidden"
+            style={{ background: 'linear-gradient(120deg, #FFFDF6 0%, #FCF4DD 100%)' }}
           >
             <span
               ref={vipGemRef}
               className="shrink-0 size-11 flex items-center justify-center"
             >
-              <LottieDiamond size={44} style={{ filter: 'grayscale(1) brightness(0.9) contrast(1.45)' }} />
+              <LottieDiamond size={44} style={{ filter: 'sepia(0.55) saturate(2.6) hue-rotate(5deg) brightness(1.08) contrast(1.05) drop-shadow(0 4px 10px rgba(208,158,40,0.5))' }} />
             </span>
 
             <div className="flex-1 min-w-0 flex flex-col">
               <span className="flex items-center gap-1.5">
-                <span className="text-black text-[15px]/[110%] font-bold">{t('vip.button')}</span>
+                <span
+                  className="text-[16px]/[110%] font-extrabold tracking-wide"
+                  style={{ background: 'linear-gradient(90deg, #A9791B 0%, #E9B84B 35%, #F8E08C 50%, #E9B84B 65%, #A9791B 100%)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }}
+                >
+                  {t('vip.button')}
+                </span>
               </span>
-              <span className="text-[#9A9AA0] text-[13px]/[135%] mt-1">{t('vip.teaser')}</span>
+              <span className="text-[#9A7B33] text-[13px]/[135%] mt-1">{t('vip.teaser')}</span>
             </div>
             <button
               type="button"
               onClick={cancelVip}
               aria-label={t('vip.cancel')}
-              className="shrink-0 size-7 rounded-full bg-[#F2F0F5] text-[#8B8A92] flex items-center justify-center active:scale-90 transition-transform"
+              className="shrink-0 size-7 rounded-full bg-[#F3EACB] text-[#A9791B] flex items-center justify-center active:scale-90 transition-transform"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none">
                 <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -451,8 +459,10 @@ export default function RequestPage() {
                 ))}
               </div>
               <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mt-1.5 mb-1">{t('request.bustSizeLabel')}</p>
-              <RangeSlider single min={0} max={BUST_SIZES.length - 1} value={bustSize}
-                onChange={setBustSize} format={(i) => sizeLabel(BUST_SIZES[i])} />
+              <RangeSlider min={0} max={BUST_SIZES.length - 1} from={bustSize.from} to={bustSize.to}
+                onChange={(f, to) => setBustSize({ from: f, to })}
+                format={(i) => sizeLabel(BUST_SIZES[i])}
+                formatRange={(f, to) => `${sizeLabel(BUST_SIZES[f])} – ${sizeLabel(BUST_SIZES[to])}`} />
             </Section>
 
             <Section title={t('request.hipsLabel')}>

@@ -60,6 +60,7 @@ Route::prefix('v1')->group(function (): void {
             ->middleware(['throttle:messages', 'idempotency'])
             ->name('chats.postMessage');
         Route::post('/chats/{chat}/read', [ChatController::class, 'markRead'])->name('chats.markRead');
+        Route::delete('/chats/{chat}/messages/{message}', [ChatController::class, 'deleteMessage'])->name('chats.deleteMessage');
 
         Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
         Route::post('/leads', [LeadController::class, 'store'])
@@ -80,6 +81,7 @@ Route::prefix('v1')->group(function (): void {
         Route::middleware('role:manager')->prefix('manager')->group(function (): void {
             Route::get('/leads', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'index'])->name('manager.leads.index');
             Route::get('/leads/{lead}', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'show'])->name('manager.leads.show');
+            Route::get('/leads/{lead}/history', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'history'])->name('manager.leads.history');
             Route::post('/leads/{lead}/accept', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'accept'])
                 ->middleware('idempotency')->name('manager.leads.accept');
             Route::patch('/leads/{lead}/status', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'updateStatus'])->name('manager.leads.status');

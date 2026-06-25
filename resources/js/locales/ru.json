@@ -62,7 +62,11 @@
     "goToMeeting": "Перейти к встрече →",
     "loadError": "Не удалось загрузить модель",
     "toList": "К списку моделей",
-    "photosEmpty": "Фото ещё не добавлены"
+    "photosEmpty": "Фото ещё не добавлены",
+    "confirmSelect": "Подтвердить",
+    "confirmTitle": "Выбрать эту модель?",
+    "confirmAsk": "Вы хотите выбрать модель «{{name}}»? Менеджер получит уведомление о вашем выборе.",
+    "selectedMsg": "Я выбираю эту модель: {{name}}"
   },
   "modelInfo": {
     "age": "Возраст",
@@ -226,6 +230,9 @@
     "closedNotice": "Заявка закрыта — переписка недоступна.",
     "acceptToReply": "Примите заявку, чтобы ответить клиенту.",
     "typing": "печатает…",
+    "managerTyping": "Менеджер печатает…",
+    "deleteConfirm": "Удалить это сообщение?",
+    "deleteConfirmBtn": "Удалить",
     "statusError": "Не удалось изменить статус",
     "uploadError": "Не удалось отправить файл",
     "uploadTooLarge": "Файл больше 10 МБ",
@@ -358,6 +365,8 @@
     "statToday": "Сегодня",
     "created": "Создана",
     "interested": "Интересующий типаж",
+    "pastLeads": "Прошлые заявки",
+    "pastLeadsEmpty": "Прошлых заявок не было",
     "supportEmpty": "Обращений пока нет",
     "searchPlaceholder": "Поиск: имя, город, #id, модель",
     "searchSupportPlaceholder": "Поиск по имени или сообщению",

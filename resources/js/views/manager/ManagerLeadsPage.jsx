@@ -108,6 +108,7 @@ export default function ManagerLeadsPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [busy, setBusy] = useState(null)
   const [viewing, setViewing] = useState(null)
+  const [pastLeads, setPastLeads] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
   const [error, setError] = useState(false)
@@ -257,7 +258,12 @@ export default function ManagerLeadsPage() {
     }
   }
 
-  const openModal = (lead) => { setViewing(lead); setStatusOpen(false); setModalOpen(true) }
+  const openModal = (lead) => {
+    setViewing(lead); setStatusOpen(false); setModalOpen(true); setPastLeads(null)
+    api.get(`/manager/leads/${lead.id}/history`)
+      .then((r) => setPastLeads(Array.isArray(r?.data?.data) ? r.data.data : []))
+      .catch(() => setPastLeads([]))
+  }
   const closeModal = () => { setModalOpen(false); setStatusOpen(false) }
   const openModelView = (model) => {
     if (!model) return
@@ -492,6 +498,35 @@ export default function ManagerLeadsPage() {
                 {typageRows(viewing, t).map(([label, value], i) => <InfoRow key={`${label}-${i}`} label={label} value={value} />)}
                 <InfoRow label={t('request.comments')} value={viewing.wishes} />
                 <InfoRow label={t('manager.created')} value={relTime(viewing.created_at, i18n.language)} />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[#9B9AA0] text-[12.5px] font-semibold px-1 uppercase tracking-[0.04em]">{t('manager.pastLeads')}</span>
+                {pastLeads == null ? (
+                  <div className="flex justify-center py-3">
+                    <div className="size-5 rounded-full border-2 border-[#E2319B] border-t-transparent animate-spin" />
+                  </div>
+                ) : pastLeads.length === 0 ? (
+                  <p className="text-[#9B9AA0] text-[13px] px-1 py-1">{t('manager.pastLeadsEmpty')}</p>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {pastLeads.map((pl) => (
+                      <button
+                        key={pl.id}
+                        onClick={() => pl.chat_id && openChat(pl)}
+                        disabled={!pl.chat_id}
+                        className="w-full flex items-center justify-between gap-3 bg-[#F5F5F7] rounded-xl px-3.5 py-2.5 text-left active:bg-[#ECEAF0] transition-colors disabled:opacity-60"
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="size-2 rounded-full shrink-0" style={{ background: (STATUS[pl.status]?.dot ?? '#C4C4C4') }} />
+                          <span className="text-black text-[14px] font-medium truncate">#{pl.id}{pl.city ? ` · ${pl.city}` : ''}</span>
+                          {pl.is_vip && <span className="text-[10px] font-bold text-[#E2319B] shrink-0">VIP</span>}
+                        </span>
+                        <span className="text-[#9B9AA0] text-[12px] shrink-0">{relTime(pl.created_at, i18n.language)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {isNew ? (

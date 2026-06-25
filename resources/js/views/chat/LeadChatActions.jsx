@@ -14,6 +14,8 @@ const CURRENCIES = [
   { code: 'RUB', symbol: '₽' },
   { code: 'USD', symbol: '$' },
   { code: 'EUR', symbol: '€' },
+  { code: 'GBP', symbol: '£' },
+  { code: 'CNY', symbol: '¥' },
 ]
 const currencySymbol = (code) => CURRENCIES.find((c) => c.code === code)?.symbol ?? code
 const money = (minor, currency = 'RUB') => {
@@ -41,7 +43,7 @@ const onHWheel = (e) => {
   el.scrollLeft += (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX)
 }
 
-export function TypedMessageCard({ msg, isManager, leadId, leadClosed = false, onPosted }) {
+export function TypedMessageCard({ msg, isManager, leadId, chatId = null, leadClosed = false, onPosted }) {
   const { t } = useTranslation()
   const navigate = useTransitionNavigate()
   const setPreviewModel = useModelPreview((s) => s.setModel)
@@ -70,7 +72,7 @@ export function TypedMessageCard({ msg, isManager, leadId, leadClosed = false, o
     if (msg.type === 'model_card') import('@/views/ModelPage').catch(() => {})
   }, [msg.type])
 
-  const openModel = (m) => { setPreviewModel(m); navigate('/model-view') }
+  const openModel = (m) => { setPreviewModel(m, isManager ? null : chatId); navigate('/model-view') }
   const side = msg.from === 'user' ? 'justify-end' : 'justify-start'
 
   if (msg.type === 'payment_request') {
@@ -519,8 +521,9 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
   const isIOS = (window.Telegram?.WebApp?.platform || '') === 'ios'
 
   const scrollToSubmit = (e) => {
-    const sc = e.currentTarget.closest('.modal-middle-scroll')
-    setTimeout(() => { if (sc) sc.scrollTop = sc.scrollHeight + 9999 }, 300)
+    const el = e.target
+    if (!el || typeof el.scrollIntoView !== 'function') return
+    setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }) } catch { /* noop */ } }, 320)
   }
 
   const reset = () => { setMethod('manual'); setCurrency('RUB'); setAmount(''); setRequisites('') }
@@ -588,9 +591,9 @@ function PaymentSheet({ open, onClose, leadId, onPosted }) {
           ))}
         </div>
 
-        <div className="flex gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           {CURRENCIES.map((c) => (
-            <button key={c.code} onClick={() => setCurrency(c.code)} className={`flex-1 py-2 rounded-xl text-[13px] font-semibold transition-colors ${currency === c.code ? 'bg-[#1B1B1B] text-white' : 'bg-[#F5F5F7] text-[#7F7F7F]'}`}>
+            <button key={c.code} onClick={() => setCurrency(c.code)} className={`py-2 rounded-xl text-[13px] font-semibold transition-colors ${currency === c.code ? 'bg-[#1B1B1B] text-white' : 'bg-[#F5F5F7] text-[#7F7F7F]'}`}>
               {c.symbol} {c.code}
             </button>
           ))}

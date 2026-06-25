@@ -62,7 +62,11 @@
     "goToMeeting": "前往会面 →",
     "loadError": "加载模特失败",
     "toList": "返回模特列表",
-    "photosEmpty": "暂未添加照片"
+    "photosEmpty": "暂未添加照片",
+    "confirmSelect": "确认",
+    "confirmTitle": "选择这位模特？",
+    "confirmAsk": "您要选择模特「{{name}}」吗？经理将收到您选择的通知。",
+    "selectedMsg": "我选择这位模特：{{name}}"
   },
   "modelInfo": {
     "age": "年龄",
@@ -226,6 +230,9 @@
     "closedNotice": "该预约已关闭 — 无法发送消息。",
     "acceptToReply": "接受预约后即可回复客户。",
     "typing": "正在输入…",
+    "managerTyping": "经理正在输入…",
+    "deleteConfirm": "删除此消息？",
+    "deleteConfirmBtn": "删除",
     "statusError": "无法更改状态",
     "uploadError": "文件发送失败",
     "uploadTooLarge": "文件超过 10 MB",
@@ -358,6 +365,8 @@
     "statToday": "今天",
     "created": "创建于",
     "interested": "请求类型",
+    "pastLeads": "历史请求",
+    "pastLeadsEmpty": "没有历史请求",
     "supportEmpty": "暂无对话",
     "searchPlaceholder": "搜索：姓名、城市、#id、模特",
     "searchSupportPlaceholder": "按姓名或消息搜索",

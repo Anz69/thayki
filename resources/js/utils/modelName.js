@@ -16,15 +16,16 @@ function transliterate(str) {
   })
 }
 
+const toId = (s) => s.replace(/^\s*(?:Модель|Model)\s*/i, 'ID ')
+
 export function modelName(model) {
   if (!model) return ''
   const isEn = !(i18n.language || 'ru').toLowerCase().startsWith('ru')
   const en = model.display_name_en
-  if (isEn && en) return en
+  if (isEn && en) return toId(en)
 
-  let name = model.display_name || en || ''
+  let name = toId(model.display_name || en || '')
   if (isEn && name) {
-    name = name.replace(/^Модель\s*№?\s*/i, 'Model №')
     name = transliterate(name)
   }
   return name

@@ -16,6 +16,7 @@ import { logError } from '@/utils/logger'
 import { prepareImageFileForUpload } from '@/utils/prepareImageForUpload'
 import { LeadActionMenu, TypedMessageCard } from '@/views/chat/LeadChatActions'
 import CancelLeadModal from '@/components/modals/CancelLeadModal'
+import ModalMiddle from '@/layout/ModalMiddle'
 import { STATUS, StatusChip } from '@/views/manager/kit'
 
 const TYPED = new Set(['payment_request', 'verification_request', 'model_card'])
@@ -235,7 +236,10 @@ export default function RequestChatPage() {
   const [accepting, setAccepting]   = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
   const [cancelBusy, setCancelBusy] = useState(false)
-  const [othersTyping, setOthersTyping] = useState(false)
+  const [othersTyping, setOthersTyping] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const longPressRef = useRef(null)
   const [peerReadAt, setPeerReadAt] = useState({})
   const typingHideRef = useRef(null)
   const lastTypingSentRef = useRef(0)
@@ -514,7 +518,7 @@ export default function RequestChatPage() {
       '.message.sent': (e) => {
         const incoming = e.message ?? e
         setMessages((prev) => mergeIncomingMessage(prev, incoming, myId, isStaff, isGroup, ownerIdRef.current))
-        if (String(incoming?.user_id ?? incoming?.sender_id) !== String(myId)) setOthersTyping(false)
+        if (String(incoming?.user_id ?? incoming?.sender_id) !== String(myId)) setOthersTyping(null)
         if (incoming?.type === 'system') setTimeout(reloadMessages, 400)
       },
       '.messages.read': (e) => {
@@ -528,6 +532,11 @@ export default function RequestChatPage() {
         }
         const readAt = e.read_at ?? new Date().toISOString()
         setMessages((prev) => prev.map((m) => (m.from === 'user' && !m.readAt ? { ...m, readAt } : m)))
+      },
+      '.message.deleted': (e) => {
+        const delId = e?.id ?? e?.message?.id
+        if (delId == null) return
+        setMessages((prev) => prev.filter((m) => String(m.id) !== String(delId)))
       },
       '.lead.status': (e) => {
         setLeadClosed(!!e.closed)
@@ -546,14 +555,14 @@ export default function RequestChatPage() {
     }
     const onTyping = (payload) => {
       if (isSelf(payload)) return
-      setOthersTyping(true)
+      setOthersTyping({ from: payload?.from ?? payload?.user_id ?? null, role: payload?.role ?? null })
       clearTimeout(typingHideRef.current)
-      typingHideRef.current = setTimeout(() => setOthersTyping(false), 6000)
+      typingHideRef.current = setTimeout(() => setOthersTyping(null), 6000)
     }
     const onStop = (payload) => {
       if (isSelf(payload)) return
       clearTimeout(typingHideRef.current)
-      setOthersTyping(false)
+      setOthersTyping(null)
     }
     try { ch.listenForWhisper('typing', onTyping) } catch {}
     try { ch.listenForWhisper('typing-stop', onStop) } catch {}
@@ -682,6 +691,42 @@ export default function RequestChatPage() {
     postMessageBody(m.text, m.id, m.clientMessageId)
   }, [postMessageBody])
 
+  const canDeleteMsg = useCallback((m) => {
+    if (!isStaff || !m) return false
+    if (m.uploading || m.failed) return false
+    const id = String(m.id ?? '')
+    return id !== '' && !id.startsWith('opt-')
+  }, [isStaff])
+
+  const startLongPress = useCallback((m) => (e) => {
+    if (!canDeleteMsg(m)) return
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    clearTimeout(longPressRef.current)
+    longPressRef.current = setTimeout(() => {
+      try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('medium') } catch { /* noop */ }
+      setDeleteTarget(m)
+    }, 500)
+  }, [canDeleteMsg])
+
+  const cancelLongPress = useCallback(() => { clearTimeout(longPressRef.current) }, [])
+
+  useEffect(() => () => clearTimeout(longPressRef.current), [])
+
+  const confirmDelete = useCallback(async () => {
+    const m = deleteTarget
+    if (!m) return
+    setDeleteBusy(true)
+    try {
+      await api.delete(`/chats/${chatId}/messages/${m.id}`)
+      setMessages((prev) => prev.filter((x) => String(x.id) !== String(m.id)))
+      setDeleteTarget(null)
+    } catch (err) {
+      logError(err)
+    } finally {
+      setDeleteBusy(false)
+    }
+  }, [deleteTarget, chatId])
+
   useEffect(() => {
     const resend = () => setMessages((prev) => {
       const failed = prev.filter((x) => x.failed && x.type === 'text' && x.clientMessageId)
@@ -768,6 +813,28 @@ export default function RequestChatPage() {
       `}</style>
       {viewerSrc && <PhotoViewer src={viewerSrc} onClose={() => setViewerSrc(null)} />}
 
+      <ModalMiddle isOpen={!!deleteTarget} onClose={() => !deleteBusy && setDeleteTarget(null)}>
+        <div className="flex flex-col px-5 pt-1 pb-6 gap-4 text-center">
+          <p className="text-black text-[15px]/[150%] font-medium">{t('requestChat.deleteConfirm')}</p>
+          <div className="flex flex-col gap-2">
+            <button
+              disabled={deleteBusy}
+              onClick={confirmDelete}
+              className="w-full py-3.5 rounded-full bg-[#E5484D] text-white text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+            >
+              {deleteBusy ? '…' : t('requestChat.deleteConfirmBtn')}
+            </button>
+            <button
+              disabled={deleteBusy}
+              onClick={() => setDeleteTarget(null)}
+              className="w-full py-3.5 rounded-full bg-[#F0F0F0] text-black text-[15px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+            >
+              {t('common.cancel')}
+            </button>
+          </div>
+        </div>
+      </ModalMiddle>
+
       <header ref={headerRef} className="w-full py-4 bg-white shrink-0">
         <div className="container flex items-center relative">
           {role !== 'requisite' && (
@@ -835,6 +902,7 @@ export default function RequestChatPage() {
                     msg={msg}
                     isManager={isStaff}
                     leadId={leadId}
+                    chatId={chatId}
                     leadClosed={leadClosed}
                     onPosted={reloadMessages}
                   />
@@ -914,9 +982,17 @@ export default function RequestChatPage() {
                 </div>
               )
 
+              const lpHandlers = canDeleteMsg(msg) ? {
+                onPointerDown: startLongPress(msg),
+                onPointerUp: cancelLongPress,
+                onPointerMove: cancelLongPress,
+                onPointerCancel: cancelLongPress,
+                onContextMenu: (e) => { e.preventDefault(); setDeleteTarget(msg) },
+              } : {}
+
               return (
                 <div key={msg.id}>
-                  <div data-msg data-msg-id={msg.id} className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`}>
+                  <div data-msg data-msg-id={msg.id} className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`} {...lpHandlers}>
                     {bubble}
                   </div>
                   {idx === 0 && isLead && !isStaff && <ManagerNote text={t('requestChat.managerNote')} />}
@@ -937,20 +1013,32 @@ export default function RequestChatPage() {
                 </div>
               )
             })}
-            {othersTyping && (
-              <div className={`flex mt-2 ${isGroup ? 'justify-start' : 'justify-start'}`}>
-                <div className={`typing-bubble rounded-3xl rounded-bl-lg px-4 py-3 inline-flex items-center gap-2 ${isGroup ? 'bg-[#F0F0F0]' : 'bg-[#F0F0F0]'}`} role="status" aria-label={t('requestChat.typing')}>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="typing-dot" style={{ animationDelay: '0ms' }} />
-                    <span className="typing-dot" style={{ animationDelay: '180ms' }} />
-                    <span className="typing-dot" style={{ animationDelay: '360ms' }} />
-                  </span>
-                  {isGroup && (
-                    <span className="text-[#9B9AA0] text-[12px] font-medium">{t('requestChat.typing')}</span>
-                  )}
+            {othersTyping && (() => {
+              const typerId = othersTyping.from
+              const typerIsOwner = ownerIdRef.current != null && typerId != null
+                && String(typerId) === String(ownerIdRef.current)
+              const typerIsStaff = STAFF_ROLES.includes(othersTyping.role)
+              const onRight = !isGroup && isStaff && typerIsStaff && !typerIsOwner
+              const label = onRight ? t('requestChat.managerTyping') : (isGroup ? t('requestChat.typing') : null)
+              return (
+                <div className={`flex mt-2 ${onRight ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`typing-bubble px-4 py-3 inline-flex items-center gap-2 ${onRight ? 'rounded-3xl rounded-br-lg bg-[#FCE9F4]' : 'rounded-3xl rounded-bl-lg bg-[#F0F0F0]'}`}
+                    role="status"
+                    aria-label={label ?? t('requestChat.typing')}
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="typing-dot" style={{ animationDelay: '0ms', background: onRight ? '#E2319B' : undefined }} />
+                      <span className="typing-dot" style={{ animationDelay: '180ms', background: onRight ? '#E2319B' : undefined }} />
+                      <span className="typing-dot" style={{ animationDelay: '360ms', background: onRight ? '#E2319B' : undefined }} />
+                    </span>
+                    {label && (
+                      <span className={`text-[12px] font-medium ${onRight ? 'text-[#E2319B]' : 'text-[#9B9AA0]'}`}>{label}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
             <div ref={messagesEndRef} />
           </div>
         </div>

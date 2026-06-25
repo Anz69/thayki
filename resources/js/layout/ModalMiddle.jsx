@@ -71,7 +71,10 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
       update(true)
       if (keyboardInset() > 120) {
         const sc = sheetRef.current?.querySelector('.modal-middle-scroll')
-        if (sc) requestAnimationFrame(() => { sc.scrollTop = sc.scrollHeight + 9999 })
+        const el = document.activeElement
+        if (sc && el && sc.contains(el)) {
+          requestAnimationFrame(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }) } catch { /* noop */ } })
+        }
       }
     }
     const onScroll = () => update(false)

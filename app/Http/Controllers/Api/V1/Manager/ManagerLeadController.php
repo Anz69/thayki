@@ -83,6 +83,28 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($this->serialize($lead->load(['user', 'manager', 'modelProfile.photos'])));
     }
 
+    public function history(Lead $lead): JsonResponse
+    {
+        $items = Lead::query()
+            ->where('user_id', $lead->user_id)
+            ->where('id', '!=', $lead->id)
+            ->latest('id')
+            ->limit(50)
+            ->get()
+            ->map(fn (Lead $l) => [
+                'id' => $l->id,
+                'chat_id' => $l->chat_id,
+                'status' => $l->status->value,
+                'city' => $l->city,
+                'goal' => $l->goal,
+                'is_vip' => $l->isVip(),
+                'created_at' => $l->created_at?->toIso8601String(),
+            ])
+            ->all();
+
+        return ApiResponse::ok($items);
+    }
+
     public function accept(Lead $lead, AcceptLeadAction $action): JsonResponse
     {
 
@@ -122,7 +144,7 @@ class ManagerLeadController extends Controller
     {
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:1'],
-            'currency' => ['nullable', 'in:RUB,USD,EUR'],
+            'currency' => ['nullable', 'in:RUB,USD,EUR,GBP,CNY'],
             'method' => ['nullable', 'in:manual,crypto'],
             'requisites' => ['nullable', 'required_if:method,manual', 'string', 'max:2000'],
         ]);

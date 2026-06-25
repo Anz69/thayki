@@ -122,7 +122,22 @@ export default function App() {
       authStore.setNeedsLogin('Не удалось получить данные авторизации из Telegram.', { step: 'initData check', message: 'window.Telegram.WebApp.initData отсутствует' })
     }
 
-    resolveAuth().catch(() => authStore.setNeedsLogin())
+    // Boot watchdog: a request that never settles (zombie connection, common when
+    // cold-opening from a notification) would leave authPending stuck forever — an
+    // endless blank/spinner screen. Cap the boot so the user always gets a reload
+    // screen instead of a dead app. Cleared as soon as auth resolves either way.
+    const watchdog = setTimeout(() => {
+      const s = useAuthStore.getState()
+      if (!s.user && !s.isBanned && !s.needsLogin) {
+        s.setNeedsLogin('Не удалось загрузить приложение. Попробуйте перезагрузить.', { step: 'boot watchdog' })
+      }
+    }, 20000)
+
+    resolveAuth()
+      .catch(() => authStore.setNeedsLogin())
+      .finally(() => clearTimeout(watchdog))
+
+    return () => clearTimeout(watchdog)
   }, [])
 
   return <RouterShell />
