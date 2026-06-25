@@ -230,10 +230,7 @@ export default function ModelPage({ preview = false }) {
   const leftPhoto = allPhotos[1] ?? null
   const rightPhoto = allPhotos[2] ?? null
 
-  const goToMedia = () => {
-    switchTab(1)
-    requestAnimationFrame(() => tabSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-  }
+  const goToMedia = () => { switchTab(1) }
 
   const confirmSelect = async () => {
     if (!canConfirmSelect || !model || confirmBusy) return

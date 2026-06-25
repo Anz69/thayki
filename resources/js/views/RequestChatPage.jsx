@@ -718,18 +718,21 @@ export default function RequestChatPage() {
 
   const confirmDelete = useCallback(async () => {
     const m = deleteTarget
-    if (!m) return
+    if (!m || deleteBusy) return
     setDeleteBusy(true)
+    // Close the modal and drop the message right away so it can't be re-pressed or
+    // get stuck open if the request is slow/errors. Restore on failure.
+    setDeleteTarget(null)
+    setMessages((prev) => prev.filter((x) => String(x.id) !== String(m.id)))
     try {
       await api.delete(`/chats/${chatId}/messages/${m.id}`)
-      setMessages((prev) => prev.filter((x) => String(x.id) !== String(m.id)))
-      setDeleteTarget(null)
     } catch (err) {
       logError(err)
+      reloadMessages()
     } finally {
       setDeleteBusy(false)
     }
-  }, [deleteTarget, chatId])
+  }, [deleteTarget, deleteBusy, chatId, reloadMessages])
 
   useEffect(() => {
     const resend = () => setMessages((prev) => {
