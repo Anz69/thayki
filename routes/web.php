@@ -50,6 +50,14 @@ Route::post('/telegram/webhook/{secret}', TelegramBotWebhookController::class)
 Route::post('/webhook/oxa', OxaPayWebhookController::class)->name('webhook.oxa');
 Route::post('/webhook/oxax', OxaPayWebhookController::class)->name('webhook.oxax');
 
-Route::get('/{any}', function () {
-    return Inertia::render('App');
+Route::get('/{any}', function (Request $request) {
+    // Never let the SPA shell be cached. Telegram's in-app WebView caches HTML
+    // aggressively, so after a deploy a stale document keeps referencing old,
+    // now-deleted asset hashes → blank white screen that a reload can't fix
+    // (the cached HTML is re-served). no-store forces a fresh shell every open,
+    // while the hashed JS/CSS assets stay immutable-cacheable.
+    return Inertia::render('App')->toResponse($request)
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        ->header('Pragma', 'no-cache')
+        ->header('Expires', '0');
 })->where('any', '.*')->name('spa');

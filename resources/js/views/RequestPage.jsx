@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
@@ -113,17 +113,24 @@ export default function RequestPage() {
     return main?.url ? resolveMediaUrl(main.url) : null
   })()
 
+  // Pre-hide the entry elements before first paint so the reveal animation never
+  // flashes content at full opacity and then jumps to hidden (the janky stutter).
+  useLayoutEffect(() => {
+    const els = rootRef.current?.querySelectorAll('[data-anim]') ?? []
+    if (els.length) gsap.set(els, { y: 22, autoAlpha: 0, willChange: 'transform,opacity' })
+  }, [])
+
   usePageReady(() => {
     const els = rootRef.current?.querySelectorAll('[data-anim]') ?? []
-    gsap.fromTo(els, { y: 22, autoAlpha: 0 },
-      {
-        y: 0,
-        autoAlpha: 1,
-        duration: 0.55,
-        stagger: 0.06,
-        ease: 'power3.out',
-        onComplete: () => gsap.set(els, { clearProps: 'transform,willChange' }),
-      })
+    if (!els.length) return
+    gsap.to(els, {
+      y: 0,
+      autoAlpha: 1,
+      duration: 0.5,
+      stagger: 0.05,
+      ease: 'power3.out',
+      onComplete: () => gsap.set(els, { clearProps: 'transform,willChange' }),
+    })
   })
 
   useEffect(() => {
