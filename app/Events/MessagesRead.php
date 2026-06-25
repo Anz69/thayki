@@ -21,6 +21,7 @@ class MessagesRead implements ShouldBroadcastNow
         public readonly int $chatId,
         public readonly int $userId,
         public readonly string $readAt,
+        public readonly bool $readerIsStaff = false,
     ) {}
 
     public function broadcastOn(): array
@@ -39,6 +40,7 @@ class MessagesRead implements ShouldBroadcastNow
             'chat_id'  => $this->chatId,
             'user_id'  => $this->userId,
             'read_at'  => $this->readAt,
+            'reader_is_staff' => $this->readerIsStaff,
         ];
     }
 }

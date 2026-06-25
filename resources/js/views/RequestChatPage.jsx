@@ -530,6 +530,10 @@ export default function RequestChatPage() {
           }))
           return
         }
+        // A read receipt only counts when the OTHER side read it. So another manager
+        // opening the chat must not flip a manager's own messages to "read" — only the
+        // client (opposite side) reading does. (undefined → legacy fallback: apply.)
+        if (e.reader_is_staff !== undefined && e.reader_is_staff === isStaff) return
         const readAt = e.read_at ?? new Date().toISOString()
         setMessages((prev) => prev.map((m) => (m.from === 'user' && !m.readAt ? { ...m, readAt } : m)))
       },

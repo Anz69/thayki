@@ -271,18 +271,42 @@ class ChatController extends Controller
             ->where('user_id', $user->id)
             ->update(['last_read_at' => $now]);
 
+        $readerIsStaff = in_array($user->role, [UserRole::Manager, UserRole::Admin, UserRole::Requisite], true);
+
         // Shared requisites inbox: read state is per participant only. A global
         // messages.read_at would let one manager's read cancel everyone else's notifications.
         if ($chat->type !== ChatType::Requisites) {
-            Message::query()
+            // A read receipt means "the other side read it". In a lead/support chat the
+            // two sides are the client (owner) and staff. So a staff member reading must
+            // only flip the client's messages — never another manager's — otherwise a
+            // manager's message would show "read" when only a colleague opened the chat.
+            $ownerId = $chat->participants()
+                ->whereIn('role', [
+                    \App\Enums\ChatParticipantRole::Client->value,
+                    \App\Enums\ChatParticipantRole::Model->value,
+                ])
+                ->value('user_id');
+
+            $query = Message::query()
                 ->where('chat_id', $chat->id)
                 ->whereNull('read_at')
-                ->where('sender_id', '!=', $user->id)
-                ->update(['read_at' => $now]);
+                ->where('sender_id', '!=', $user->id);
+
+            if ($ownerId !== null) {
+                if ((int) $user->id === (int) $ownerId) {
+                    // Client read → flip staff (non-owner) messages.
+                    $query->where('sender_id', '!=', $ownerId);
+                } else {
+                    // Staff read → flip only the client's messages.
+                    $query->where('sender_id', $ownerId);
+                }
+            }
+
+            $query->update(['read_at' => $now]);
         }
 
         try {
-            event(new MessagesRead($chat->id, $user->id, $now->toIso8601String()));
+            event(new MessagesRead($chat->id, $user->id, $now->toIso8601String(), $readerIsStaff));
         } catch (\Throwable) {}
 
         return ApiResponse::noContent();
