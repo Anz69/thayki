@@ -342,6 +342,38 @@ class ChatController extends Controller
             ],
         );
 
+        // Typed cards are skipped by the generic message-notification job, so push
+        // the manager(s) explicitly — they must be told even when not in the chat.
+        try {
+            $lead = Lead::query()->where('chat_id', $chat->id)->first();
+            if ($lead !== null) {
+                $notifier = \App\Services\Telegram\Notifier::default();
+                $name = trim((string) ($data['name'] ?? ''));
+                $managers = User::query()
+                    ->where('role', UserRole::Manager->value)
+                    ->whereNotNull('tg_chat_id')
+                    ->where('notifications_enabled', true)
+                    ->when($lead->manager_id, fn ($q) => $q->where('id', $lead->manager_id))
+                    ->get();
+
+                foreach ($managers as $manager) {
+                    if ((int) $manager->id === (int) $user->id) {
+                        continue;
+                    }
+                    $code = strtolower((string) ($manager->language_code ?? ''));
+                    $locale = str_starts_with($code, 'zh') ? 'zh' : (str_starts_with($code, 'en') ? 'en' : 'ru');
+                    $notifier->notifyUser(
+                        $manager,
+                        trans('notifications.model_selected', ['id' => $lead->id, 'name' => e($name)], $locale),
+                        "/request/chat?id={$chat->id}&lead={$lead->id}&from=".rawurlencode('/manager/leads'),
+                        trans('notifications.open_chat', [], $locale),
+                        'model-selected:'.$message->id.':m'.$manager->id,
+                    );
+                }
+            }
+        } catch (\Throwable) {
+        }
+
         return ApiResponse::created(new MessageResource($message->load('sender')));
     }
 

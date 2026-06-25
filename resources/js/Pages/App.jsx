@@ -15,6 +15,16 @@ export default function App() {
 
     if (auth?.user) {
       authStore.setUser(auth.user)
+      // The server-shared session user is cached and can be stale (e.g. the user
+      // changed their Telegram username). Refresh it from the live initData so the
+      // DB and the UI pick up the new username/name/photo. Best-effort.
+      const tg = window.Telegram?.WebApp
+      const initData = tg?.initData
+      if (initData) {
+        api.post('/auth/sync', { init_data: initData })
+          .then(({ data }) => { if (data?.data) authStore.setUser(data.data) })
+          .catch(() => {})
+      }
       return
     }
 
