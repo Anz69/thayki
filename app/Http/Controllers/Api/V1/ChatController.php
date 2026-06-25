@@ -312,6 +312,39 @@ class ChatController extends Controller
         return ApiResponse::noContent();
     }
 
+    public function selectModel(Request $request, Chat $chat, PostMessageAction $action): JsonResponse
+    {
+        $user = $request->user();
+        if (! $this->canAccessChat($user, $chat)) {
+            throw DomainException::forbidden('CHAT_FORBIDDEN', 'Not a participant.');
+        }
+        if ($chat->type !== ChatType::Lead) {
+            throw DomainException::forbidden('CHAT_FORBIDDEN', 'Model selection is only available in lead chats.');
+        }
+
+        $data = $request->validate([
+            'name' => ['nullable', 'string', 'max:255'],
+            'model_id' => ['nullable', 'integer'],
+            'photo' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $message = $action->execute(
+            $user,
+            $chat,
+            null,
+            null,
+            null,
+            'model_selected',
+            [
+                'name' => $data['name'] ?? null,
+                'model_id' => $data['model_id'] ?? null,
+                'photo' => $data['photo'] ?? null,
+            ],
+        );
+
+        return ApiResponse::created(new MessageResource($message->load('sender')));
+    }
+
     public function deleteMessage(Request $request, Chat $chat, Message $message): JsonResponse
     {
         $user = $request->user();

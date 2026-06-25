@@ -62,6 +62,8 @@ Route::prefix('v1')->group(function (): void {
             ->name('chats.postMessage');
         Route::post('/chats/{chat}/read', [ChatController::class, 'markRead'])->name('chats.markRead');
         Route::delete('/chats/{chat}/messages/{message}', [ChatController::class, 'deleteMessage'])->name('chats.deleteMessage');
+        Route::post('/chats/{chat}/select-model', [ChatController::class, 'selectModel'])
+            ->middleware('throttle:messages')->name('chats.selectModel');
 
         Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
         Route::post('/leads', [LeadController::class, 'store'])

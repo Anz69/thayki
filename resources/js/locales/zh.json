@@ -65,8 +65,7 @@
     "photosEmpty": "暂未添加照片",
     "confirmSelect": "确认",
     "confirmTitle": "选择这位模特？",
-    "confirmAsk": "您要选择模特「{{name}}」吗？经理将收到您选择的通知。",
-    "selectedMsg": "我选择这位模特：{{name}}"
+    "confirmAsk": "您要选择模特「{{name}}」吗？经理将收到您选择的通知。"
   },
   "modelInfo": {
     "age": "年龄",
@@ -417,6 +416,8 @@
     "verifySheetText": "客户将看到「验证身份」按钮，并通过其 Telegram 联系方式确认。",
     "verifySheetBtn": "请求验证",
     "modelsTitle": "模特精选（{{n}}）",
+    "modelSelectedTitle": "客户已选择模特",
+    "modelSelectedBadge": "已选择模特",
     "profileExpired": "该资料已不可用 — 24 小时查看期已过。",
     "modelsSheetTitle": "挑选模特",
     "modelsSend": "发送（{{n}}）",

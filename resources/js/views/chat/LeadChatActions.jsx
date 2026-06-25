@@ -155,6 +155,33 @@ export function TypedMessageCard({ msg, isManager, leadId, chatId = null, leadCl
     )
   }
 
+  if (msg.type === 'model_selected') {
+    const name = p.name || ''
+    const photo = p.photo ? resolveMediaUrl(p.photo) : null
+    return (
+      <div data-msg className={`flex ${side} my-3 px-2`}>
+        <div className="w-full max-w-[320px] rounded-2xl bg-white border border-black/[0.08] overflow-hidden">
+          <div className="px-4 pt-3.5 pb-3 flex items-center gap-3">
+            {photo ? (
+              <img src={photo} alt="" className="size-11 rounded-xl object-cover object-top shrink-0 bg-[#EFEAEE]" />
+            ) : (
+              <span className="size-11 rounded-xl flex items-center justify-center shrink-0 bg-[#E6F5EA]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.5 4.5L19 7" stroke="#1E9E4E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </span>
+            )}
+            <div className="flex flex-col min-w-0">
+              <span className="text-black text-[14px] font-semibold">{t('leadChat.modelSelectedTitle')}</span>
+              {name && <span className="text-[#9B9AA0] text-[13px] font-medium truncate">{name}</span>}
+            </div>
+          </div>
+          <div className="px-4 py-2.5 text-center text-[13px] font-semibold bg-[#E6F5EA] text-[#1E9E4E]">
+            {t('leadChat.modelSelectedBadge')}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (msg.type === 'verification_request') {
     const done = p.status === 'done'
     return (

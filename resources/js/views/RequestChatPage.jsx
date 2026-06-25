@@ -19,7 +19,7 @@ import CancelLeadModal from '@/components/modals/CancelLeadModal'
 import ModalMiddle from '@/layout/ModalMiddle'
 import { STATUS, StatusChip } from '@/views/manager/kit'
 
-const TYPED = new Set(['payment_request', 'verification_request', 'model_card'])
+const TYPED = new Set(['payment_request', 'verification_request', 'model_card', 'model_selected'])
 const MANAGER_STATUSES = ['in_progress', 'awaiting_client', 'awaiting_payment', 'prepaid', 'completed', 'closed']
 
 function HeaderLeadStatus({ status, onChange }) {

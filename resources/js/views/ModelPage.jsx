@@ -239,8 +239,10 @@ export default function ModelPage({ preview = false }) {
     if (!canConfirmSelect || !model || confirmBusy) return
     setConfirmBusy(true)
     try {
-      await api.post(`/chats/${previewChatId}/messages`, {
-        body: `✅ ${t('model.selectedMsg', { name: modelName(model) })}`,
+      await api.post(`/chats/${previewChatId}/select-model`, {
+        name: modelName(model),
+        model_id: model.id ?? null,
+        photo: model.photo ?? model.photos?.[0]?.url ?? null,
       })
       setConfirmOpen(false)
       navigate(-1)

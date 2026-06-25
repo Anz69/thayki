@@ -65,8 +65,7 @@
     "photosEmpty": "No photos added yet",
     "confirmSelect": "Confirm",
     "confirmTitle": "Choose this model?",
-    "confirmAsk": "Do you want to choose model “{{name}}”? The manager will be notified of your choice.",
-    "selectedMsg": "I'm choosing this model: {{name}}"
+    "confirmAsk": "Do you want to choose model “{{name}}”? The manager will be notified of your choice."
   },
   "modelInfo": {
     "age": "Age",
@@ -417,6 +416,8 @@
     "verifySheetText": "The client will get a «Verify identity» button and confirm via their Telegram contact.",
     "verifySheetBtn": "Request verification",
     "modelsTitle": "Model selection ({{n}})",
+    "modelSelectedTitle": "Client chose a model",
+    "modelSelectedBadge": "Model selected",
     "profileExpired": "This profile is no longer available — the 24h viewing window has expired.",
     "modelsSheetTitle": "Pick models",
     "modelsSend": "Send ({{n}})",
