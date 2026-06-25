@@ -7,7 +7,6 @@ import { usePageReady } from '@/composables/usePageReady'
 import TransitionLink from '@/components/TransitionLink'
 import Info from '@/components/sections/modelSelectInfo/Info'
 import Media from '@/components/sections/modelSelectInfo/Media'
-import MediaLightbox from '@/components/ui/MediaLightbox'
 import ModalMiddle from '@/layout/ModalMiddle'
 import { logError } from '@/utils/logger'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
@@ -39,7 +38,6 @@ export default function ModelPage({ preview = false }) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [shareModalOpen, setShareModalOpen] = useState(false)
-  const [lightboxIdx, setLightboxIdx] = useState(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirmBusy, setConfirmBusy] = useState(false)
   const canConfirmSelect = preview && !!previewChatId
@@ -228,16 +226,14 @@ export default function ModelPage({ preview = false }) {
   usePageReady(startAnimations)
 
   const allPhotos = model?.photos ?? []
-  const allVideos = model?.videos ?? []
   const mainPhoto = allPhotos[0] ?? null
   const leftPhoto = allPhotos[1] ?? null
   const rightPhoto = allPhotos[2] ?? null
 
-  const lightboxMedia = [
-    ...allPhotos.map((p) => ({ type: 'image', url: resolveMediaUrl(p.url) })),
-    ...allVideos.map((v) => ({ type: 'video', url: resolveMediaUrl(v.url), poster: v.poster ? resolveMediaUrl(v.poster) : undefined })),
-  ]
-  const openLightbox = (i) => { if (lightboxMedia.length) setLightboxIdx(Math.min(i, lightboxMedia.length - 1)) }
+  const goToMedia = () => {
+    switchTab(1)
+    requestAnimationFrame(() => tabSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
 
   const confirmSelect = async () => {
     if (!canConfirmSelect || !model || confirmBusy) return
@@ -375,17 +371,17 @@ export default function ModelPage({ preview = false }) {
           )}
 
           <div className="relative w-[160px] h-[210px] container">
-            <div ref={mainPhotoRef} onClick={() => mainPhoto?.url && openLightbox(0)} className="w-full h-full relative z-10 rounded-2xl overflow-hidden cursor-pointer" style={{ visibility: 'hidden' }}>
+            <div ref={mainPhotoRef} onClick={goToMedia} className="w-full h-full relative z-10 rounded-2xl overflow-hidden cursor-pointer" style={{ visibility: 'hidden' }}>
               {mainPhoto?.url && (
                 <LazyImg src={resolveMediaUrl(mainPhoto.url)} alt={model?.display_name ?? 'girl'} className="w-full h-full" />
               )}
             </div>
-            <div ref={leftPhotoRef} onClick={() => leftPhoto?.url && openLightbox(1)} className="w-[110px] h-[148px] absolute -top-4 -left-16 rounded-xl overflow-hidden cursor-pointer" style={{ visibility: 'hidden' }}>
+            <div ref={leftPhotoRef} onClick={goToMedia} className="w-[110px] h-[148px] absolute -top-4 -left-16 rounded-xl overflow-hidden cursor-pointer" style={{ visibility: 'hidden' }}>
               {leftPhoto?.url && (
                 <LazyImg src={resolveMediaUrl(leftPhoto.url)} alt="" className="w-full h-full" />
               )}
             </div>
-            <div ref={rightPhotoRef} onClick={() => rightPhoto?.url && openLightbox(2)} className="w-[124px] h-[150px] absolute -top-4 -right-16 rounded-xl overflow-hidden cursor-pointer" style={{ visibility: 'hidden' }}>
+            <div ref={rightPhotoRef} onClick={goToMedia} className="w-[124px] h-[150px] absolute -top-4 -right-16 rounded-xl overflow-hidden cursor-pointer" style={{ visibility: 'hidden' }}>
               {rightPhoto?.url && (
                 <LazyImg src={resolveMediaUrl(rightPhoto.url)} alt="" className="w-full h-full" />
               )}
@@ -446,10 +442,6 @@ export default function ModelPage({ preview = false }) {
         onClose={() => setShareModalOpen(false)}
         models={model ? [model] : []}
       />
-
-      {lightboxIdx != null && (
-        <MediaLightbox media={lightboxMedia} index={lightboxIdx} onClose={() => setLightboxIdx(null)} />
-      )}
 
       <ModalMiddle isOpen={confirmOpen} onClose={() => !confirmBusy && setConfirmOpen(false)}>
         <div className="flex flex-col px-5 pt-1 pb-6 gap-4 text-center">
