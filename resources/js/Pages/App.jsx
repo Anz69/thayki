@@ -33,7 +33,12 @@ export default function App() {
       const accountMatches = currentTgId == null || storedUid == null || storedUid === String(currentTgId)
       if (storedToken && accountMatches) {
         try {
-          const { data } = await api.get('/auth/me')
+          // Resume the session, but re-sync the profile from the live initData so a
+          // changed Telegram username/name/photo propagates (the login action that
+          // normally refreshes these is skipped on the stored-token fast path).
+          const { data } = initData
+            ? await api.post('/auth/sync', { init_data: initData })
+            : await api.get('/auth/me')
           const user = data?.data
           if (user) {
             authStore.setUser(user)

@@ -27,6 +27,7 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
 
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
+        Route::post('/auth/sync', [AuthController::class, 'sync'])->name('auth.sync');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
         Route::post('/auth/write-access', [AuthController::class, 'writeAccessGranted'])->name('auth.write-access');

@@ -111,6 +111,44 @@ class AuthController extends Controller
         return ApiResponse::ok(new UserResource($user->loadMissing('modelProfile', 'wallet')));
     }
 
+    public function sync(Request $request, \App\Services\Telegram\InitDataValidator $validator): JsonResponse
+    {
+        $user = $request->user();
+        $raw = (string) $request->input('init_data', '');
+
+        // Returning users resume via a stored token and never re-run the Telegram
+        // login action, so profile fields (username, name, photo) would never
+        // refresh after the user changes them on Telegram. Re-validate the live
+        // initData here and sync — best-effort, never breaking the session.
+        if ($raw !== '') {
+            try {
+                $validated = $validator->validate($raw);
+                $payload = $validated['user'] ?? [];
+
+                if ((int) ($payload['id'] ?? 0) === (int) $user->telegram_id) {
+                    $user->fill([
+                        'first_name' => isset($payload['first_name']) ? (string) $payload['first_name'] : $user->first_name,
+                        'last_name' => isset($payload['last_name']) ? (string) $payload['last_name'] : $user->last_name,
+                        'username' => isset($payload['username']) ? (string) $payload['username'] : $user->username,
+                        'language_code' => $user->language_chosen
+                            ? $user->language_code
+                            : (isset($payload['language_code']) ? (string) $payload['language_code'] : $user->language_code),
+                        'photo_url' => $user->photo_customized
+                            ? $user->photo_url
+                            : (isset($payload['photo_url']) ? (string) $payload['photo_url'] : $user->photo_url),
+                    ]);
+
+                    if ($user->isDirty()) {
+                        $user->save();
+                    }
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return ApiResponse::ok(new UserResource($user->loadMissing('modelProfile', 'wallet')));
+    }
+
     public function writeAccessGranted(Request $request): JsonResponse
     {
 
