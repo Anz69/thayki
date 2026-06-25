@@ -19,7 +19,7 @@ class RevokeLeadCryptoAddressesJob implements ShouldQueue
     public int $timeout = 600;
     public int $tries = 1;
 
-    public function __construct(public int $leadId, public ?int $exceptAddressId = null) {}
+    public function __construct(public int $leadId, public ?int $exceptAddressId = null, public ?int $messageId = null) {}
 
     public function handle(OxaPayService $oxa): void
     {
@@ -28,6 +28,7 @@ class RevokeLeadCryptoAddressesJob implements ShouldQueue
             ->where('status', LeadCryptoAddress::STATUS_ACTIVE)
             ->whereNotNull('address')
             ->when($this->exceptAddressId !== null, fn ($q) => $q->where('id', '!=', $this->exceptAddressId))
+            ->when($this->messageId !== null, fn ($q) => $q->where('message_id', $this->messageId))
             ->get();
 
         foreach ($rows as $row) {

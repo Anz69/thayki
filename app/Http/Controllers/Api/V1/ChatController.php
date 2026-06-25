@@ -393,6 +393,8 @@ class ChatController extends Controller
         }
 
         $messageId = $message->id;
+        $isCryptoPayment = $message->type === 'payment_request'
+            && ($message->payload['method'] ?? null) === 'crypto';
 
         if ($message->attachment_path !== null && $message->attachment_disk !== null) {
             try {
@@ -402,6 +404,33 @@ class ChatController extends Controller
         }
 
         $message->delete();
+
+        // Deleting a crypto payment card must revoke its on-chain addresses, otherwise
+        // they keep being monitored/billed with no card to pay into. (message_id is not
+        // a cascading FK, so the address rows survive the message deletion.)
+        if ($isCryptoPayment) {
+            try {
+                $cryptoRows = \App\Models\LeadCryptoAddress::query()
+                    ->where('message_id', $messageId)
+                    ->get(['id', 'lead_id', 'status']);
+
+                if ($cryptoRows->isNotEmpty()) {
+                    $leadId = (int) $cryptoRows->first()->lead_id;
+                    // Live addresses are revoked on OxaPay asynchronously…
+                    \App\Jobs\RevokeLeadCryptoAddressesJob::dispatch($leadId, null, $messageId);
+                    // …and anything not yet active (or already paid) is closed out locally
+                    // so it can't be generated or monitored after the card is gone.
+                    \App\Models\LeadCryptoAddress::query()
+                        ->where('message_id', $messageId)
+                        ->whereNotIn('status', [
+                            \App\Models\LeadCryptoAddress::STATUS_PAID,
+                            \App\Models\LeadCryptoAddress::STATUS_ACTIVE,
+                        ])
+                        ->update(['status' => \App\Models\LeadCryptoAddress::STATUS_REVOKED]);
+                }
+            } catch (\Throwable) {
+            }
+        }
 
         $last = Message::query()->where('chat_id', $chat->id)->latest('id')->first();
         $chat->forceFill(['last_message_at' => $last?->created_at])->save();

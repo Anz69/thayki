@@ -385,6 +385,26 @@ export default function RequestChatPage() {
           if (!prev.length) return incoming.map((m) => normalizeMsg(m, myId, isStaff, isGroup, oid))
           let next = prev
           for (const raw of incoming) next = mergeIncomingMessage(next, raw, myId, isStaff, isGroup, oid)
+          // Reconcile deletions: if a message was deleted while we were backgrounded
+          // or offline, the realtime event was missed. Within the fetched window drop
+          // any confirmed message the server no longer returns. (Older-than-window and
+          // just-arrived/optimistic messages are left untouched.)
+          if (incoming.length) {
+            const ids = new Set(incoming.map((m) => String(m.id)))
+            let minId = Infinity
+            let maxId = -Infinity
+            for (const m of incoming) {
+              const n = Number(m.id)
+              if (Number.isFinite(n)) { if (n < minId) minId = n; if (n > maxId) maxId = n }
+            }
+            next = next.filter((m) => {
+              const idStr = String(m.id)
+              if (idStr.startsWith('opt-') || m.uploading || m.failed) return true
+              const n = Number(m.id)
+              if (!Number.isFinite(n) || n < minId || n > maxId) return true
+              return ids.has(idStr)
+            })
+          }
           return next
         })
         ingestParticipantsRead(res.data.meta)
