@@ -19,6 +19,8 @@
     "no": "否",
     "cancel": "取消",
     "done": "完成",
+    "save": "保存",
+    "edit": "编辑",
     "copied": "已复制"
   },
   "orderStatus": {
@@ -399,6 +401,13 @@
     "payment": "付款按钮",
     "verification": "身份验证",
     "models": "模特资料",
+    "templates": "模板",
+    "templatesTitle": "消息模板",
+    "templatePlaceholder": "模板内容…",
+    "templateAdd": "添加",
+    "templatesEmpty": "暂无模板",
+    "templateDelete": "删除",
+    "templateDeleteConfirm": "删除模板？",
     "payTitle": "付款请求",
     "payRequisites": "收款信息",
     "payPending": "等待付款",

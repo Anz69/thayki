@@ -19,6 +19,8 @@
     "no": "Нет",
     "cancel": "Отмена",
     "done": "Готово",
+    "save": "Сохранить",
+    "edit": "Изменить",
     "copied": "Скопировано"
   },
   "orderStatus": {
@@ -399,6 +401,13 @@
     "payment": "Кнопка оплаты",
     "verification": "Верификация личности",
     "models": "Профили моделей",
+    "templates": "Шаблоны",
+    "templatesTitle": "Шаблоны сообщений",
+    "templatePlaceholder": "Текст шаблона…",
+    "templateAdd": "Добавить",
+    "templatesEmpty": "Шаблонов пока нет",
+    "templateDelete": "Удалить",
+    "templateDeleteConfirm": "Удалить шаблон?",
     "payTitle": "Запрос оплаты",
     "payRequisites": "Реквизиты",
     "payPending": "Ожидает оплаты",

@@ -269,7 +269,123 @@ export function TypedMessageCard({ msg, isManager, leadId, chatId = null, leadCl
   return null
 }
 
-export function LeadActionMenu({ leadId, onPickMedia, onPosted }) {
+function TemplatesSheet({ open, onClose, onPick }) {
+  const { t } = useTranslation()
+  const [items, setItems] = useState(null)
+  const [draft, setDraft] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [editBody, setEditBody] = useState('')
+  const [confirmId, setConfirmId] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const load = useCallback(() => {
+    api.get('/manager/templates')
+      .then(({ data }) => setItems(Array.isArray(data?.data) ? data.data : []))
+      .catch((e) => { logError(e); setItems([]) })
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    setItems(null); setDraft(''); setEditingId(null); setConfirmId(null)
+    load()
+  }, [open, load])
+
+  const add = async () => {
+    const body = draft.trim()
+    if (!body || busy) return
+    setBusy(true)
+    try {
+      const { data } = await api.post('/manager/templates', { body })
+      setItems((p) => [...(p ?? []), data.data])
+      setDraft('')
+    } catch (e) { logError(e) } finally { setBusy(false) }
+  }
+
+  const saveEdit = async () => {
+    const body = editBody.trim()
+    if (!body || busy || editingId == null) return
+    setBusy(true)
+    try {
+      const { data } = await api.patch(`/manager/templates/${editingId}`, { body })
+      setItems((p) => (p ?? []).map((x) => (x.id === editingId ? data.data : x)))
+      setEditingId(null)
+    } catch (e) { logError(e) } finally { setBusy(false) }
+  }
+
+  const remove = async (id) => {
+    if (busy) return
+    setBusy(true)
+    try {
+      await api.delete(`/manager/templates/${id}`)
+      setItems((p) => (p ?? []).filter((x) => x.id !== id))
+      setConfirmId(null)
+    } catch (e) { logError(e) } finally { setBusy(false) }
+  }
+
+  return (
+    <ModalMiddle isOpen={open} onClose={onClose}>
+      <div className="flex flex-col px-5 pt-1 pb-6 gap-3" style={{ maxHeight: '82dvh' }}>
+        <h2 className="text-black text-lg font-bold">{t('leadChat.templatesTitle')}</h2>
+
+        <div className="flex flex-col gap-2">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onFocus={(e) => { const el = e.target; setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 320) }}
+            rows={2}
+            placeholder={t('leadChat.templatePlaceholder')}
+            className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[14px] outline-none resize-none"
+          />
+          <button disabled={!draft.trim() || busy} onClick={add} className="self-end px-4 py-2 rounded-full bg-[#E2319B] text-white text-[13px] font-semibold disabled:opacity-50 active:scale-95 transition-transform">
+            {t('leadChat.templateAdd')}
+          </button>
+        </div>
+
+        <div className="h-px bg-black/[0.06]" />
+
+        <div className="flex flex-col gap-2 overflow-y-auto" style={{ maxHeight: '48dvh' }}>
+          {items == null ? (
+            <div className="flex justify-center py-4"><div className="size-5 rounded-full border-2 border-[#E2319B] border-t-transparent animate-spin" /></div>
+          ) : items.length === 0 ? (
+            <p className="text-[#9B9AA0] text-[13px] text-center py-3">{t('leadChat.templatesEmpty')}</p>
+          ) : items.map((it) => (
+            <div key={it.id} className="bg-[#F5F5F7] rounded-xl p-3 flex flex-col gap-2">
+              {editingId === it.id ? (
+                <>
+                  <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={2} className="bg-white rounded-lg px-3 py-2 text-black text-[14px] outline-none resize-none" />
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => setEditingId(null)} className="px-3 py-1.5 rounded-full bg-white text-[#7F7F7F] text-[12px] font-semibold active:scale-95 transition-transform">{t('common.cancel')}</button>
+                    <button disabled={busy || !editBody.trim()} onClick={saveEdit} className="px-3 py-1.5 rounded-full bg-[#E2319B] text-white text-[12px] font-semibold disabled:opacity-50 active:scale-95 transition-transform">{t('common.save')}</button>
+                  </div>
+                </>
+              ) : confirmId === it.id ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[#E5484D] text-[13px] font-medium">{t('leadChat.templateDeleteConfirm')}</span>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => setConfirmId(null)} className="px-3 py-1.5 rounded-full bg-white text-[#7F7F7F] text-[12px] font-semibold active:scale-95 transition-transform">{t('common.cancel')}</button>
+                    <button disabled={busy} onClick={() => remove(it.id)} className="px-3 py-1.5 rounded-full bg-[#E5484D] text-white text-[12px] font-semibold disabled:opacity-50 active:scale-95 transition-transform">{t('requestChat.deleteConfirmBtn')}</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button onClick={() => onPick(it.body)} className="text-left text-black text-[14px]/[150%] active:opacity-70 transition-opacity" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    {it.body}
+                  </button>
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => { setEditingId(it.id); setEditBody(it.body); setConfirmId(null) }} className="px-3 py-1.5 rounded-full bg-white text-[#3E6CC4] text-[12px] font-semibold active:scale-95 transition-transform">{t('common.edit')}</button>
+                    <button onClick={() => { setConfirmId(it.id); setEditingId(null) }} className="px-3 py-1.5 rounded-full bg-white text-[#E5484D] text-[12px] font-semibold active:scale-95 transition-transform">{t('leadChat.templateDelete')}</button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </ModalMiddle>
+  )
+}
+
+export function LeadActionMenu({ leadId, onPickMedia, onPosted, onPickTemplate }) {
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [sheet, setSheet] = useState(null)
@@ -293,8 +409,11 @@ export function LeadActionMenu({ leadId, onPickMedia, onPosted }) {
           <MenuRow icon={ICONS.payment} tint="#1E9E4E" label={t('leadChat.payment')} onClick={() => open('payment')} />
           <MenuRow icon={ICONS.verify} tint="#C77A12" label={t('leadChat.verification')} onClick={() => open('verify')} />
           <MenuRow icon={ICONS.models} tint="#E2319B" label={t('leadChat.models')} onClick={() => open('link')} />
+          <MenuRow icon={ICONS.template} tint="#7A5AF8" label={t('leadChat.templates')} onClick={() => open('templates')} />
         </div>
       </ModalMiddle>
+
+      <TemplatesSheet open={sheet === 'templates'} onClose={() => setSheet(null)} onPick={(text) => { setSheet(null); onPickTemplate?.(text) }} />
 
       <PaymentSheet open={sheet === 'payment'} onClose={() => setSheet(null)} leadId={leadId} onPosted={onPosted} />
       <VerifySheet open={sheet === 'verify'} onClose={() => setSheet(null)} leadId={leadId} onPosted={onPosted} />
@@ -522,6 +641,7 @@ const ICONS = {
   verify: <><rect x="3" y="5" width="18" height="14" rx="2.5" /><circle cx="8.5" cy="11" r="2" /><path d="M13.5 9.5h4M13.5 13h4M5.5 15.2c.4-1.3 1.6-2 3-2s2.6.7 3 2" /></>,
   models: <><circle cx="12" cy="8" r="3.4" /><path d="M5.5 19c.6-3.2 3.2-5 6.5-5s5.9 1.8 6.5 5" /></>,
   link: <><path d="M9.5 14.5l5-5M8 12l-1.6 1.6a3.1 3.1 0 0 0 4.4 4.4L12.5 16M16 12l1.6-1.6a3.1 3.1 0 0 0-4.4-4.4L11.5 8" /></>,
+  template: <><rect x="4" y="3" width="16" height="18" rx="2.5" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
 }
 
 function MenuRow({ icon, label, tint = '#7F7F7F', onClick }) {

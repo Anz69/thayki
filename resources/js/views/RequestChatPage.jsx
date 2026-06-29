@@ -687,6 +687,17 @@ export default function RequestChatPage() {
     el.style.height = Math.min(el.scrollHeight, 120) + 'px'
   }
 
+  // Insert a template phrase into the composer as editable draft text (not sent).
+  const insertTemplate = (text) => {
+    const t2 = (text ?? '').trim()
+    if (!t2) return
+    setInputText((prev) => (prev.trim() ? `${prev.replace(/\s+$/, '')}\n${t2}` : t2))
+    requestAnimationFrame(() => {
+      autoResize()
+      try { textareaRef.current?.focus() } catch { /* noop */ }
+    })
+  }
+
   const postMessageBody = useCallback(async (text, optimisticId, clientMessageId) => {
     try {
       const { data } = await api.post(`/chats/${chatId}/messages`, { body: text, client_message_id: clientMessageId }, {
@@ -1117,6 +1128,7 @@ export default function RequestChatPage() {
               leadId={leadId}
               onPickMedia={() => fileInputRef.current?.click()}
               onPosted={reloadMessages}
+              onPickTemplate={insertTemplate}
             />
           ) : (
             <button

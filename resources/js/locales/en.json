@@ -19,6 +19,8 @@
     "no": "No",
     "cancel": "Cancel",
     "done": "Done",
+    "save": "Save",
+    "edit": "Edit",
     "copied": "Copied"
   },
   "orderStatus": {
@@ -399,6 +401,13 @@
     "payment": "Payment button",
     "verification": "Identity verification",
     "models": "Model profiles",
+    "templates": "Templates",
+    "templatesTitle": "Message templates",
+    "templatePlaceholder": "Template text…",
+    "templateAdd": "Add",
+    "templatesEmpty": "No templates yet",
+    "templateDelete": "Delete",
+    "templateDeleteConfirm": "Delete template?",
     "payTitle": "Payment request",
     "payRequisites": "Requisites",
     "payPending": "Awaiting payment",

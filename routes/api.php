@@ -82,6 +82,11 @@ Route::prefix('v1')->group(function (): void {
             ->name('invites.share');
 
         Route::middleware('role:manager')->prefix('manager')->group(function (): void {
+            Route::get('/templates', [\App\Http\Controllers\Api\V1\Manager\ManagerTemplateController::class, 'index'])->name('manager.templates.index');
+            Route::post('/templates', [\App\Http\Controllers\Api\V1\Manager\ManagerTemplateController::class, 'store'])->name('manager.templates.store');
+            Route::patch('/templates/{template}', [\App\Http\Controllers\Api\V1\Manager\ManagerTemplateController::class, 'update'])->name('manager.templates.update');
+            Route::delete('/templates/{template}', [\App\Http\Controllers\Api\V1\Manager\ManagerTemplateController::class, 'destroy'])->name('manager.templates.destroy');
+
             Route::get('/leads', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'index'])->name('manager.leads.index');
             Route::get('/leads/{lead}', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'show'])->name('manager.leads.show');
             Route::get('/leads/{lead}/history', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'history'])->name('manager.leads.history');
