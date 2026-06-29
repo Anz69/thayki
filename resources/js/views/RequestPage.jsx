@@ -345,9 +345,14 @@ export default function RequestPage() {
                 />
               </span>
               <span className="relative z-10 inline-flex shrink-0">
-                <LottieDiamond size={20} style={{ filter: 'grayscale(1) brightness(1.2) contrast(1.05)' }} />
+                <LottieDiamond size={20} style={{ filter: 'sepia(0.55) saturate(2.6) hue-rotate(5deg) brightness(1.1) contrast(1.05)' }} />
               </span>
-              <span className="relative z-10 text-sm/[80%] font-[500]">VIP</span>
+              <span
+                className="relative z-10 text-sm/[80%] font-bold tracking-wide"
+                style={{ background: 'linear-gradient(90deg, #A9791B 0%, #E9B84B 35%, #F8E08C 50%, #E9B84B 65%, #A9791B 100%)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }}
+              >
+                VIP
+              </span>
               <svg ref={vipSparkRef} className="absolute -top-1.5 -right-1.5 w-4 h-4 z-10" viewBox="0 0 24 24" fill="#E2319B" aria-hidden>
                 <path d="M12 2.5l1.7 5.1a3 3 0 0 0 1.9 1.9L20.5 11l-4.9 1.5a3 3 0 0 0-1.9 1.9L12 19.5l-1.7-5.1a3 3 0 0 0-1.9-1.9L3.5 11l4.9-1.5a3 3 0 0 0 1.9-1.9L12 2.5Z" />
               </svg>
@@ -459,17 +464,21 @@ export default function RequestPage() {
 
             <Section title={t('request.bust')}>
               <div className="flex flex-wrap gap-2">
-                {['natural', 'silicone'].map((k) => (
+                {['any', 'natural', 'silicone'].map((k) => (
                   <Chip key={k} active={bustType === k} onClick={() => setBustType(bustType === k ? null : k)}>
                     {t(`request.bustTypes.${k}`)}
                   </Chip>
                 ))}
               </div>
-              <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mt-1.5 mb-1">{t('request.bustSizeLabel')}</p>
-              <RangeSlider min={0} max={BUST_SIZES.length - 1} from={bustSize.from} to={bustSize.to}
-                onChange={(f, to) => setBustSize({ from: f, to })}
-                format={(i) => sizeLabel(BUST_SIZES[i])}
-                formatRange={(f, to) => `${sizeLabel(BUST_SIZES[f])} – ${sizeLabel(BUST_SIZES[to])}`} />
+              {bustType && (
+                <>
+                  <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mt-1.5 mb-1">{t('request.bustSizeLabel')}</p>
+                  <RangeSlider min={0} max={BUST_SIZES.length - 1} from={bustSize.from} to={bustSize.to}
+                    onChange={(f, to) => setBustSize({ from: f, to })}
+                    format={(i) => sizeLabel(BUST_SIZES[i])}
+                    formatRange={(f, to) => `${sizeLabel(BUST_SIZES[f])} – ${sizeLabel(BUST_SIZES[to])}`} />
+                </>
+              )}
             </Section>
 
             <Section title={t('request.hipsLabel')}>

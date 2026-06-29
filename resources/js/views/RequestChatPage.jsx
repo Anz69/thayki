@@ -225,6 +225,11 @@ export default function RequestChatPage() {
 
   const role     = auth.user?.role
   const isStaff  = role === 'manager'
+  const myName   = (() => {
+    const u = auth.user
+    if (!u) return ''
+    return (`${u.first_name ?? ''} ${u.last_name ?? ''}`).trim() || u.username || u.name || ''
+  })()
   const [chatInfo, setChatInfo] = useState(null)
   const [leadMeta, setLeadMeta] = useState(null)
   const isLead   = !!leadId || chatInfo?.type === 'lead' || leadMeta?.id != null
@@ -579,7 +584,7 @@ export default function RequestChatPage() {
     }
     const onTyping = (payload) => {
       if (isSelf(payload)) return
-      setOthersTyping({ from: payload?.from ?? payload?.user_id ?? null, role: payload?.role ?? null })
+      setOthersTyping({ from: payload?.from ?? payload?.user_id ?? null, role: payload?.role ?? null, name: payload?.name ?? null })
       clearTimeout(typingHideRef.current)
       typingHideRef.current = setTimeout(() => setOthersTyping(null), 6000)
     }
@@ -601,10 +606,10 @@ export default function RequestChatPage() {
     const now = Date.now()
     if (now - lastTypingSentRef.current < 1500) return
     lastTypingSentRef.current = now
-    try { privateChannel(`chats.${chatId}`)?.whisper?.('typing', { from: myId, role }) } catch {}
+    try { privateChannel(`chats.${chatId}`)?.whisper?.('typing', { from: myId, role, name: myName }) } catch {}
     clearTimeout(typingPingRef.current)
     typingPingRef.current = setTimeout(() => sendStopTyping(), 15000)
-  }, [chatId, myId, role]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [chatId, myId, role, myName]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendStopTyping = useCallback(() => {
     clearTimeout(typingPingRef.current)
@@ -824,8 +829,9 @@ export default function RequestChatPage() {
     }
   }
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
+  const handleKeyDown = () => {
+    // Enter must insert a newline (so users can write paragraphs on mobile) —
+    // sending is done only via the send button.
   }
 
   return (
@@ -1050,7 +1056,9 @@ export default function RequestChatPage() {
                 && String(typerId) === String(ownerIdRef.current)
               const typerIsStaff = STAFF_ROLES.includes(othersTyping.role)
               const onRight = !isGroup && isStaff && typerIsStaff && !typerIsOwner
-              const label = onRight ? t('requestChat.managerTyping') : (isGroup ? t('requestChat.typing') : null)
+              const label = onRight
+                ? (othersTyping.name ? t('requestChat.managerTypingName', { name: othersTyping.name }) : t('requestChat.managerTyping'))
+                : (isGroup ? t('requestChat.typing') : null)
               return (
                 <div className={`flex mt-2 ${onRight ? 'justify-end' : 'justify-start'}`}>
                   <div

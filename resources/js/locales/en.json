@@ -152,6 +152,7 @@
     "unitLb": "lb",
     "size6plus": "6+",
     "bustTypes": {
+      "any": "Doesn't matter",
       "natural": "Natural",
       "silicone": "Silicone"
     },
@@ -230,6 +231,7 @@
     "acceptToReply": "Accept the request to reply to the client.",
     "typing": "typing…",
     "managerTyping": "Manager is typing…",
+    "managerTypingName": "{{name}} is typing…",
     "deleteConfirm": "Delete this message?",
     "deleteConfirmBtn": "Delete",
     "statusError": "Couldn't change status",
@@ -290,9 +292,9 @@
     "s2t": "Leave a request",
     "s2s": "Fill out a short form — it takes less than a minute.",
     "s3t": "A manager will contact you",
-    "s3s": "We'll find suitable options and reply in chat — on average within an hour.",
-    "s4t": "Confirm the booking",
-    "s4s": "Pay a 50% deposit 2 hours before the meeting. The rest is paid at the meeting.",
+    "s3s": "We'll answer all the questions needed to arrange the meeting.",
+    "s4t": "Order confirmation",
+    "s4s": "The agency commission is 30%, paid as confirmation of your serious intent.",
     "sent": "Request sent"
   },
   "faqModal": {
