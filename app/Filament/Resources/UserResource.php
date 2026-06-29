@@ -54,6 +54,10 @@ class UserResource extends Resource
                 ->label('Strange (не верифицирован)')
                 ->helperText('Пользователь видит только экран-заглушку, пока не пройдёт по invite-ссылке.'),
             Forms\Components\Toggle::make('notifications_enabled')->label('Уведомления в TG'),
+            Forms\Components\Toggle::make('can_delete_messages')
+                ->label('Может удалять сообщения')
+                ->helperText('Разрешить этому менеджеру удалять сообщения в чатах заявок. По умолчанию выключено.')
+                ->visible(fn (?User $record): bool => $record?->role === UserRole::Manager),
             Forms\Components\DateTimePicker::make('last_auth_at')->label('Последний вход'),
         ]);
     }

@@ -387,9 +387,12 @@ class ChatController extends Controller
             throw DomainException::forbidden('MESSAGE_FORBIDDEN', 'Message does not belong to this chat.');
         }
 
-        $isStaff = in_array($user->role, [UserRole::Manager, UserRole::Admin], true);
-        if (! $isStaff && $message->sender_id !== $user->id) {
-            throw DomainException::forbidden('MESSAGE_FORBIDDEN', 'You can only delete your own messages.');
+        // Admins may always delete; managers only if explicitly granted the right in
+        // the admin panel. Everyone else may delete only their own messages.
+        $canModerate = $user->role === UserRole::Admin
+            || ($user->role === UserRole::Manager && (bool) $user->can_delete_messages);
+        if (! $canModerate && $message->sender_id !== $user->id) {
+            throw DomainException::forbidden('MESSAGE_FORBIDDEN', 'You are not allowed to delete this message.');
         }
 
         $messageId = $message->id;

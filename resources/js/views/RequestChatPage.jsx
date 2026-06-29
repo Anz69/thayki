@@ -722,10 +722,11 @@ export default function RequestChatPage() {
 
   const canDeleteMsg = useCallback((m) => {
     if (!isStaff || !m) return false
+    if (!auth.user?.can_delete_messages) return false
     if (m.uploading || m.failed) return false
     const id = String(m.id ?? '')
     return id !== '' && !id.startsWith('opt-')
-  }, [isStaff])
+  }, [isStaff, auth.user?.can_delete_messages])
 
   const startLongPress = useCallback((m) => (e) => {
     if (!canDeleteMsg(m)) return

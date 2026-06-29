@@ -24,6 +24,7 @@ class UserResource extends JsonResource
             'photo_customized' => $this->photo_customized,
             'is_strange' => (bool) $this->is_strange,
             'notifications_enabled' => (bool) $this->notifications_enabled,
+            'can_delete_messages' => (bool) $this->can_delete_messages,
             'role' => $this->role->value,
             'status' => $this->status->value,
             'last_auth_at' => $this->last_auth_at?->toIso8601String(),
