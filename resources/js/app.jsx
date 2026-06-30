@@ -42,32 +42,44 @@ function rmDismissAndRepaint() {
     if (ld) { ld.style.opacity = '0'; ld.style.visibility = 'hidden'; ld.style.pointerEvents = 'none' }
   } catch {}
   try {
-    const b = document.body
-    if (b) { const d = b.style.display; b.style.display = 'none'; void b.offsetHeight; b.style.display = d || '' }
+    const el = document.documentElement
+    el.style.transform = 'translateZ(0)'
+    void document.body.offsetHeight
+    requestAnimationFrame(() => {
+      try { el.style.transform = '' } catch {}
+      try { window.scrollBy(0, 1); window.scrollBy(0, -1) } catch {}
+    })
   } catch {}
+}
+// On resume, detect a compositor freeze (the iOS WebView returns from background but
+// never repaints → blank white). A frozen WebView stops servicing requestAnimationFrame,
+// so if no frame arrives shortly after resume we hard-reload — the only thing that
+// reliably recovers a compositor freeze. Healthy resumes paint and are left alone.
+function rmOnResume() {
+  rmDismissAndRepaint()
+  let frames = 0
+  const tick = () => { frames++ }
+  try { requestAnimationFrame(tick) } catch {}
+  try { requestAnimationFrame(() => requestAnimationFrame(tick)) } catch {}
+  setTimeout(() => {
+    try {
+      const root = document.getElementById('app')
+      const empty = (!root || root.childElementCount === 0) && !document.getElementById('boot-splash')
+      if (frames === 0 || empty) window.location.reload()
+    } catch {}
+  }, 650)
 }
 try {
   window.addEventListener('pageshow', (e) => {
     if (e && e.persisted) { try { window.location.reload() } catch {} return }
     rmDismissAndRepaint()
   })
-  window.addEventListener('focus', rmDismissAndRepaint)
+  window.addEventListener('focus', rmOnResume)
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') return
-    rmDismissAndRepaint()
-    // double nudge after a frame — some WebView versions ignore the first
-    requestAnimationFrame(rmDismissAndRepaint)
-    setTimeout(() => {
-      try {
-        const root = document.getElementById('app')
-        if ((!root || root.childElementCount === 0) && !document.getElementById('boot-splash')) window.location.reload()
-      } catch {}
-    }, 800)
+    if (document.visibilityState === 'visible') rmOnResume()
   })
-  // Telegram lifecycle signals (cover SDK versions that fire these)
   const tg = window.Telegram?.WebApp
-  try { tg?.onEvent?.('activated', rmDismissAndRepaint) } catch {}
-  try { tg?.onEvent?.('viewportChanged', rmDismissAndRepaint) } catch {}
+  try { tg?.onEvent?.('activated', rmOnResume) } catch {}
 } catch {}
 try {
   window.addEventListener('error', (e) => beaconError('error', {
