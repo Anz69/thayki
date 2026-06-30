@@ -14,6 +14,17 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
 
+    // Public client-error beacon (debug). The mini-app posts uncaught JS errors here
+    // so device-only crashes (e.g. iOS WebView) land in the server log.
+    Route::post('/client-log', function (\Illuminate\Http\Request $request): \Illuminate\Http\Response {
+        \Illuminate\Support\Facades\Log::warning('[client-error] '.json_encode(
+            $request->only(['kind', 'message', 'stack', 'url', 'ua', 'tgver', 'platform', 'build', 't']),
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+        ));
+
+        return response()->noContent();
+    })->middleware('throttle:120,1')->name('client-log');
+
     Route::middleware('throttle:auth')->group(function (): void {
         Route::post('/auth/telegram', [AuthController::class, 'login'])->name('auth.telegram');
     });

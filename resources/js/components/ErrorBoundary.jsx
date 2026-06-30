@@ -27,6 +27,12 @@ export default class ErrorBoundary extends Component {
     console.error('[ErrorBoundary]', error, info?.componentStack)
     // Make sure the inline boot splash can't hide the error UI underneath it.
     try { document.getElementById('boot-splash')?.remove() } catch { /* noop */ }
+    try {
+      window.__beaconError?.('react', {
+        message: error?.message ?? String(error ?? ''),
+        stack: (error?.stack ?? '') + '\n--- componentStack ---' + (info?.componentStack ?? ''),
+      })
+    } catch { /* noop */ }
     this.setState({
       componentStack: info?.componentStack ?? null,
       errorRoute: window.location?.pathname ?? null,

@@ -6,6 +6,39 @@ import '@/i18n'
 
 gsap.config({ nullTargetWarn: false })
 
+// Debug beacon: ship uncaught client errors to the server log so mobile-only
+// (iOS Telegram WebView) crashes are visible. Cheap, fire-and-forget.
+function beaconError(kind, data) {
+  try {
+    const tg = window.Telegram?.WebApp
+    const payload = JSON.stringify({
+      kind,
+      message: String(data?.message ?? data ?? '').slice(0, 1000),
+      stack: data?.stack ? String(data.stack).slice(0, 2000) : null,
+      url: location.href,
+      ua: navigator.userAgent,
+      tgver: tg?.version ?? null,
+      platform: tg?.platform ?? null,
+      build: window.__APP_BUILD_ID__ ?? null,
+      t: new Date().toISOString(),
+    })
+    const url = '/api/v1/client-log'
+    if (navigator.sendBeacon) navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }))
+    else fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {})
+  } catch {}
+}
+try { window.__beaconError = beaconError } catch {}
+try {
+  window.addEventListener('error', (e) => beaconError('error', {
+    message: e?.message,
+    stack: e?.error?.stack ?? `${e?.filename ?? ''}:${e?.lineno ?? ''}:${e?.colno ?? ''}`,
+  }))
+  window.addEventListener('unhandledrejection', (e) => beaconError('unhandledrejection', {
+    message: e?.reason?.message ?? String(e?.reason ?? 'unhandledrejection'),
+    stack: e?.reason?.stack ?? null,
+  }))
+} catch {}
+
 function resolveBuildId() {
   try {
     const explicit = import.meta.env.VITE_APP_BUILD_ID

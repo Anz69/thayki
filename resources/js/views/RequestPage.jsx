@@ -19,7 +19,6 @@ const FIGURES = ['anorexic', 'slim', 'curvy', 'bodybuilder', 'fit', 'siliconeBea
 const HIPS = ['narrow', 'medium', 'wide']
 const HAIRS = ['any', 'blonde', 'brunette', 'brown', 'red']
 const EVENTS = ['oneTime', 'trip', 'relationship']
-const TRIP_PURPOSES = ['leisure', 'business', 'event', 'companion']
 
 function Chip({ active, onClick, children }) {
   return (
@@ -73,7 +72,6 @@ export default function RequestPage() {
   const [eventHours, setEventHours] = useState({ from: 2, to: 6 })
   const [tripDays, setTripDays] = useState({ from: 3, to: 7 })
   const [tripCity, setTripCity] = useState('')
-  const [tripPurpose, setTripPurpose] = useState(null)
   const [comments, setComments] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
@@ -90,7 +88,7 @@ export default function RequestPage() {
   const vipGemRef = useRef(null)
 
   const eventOk = eventType === 'oneTime' || eventType === 'relationship'
-    || (eventType === 'trip' && tripCity.trim().length > 0 && !!tripPurpose)
+    || (eventType === 'trip' && tripCity.trim().length > 0)
   const paramsOk = !!bustType && !!hips && !!figure && !!hair && !!eventType && eventOk
   const allSelected = isModelFlow || paramsOk
   const canSubmit = city.trim().length > 0 && allSelected && !submitting
@@ -222,7 +220,7 @@ export default function RequestPage() {
 
   const eventStr = () => {
     if (eventType === 'oneTime') return `${U('events.oneTime')} · ${eventHours.from}–${eventHours.to} ${U('unitHour')}`
-    if (eventType === 'trip') return `${U('events.trip')} · ${tripDays.from}–${tripDays.to} ${U('unitDay')} · ${tripCity.trim()} · ${U(`tripPurposes.${tripPurpose}`)}`
+    if (eventType === 'trip') return `${U('events.trip')} · ${tripDays.from}–${tripDays.to} ${U('unitDay')} · ${tripCity.trim()}`
     if (eventType === 'relationship') return U('events.relationship')
     return null
   }
@@ -251,7 +249,7 @@ export default function RequestPage() {
   const ruEventStr = () => {
     const e = ru.request.events
     if (eventType === 'oneTime') return `${e.oneTime} · ${eventHours.from}–${eventHours.to} ${ru.request.unitHour}`
-    if (eventType === 'trip') return `${e.trip} · ${tripDays.from}–${tripDays.to} ${ru.request.unitDay} · ${tripCity.trim()} · ${ru.request.tripPurposes[tripPurpose]}`
+    if (eventType === 'trip') return `${e.trip} · ${tripDays.from}–${tripDays.to} ${ru.request.unitDay} · ${tripCity.trim()}`
     return e.relationship
   }
 
@@ -295,7 +293,7 @@ export default function RequestPage() {
         trip_days_from: eventType === 'trip' ? tripDays.from : null,
         trip_days_to: eventType === 'trip' ? tripDays.to : null,
         trip_city: eventType === 'trip' ? tripCity.trim() : null,
-        trip_purpose: eventType === 'trip' ? tripPurpose : null,
+        trip_purpose: null,
       }
 
       const { data } = await api.post('/leads', { ...base, ...typage },
@@ -547,18 +545,6 @@ export default function RequestPage() {
                         {t('request.tripCity')} <span className="text-[#E2319B]">*</span>
                       </p>
                       <CitySelect value={tripCity} onChange={setTripCity} placeholder={t('request.tripCityPlaceholder')} inline overlay />
-                    </div>
-                    <div>
-                      <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2">
-                        {t('request.tripPurposeLabel')} <span className="text-[#E2319B]">*</span>
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {TRIP_PURPOSES.map((k) => (
-                          <Chip key={k} active={tripPurpose === k} onClick={() => setTripPurpose(tripPurpose === k ? null : k)}>
-                            {t(`request.tripPurposes.${k}`)}
-                          </Chip>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 )}
