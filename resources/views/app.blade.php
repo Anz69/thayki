@@ -28,6 +28,50 @@
 </head>
 <body class="bg-white">
     <div id="boot-splash"><div class="bs-ring"></div></div>
+    <script>
+    /* Bundle-independent recovery watchdog. If the JS bundle never boots (flaky/slow
+       connection, a dropped chunk, etc.) the inline spinner would spin forever. This
+       runs from the HTML itself — no Vite bundle needed — and, after a grace period,
+       swaps the spinner for a "Reload" screen. React removes #boot-splash on mount,
+       which is our signal that the app booted. */
+    (function () {
+      var FIRST = 9000, FINAL = 18000;
+      function el(tag, css, text) { var e = document.createElement(tag); if (css) e.setAttribute('style', css); if (text != null) e.textContent = text; return e; }
+      function offer(msg) {
+        var sp = document.getElementById('boot-splash');
+        if (!sp) return; /* app booted */
+        try {
+          sp.replaceChildren();
+          var box = el('div', 'display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif');
+          box.appendChild(el('div', 'font-size:42px', '😕'));
+          box.appendChild(el('div', 'color:#111;font-size:16px;font-weight:600', 'Не удалось загрузить'));
+          box.appendChild(el('div', 'color:#888;font-size:13px;line-height:1.5;max-width:260px', msg));
+          var b = el('button', 'margin-top:4px;padding:13px 26px;border:none;border-radius:9999px;background:#E2319B;color:#fff;font-size:15px;font-weight:600', 'Перезагрузить');
+          b.addEventListener('click', function () { try { sessionStorage.clear(); } catch (e) {} location.reload(); });
+          box.appendChild(b);
+          sp.appendChild(box);
+          sp.style.opacity = '1';
+        } catch (e) {}
+      }
+      /* Soft nudge first (keep a spinner but hint), hard reload screen later. */
+      var t1 = setTimeout(function () {
+        var sp = document.getElementById('boot-splash');
+        if (sp && sp.querySelector('.bs-ring')) {
+          var hint = el('div', 'margin-top:18px;color:#aaa;font-size:12px;font-family:-apple-system,system-ui,sans-serif', 'Загрузка…');
+          sp.appendChild(hint);
+        }
+      }, FIRST);
+      var t2 = setTimeout(function () { offer('Похоже, нестабильное соединение. Попробуйте ещё раз.'); }, FINAL);
+      window.__bootWatchdog = function () { try { clearTimeout(t1); clearTimeout(t2); } catch (e) {} };
+      /* If the bundle's own <script> errors out (404/parse), don't wait — offer now. */
+      window.addEventListener('error', function (ev) {
+        var t = ev && ev.target;
+        if (t && t.tagName === 'SCRIPT' && /\/build\/assets\//.test(t.src || '')) {
+          offer('Не удалось загрузить приложение. Проверьте соединение.');
+        }
+      }, true);
+    })();
+    </script>
     @inertia
 </body>
 </html>

@@ -89,6 +89,7 @@ export default function AppLoader() {
   useEffect(() => {
     // React has committed this overlay (white, with logo) — now it's safe to drop the
     // inline HTML boot splash without flashing a blank frame.
+    try { window.__bootWatchdog?.() } catch {}
     try {
       const sp = document.getElementById('boot-splash')
       if (sp) { sp.style.opacity = '0'; setTimeout(() => { try { sp.remove() } catch {} }, 240) }
