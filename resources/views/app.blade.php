@@ -13,9 +13,10 @@
     <meta property="og:title" content="Rus-Model Agency">
     <meta property="og:description" content="Проверенные модели — конфиденциально и безопасно.">
     <meta property="og:site_name" content="Rus-Model Agency">
-    {{-- Self-hosted Telegram SDK: telegram.org being slow/blocked must never stall the app start.
+    {{-- Self-hosted Telegram SDK. `defer` so it never render-blocks the boot splash
+         (it still runs before the app module, which is also deferred, by document order).
          data-cfasync="false" stops Cloudflare Rocket Loader from rewriting/breaking it. --}}
-    <script data-cfasync="false" src="/js/telegram-web-app.js?v=1"></script>
+    <script defer data-cfasync="false" src="/js/telegram-web-app.js?v=1"></script>
     {{-- Inline boot splash: pure HTML/CSS, no Tailwind, no JS bundle — so the user never
          sees a blank white screen while the JS chunks load. React removes it on mount. --}}
     <style>

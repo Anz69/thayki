@@ -11,22 +11,17 @@ export default function App() {
   const authStore    = useAuthStore()
 
   useEffect(() => {
-    window.Telegram?.WebApp?.expand?.()
-
-    if (auth?.user) {
-      authStore.setUser(auth.user)
-      // The server-shared session user is cached and can be stale (e.g. the user
-      // changed their Telegram username). Refresh it from the live initData so the
-      // DB and the UI pick up the new username/name/photo. Best-effort.
-      const tg = window.Telegram?.WebApp
-      const initData = tg?.initData
-      if (initData) {
-        api.post('/auth/sync', { init_data: initData })
-          .then(({ data }) => { if (data?.data) authStore.setUser(data.data) })
-          .catch(() => {})
-      }
-      return
-    }
+    let cancelled = false
+    // The Telegram SDK is deferred (so it doesn't render-block the splash) — wait
+    // briefly for it before reading initData, so auth never starts before
+    // window.Telegram.WebApp exists.
+    const waitForTelegram = (timeoutMs = 1500) => new Promise((resolve) => {
+      if (window.Telegram?.WebApp) { resolve(); return }
+      const start = Date.now()
+      const id = setInterval(() => {
+        if (window.Telegram?.WebApp || Date.now() - start > timeoutMs) { clearInterval(id); resolve() }
+      }, 30)
+    })
 
     authStore.setAuthPending()
 
@@ -148,11 +143,30 @@ export default function App() {
       }
     }, 20000)
 
-    resolveAuth()
-      .catch(() => authStore.setNeedsLogin())
-      .finally(() => clearTimeout(watchdog))
+    ;(async () => {
+      await waitForTelegram()
+      if (cancelled) return
+      try { window.Telegram?.WebApp?.expand?.() } catch {}
 
-    return () => clearTimeout(watchdog)
+      if (auth?.user) {
+        authStore.setUser(auth.user)
+        // The server-shared session user can be stale (changed Telegram username);
+        // refresh from live initData. Best-effort.
+        const initData = window.Telegram?.WebApp?.initData
+        if (initData) {
+          api.post('/auth/sync', { init_data: initData })
+            .then(({ data }) => { if (!cancelled && data?.data) authStore.setUser(data.data) })
+            .catch(() => {})
+        }
+        clearTimeout(watchdog)
+        return
+      }
+
+      await resolveAuth().catch(() => authStore.setNeedsLogin())
+      clearTimeout(watchdog)
+    })()
+
+    return () => { cancelled = true; clearTimeout(watchdog) }
   }, [])
 
   return <RouterShell />

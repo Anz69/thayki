@@ -108,7 +108,7 @@ class AuthController extends Controller
 
         $user = $request->user();
 
-        return ApiResponse::ok(new UserResource($user->loadMissing('modelProfile', 'wallet')));
+        return ApiResponse::ok(new UserResource($user->loadMissing('modelProfile')));
     }
 
     public function sync(Request $request, \App\Services\Telegram\InitDataValidator $validator): JsonResponse
@@ -146,7 +146,7 @@ class AuthController extends Controller
             }
         }
 
-        return ApiResponse::ok(new UserResource($user->loadMissing('modelProfile', 'wallet')));
+        return ApiResponse::ok(new UserResource($user->loadMissing('modelProfile')));
     }
 
     public function writeAccessGranted(Request $request): JsonResponse
