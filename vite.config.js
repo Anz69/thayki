@@ -20,6 +20,12 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 700,
+    // Keep previous builds' hashed assets on deploy. Telegram's iOS WebView can hold
+    // a stale cached HTML shell that references old chunk hashes; if those were wiped
+    // the app dead-ends on a 404 → blank white screen with no loader and no JS. By not
+    // emptying the dir, a stale shell still finds its chunks and boots (old version),
+    // while no-store HTML hands fresh devices the current build.
+    emptyOutDir: false,
     rollupOptions: {
       output: {
         // Split heavy third-party libs into their own chunks so they cache
