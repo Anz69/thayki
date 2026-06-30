@@ -186,6 +186,18 @@ createInertiaApp({
   setup({ el, App, props }) {
     createRoot(el).render(<App {...props} />)
     try { window.Telegram?.WebApp?.ready?.() } catch {}
+    // Last-resort watchdog: if React never paints anything into the root (hard crash
+    // before any UI), don't leave the user staring at a blank screen — show reload.
+    try {
+      setTimeout(() => {
+        try {
+          if ((el?.childElementCount ?? 0) === 0) {
+            try { document.getElementById('boot-splash')?.remove() } catch {}
+            showFatalScreen()
+          }
+        } catch {}
+      }, 12000)
+    } catch {}
     // NOTE: the inline #boot-splash is removed by <AppLoader> once React has actually
     // committed its own splash overlay — NOT here. Removing it eagerly (before the
     // 1.2 MB bundle paints) flashed a blank white screen on slow loads.

@@ -25,6 +25,8 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary]', error, info?.componentStack)
+    // Make sure the inline boot splash can't hide the error UI underneath it.
+    try { document.getElementById('boot-splash')?.remove() } catch { /* noop */ }
     this.setState({
       componentStack: info?.componentStack ?? null,
       errorRoute: window.location?.pathname ?? null,

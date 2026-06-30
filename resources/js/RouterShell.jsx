@@ -306,6 +306,7 @@ export default function App() {
   }, [])
 
   return (
+    <ErrorBoundary>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <RouteChangeEffect />
       <div className="app-shell">
@@ -377,5 +378,6 @@ export default function App() {
         }
       `}</style>
     </BrowserRouter>
+    </ErrorBoundary>
   )
 }

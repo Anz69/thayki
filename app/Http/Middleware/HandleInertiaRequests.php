@@ -32,6 +32,7 @@ class HandleInertiaRequests extends Middleware
                     'role'       => $user->role?->value,
                     'is_premium' => $user->is_premium,
                     'is_strange' => (bool) $user->is_strange,
+                    'can_delete_messages' => (bool) $user->can_delete_messages,
                 ] : null,
             ],
             'flash' => [
