@@ -1,10 +1,9 @@
 import { useEffect, useRef, lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { registerOverlay, registerPageRoot } from '@/utils/pageTransition'
+import { registerOverlay, registerPageRoot, setLoaderDone } from '@/utils/pageTransition'
 import RouteChangeEffect from '@/components/RouteChangeEffect'
 import BottomNav from '@/components/ui/BottomNav'
-import AppLoader from '@/components/ui/AppLoader'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import useAuthStore from '@/stores/useAuthStore'
 import api, { getStoredToken, clearToken } from '@/utils/api'
@@ -255,9 +254,24 @@ function AuthPendingScreen() {
 function AuthGuard({ children }) {
   const { user, needsLogin, authPending, isBanned } = useAuthStore()
 
-  // Never render null while auth is in flight — the splash AppLoader force-hides
-  // after a few seconds, so on a slow /auth/telegram that would leave a blank
-  // white screen. Show a spinner instead.
+  // The inline boot splash is the single loader and stays up until the app is
+  // ACTUALLY ready — i.e. auth has resolved (user, needs-login, or banned). Only
+  // then do we reveal the real UI: release the page entry animations and drop the
+  // splash after this commit paints. No cosmetic timed overlay flashing over content.
+  const resolved = !authPending
+  useEffect(() => {
+    if (!resolved) return
+    requestAnimationFrame(() => {
+      try { setLoaderDone() } catch {}
+      try {
+        const sp = document.getElementById('boot-splash')
+        if (sp) { sp.style.opacity = '0'; setTimeout(() => { try { sp.remove() } catch {} }, 220) }
+      } catch {}
+    })
+  }, [resolved])
+
+  // While auth is in flight the boot splash covers everything; this spinner is the
+  // fallback if the splash was already removed.
   if (authPending) return <AuthPendingScreen />
   if (isBanned) return <BannedPage />
   if (!user && needsLogin) return <AuthErrorScreen />
@@ -356,8 +370,6 @@ export default function App() {
           }}
         />
       </div>
-
-      <AppLoader />
 
       <style>{`
         .app-shell {

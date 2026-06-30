@@ -284,9 +284,9 @@ createInertiaApp({
         } catch {}
       }, 12000)
     } catch {}
-    // NOTE: the inline #boot-splash is removed by <AppLoader> once React has actually
-    // committed its own splash overlay — NOT here. Removing it eagerly (before the
-    // 1.2 MB bundle paints) flashed a blank white screen on slow loads.
+    // NOTE: the inline #boot-splash is the single loader and is removed by AuthGuard
+    // only once auth has actually resolved (real readiness) — NOT here. Removing it
+    // eagerly (before content paints) flashed a blank white screen on slow loads.
   },
 
   progress: {
