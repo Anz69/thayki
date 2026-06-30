@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
-import api from '@/utils/api'
+import api, { extractErrorMessage } from '@/utils/api'
 import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
@@ -304,7 +304,9 @@ export default function RequestPage() {
       navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}&from=${from}`, { replace: true })
     } catch (err) {
       logError(err)
-      setSubmitError(t('request.submitError'))
+      setSubmitError(extractErrorMessage(err, t('request.submitError')))
+      // Reset the idempotency key so a retry isn't deduped against the failed attempt.
+      submitKeyRef.current = null
       setSubmitting(false)
     }
   }

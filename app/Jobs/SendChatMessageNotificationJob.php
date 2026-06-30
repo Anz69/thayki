@@ -132,7 +132,13 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     ->where('role', UserRole::Manager->value)
                     ->whereNotNull('tg_chat_id')
                     ->where('notifications_enabled', true)
-                    ->when($isLead && $lead?->manager_id, fn ($q) => $q->where('id', $lead->manager_id))
+                    // For a lead, only the ASSIGNED manager is notified of new messages.
+                    // An unassigned lead must NOT blast every manager — that leaked one
+                    // client's lead activity to uninvolved managers. (New leads are
+                    // surfaced separately via the new-lead alert + the leads inbox.)
+                    ->when($isLead, fn ($q) => $lead?->manager_id
+                        ? $q->where('id', $lead->manager_id)
+                        : $q->whereRaw('1 = 0'))
                     ->get();
                 foreach ($managers as $manager) {
                     if ($sender !== null && (int) $manager->id === (int) $sender->id) {

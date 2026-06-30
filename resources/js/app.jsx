@@ -24,6 +24,29 @@ try {
   window.__APP_BUILD_ID__ = resolveBuildId()
 } catch {}
 
+function showFatalScreen() {
+  try {
+    const wrap = document.createElement('div')
+    wrap.setAttribute('style', 'position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;z-index:2147483647')
+    const emoji = document.createElement('div')
+    emoji.setAttribute('style', 'font-size:42px')
+    emoji.textContent = '😕'
+    const title = document.createElement('div')
+    title.setAttribute('style', 'color:#111;font-size:17px;font-weight:600')
+    title.textContent = 'Не удалось загрузить приложение'
+    const sub = document.createElement('div')
+    sub.setAttribute('style', 'color:#888;font-size:14px;line-height:1.5;max-width:280px')
+    sub.textContent = 'Проверьте интернет-соединение и попробуйте ещё раз.'
+    const btn = document.createElement('button')
+    btn.setAttribute('style', 'margin-top:6px;padding:14px 28px;border:none;border-radius:9999px;background:#E2319B;color:#fff;font-size:15px;font-weight:600')
+    btn.textContent = 'Перезагрузить'
+    btn.addEventListener('click', () => { try { sessionStorage.clear() } catch {} window.location.reload() })
+    wrap.append(emoji, title, sub, btn)
+    document.body.appendChild(wrap)
+  } catch {}
+}
+try { window.__showFatalScreen = showFatalScreen } catch {}
+
 try {
   window.addEventListener('vite:preloadError', (event) => {
     event?.preventDefault?.()
@@ -31,7 +54,9 @@ try {
       const buildId = String(window.__APP_BUILD_ID__ ?? 'unknown')
       const key = `__chunk_reload_once__:${buildId}`
       const alreadyReloaded = sessionStorage.getItem(key) === '1'
-      if (alreadyReloaded) return
+      // Already retried once and chunks still fail → don't loop-reload into a blank
+      // screen; show an explicit reload/offline screen instead.
+      if (alreadyReloaded) { showFatalScreen(); return }
       sessionStorage.setItem(key, '1')
     } catch {}
     window.location.reload()
@@ -160,6 +185,12 @@ createInertiaApp({
 
   setup({ el, App, props }) {
     createRoot(el).render(<App {...props} />)
+    try { window.Telegram?.WebApp?.ready?.() } catch {}
+    // React has taken over — fade out the inline boot splash.
+    requestAnimationFrame(() => {
+      const sp = document.getElementById('boot-splash')
+      if (sp) { sp.style.opacity = '0'; setTimeout(() => { try { sp.remove() } catch {} }, 280) }
+    })
   },
 
   progress: {

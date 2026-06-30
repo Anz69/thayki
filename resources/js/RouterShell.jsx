@@ -44,6 +44,12 @@ function importWithRetry(importer, attempt = 0) {
         window.location.reload()
         return new Promise(() => {})
       }
+      // Already reloaded once and the chunk still won't load — show an explicit
+      // reload screen instead of letting it fall through to a blank/Suspense state.
+      if (typeof window.__showFatalScreen === 'function') {
+        window.__showFatalScreen()
+        return new Promise(() => {})
+      }
     } catch { }
     throw err
   })
@@ -89,7 +95,12 @@ function MoreRolePage() {
 }
 
 function PageFallback() {
-  return <div style={{ width: '100%', height: '100dvh', background: '#fff' }} />
+  return (
+    <div style={{ width: '100%', height: '100dvh', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <style>{`@keyframes rmspin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid #f1d8e8', borderTopColor: '#E2319B', animation: 'rmspin .8s linear infinite' }} />
+    </div>
+  )
 }
 
 let authRetried = false
@@ -234,8 +245,9 @@ function AuthErrorScreen() {
 
 function AuthPendingScreen() {
   return (
-    <main className="flex items-center justify-center min-h-[100dvh] bg-white">
-      <div className="size-9 rounded-full border-[3px] border-[#E2319B] border-t-transparent animate-spin" />
+    <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', background: '#fff' }}>
+      <style>{`@keyframes rmspin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid #f1d8e8', borderTopColor: '#E2319B', animation: 'rmspin .8s linear infinite' }} />
     </main>
   )
 }
