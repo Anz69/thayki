@@ -169,6 +169,7 @@ export default function AppLoader() {
   return (
     <div
       ref={overlayRef}
+      id="rm-app-loader"
       style={{
         position: 'fixed', inset: 0, zIndex: 99999,
         background: '#ffffff',

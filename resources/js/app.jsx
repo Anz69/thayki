@@ -30,22 +30,44 @@ function beaconError(kind, data) {
 try { window.__beaconError = beaconError } catch {}
 
 // Recover from the "close right after load, reopen instantly → frozen white screen"
-// case. Telegram can restore the WebView from a paused/bfcache state that never
-// finishes painting. A clean reload when that happens guarantees a fresh render.
+// case. iOS WKWebView (Telegram) often restores a backgrounded page WITHOUT
+// repainting — the DOM is correct but the screen stays white until forced to paint;
+// and a splash/loader overlay whose GSAP timers were paused can stay up. On every
+// resume we drop the overlays and force a synchronous repaint (no visible flash),
+// then reload only as a last resort if the root is genuinely empty.
+function rmDismissAndRepaint() {
+  try { document.getElementById('boot-splash')?.remove() } catch {}
+  try {
+    const ld = document.getElementById('rm-app-loader')
+    if (ld) { ld.style.opacity = '0'; ld.style.visibility = 'hidden'; ld.style.pointerEvents = 'none' }
+  } catch {}
+  try {
+    const b = document.body
+    if (b) { const d = b.style.display; b.style.display = 'none'; void b.offsetHeight; b.style.display = d || '' }
+  } catch {}
+}
 try {
   window.addEventListener('pageshow', (e) => {
-    if (e && e.persisted) { try { window.location.reload() } catch {} }
+    if (e && e.persisted) { try { window.location.reload() } catch {} return }
+    rmDismissAndRepaint()
   })
+  window.addEventListener('focus', rmDismissAndRepaint)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return
+    rmDismissAndRepaint()
+    // double nudge after a frame — some WebView versions ignore the first
+    requestAnimationFrame(rmDismissAndRepaint)
     setTimeout(() => {
       try {
         const root = document.getElementById('app')
-        const blank = (!root || root.childElementCount === 0) && !document.getElementById('boot-splash')
-        if (blank) window.location.reload()
+        if ((!root || root.childElementCount === 0) && !document.getElementById('boot-splash')) window.location.reload()
       } catch {}
-    }, 700)
+    }, 800)
   })
+  // Telegram lifecycle signals (cover SDK versions that fire these)
+  const tg = window.Telegram?.WebApp
+  try { tg?.onEvent?.('activated', rmDismissAndRepaint) } catch {}
+  try { tg?.onEvent?.('viewportChanged', rmDismissAndRepaint) } catch {}
 } catch {}
 try {
   window.addEventListener('error', (e) => beaconError('error', {
