@@ -9,7 +9,7 @@ return [
     'city' => 'City',
     'age' => 'Age',
     'height' => 'Height',
-    'goal' => 'Purpose',
+    'goal' => 'Event',
     'wishes_extra' => 'Additional preferences',
     'wishes' => 'Preferences',
     'manager_joined' => '👤 A manager has joined your request and will reply shortly.',

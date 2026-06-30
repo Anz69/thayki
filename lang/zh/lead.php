@@ -9,7 +9,7 @@ return [
     'city' => '城市',
     'age' => '年龄',
     'height' => '身高',
-    'goal' => '目的',
+    'goal' => '活动',
     'wishes_extra' => '其他要求',
     'wishes' => '要求',
     'manager_joined' => '👤 经理已加入您的申请，很快会回复您。',
