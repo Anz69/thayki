@@ -296,7 +296,7 @@
     "s3t": "A manager will contact you",
     "s3s": "To agree on all the necessary working details of the interaction.",
     "s4t": "Order confirmation",
-    "s4s": "An agency commission of about 30% is required as a deposit confirming the order and the client's serious intent.",
+    "s4s": "An agency commission of ~30% is required to confirm the order and the client's serious intent.",
     "sent": "Request sent"
   },
   "faqModal": {

@@ -183,7 +183,7 @@ export default function HowItWorksModal({ isOpen, onClose }) {
             </h2>
             <p
               ref={subtitleRef}
-              className="max-w-[300px] text-[14px]/[130%] font-medium text-[#8A8A8A] line-clamp-2"
+              className="max-w-[300px] text-[14px]/[140%] font-medium text-[#8A8A8A]"
             >
               {t(`hiw.${stepKey}s`)}
             </p>
