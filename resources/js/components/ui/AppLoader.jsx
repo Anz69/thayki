@@ -87,6 +87,13 @@ export default function AppLoader() {
   }
 
   useEffect(() => {
+    // React has committed this overlay (white, with logo) — now it's safe to drop the
+    // inline HTML boot splash without flashing a blank frame.
+    try {
+      const sp = document.getElementById('boot-splash')
+      if (sp) { sp.style.opacity = '0'; setTimeout(() => { try { sp.remove() } catch {} }, 240) }
+    } catch {}
+
     try { gsap.set(ringRef.current, { autoAlpha: 0, scale: 0.6 }) } catch {}
 
     const tl = gsap.timeline({

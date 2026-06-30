@@ -132,13 +132,10 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     ->where('role', UserRole::Manager->value)
                     ->whereNotNull('tg_chat_id')
                     ->where('notifications_enabled', true)
-                    // For a lead, only the ASSIGNED manager is notified of new messages.
-                    // An unassigned lead must NOT blast every manager — that leaked one
-                    // client's lead activity to uninvolved managers. (New leads are
-                    // surfaced separately via the new-lead alert + the leads inbox.)
-                    ->when($isLead, fn ($q) => $lead?->manager_id
-                        ? $q->where('id', $lead->manager_id)
-                        : $q->whereRaw('1 = 0'))
+                    // Assigned lead → only its manager; unassigned → all managers so it
+                    // gets picked up. (role=manager filter means a client can never match
+                    // here — the earlier privacy leak was NOT this query.)
+                    ->when($isLead && $lead?->manager_id, fn ($q) => $q->where('id', $lead->manager_id))
                     ->get();
                 foreach ($managers as $manager) {
                     if ($sender !== null && (int) $manager->id === (int) $sender->id) {
@@ -164,12 +161,23 @@ class SendChatMessageNotificationJob implements ShouldQueue
 
             $openPath = $isLead ? "/request/chat?id={$chat->id}".($leadId ? "&lead={$leadId}" : '') : ($isSupport ? '/support' : '/home');
 
+            $recipientIsStaff = fn (User $u): bool => in_array($u->role, [UserRole::Manager, UserRole::Admin], true);
+
             foreach ($chat->participants as $participant) {
                 $recipient = $participant->user;
                 if ($recipient === null) {
                     continue;
                 }
                 if ($this->isSameUser($sender, $recipient)) {
+                    continue;
+                }
+
+                // Privacy guard: a lead notification must only reach the lead's OWNER
+                // (the client) or staff — never any other non-staff participant. This
+                // stops one client ever being pinged about another client's lead, no
+                // matter how they ended up on the chat's participant list.
+                if ($isLead && ! $recipientIsStaff($recipient)
+                    && $lead !== null && (int) $recipient->id !== (int) $lead->user_id) {
                     continue;
                 }
 

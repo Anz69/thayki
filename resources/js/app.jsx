@@ -186,11 +186,9 @@ createInertiaApp({
   setup({ el, App, props }) {
     createRoot(el).render(<App {...props} />)
     try { window.Telegram?.WebApp?.ready?.() } catch {}
-    // React has taken over — fade out the inline boot splash.
-    requestAnimationFrame(() => {
-      const sp = document.getElementById('boot-splash')
-      if (sp) { sp.style.opacity = '0'; setTimeout(() => { try { sp.remove() } catch {} }, 280) }
-    })
+    // NOTE: the inline #boot-splash is removed by <AppLoader> once React has actually
+    // committed its own splash overlay — NOT here. Removing it eagerly (before the
+    // 1.2 MB bundle paints) flashed a blank white screen on slow loads.
   },
 
   progress: {
