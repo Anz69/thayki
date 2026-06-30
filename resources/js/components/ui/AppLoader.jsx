@@ -139,6 +139,17 @@ export default function AppLoader() {
     return () => clearTimeout(lifetimeId)
   }, [])
 
+  // If the mini app is closed and reopened, the page becomes visible again while the
+  // splash overlay may still be up — and its GSAP timers were paused while hidden, so
+  // it can freeze on a white overlay. Force it away the moment we're visible again.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === 'visible' && !exited.current) forceHide()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
+
   useEffect(() => {
     if (getPageReady()) {
       if (entryDone.current) runExit()

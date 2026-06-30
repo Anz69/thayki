@@ -28,6 +28,25 @@ function beaconError(kind, data) {
   } catch {}
 }
 try { window.__beaconError = beaconError } catch {}
+
+// Recover from the "close right after load, reopen instantly → frozen white screen"
+// case. Telegram can restore the WebView from a paused/bfcache state that never
+// finishes painting. A clean reload when that happens guarantees a fresh render.
+try {
+  window.addEventListener('pageshow', (e) => {
+    if (e && e.persisted) { try { window.location.reload() } catch {} }
+  })
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return
+    setTimeout(() => {
+      try {
+        const root = document.getElementById('app')
+        const blank = (!root || root.childElementCount === 0) && !document.getElementById('boot-splash')
+        if (blank) window.location.reload()
+      } catch {}
+    }, 700)
+  })
+} catch {}
 try {
   window.addEventListener('error', (e) => beaconError('error', {
     message: e?.message,
