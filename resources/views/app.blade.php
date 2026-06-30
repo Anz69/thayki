@@ -13,8 +13,9 @@
     <meta property="og:title" content="Rus-Model Agency">
     <meta property="og:description" content="Проверенные модели — конфиденциально и безопасно.">
     <meta property="og:site_name" content="Rus-Model Agency">
-    {{-- Self-hosted Telegram SDK: telegram.org being slow/blocked must never stall the app start. --}}
-    <script src="/js/telegram-web-app.js?v=1"></script>
+    {{-- Self-hosted Telegram SDK: telegram.org being slow/blocked must never stall the app start.
+         data-cfasync="false" stops Cloudflare Rocket Loader from rewriting/breaking it. --}}
+    <script data-cfasync="false" src="/js/telegram-web-app.js?v=1"></script>
     {{-- Inline boot splash: pure HTML/CSS, no Tailwind, no JS bundle — so the user never
          sees a blank white screen while the JS chunks load. React removes it on mount. --}}
     <style>
@@ -28,7 +29,7 @@
 </head>
 <body class="bg-white">
     <div id="boot-splash"><div class="bs-ring"></div></div>
-    <script>
+    <script data-cfasync="false">
     /* Bundle-independent recovery watchdog. If the JS bundle never boots (flaky/slow
        connection, a dropped chunk, etc.) the inline spinner would spin forever. This
        runs from the HTML itself — no Vite bundle needed — and, after a grace period,
