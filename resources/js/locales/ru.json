@@ -177,7 +177,7 @@
       "medium": "Нормальные",
       "wide": "Большие"
     },
-    "tripPurposeLabel": "Цель поездки",
+    "tripPurposeLabel": "Мероприятие",
     "tripPurposes": {
       "leisure": "Отдых",
       "business": "Деловая",
@@ -219,7 +219,7 @@
     "tripCity": "Город поездки",
     "comments": "Комментарии",
     "hips": "Бёдра",
-    "tripPurpose": "Цель поездки"
+    "tripPurpose": "Мероприятие"
   },
   "requestModal": {
     "title": "Оставить заявку",

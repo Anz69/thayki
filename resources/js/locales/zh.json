@@ -177,7 +177,7 @@
       "medium": "正常",
       "wide": "宽"
     },
-    "tripPurposeLabel": "旅行目的",
+    "tripPurposeLabel": "活动",
     "tripPurposes": {
       "leisure": "休闲",
       "business": "商务",
@@ -219,7 +219,7 @@
     "tripCity": "旅行城市",
     "comments": "备注",
     "hips": "臀部",
-    "tripPurpose": "旅行目的"
+    "tripPurpose": "活动"
   },
   "requestModal": {
     "title": "提交预约",

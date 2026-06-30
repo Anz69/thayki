@@ -177,7 +177,7 @@
       "medium": "Normal",
       "wide": "Wide"
     },
-    "tripPurposeLabel": "Trip purpose",
+    "tripPurposeLabel": "Event",
     "tripPurposes": {
       "leisure": "Leisure",
       "business": "Business",
@@ -219,7 +219,7 @@
     "tripCity": "Trip city",
     "comments": "Comments",
     "hips": "Hips",
-    "tripPurpose": "Trip purpose"
+    "tripPurpose": "Event"
   },
   "requestModal": {
     "title": "Leave a request",
