@@ -186,15 +186,33 @@ class TelegramBotService
 
         $miniAppUrl = (string) config('telegram.miniapp_url', '');
         if ($miniAppUrl !== '' && ! str_starts_with($miniAppUrl, 'https://t.me/')) {
-            return rtrim($miniAppUrl, '/').$clean;
+            return $this->appendBuildVersion(rtrim($miniAppUrl, '/').$clean);
         }
 
         $appUrl = (string) config('app.url', '');
         if ($appUrl !== '') {
-            return rtrim($appUrl, '/').$clean;
+            return $this->appendBuildVersion(rtrim($appUrl, '/').$clean);
         }
 
         return null;
+    }
+
+    // Telegram's WebView caches a mini-app page by its URL and can keep serving a
+    // stale one after a deploy (blank screen, dead chunk). Tagging the open URL with
+    // the current build makes every deploy a "new" URL → guaranteed fresh fetch.
+    private function appendBuildVersion(string $url): string
+    {
+        try {
+            $ts = @filemtime(public_path('build/manifest.json'));
+        } catch (\Throwable) {
+            $ts = null;
+        }
+        if (! $ts) {
+            return $url;
+        }
+        $sep = str_contains($url, '?') ? '&' : '?';
+
+        return $url.$sep.'v='.$ts;
     }
 
     private function buildMiniAppUrl(string $miniAppUrl, string $openPath): string
