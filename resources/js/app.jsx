@@ -29,57 +29,59 @@ function beaconError(kind, data) {
 }
 try { window.__beaconError = beaconError } catch {}
 
-// Recover from the "close right after load, reopen instantly → frozen white screen"
-// case. iOS WKWebView (Telegram) often restores a backgrounded page WITHOUT
-// repainting — the DOM is correct but the screen stays white until forced to paint;
-// and a splash/loader overlay whose GSAP timers were paused can stay up. On every
-// resume we drop the overlays and force a synchronous repaint (no visible flash),
-// then reload only as a last resort if the root is genuinely empty.
-function rmDismissAndRepaint() {
-  try { document.getElementById('boot-splash')?.remove() } catch {}
+// Lifecycle logging to the server beacon — so we can see EXACTLY what happens on a
+// quick close+reopen ("white moment"). Low volume; temporary diagnostic.
+let __seq = 0
+function logLife(stage, extra) {
   try {
-    const ld = document.getElementById('rm-app-loader')
-    if (ld) { ld.style.opacity = '0'; ld.style.visibility = 'hidden'; ld.style.pointerEvents = 'none' }
+    __seq += 1
+    const root = document.getElementById('app')
+    beaconError('lifecycle', {
+      message: '#' + __seq + ' ' + stage,
+      stack: JSON.stringify({
+        vis: document.visibilityState,
+        root: root ? root.childElementCount : -1,
+        splash: !!document.getElementById('boot-splash'),
+        ...(extra || {}),
+      }),
+    })
   } catch {}
+}
+try { window.__logLife = logLife } catch {}
+logLife('script-eval')
+
+// Resume handling — intentionally minimal and SAFE. iOS sometimes doesn't repaint a
+// foregrounded WebView, so we nudge a repaint. We NEVER touch the boot splash here
+// (AuthGuard owns it — removing it during a fresh load caused the empty flash) and we
+// reload ONLY if the screen is genuinely empty (no app content AND no splash).
+function rmRepaint() {
   try {
     const el = document.documentElement
     el.style.transform = 'translateZ(0)'
     void document.body.offsetHeight
-    requestAnimationFrame(() => {
-      try { el.style.transform = '' } catch {}
-      try { window.scrollBy(0, 1); window.scrollBy(0, -1) } catch {}
-    })
+    requestAnimationFrame(() => { try { el.style.transform = '' } catch {} })
   } catch {}
 }
-// On resume, detect a compositor freeze (the iOS WebView returns from background but
-// never repaints → blank white). A frozen WebView stops servicing requestAnimationFrame,
-// so if no frame arrives shortly after resume we hard-reload — the only thing that
-// reliably recovers a compositor freeze. Healthy resumes paint and are left alone.
 function rmOnResume() {
-  rmDismissAndRepaint()
-  let frames = 0
-  const tick = () => { frames++ }
-  try { requestAnimationFrame(tick) } catch {}
-  try { requestAnimationFrame(() => requestAnimationFrame(tick)) } catch {}
+  rmRepaint()
   setTimeout(() => {
     try {
       const root = document.getElementById('app')
       const empty = (!root || root.childElementCount === 0) && !document.getElementById('boot-splash')
-      if (frames === 0 || empty) window.location.reload()
+      logLife('resume-check', { empty })
+      if (empty) window.location.reload()
     } catch {}
-  }, 650)
+  }, 1200)
 }
 try {
   window.addEventListener('pageshow', (e) => {
-    if (e && e.persisted) { try { window.location.reload() } catch {} return }
-    rmDismissAndRepaint()
+    logLife('pageshow', { persisted: !!(e && e.persisted) })
+    if (e && e.persisted) { try { window.location.reload() } catch {} }
   })
-  window.addEventListener('focus', rmOnResume)
   document.addEventListener('visibilitychange', () => {
+    logLife('visibility:' + document.visibilityState)
     if (document.visibilityState === 'visible') rmOnResume()
   })
-  const tg = window.Telegram?.WebApp
-  try { tg?.onEvent?.('activated', rmOnResume) } catch {}
 } catch {}
 try {
   window.addEventListener('error', (e) => beaconError('error', {
@@ -271,6 +273,7 @@ createInertiaApp({
 
   setup({ el, App, props }) {
     createRoot(el).render(<App {...props} />)
+    try { window.__logLife?.('react-render') } catch {}
     try { window.Telegram?.WebApp?.ready?.() } catch {}
     // Last-resort watchdog: if React never paints anything into the root (hard crash
     // before any UI), don't leave the user staring at a blank screen — show reload.

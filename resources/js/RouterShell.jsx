@@ -261,6 +261,7 @@ function AuthGuard({ children }) {
   const resolved = !authPending
   useEffect(() => {
     if (!resolved) return
+    try { window.__logLife?.('auth-resolved', { user: !!user, needsLogin, isBanned }) } catch {}
     requestAnimationFrame(() => {
       try { setLoaderDone() } catch {}
       try {
