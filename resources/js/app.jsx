@@ -74,10 +74,10 @@ function logLife(stage, extra) {
 try { window.__logLife = logLife } catch {}
 logLife('script-eval')
 
-// Resume handling — intentionally minimal and SAFE. iOS sometimes doesn't repaint a
-// foregrounded WebView, so we nudge a repaint. We NEVER touch the boot splash here
-// (AuthGuard owns it — removing it during a fresh load caused the empty flash) and we
-// reload ONLY if the screen is genuinely empty (no app content AND no splash).
+// Resume handling — repaint ONLY. NO auto-reload on resume/pageshow: reloading every
+// time the mini app comes back to the foreground (e.g. when scrolling collapses it on
+// Android) is exactly what caused the Telegram "failed to load" churn. iOS/Android can
+// keep a foregrounded WebView unpainted, so we just nudge a repaint.
 function rmRepaint() {
   try {
     const el = document.documentElement
@@ -86,25 +86,10 @@ function rmRepaint() {
     requestAnimationFrame(() => { try { el.style.transform = '' } catch {} })
   } catch {}
 }
-function rmOnResume() {
-  rmRepaint()
-  setTimeout(() => {
-    try {
-      const root = document.getElementById('app')
-      const empty = (!root || root.childElementCount === 0) && !document.getElementById('boot-splash')
-      logLife('resume-check', { empty })
-      if (empty) safeReload()
-    } catch {}
-  }, 1200)
-}
 try {
-  window.addEventListener('pageshow', (e) => {
-    logLife('pageshow', { persisted: !!(e && e.persisted) })
-    if (e && e.persisted) { safeReload() }
-  })
+  window.addEventListener('pageshow', () => { rmRepaint() })
   document.addEventListener('visibilitychange', () => {
-    logLife('visibility:' + document.visibilityState)
-    if (document.visibilityState === 'visible') rmOnResume()
+    if (document.visibilityState === 'visible') rmRepaint()
   })
 } catch {}
 try {
