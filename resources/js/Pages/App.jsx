@@ -5,6 +5,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import api, { getStoredToken, clearToken, getStoredAuthUid, storeAuthUid } from '@/utils/api'
 import { logWarn } from '@/utils/logger'
 import { parseTelegramStartParam, buildDevInitData, getOrCreateDevTelegramId } from '@/utils/telegramAuth'
+import { lockTelegramVerticalSwipes } from '@/utils/modalLocks'
 
 export default function App() {
   const { auth, appEnv } = usePage().props
@@ -147,6 +148,11 @@ export default function App() {
       await waitForTelegram()
       if (cancelled) return
       try { window.Telegram?.WebApp?.expand?.() } catch {}
+      // Disable Telegram's swipe-down-to-minimize gesture (permanent baseline; modals
+      // stack on top). Scrolling the page down otherwise collapses the mini app and
+      // its restore/reload is what breaks on Android. No downside — the header buttons
+      // still close/minimize; the page still scrolls normally.
+      try { lockTelegramVerticalSwipes() } catch {}
 
       if (auth?.user) {
         authStore.setUser(auth.user)
