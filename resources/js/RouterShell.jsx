@@ -370,10 +370,14 @@ export default function App() {
       </div>
 
       <style>{`
+        html, body {
+          overscroll-behavior: none;
+        }
         .app-shell {
           background: #ffffff;
           min-height: 100dvh;
           overflow: hidden;
+          overscroll-behavior: none;
         }
         .page-root {
           background: #fff;
@@ -382,6 +386,8 @@ export default function App() {
           overflow-x: hidden;
           scrollbar-width: none;
           position: relative;
+          overscroll-behavior-y: contain;
+          -webkit-overflow-scrolling: touch;
         }
         .page-root::-webkit-scrollbar {
           display: none;

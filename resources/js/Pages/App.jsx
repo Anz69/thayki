@@ -5,6 +5,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import api, { getStoredToken, clearToken, getStoredAuthUid, storeAuthUid } from '@/utils/api'
 import { logWarn } from '@/utils/logger'
 import { parseTelegramStartParam, buildDevInitData, getOrCreateDevTelegramId } from '@/utils/telegramAuth'
+import { lockTelegramVerticalSwipes } from '@/utils/modalLocks'
 
 export default function App() {
   const { auth, appEnv } = usePage().props
@@ -147,6 +148,10 @@ export default function App() {
       await waitForTelegram()
       if (cancelled) return
       try { window.Telegram?.WebApp?.expand?.() } catch {}
+      // Permanent baseline: disable Telegram's vertical-swipe gesture so scrolling the
+      // page down doesn't trigger swipe-to-minimize (which restores the WebView in a
+      // broken/blank state). Never unlocked — modals add/remove on top of this depth.
+      try { lockTelegramVerticalSwipes() } catch {}
 
       if (auth?.user) {
         authStore.setUser(auth.user)
