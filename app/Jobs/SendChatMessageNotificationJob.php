@@ -85,6 +85,7 @@ class SendChatMessageNotificationJob implements ShouldQueue
             $preview = $preview !== '' ? e(mb_substr($preview, 0, 200)) : '';
 
             $notified = [];
+            $notifiedChatIds = [];
 
             if ($chat->type === ChatType::Requisites) {
                 $openPath = '/requisites/open';
@@ -120,13 +121,15 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 return;
             }
 
+            $adminText = null;
             if ($isSupport && ! $senderIsSupport && ! $senderIsStaff) {
+                // Built now, but SENT LAST — after managers/participants — so an admin who
+                // is also a manager doesn't get pinged twice for one message.
                 $adminText = ($isLead ? '📩 Новое сообщение по заявке от <b>' : '💬 Новое сообщение в поддержку от <b>')
                     .e($this->senderDisplayName($sender, 'ru')).'</b>';
                 if ($preview !== '') {
                     $adminText .= "\n\n".$preview;
                 }
-                $notifier->notifyAdmins($adminText, null, null, $dedupToken);
 
                 $managers = User::query()
                     ->where('role', UserRole::Manager->value)
@@ -156,6 +159,9 @@ class SendChatMessageNotificationJob implements ShouldQueue
                         $dedupToken.':m'.$manager->id,
                     );
                     $notified[$manager->id] = true;
+                    if ($manager->tg_chat_id !== null) {
+                        $notifiedChatIds[] = (int) $manager->tg_chat_id;
+                    }
                 }
             }
 
@@ -201,6 +207,15 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 $button = trans('notifications.open_chat', [], $locale);
 
                 $notifier->notifyUser($recipient, $text, $openPath, $button, $dedupToken);
+                if ($recipient->tg_chat_id !== null) {
+                    $notifiedChatIds[] = (int) $recipient->tg_chat_id;
+                }
+            }
+
+            // Admin monitoring ping goes out LAST, skipping anyone (manager/participant)
+            // already notified for this message — no double pings for admin+manager users.
+            if ($adminText !== null) {
+                $notifier->notifyAdmins($adminText, null, null, $dedupToken, array_values(array_unique($notifiedChatIds)));
             }
         } catch (\Throwable $e) {
             Log::warning('[SendChatMessageNotificationJob] failed', [

@@ -41,11 +41,17 @@ class Notifier
         $this->sendDeduped((int) $user->tg_chat_id, $text, $openPath, $buttonLabel, $dedupToken);
     }
 
+    /**
+     * @param  array<int, int>  $excludeChatIds  tg_chat_ids that already got a notification for
+     *                                            this event (so an admin who is also a manager
+     *                                            isn't pinged twice for one message).
+     */
     public function notifyAdmins(
         string $text,
         ?string $openPath = null,
         ?string $buttonLabel = null,
         ?string $dedupToken = null,
+        array $excludeChatIds = [],
     ): void {
         if (! Schema::hasTable('admin_users')) {
             return;
@@ -58,7 +64,11 @@ class Notifier
         } catch (\Throwable) {
             return;
         }
+        $exclude = array_map('intval', $excludeChatIds);
         foreach ($admins as $admin) {
+            if (in_array((int) $admin->tg_chat_id, $exclude, true)) {
+                continue;
+            }
             $this->sendDeduped((int) $admin->tg_chat_id, $text, $openPath, $buttonLabel, $dedupToken);
         }
     }
