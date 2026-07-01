@@ -1,10 +1,19 @@
 if (typeof document !== 'undefined' && !document.getElementById('gb-styles')) {
   const s = document.createElement('style')
   s.id = 'gb-styles'
+  // Rotate the CONIC GRADIENT'S ANGLE, not a child element. This way the border is
+  // just a rounded background (border-radius rounds it on every device) and there's
+  // no animated/transformed child for buggy WebViews to fail clipping — so the RGB
+  // border is never square. Where @property is unsupported (very old WebView) the
+  // gradient is static but STILL rounded.
   s.textContent = `
-    @keyframes gb-spin {
-      from { transform: translate(-50%, -50%) rotate(0deg); }
-      to   { transform: translate(-50%, -50%) rotate(360deg); }
+    @property --gb-angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+    @keyframes gb-rotate {
+      to { --gb-angle: 360deg; }
     }
   `
   document.head.appendChild(s)
@@ -19,30 +28,17 @@ export default function GradientBorder({
 }) {
   return (
     <div
-      className={`relative overflow-hidden ${className}`}
-      style={{
-        borderRadius: radius,
-        padding: borderWidth,
-        // Force the rounded clip on iOS / older Android WebView. Without its own
-        // paint/compositing context, overflow:hidden + border-radius fails to clip the
-        // ANIMATED gradient child there, so its square corners poke out and the border
-        // looks square. These are non-destructive (no visual fade).
-        isolation: 'isolate',
-        contain: 'paint',
-        transform: 'translateZ(0)',
-        WebkitTransform: 'translateZ(0)',
-      }}
+      className={`relative ${className}`}
+      style={{ borderRadius: radius, padding: borderWidth }}
     >
       <div
+        aria-hidden
         style={{
-          position:   'absolute',
-          top:        '50%',
-          left:       '50%',
-          width:      '220%',
-          aspectRatio:'1',
-          background: 'conic-gradient(from 180deg at 50% 50%, #E2319B 0deg, #B331E2 68.4deg, #E2314C 360deg)',
-          animation:  `gb-spin ${speed}s linear infinite`,
-          willChange: 'transform',
+          position:     'absolute',
+          inset:        0,
+          borderRadius: radius,
+          background:   'conic-gradient(from var(--gb-angle, 0deg) at 50% 50%, #E2319B 0deg, #B331E2 90deg, #E2314C 200deg, #E2319B 360deg)',
+          animation:    `gb-rotate ${speed}s linear infinite`,
         }}
       />
       <div
