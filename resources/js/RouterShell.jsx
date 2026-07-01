@@ -36,19 +36,14 @@ function importWithRetry(importer, attempt = 0) {
         .then(() => importWithRetry(importer, attempt + 1))
     }
     try {
-      const buildId = String(window.__APP_BUILD_ID__ ?? 'unknown')
-      const key = `__chunk_reload_once__:${buildId}`
-      if (sessionStorage.getItem(key) !== '1') {
-        sessionStorage.setItem(key, '1')
-        window.location.reload()
+      // Capped auto-reload (survives Telegram WebView recreation so it can't loop);
+      // after the cap it shows the manual recovery screen instead of blanking.
+      if (typeof window.__safeReload === 'function') {
+        window.__safeReload()
         return new Promise(() => {})
       }
-      // Already reloaded once and the chunk still won't load — show an explicit
-      // reload screen instead of letting it fall through to a blank/Suspense state.
-      if (typeof window.__showFatalScreen === 'function') {
-        window.__showFatalScreen()
-        return new Promise(() => {})
-      }
+      window.location.reload()
+      return new Promise(() => {})
     } catch { }
     throw err
   })
@@ -261,6 +256,8 @@ function AuthGuard({ children }) {
   const resolved = !authPending
   useEffect(() => {
     if (!resolved) return
+    // A good boot → clear the auto-reload cap so a future genuine reload isn't blocked.
+    try { window.__clearReloadGuard?.() } catch {}
     try { window.__logLife?.('auth-resolved', { user: !!user, needsLogin, isBanned }) } catch {}
     requestAnimationFrame(() => {
       try { setLoaderDone() } catch {}

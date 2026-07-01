@@ -29,6 +29,30 @@ function beaconError(kind, data) {
 }
 try { window.__beaconError = beaconError } catch {}
 
+// Guarded auto-reload. Telegram recreates a fresh WebView on each retry, which wipes
+// sessionStorage — so a sessionStorage "reload once" guard resets every time and can
+// loop forever (Telegram's own "failed to load" error every few seconds). Cap with
+// localStorage (survives WebView recreation): at most 2 auto-reloads per 30s, then
+// stop looping and show a manual recovery screen instead. Cleared on a good boot.
+function safeReload() {
+  try {
+    const KEY = '__rm_reload_guard__'
+    const now = Date.now()
+    let rec = null
+    try { rec = JSON.parse(localStorage.getItem(KEY) || 'null') } catch { rec = null }
+    if (!rec || (now - (rec.t || 0)) > 30000) rec = { n: 0, t: now }
+    if (rec.n >= 2) {
+      try { window.__showFatalScreen?.() } catch {}
+      return
+    }
+    rec.n += 1
+    try { localStorage.setItem(KEY, JSON.stringify(rec)) } catch {}
+  } catch {}
+  try { window.location.reload() } catch {}
+}
+try { window.__safeReload = safeReload } catch {}
+try { window.__clearReloadGuard = () => { try { localStorage.removeItem('__rm_reload_guard__') } catch {} } } catch {}
+
 // Lifecycle logging to the server beacon — so we can see EXACTLY what happens on a
 // quick close+reopen ("white moment"). Low volume; temporary diagnostic.
 let __seq = 0
@@ -69,14 +93,14 @@ function rmOnResume() {
       const root = document.getElementById('app')
       const empty = (!root || root.childElementCount === 0) && !document.getElementById('boot-splash')
       logLife('resume-check', { empty })
-      if (empty) window.location.reload()
+      if (empty) safeReload()
     } catch {}
   }, 1200)
 }
 try {
   window.addEventListener('pageshow', (e) => {
     logLife('pageshow', { persisted: !!(e && e.persisted) })
-    if (e && e.persisted) { try { window.location.reload() } catch {} }
+    if (e && e.persisted) { safeReload() }
   })
   document.addEventListener('visibilitychange', () => {
     logLife('visibility:' + document.visibilityState)
@@ -138,16 +162,9 @@ try { window.__showFatalScreen = showFatalScreen } catch {}
 try {
   window.addEventListener('vite:preloadError', (event) => {
     event?.preventDefault?.()
-    try {
-      const buildId = String(window.__APP_BUILD_ID__ ?? 'unknown')
-      const key = `__chunk_reload_once__:${buildId}`
-      const alreadyReloaded = sessionStorage.getItem(key) === '1'
-      // Already retried once and chunks still fail → don't loop-reload into a blank
-      // screen; show an explicit reload/offline screen instead.
-      if (alreadyReloaded) { showFatalScreen(); return }
-      sessionStorage.setItem(key, '1')
-    } catch {}
-    window.location.reload()
+    // safeReload caps retries across WebView recreations, so a persistently failing
+    // asset can't loop-reload forever — it falls back to the manual recovery screen.
+    safeReload()
   })
 } catch {}
 

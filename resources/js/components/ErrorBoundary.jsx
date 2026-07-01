@@ -52,10 +52,9 @@ export default class ErrorBoundary extends Component {
   tryRecoverChunkError = (error) => {
     if (!this.isChunkLoadError(error)) return
     try {
-      const key = ErrorBoundary.chunkReloadKey()
-      const alreadyReloaded = sessionStorage.getItem(key) === '1'
-      if (alreadyReloaded) return
-      sessionStorage.setItem(key, '1')
+      // Capped auto-reload (survives WebView recreation) so a persistently failing
+      // chunk can't loop-reload forever.
+      if (typeof window.__safeReload === 'function') { window.__safeReload(); return }
       window.location.reload()
     } catch {
     }
