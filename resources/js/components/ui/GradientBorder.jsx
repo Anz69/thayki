@@ -20,7 +20,18 @@ export default function GradientBorder({
   return (
     <div
       className={`relative overflow-hidden ${className}`}
-      style={{ borderRadius: radius, padding: borderWidth }}
+      style={{
+        borderRadius: radius,
+        padding: borderWidth,
+        // Force the rounded clip on iOS / older Android WebView. Without its own
+        // paint/compositing context, overflow:hidden + border-radius fails to clip the
+        // ANIMATED gradient child there, so its square corners poke out and the border
+        // looks square. These are non-destructive (no visual fade).
+        isolation: 'isolate',
+        contain: 'paint',
+        transform: 'translateZ(0)',
+        WebkitTransform: 'translateZ(0)',
+      }}
     >
       <div
         style={{
@@ -31,6 +42,7 @@ export default function GradientBorder({
           aspectRatio:'1',
           background: 'conic-gradient(from 180deg at 50% 50%, #E2319B 0deg, #B331E2 68.4deg, #E2314C 360deg)',
           animation:  `gb-spin ${speed}s linear infinite`,
+          willChange: 'transform',
         }}
       />
       <div
