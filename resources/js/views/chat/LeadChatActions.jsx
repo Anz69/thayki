@@ -272,8 +272,9 @@ export function TypedMessageCard({ msg, isManager, leadId, chatId = null, leadCl
 function TemplatesSheet({ open, onClose, onPick }) {
   const { t } = useTranslation()
   const [categories, setCategories] = useState(null)
+  const [activeCat, setActiveCat] = useState(null)
+  const [adding, setAdding] = useState(false)
   const [draftBody, setDraftBody] = useState('')
-  const [draftCat, setDraftCat] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [editBody, setEditBody] = useState('')
   const [confirmId, setConfirmId] = useState(null)
@@ -284,24 +285,26 @@ function TemplatesSheet({ open, onClose, onPick }) {
       .then(({ data }) => {
         const cats = Array.isArray(data?.data?.categories) ? data.data.categories : []
         setCategories(cats)
-        setDraftCat((prev) => (prev != null && cats.some((c) => c.id === prev) ? prev : (cats[0]?.id ?? null)))
+        setActiveCat((prev) => (prev != null && cats.some((c) => c.id === prev) ? prev : (cats[0]?.id ?? null)))
       })
       .catch((e) => { logError(e); setCategories([]) })
   }, [])
 
   useEffect(() => {
     if (!open) return
-    setCategories(null); setDraftBody(''); setEditingId(null); setConfirmId(null)
+    setCategories(null); setAdding(false); setDraftBody(''); setEditingId(null); setConfirmId(null)
     load()
   }, [open, load])
 
+  const resetModes = () => { setAdding(false); setDraftBody(''); setEditingId(null); setConfirmId(null) }
+
   const add = async () => {
     const body = draftBody.trim()
-    if (!body || draftCat == null || busy) return
+    if (!body || activeCat == null || busy) return
     setBusy(true)
     try {
-      await api.post('/manager/templates', { body, category_id: draftCat })
-      setDraftBody('')
+      await api.post('/manager/templates', { body, category_id: activeCat })
+      setDraftBody(''); setAdding(false)
       load()
     } catch (e) { logError(e) } finally { setBusy(false) }
   }
@@ -328,6 +331,8 @@ function TemplatesSheet({ open, onClose, onPick }) {
   }
 
   const hasCats = Array.isArray(categories) && categories.length > 0
+  const active = hasCats ? (categories.find((c) => c.id === activeCat) ?? categories[0]) : null
+  const templates = active?.templates ?? []
 
   return (
     <ModalMiddle isOpen={open} onClose={onClose}>
@@ -340,68 +345,73 @@ function TemplatesSheet({ open, onClose, onPick }) {
           <p className="text-[#9B9AA0] text-[13px] text-center py-4">{t('leadChat.templatesNoCategories')}</p>
         ) : (
           <>
-            <div className="flex flex-col gap-2">
-              <textarea
-                value={draftBody}
-                onChange={(e) => setDraftBody(e.target.value)}
-                onFocus={(e) => { const el = e.target; setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 320) }}
-                rows={2}
-                placeholder={t('leadChat.templatePlaceholder')}
-                className="bg-[#F5F5F7] rounded-xl px-4 py-3 text-black text-[14px] outline-none resize-none"
-              />
-              <div className="flex items-center gap-2">
-                <select
-                  value={draftCat ?? ''}
-                  onChange={(e) => setDraftCat(Number(e.target.value))}
-                  className="flex-1 min-w-0 bg-[#F5F5F7] rounded-xl px-3 py-2.5 text-black text-[13px] outline-none"
+            <div onWheel={onHWheel} className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => { setActiveCat(c.id); resetModes() }}
+                  className={`shrink-0 px-4 py-2 rounded-full text-[13px] font-semibold transition-colors ${active?.id === c.id ? 'bg-[#E2319B] text-white' : 'bg-[#F5F5F7] text-[#7F7F7F]'}`}
                 >
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <button disabled={!draftBody.trim() || draftCat == null || busy} onClick={add} className="px-4 py-2.5 rounded-full bg-[#E2319B] text-white text-[13px] font-semibold disabled:opacity-50 active:scale-95 transition-transform shrink-0">
-                  {t('leadChat.templateAdd')}
+                  {c.name}
                 </button>
-              </div>
+              ))}
             </div>
 
-            <div className="h-px bg-black/[0.06]" />
+            {adding ? (
+              <div className="flex flex-col gap-2 bg-[#F5F5F7] rounded-xl p-3">
+                <textarea
+                  value={draftBody}
+                  autoFocus
+                  onChange={(e) => setDraftBody(e.target.value)}
+                  onFocus={(e) => { const el = e.target; setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 320) }}
+                  rows={2}
+                  placeholder={t('leadChat.templatePlaceholder')}
+                  className="bg-white rounded-lg px-3 py-2 text-black text-[14px] outline-none resize-none"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => { setAdding(false); setDraftBody('') }} className="px-3 py-1.5 rounded-full bg-white text-[#7F7F7F] text-[12px] font-semibold active:scale-95 transition-transform">{t('common.cancel')}</button>
+                  <button disabled={!draftBody.trim() || busy} onClick={add} className="px-3 py-1.5 rounded-full bg-[#E2319B] text-white text-[12px] font-semibold disabled:opacity-50 active:scale-95 transition-transform">{t('common.save')}</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => { setAdding(true); setEditingId(null); setConfirmId(null) }} className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-[#E2319B]/50 text-[#E2319B] text-[13px] font-semibold active:bg-[#E2319B]/5 transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                {t('leadChat.templateAdd')}
+              </button>
+            )}
 
-            <div className="flex flex-col gap-4 overflow-y-auto" style={{ maxHeight: '44dvh' }}>
-              {categories.map((cat) => (
-                <div key={cat.id} className="flex flex-col gap-2">
-                  <span className="text-[#9B9AA0] text-[12px] font-semibold uppercase tracking-[0.04em] px-1">{cat.name}</span>
-                  {(cat.templates ?? []).length === 0 ? (
-                    <p className="text-[#C4C4C4] text-[12px] px-1">{t('leadChat.templatesEmpty')}</p>
-                  ) : cat.templates.map((it) => (
-                    <div key={it.id} className="bg-[#F5F5F7] rounded-xl p-3 flex flex-col gap-2">
-                      {editingId === it.id ? (
-                        <>
-                          <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={2} className="bg-white rounded-lg px-3 py-2 text-black text-[14px] outline-none resize-none" />
-                          <div className="flex gap-2 justify-end">
-                            <button onClick={() => setEditingId(null)} className="px-3 py-1.5 rounded-full bg-white text-[#7F7F7F] text-[12px] font-semibold active:scale-95 transition-transform">{t('common.cancel')}</button>
-                            <button disabled={busy || !editBody.trim()} onClick={saveEdit} className="px-3 py-1.5 rounded-full bg-[#E2319B] text-white text-[12px] font-semibold disabled:opacity-50 active:scale-95 transition-transform">{t('common.save')}</button>
-                          </div>
-                        </>
-                      ) : confirmId === it.id ? (
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[#E5484D] text-[13px] font-medium">{t('leadChat.templateDeleteConfirm')}</span>
-                          <div className="flex gap-2 shrink-0">
-                            <button onClick={() => setConfirmId(null)} className="px-3 py-1.5 rounded-full bg-white text-[#7F7F7F] text-[12px] font-semibold active:scale-95 transition-transform">{t('common.cancel')}</button>
-                            <button disabled={busy} onClick={() => remove(it.id)} className="px-3 py-1.5 rounded-full bg-[#E5484D] text-white text-[12px] font-semibold disabled:opacity-50 active:scale-95 transition-transform">{t('requestChat.deleteConfirmBtn')}</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <button onClick={() => onPick(it.body)} className="text-left text-black text-[14px]/[150%] active:opacity-70 transition-opacity" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                            {it.body}
-                          </button>
-                          <div className="flex gap-2 justify-end">
-                            <button onClick={() => { setEditingId(it.id); setEditBody(it.body); setConfirmId(null) }} className="px-3 py-1.5 rounded-full bg-white text-[#3E6CC4] text-[12px] font-semibold active:scale-95 transition-transform">{t('common.edit')}</button>
-                            <button onClick={() => { setConfirmId(it.id); setEditingId(null) }} className="px-3 py-1.5 rounded-full bg-white text-[#E5484D] text-[12px] font-semibold active:scale-95 transition-transform">{t('leadChat.templateDelete')}</button>
-                          </div>
-                        </>
-                      )}
+            <div className="flex flex-col gap-2 overflow-y-auto" style={{ maxHeight: '46dvh' }}>
+              {templates.length === 0 ? (
+                <p className="text-[#9B9AA0] text-[13px] text-center py-3">{t('leadChat.templatesEmpty')}</p>
+              ) : templates.map((it) => (
+                <div key={it.id} className="bg-[#F5F5F7] rounded-xl p-3 flex flex-col gap-2">
+                  {editingId === it.id ? (
+                    <>
+                      <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={2} className="bg-white rounded-lg px-3 py-2 text-black text-[14px] outline-none resize-none" />
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={() => setEditingId(null)} className="px-3 py-1.5 rounded-full bg-white text-[#7F7F7F] text-[12px] font-semibold active:scale-95 transition-transform">{t('common.cancel')}</button>
+                        <button disabled={busy || !editBody.trim()} onClick={saveEdit} className="px-3 py-1.5 rounded-full bg-[#E2319B] text-white text-[12px] font-semibold disabled:opacity-50 active:scale-95 transition-transform">{t('common.save')}</button>
+                      </div>
+                    </>
+                  ) : confirmId === it.id ? (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[#E5484D] text-[13px] font-medium">{t('leadChat.templateDeleteConfirm')}</span>
+                      <div className="flex gap-2 shrink-0">
+                        <button onClick={() => setConfirmId(null)} className="px-3 py-1.5 rounded-full bg-white text-[#7F7F7F] text-[12px] font-semibold active:scale-95 transition-transform">{t('common.cancel')}</button>
+                        <button disabled={busy} onClick={() => remove(it.id)} className="px-3 py-1.5 rounded-full bg-[#E5484D] text-white text-[12px] font-semibold disabled:opacity-50 active:scale-95 transition-transform">{t('requestChat.deleteConfirmBtn')}</button>
+                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    <>
+                      <button onClick={() => onPick(it.body)} className="text-left text-black text-[14px]/[150%] active:opacity-70 transition-opacity" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                        {it.body}
+                      </button>
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={() => { setEditingId(it.id); setEditBody(it.body); setConfirmId(null) }} className="px-3 py-1.5 rounded-full bg-white text-[#3E6CC4] text-[12px] font-semibold active:scale-95 transition-transform">{t('common.edit')}</button>
+                        <button onClick={() => { setConfirmId(it.id); setEditingId(null) }} className="px-3 py-1.5 rounded-full bg-white text-[#E5484D] text-[12px] font-semibold active:scale-95 transition-transform">{t('leadChat.templateDelete')}</button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
