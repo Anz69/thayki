@@ -65,16 +65,17 @@ export default function CatalogNotice() {
     <div className="container">
       <style>{`
         @keyframes cnGrow{from{width:0%}to{width:100%}}
-        @keyframes cnSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+        @property --gb-angle{syntax:'<angle>';initial-value:0deg;inherits:false;}
+        @keyframes gb-rotate{to{--gb-angle:360deg}}
       `}</style>
 
-      <div className="relative overflow-hidden" style={{ borderRadius: 16, padding: 1.5 }}>
+      <div className="relative" style={{ borderRadius: 16, padding: 1.5 }}>
         <div
           aria-hidden
           style={{
-            position: 'absolute', top: '50%', left: '50%', width: '220%', aspectRatio: '1',
-            background: 'conic-gradient(from 180deg at 50% 50%, #E2319B 0deg, #B331E2 68.4deg, #E2314C 360deg)',
-            animation: 'cnSpin 4s linear infinite',
+            position: 'absolute', inset: 0, borderRadius: 16,
+            background: 'conic-gradient(from var(--gb-angle, 0deg) at 50% 50%, #E2319B 0deg, #B331E2 90deg, #E2314C 200deg, #E2319B 360deg)',
+            animation: 'gb-rotate 4s linear infinite',
           }}
         />
 
