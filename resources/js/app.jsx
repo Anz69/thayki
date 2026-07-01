@@ -87,10 +87,15 @@ function rmRepaint() {
     requestAnimationFrame(() => { try { el.style.transform = '' } catch {} })
   } catch {}
 }
+// Re-assert the swipe disable whenever the app comes back — Telegram can reset the
+// gesture state on restore, which would re-enable scroll-collapse on Android.
+function rmReassertSwipes() {
+  try { window.Telegram?.WebApp?.disableVerticalSwipes?.() } catch {}
+}
 try {
-  window.addEventListener('pageshow', () => { rmRepaint() })
+  window.addEventListener('pageshow', () => { rmRepaint(); rmReassertSwipes() })
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') rmRepaint()
+    if (document.visibilityState === 'visible') { rmRepaint(); rmReassertSwipes() }
   })
 } catch {}
 try {

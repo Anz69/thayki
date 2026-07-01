@@ -386,7 +386,7 @@ export default function App() {
           overflow-x: hidden;
           scrollbar-width: none;
           position: relative;
-          overscroll-behavior-y: contain;
+          overscroll-behavior: none;
           -webkit-overflow-scrolling: touch;
         }
         .page-root::-webkit-scrollbar {

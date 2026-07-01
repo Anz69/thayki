@@ -60,15 +60,18 @@ export function telegramSwipeBehaviorSupported() {
 
 export function lockTelegramVerticalSwipes() {
   const tg = resolveTelegramWebApp()
-  if (!telegramSwipeBehaviorSupported() || !tg?.disableVerticalSwipes) return
+  // Call whenever the method exists — do NOT gate on isVersionAtLeast('7.7'), which
+  // returns false on some Android builds even though disableVerticalSwipes works,
+  // leaving the swipe-collapse/pull-to-refresh gesture active (page breaks on scroll).
+  if (typeof tg?.disableVerticalSwipes !== 'function') return
 
   telegramSwipeLockDepth += 1
-  tg.disableVerticalSwipes()
+  try { tg.disableVerticalSwipes() } catch { /* noop */ }
 }
 
 export function unlockTelegramVerticalSwipes(force = false) {
   const tg = resolveTelegramWebApp()
-  if (!telegramSwipeBehaviorSupported() || !tg?.enableVerticalSwipes) return
+  if (typeof tg?.enableVerticalSwipes !== 'function') return
 
   if (force) {
     telegramSwipeLockDepth = 0
@@ -77,5 +80,5 @@ export function unlockTelegramVerticalSwipes(force = false) {
   }
 
   if (telegramSwipeLockDepth > 0) return
-  tg.enableVerticalSwipes()
+  try { tg.enableVerticalSwipes() } catch { /* noop */ }
 }
