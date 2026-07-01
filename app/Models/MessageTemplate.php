@@ -15,4 +15,9 @@ class MessageTemplate extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(TemplateCategory::class, 'category_id');
+    }
 }

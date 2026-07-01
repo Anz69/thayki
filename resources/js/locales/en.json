@@ -406,6 +406,7 @@
     "templatePlaceholder": "Template text…",
     "templateAdd": "Add",
     "templatesEmpty": "No templates yet",
+    "templatesNoCategories": "Template categories are created by the admin in the admin panel.",
     "templateDelete": "Delete",
     "templateDeleteConfirm": "Delete template?",
     "payTitle": "Payment request",

@@ -161,8 +161,6 @@ class SendChatMessageNotificationJob implements ShouldQueue
 
             $openPath = $isLead ? "/request/chat?id={$chat->id}".($leadId ? "&lead={$leadId}" : '') : ($isSupport ? '/support' : '/home');
 
-            $recipientIsStaff = fn (User $u): bool => in_array($u->role, [UserRole::Manager, UserRole::Admin], true);
-
             foreach ($chat->participants as $participant) {
                 $recipient = $participant->user;
                 if ($recipient === null) {
@@ -172,12 +170,11 @@ class SendChatMessageNotificationJob implements ShouldQueue
                     continue;
                 }
 
-                // Privacy guard: a lead notification must only reach the lead's OWNER
-                // (the client) or staff — never any other non-staff participant. This
-                // stops one client ever being pinged about another client's lead, no
-                // matter how they ended up on the chat's participant list.
-                if ($isLead && ! $recipientIsStaff($recipient)
-                    && $lead !== null && (int) $recipient->id !== (int) $lead->user_id) {
+                // In a lead chat this loop only ever notifies the OWNER (the client).
+                // A staff reply must never ping other managers, and a client is never
+                // pinged about someone else's lead. (When the client writes, the
+                // assigned manager is notified above via the staff block.)
+                if ($isLead && ($lead === null || (int) $recipient->id !== (int) $lead->user_id)) {
                     continue;
                 }
 
