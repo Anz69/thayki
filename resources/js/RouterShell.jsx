@@ -39,7 +39,7 @@ function importWithRetry(importer, attempt = 0) {
       // Capped auto-reload (survives Telegram WebView recreation so it can't loop);
       // after the cap it shows the manual recovery screen instead of blanking.
       if (typeof window.__safeReload === 'function') {
-        window.__safeReload()
+        window.__safeReload('chunk-import')
         return new Promise(() => {})
       }
       window.location.reload()

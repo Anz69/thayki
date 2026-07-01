@@ -34,7 +34,8 @@ try { window.__beaconError = beaconError } catch {}
 // loop forever (Telegram's own "failed to load" error every few seconds). Cap with
 // localStorage (survives WebView recreation): at most 2 auto-reloads per 30s, then
 // stop looping and show a manual recovery screen instead. Cleared on a good boot.
-function safeReload() {
+function safeReload(reason) {
+  try { beaconError('reload', { message: 'reload:' + (reason || 'unknown') }) } catch {}
   try {
     const KEY = '__rm_reload_guard__'
     const now = Date.now()
@@ -101,6 +102,17 @@ try {
     message: e?.reason?.message ?? String(e?.reason ?? 'unhandledrejection'),
     stack: e?.reason?.stack ?? null,
   }))
+  // Capture-phase: resource load failures (script/link/img) don't bubble to the
+  // handler above — log which asset URL failed so a broken chunk/asset is visible
+  // in the server log even without device debugging.
+  window.addEventListener('error', (e) => {
+    try {
+      const el = e?.target
+      if (el && el !== window && (el.tagName === 'SCRIPT' || el.tagName === 'LINK' || el.tagName === 'IMG')) {
+        beaconError('asset-error', { message: 'asset:' + el.tagName, stack: String(el.src || el.href || '') })
+      }
+    } catch {}
+  }, true)
 } catch {}
 
 function resolveBuildId() {
@@ -149,7 +161,8 @@ try {
     event?.preventDefault?.()
     // safeReload caps retries across WebView recreations, so a persistently failing
     // asset can't loop-reload forever — it falls back to the manual recovery screen.
-    safeReload()
+    try { beaconError('preloadError', { message: 'preloadError', stack: String(event?.payload?.message ?? event?.reason ?? '') }) } catch {}
+    safeReload('preloadError')
   })
 } catch {}
 

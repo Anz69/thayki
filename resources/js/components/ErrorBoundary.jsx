@@ -54,7 +54,7 @@ export default class ErrorBoundary extends Component {
     try {
       // Capped auto-reload (survives WebView recreation) so a persistently failing
       // chunk can't loop-reload forever.
-      if (typeof window.__safeReload === 'function') { window.__safeReload(); return }
+      if (typeof window.__safeReload === 'function') { window.__safeReload('errorboundary-chunk'); return }
       window.location.reload()
     } catch {
     }
