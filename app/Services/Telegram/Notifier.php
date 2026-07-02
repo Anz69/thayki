@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Telegram;
 
+use App\Enums\UserRole;
 use App\Models\AdminUser;
+use App\Models\BotNotification;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
@@ -38,7 +40,12 @@ class Notifier
             return;
         }
 
-        $this->sendDeduped((int) $user->tg_chat_id, $text, $openPath, $buttonLabel, $dedupToken);
+        // Track client-facing notifications so they can be cleaned later (manually on
+        // lead close/completion, or automatically after 48h). Staff notifications are
+        // not tracked. The pinned welcome is sent elsewhere and never recorded.
+        $trackFor = $user->role === UserRole::Client ? $user : null;
+
+        $this->sendDeduped((int) $user->tg_chat_id, $text, $openPath, $buttonLabel, $dedupToken, $trackFor);
     }
 
     /**
@@ -79,6 +86,7 @@ class Notifier
         ?string $openPath,
         ?string $buttonLabel,
         ?string $dedupToken = null,
+        ?User $trackFor = null,
     ): void {
         $fingerprint = $dedupToken !== null
             ? sha1($chatId.'|'.$dedupToken)
@@ -89,6 +97,17 @@ class Notifier
             return;
         }
 
-        $this->bot->sendMessage($chatId, $text, $openPath, $buttonLabel);
+        $messageId = $this->bot->sendMessageReturningId($chatId, $text, $openPath, $buttonLabel);
+
+        if ($messageId !== null && $trackFor !== null) {
+            try {
+                BotNotification::query()->create([
+                    'user_id' => $trackFor->id,
+                    'tg_chat_id' => $chatId,
+                    'message_id' => $messageId,
+                ]);
+            } catch (\Throwable) {
+            }
+        }
     }
 }

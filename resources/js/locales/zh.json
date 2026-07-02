@@ -568,6 +568,15 @@
     "confirm": "申请将被永久删除。确定吗？",
     "error": "取消申请失败"
   },
+  "clearNotif": {
+    "title": "清除客户的通知？",
+    "subtitle": "待删除：{{count}} 条通知",
+    "confirmTitle": "确定删除？",
+    "confirmText": "将从客户处删除 {{count}} 条通知。欢迎消息将保留。",
+    "confirmBtn": "删除",
+    "done": "已清除通知：{{count}}",
+    "error": "清除通知失败"
+  },
   "finishMeeting": {
     "title": "结束会面",
     "confirm": "确定要结束会面吗？"

@@ -25,8 +25,15 @@ class TelegramBotService
 
     public function sendMessage(int|string $chatId, string $text, ?string $openPath = null, ?string $buttonLabel = null, bool $pin = false): bool
     {
+        return $this->sendMessageReturningId($chatId, $text, $openPath, $buttonLabel, $pin) !== null;
+    }
+
+    // Same as sendMessage but returns the Telegram message_id on success (null on
+    // failure) so callers can store it — needed to later delete client notifications.
+    public function sendMessageReturningId(int|string $chatId, string $text, ?string $openPath = null, ?string $buttonLabel = null, bool $pin = false): ?int
+    {
         if ($this->botToken === '') {
-            return false;
+            return null;
         }
 
         $payload = [
@@ -57,23 +64,22 @@ class TelegramBotService
                     'status'  => $response->status(),
                     'body'    => $response->body(),
                 ]);
-                return false;
+                return null;
             }
 
-            if ($pin) {
-                $messageId = (int) ($response->json('result.message_id') ?? 0);
-                if ($messageId > 0) {
-                    $this->pinWelcome($chatId, $messageId);
-                }
+            $messageId = (int) ($response->json('result.message_id') ?? 0);
+
+            if ($pin && $messageId > 0) {
+                $this->pinWelcome($chatId, $messageId);
             }
 
-            return true;
+            return $messageId > 0 ? $messageId : null;
         } catch (\Throwable $e) {
             Log::warning('[TelegramBotService] sendMessage threw', [
                 'chat_id' => $chatId,
                 'error'   => $e->getMessage(),
             ]);
-            return false;
+            return null;
         }
     }
 

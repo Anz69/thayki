@@ -18,3 +18,8 @@ Schedule::command('model-cards:cleanup')
     ->withoutOverlapping()
     ->runInBackground();
 
+Schedule::command('bot:cleanup-notifications')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();
+

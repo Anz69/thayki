@@ -140,6 +140,26 @@ class ManagerLeadController extends Controller
         return ApiResponse::ok($this->serialize($lead->fresh(['user', 'manager', 'modelProfile.photos'])));
     }
 
+    public function notificationsCount(Request $request, Lead $lead): JsonResponse
+    {
+        $client = $lead->user;
+        $count = $client !== null
+            ? \App\Services\Telegram\BotNotificationCleaner::default()->countForUser($client)
+            : 0;
+
+        return ApiResponse::ok(['count' => $count]);
+    }
+
+    public function clearNotifications(Request $request, Lead $lead): JsonResponse
+    {
+        $client = $lead->user;
+        $deleted = $client !== null
+            ? \App\Services\Telegram\BotNotificationCleaner::default()->clearForUser($client)
+            : 0;
+
+        return ApiResponse::ok(['deleted' => $deleted]);
+    }
+
     public function paymentRequest(Request $request, Lead $lead, PostMessageAction $post): JsonResponse
     {
         $data = $request->validate([

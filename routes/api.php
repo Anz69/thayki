@@ -104,6 +104,8 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/leads/{lead}/accept', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'accept'])
                 ->middleware('idempotency')->name('manager.leads.accept');
             Route::patch('/leads/{lead}/status', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'updateStatus'])->name('manager.leads.status');
+            Route::get('/leads/{lead}/notifications-count', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'notificationsCount'])->name('manager.leads.notificationsCount');
+            Route::post('/leads/{lead}/clear-notifications', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'clearNotifications'])->name('manager.leads.clearNotifications');
             Route::post('/leads/{lead}/payment-request', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'paymentRequest'])->name('manager.leads.paymentRequest');
             Route::post('/leads/{lead}/payment-confirm', [\App\Http\Controllers\Api\V1\Manager\ManagerLeadController::class, 'paymentConfirm'])
                 ->middleware('idempotency')->name('manager.leads.paymentConfirm');

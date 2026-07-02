@@ -16,6 +16,7 @@ import { logError } from '@/utils/logger'
 import { prepareImageFileForUpload } from '@/utils/prepareImageForUpload'
 import { LeadActionMenu, TypedMessageCard } from '@/views/chat/LeadChatActions'
 import CancelLeadModal from '@/components/modals/CancelLeadModal'
+import ClearClientNotificationsModal from '@/components/modals/ClearClientNotificationsModal'
 import ModalMiddle from '@/layout/ModalMiddle'
 import { STATUS, StatusChip } from '@/views/manager/kit'
 
@@ -241,6 +242,7 @@ export default function RequestChatPage() {
   const [accepting, setAccepting]   = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
   const [cancelBusy, setCancelBusy] = useState(false)
+  const [clearNotif, setClearNotif] = useState({ open: false, count: 0, busy: false })
   const [othersTyping, setOthersTyping] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
@@ -465,6 +467,13 @@ export default function RequestChatPage() {
     setLeadClosed(s === 'closed' || s === 'completed')
     try {
       await api.patch(`/manager/leads/${leadId}/status`, { status: s })
+      if (s === 'closed' || s === 'completed') {
+        try {
+          const { data } = await api.get(`/manager/leads/${leadId}/notifications-count`)
+          const count = data?.data?.count ?? 0
+          if (count > 0) setClearNotif({ open: true, count, busy: false })
+        } catch (err) { logError(err) }
+      }
     } catch (e) {
       logError(e)
       setLeadStatus(prevStatus)
@@ -472,6 +481,20 @@ export default function RequestChatPage() {
       showToast(t('requestChat.statusError'))
     }
   }, [leadId, leadStatus, leadClosed, showToast, t])
+
+  const confirmClearNotif = useCallback(async () => {
+    setClearNotif((s) => ({ ...s, busy: true }))
+    try {
+      const { data } = await api.post(`/manager/leads/${leadId}/clear-notifications`)
+      const deleted = data?.data?.deleted ?? 0
+      showToast(t('clearNotif.done', { count: deleted }))
+    } catch (e) {
+      logError(e)
+      showToast(t('clearNotif.error'))
+    } finally {
+      setClearNotif({ open: false, count: 0, busy: false })
+    }
+  }, [leadId, showToast, t])
 
   const acceptLead = useCallback(async () => {
     if (accepting || !leadId) return
@@ -1175,6 +1198,14 @@ export default function RequestChatPage() {
         onClose={() => setCancelOpen(false)}
         onConfirm={cancelLead}
         busy={cancelBusy}
+      />
+
+      <ClearClientNotificationsModal
+        isOpen={clearNotif.open}
+        count={clearNotif.count}
+        busy={clearNotif.busy}
+        onCancel={() => setClearNotif({ open: false, count: 0, busy: false })}
+        onConfirmed={confirmClearNotif}
       />
 
       {toast && (

@@ -568,6 +568,15 @@
     "confirm": "The request will be permanently deleted. Are you sure?",
     "error": "Failed to cancel the request"
   },
+  "clearNotif": {
+    "title": "Clear the client's notifications?",
+    "subtitle": "To be deleted: {{count}} notif.",
+    "confirmTitle": "Delete for sure?",
+    "confirmText": "{{count}} notification(s) will be removed from the client. The welcome message stays.",
+    "confirmBtn": "Delete",
+    "done": "Notifications cleared: {{count}}",
+    "error": "Failed to clear notifications"
+  },
   "finishMeeting": {
     "title": "Finish meeting",
     "confirm": "Are you sure you want to finish the meeting?"
