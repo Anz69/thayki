@@ -257,6 +257,7 @@ class StartHandler
             trans('start.verified', ['greeting' => $this->greeting($firstName, $locale)], $locale),
             openPath: '/',
             buttonLabel: trans('start.open_app', [], $locale),
+            pin: true,
         );
     }
 
@@ -267,6 +268,7 @@ class StartHandler
             trans('start.model', ['greeting' => $this->greeting($firstName, $locale)], $locale),
             openPath: '/',
             buttonLabel: trans('start.open_app', [], $locale),
+            pin: true,
         );
     }
 
@@ -277,6 +279,7 @@ class StartHandler
             trans('start.model_invite', ['greeting' => $this->greeting($firstName, $locale)], $locale),
             openPath: '/',
             buttonLabel: trans('start.become_model', [], $locale),
+            pin: true,
         );
     }
 

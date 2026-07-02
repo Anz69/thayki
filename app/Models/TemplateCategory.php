@@ -15,4 +15,9 @@ class TemplateCategory extends Model
     {
         return $this->hasMany(MessageTemplate::class, 'category_id');
     }
+
+    public function subcategories(): HasMany
+    {
+        return $this->hasMany(TemplateSubcategory::class, 'category_id');
+    }
 }

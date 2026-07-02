@@ -23,7 +23,7 @@ class TelegramBotService
         return new self((string) config('telegram.bot_token', ''));
     }
 
-    public function sendMessage(int|string $chatId, string $text, ?string $openPath = null, ?string $buttonLabel = null): bool
+    public function sendMessage(int|string $chatId, string $text, ?string $openPath = null, ?string $buttonLabel = null, bool $pin = false): bool
     {
         if ($this->botToken === '') {
             return false;
@@ -58,6 +58,13 @@ class TelegramBotService
                     'body'    => $response->body(),
                 ]);
                 return false;
+            }
+
+            if ($pin) {
+                $messageId = (int) ($response->json('result.message_id') ?? 0);
+                if ($messageId > 0) {
+                    $this->pinWelcome($chatId, $messageId);
+                }
             }
 
             return true;
@@ -113,6 +120,33 @@ class TelegramBotService
             ]);
         } catch (\Throwable) {
         }
+    }
+
+    // Pin a message as the single "welcome" pin: drop any previous pin, pin the new
+    // one silently, then delete the "Bot pinned a message" service message Telegram
+    // auto-posts. disable_notification only mutes the push — it does NOT stop the
+    // service message, which is why we delete it. In a private chat the service
+    // message is the next message after the pinned one (id + 1).
+    public function pinWelcome(int|string $chatId, int $messageId): void
+    {
+        if ($this->botToken === '' || $messageId <= 0) {
+            return;
+        }
+        try {
+            Http::timeout(5)->post($this->endpoint('unpinAllChatMessages'), [
+                'chat_id' => $chatId,
+            ]);
+        } catch (\Throwable) {
+        }
+        try {
+            Http::timeout(5)->post($this->endpoint('pinChatMessage'), [
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+                'disable_notification' => true,
+            ]);
+        } catch (\Throwable) {
+        }
+        $this->deleteMessage($chatId, $messageId + 1);
     }
 
     public function answerCallback(string $callbackId, ?string $text = null): void

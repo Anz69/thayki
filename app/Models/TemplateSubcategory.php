@@ -6,23 +6,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class MessageTemplate extends Model
+class TemplateSubcategory extends Model
 {
     protected $guarded = ['id'];
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
 
     public function category(): BelongsTo
     {
         return $this->belongsTo(TemplateCategory::class, 'category_id');
     }
 
-    public function subcategory(): BelongsTo
+    public function templates(): HasMany
     {
-        return $this->belongsTo(TemplateSubcategory::class, 'subcategory_id');
+        return $this->hasMany(MessageTemplate::class, 'subcategory_id');
     }
 }

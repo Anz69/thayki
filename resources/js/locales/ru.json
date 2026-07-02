@@ -407,6 +407,7 @@
     "templateAdd": "Добавить",
     "templatesEmpty": "Шаблонов пока нет",
     "templatesNoCategories": "Категории шаблонов создаёт администратор в админ-панели.",
+    "templatesNoSubcategories": "В этой категории пока нет подкатегорий. Их создаёт администратор в админ-панели.",
     "templateDelete": "Удалить",
     "templateDeleteConfirm": "Удалить шаблон?",
     "payTitle": "Запрос оплаты",

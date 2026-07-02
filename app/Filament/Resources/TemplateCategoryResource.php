@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TemplateCategoryResource\Pages;
+use App\Filament\Resources\TemplateCategoryResource\RelationManagers\SubcategoriesRelationManager;
 use App\Models\TemplateCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -67,7 +68,9 @@ class TemplateCategoryResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            SubcategoriesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

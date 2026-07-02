@@ -273,6 +273,7 @@ function TemplatesSheet({ open, onClose, onPick }) {
   const { t } = useTranslation()
   const [categories, setCategories] = useState(null)
   const [activeCat, setActiveCat] = useState(null)
+  const [activeSub, setActiveSub] = useState(null)
   const [adding, setAdding] = useState(false)
   const [draftBody, setDraftBody] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -292,7 +293,8 @@ function TemplatesSheet({ open, onClose, onPick }) {
 
   useEffect(() => {
     if (!open) return
-    setCategories(null); setAdding(false); setDraftBody(''); setEditingId(null); setConfirmId(null)
+    setCategories(null); setActiveCat(null); setActiveSub(null)
+    setAdding(false); setDraftBody(''); setEditingId(null); setConfirmId(null)
     load()
   }, [open, load])
 
@@ -300,10 +302,10 @@ function TemplatesSheet({ open, onClose, onPick }) {
 
   const add = async () => {
     const body = draftBody.trim()
-    if (!body || activeCat == null || busy) return
+    if (!body || activeSub == null || busy) return
     setBusy(true)
     try {
-      await api.post('/manager/templates', { body, category_id: activeCat })
+      await api.post('/manager/templates', { body, subcategory_id: activeSub })
       setDraftBody(''); setAdding(false)
       load()
     } catch (e) { logError(e) } finally { setBusy(false) }
@@ -332,7 +334,17 @@ function TemplatesSheet({ open, onClose, onPick }) {
 
   const hasCats = Array.isArray(categories) && categories.length > 0
   const active = hasCats ? (categories.find((c) => c.id === activeCat) ?? categories[0]) : null
-  const templates = active?.templates ?? []
+  const subcategories = active?.subcategories ?? []
+  const hasSubs = subcategories.length > 0
+  const activeSubObj = hasSubs ? (subcategories.find((s) => s.id === activeSub) ?? subcategories[0]) : null
+  const templates = activeSubObj?.templates ?? []
+
+  useEffect(() => {
+    if (!hasSubs) { if (activeSub != null) setActiveSub(null); return }
+    if (activeSub == null || !subcategories.some((s) => s.id === activeSub)) {
+      setActiveSub(subcategories[0].id)
+    }
+  }, [activeCat, hasSubs, activeSub, subcategories])
 
   return (
     <ModalMiddle isOpen={open} onClose={onClose}>
@@ -349,7 +361,7 @@ function TemplatesSheet({ open, onClose, onPick }) {
               {categories.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => { setActiveCat(c.id); resetModes() }}
+                  onClick={() => { setActiveCat(c.id); setActiveSub(null); resetModes() }}
                   className={`shrink-0 px-4 py-2 rounded-full text-[13px] font-semibold transition-colors ${active?.id === c.id ? 'bg-[#E2319B] text-white' : 'bg-[#F5F5F7] text-[#7F7F7F]'}`}
                 >
                   {c.name}
@@ -357,6 +369,23 @@ function TemplatesSheet({ open, onClose, onPick }) {
               ))}
             </div>
 
+            {hasSubs && (
+              <div onWheel={onHWheel} className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                {subcategories.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setActiveSub(s.id); resetModes() }}
+                    className={`shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-colors ${activeSubObj?.id === s.id ? 'bg-[#E2319B]/12 text-[#E2319B] ring-1 ring-[#E2319B]/40' : 'bg-[#F5F5F7] text-[#9B9AA0]'}`}
+                  >
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!hasSubs ? (
+              <p className="text-[#9B9AA0] text-[13px] text-center py-4">{t('leadChat.templatesNoSubcategories')}</p>
+            ) : (<>
             {adding ? (
               <div className="flex flex-col gap-2 bg-[#F5F5F7] rounded-xl p-3">
                 <textarea
@@ -415,6 +444,7 @@ function TemplatesSheet({ open, onClose, onPick }) {
                 </div>
               ))}
             </div>
+            </>)}
           </>
         )}
       </div>

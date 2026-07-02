@@ -407,6 +407,7 @@
     "templateAdd": "添加",
     "templatesEmpty": "暂无模板",
     "templatesNoCategories": "模板分类由管理员在后台创建。",
+    "templatesNoSubcategories": "该分类下暂无子分类。子分类由管理员在后台创建。",
     "templateDelete": "删除",
     "templateDeleteConfirm": "删除模板？",
     "payTitle": "付款请求",
