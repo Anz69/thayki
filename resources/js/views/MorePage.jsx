@@ -10,6 +10,16 @@ import { useTranslation } from 'react-i18next'
 import i18n, { setLanguage } from '@/i18n'
 import api from '@/utils/api'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
+import { modelName } from '@/utils/modelName'
+import { logError } from '@/utils/logger'
+
+const ACTIVE_STATUS = {
+  new:              { key: 'new',             fg: '#E2319B' },
+  in_progress:      { key: 'inProgress',      fg: '#C77A12' },
+  awaiting_client:  { key: 'awaitingClient',  fg: '#2F6BD8' },
+  awaiting_payment: { key: 'awaitingPayment', fg: '#C77A12' },
+  prepaid:          { key: 'prepaid',         fg: '#1E9E4E' },
+}
 
 const IconQuestion = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -74,6 +84,25 @@ export default function MorePage() {
       setNotifications((v) => !v)
     }
   }, [auth])
+  const [activeLeads, setActiveLeads] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    api.get('/leads', { params: { page: 1, per_page: 20 } })
+      .then(({ data }) => {
+        if (cancelled) return
+        const items = Array.isArray(data?.data) ? data.data : []
+        setActiveLeads(items.filter((l) => !!ACTIVE_STATUS[l.status] && l.chat_id))
+      })
+      .catch((e) => { logError(e); if (!cancelled) setActiveLeads([]) })
+    return () => { cancelled = true }
+  }, [])
+
+  const openLead = useCallback((lead) => {
+    if (!lead?.chat_id) return
+    navigate(`/request/chat?id=${lead.chat_id}&lead=${lead.id}&from=${encodeURIComponent('/more')}`)
+  }, [navigate])
+
   const section1Ref = useRef(null)
   const section2Ref = useRef(null)
 
@@ -118,18 +147,66 @@ export default function MorePage() {
           <div ref={section1Ref} className="flex flex-col gap-4">
             <SectionLabel>{t('more.important')}</SectionLabel>
 
-            <button
-              onClick={() => navigate('/requests')}
-              className="w-full flex items-center gap-2.5 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
-            >
-              <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 13h4l2 3h6l2-3h4M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
-                    stroke="#777779" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-              <span className="text-black text-[16px]/[100%] font-medium">{t('more.myRequests')}</span>
-            </button>
+            {activeLeads === null ? (
+              <div className="w-full h-[84px] rounded-2xl bg-[#F1EFF3] animate-pulse" />
+            ) : activeLeads.length > 0 ? (
+              <>
+                {activeLeads.map((lead) => {
+                  const st = ACTIVE_STATUS[lead.status] ?? ACTIVE_STATUS.new
+                  const m = lead.model
+                  const photo = m?.photo ? resolveMediaUrl(m.photo) : null
+                  const title = (m && modelName(m)) || `${t('requestChat.title')} #${lead.id}`
+                  return (
+                    <button
+                      key={lead.id}
+                      onClick={() => openLead(lead)}
+                      className="w-full flex items-center gap-3.5 rounded-2xl px-4 py-4 bg-[#FDE8F5] active:bg-[#FBDCEF] transition-colors text-left"
+                    >
+                      <div className="size-12 rounded-xl bg-[#E2319B] shrink-0 flex items-center justify-center overflow-hidden">
+                        {photo
+                          ? <img src={photo} alt="" className="w-full h-full object-cover object-top" />
+                          : (
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                              <path d="M12 2.5 4 6.75v10.5L12 21.5l8-4.25V6.75L12 2.5ZM4 6.75 12 11m0 0 8-4.25M12 11v10.5" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="block text-[12px]/[100%] font-semibold uppercase tracking-[0.06em]" style={{ color: st.fg }}>
+                          {t('more.activeRequest')}
+                        </span>
+                        <span className="block text-black text-[18px]/[120%] font-bold truncate mt-1">{title}</span>
+                        <span className="block text-[#8A8A8A] text-[13px]/[120%] mt-1 truncate">
+                          {t(`requests.status.${st.key}`)}{lead.city ? ` · 📍 ${lead.city}` : ''}
+                        </span>
+                      </div>
+                      <svg className="w-5 h-5 text-[#E2319B] shrink-0" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  )
+                })}
+                <button
+                  onClick={() => navigate('/requests')}
+                  className="self-start text-[#8A8A8A] text-[14px]/[100%] font-medium px-1 py-1 active:opacity-70 transition-opacity"
+                >
+                  {t('more.allRequests')} →
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => navigate('/requests')}
+                className="w-full flex items-center gap-2.5 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
+              >
+                <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 13h4l2 3h6l2-3h4M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
+                      stroke="#777779" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <span className="text-black text-[16px]/[100%] font-medium">{t('more.myRequests')}</span>
+              </button>
+            )}
 
             <button
               onClick={() => setHowItWorksOpen(true)}

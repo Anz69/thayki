@@ -261,7 +261,9 @@
     "faq": "F.A.Q.",
     "support": "Contact support",
     "language": "Language",
-    "myRequests": "My requests"
+    "myRequests": "My requests",
+    "activeRequest": "Active request",
+    "allRequests": "All my requests"
   },
   "vip": {
     "button": "V.I.P models",

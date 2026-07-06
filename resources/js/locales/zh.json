@@ -261,7 +261,9 @@
     "faq": "常见问题",
     "support": "联系客服",
     "language": "语言",
-    "myRequests": "我的预约"
+    "myRequests": "我的预约",
+    "activeRequest": "进行中的预约",
+    "allRequests": "全部预约"
   },
   "vip": {
     "button": "V.I.P 模特",

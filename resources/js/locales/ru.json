@@ -261,7 +261,9 @@
     "faq": "F.A.Q.",
     "support": "Написать в поддержку",
     "language": "Язык",
-    "myRequests": "Мои заявки"
+    "myRequests": "Мои заявки",
+    "activeRequest": "Активная заявка",
+    "allRequests": "Все мои заявки"
   },
   "vip": {
     "button": "V.I.P модели",
