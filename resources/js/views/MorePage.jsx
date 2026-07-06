@@ -10,7 +10,6 @@ import { useTranslation } from 'react-i18next'
 import i18n, { setLanguage } from '@/i18n'
 import api from '@/utils/api'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
-import { modelName } from '@/utils/modelName'
 import { logError } from '@/utils/logger'
 
 const ACTIVE_STATUS = {
@@ -158,8 +157,6 @@ export default function MorePage() {
               (() => {
                 const lead = activeLeads[0]
                 const st = ACTIVE_STATUS[lead.status] ?? ACTIVE_STATUS.new
-                const m = lead.model
-                const typ = m && modelName(m)
                 return (
                   <>
                     <button
@@ -178,16 +175,8 @@ export default function MorePage() {
                         <span className="block text-black text-[16px]/[120%] font-semibold truncate">
                           {t('more.activeRequest')} <span className="text-[#E2319B]">#{lead.id}</span>
                         </span>
-                        <span className="flex items-baseline gap-1.5 mt-1 min-w-0">
-                          <span className="text-[13px]/[120%] font-medium shrink-0" style={{ color: st.fg }}>
-                            {t(`requests.status.${st.key}`)}
-                          </span>
-                          {typ && (
-                            <>
-                              <span className="text-[#D5C1CD] text-[13px] shrink-0">·</span>
-                              <span className="text-[#8A8A8A] text-[13px]/[120%] truncate">{t('more.leadTypeLabel')}: {typ}</span>
-                            </>
-                          )}
+                        <span className="block text-[13px]/[120%] font-medium mt-1 truncate" style={{ color: st.fg }}>
+                          {t(`requests.status.${st.key}`)}
                         </span>
                       </div>
                       <svg className="w-[18px] h-[18px] text-[#E2319B]/70 shrink-0" viewBox="0 0 16 16" fill="none">
