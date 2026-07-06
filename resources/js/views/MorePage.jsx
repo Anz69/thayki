@@ -148,7 +148,13 @@ export default function MorePage() {
             <SectionLabel>{t('more.important')}</SectionLabel>
 
             {activeLeads === null ? (
-              <div className="w-full h-[84px] rounded-2xl bg-[#F1EFF3] animate-pulse" />
+              <div className="w-full flex items-center gap-3 rounded-[18px] px-4 py-3 bg-[#FCEFF6] border border-[#F4D5E7]">
+                <div className="size-[46px] rounded-[14px] bg-[#F0D3E3] animate-pulse shrink-0" />
+                <div className="flex-1 flex flex-col gap-2 py-0.5">
+                  <div className="h-2.5 w-20 rounded-full bg-[#F0D3E3] animate-pulse" />
+                  <div className="h-3.5 w-32 rounded-full bg-[#E7C4D9] animate-pulse" />
+                </div>
+              </div>
             ) : activeLeads.length > 0 ? (
               <>
                 {activeLeads.map((lead) => {
@@ -160,38 +166,23 @@ export default function MorePage() {
                     <button
                       key={lead.id}
                       onClick={() => openLead(lead)}
-                      className="w-full flex items-center gap-3.5 rounded-2xl px-3.5 py-3.5 bg-[#FBEAF3] active:bg-[#F7DEEC] transition-colors text-left"
+                      className="w-full flex items-center gap-3 rounded-[18px] px-4 py-3 bg-[#FCEFF6] border border-[#F4D5E7] active:bg-[#F8E2EF] transition-colors text-left"
                     >
-                      <div className="size-[52px] rounded-[15px] shrink-0 flex items-center justify-center overflow-hidden bg-[#E2319B]">
+                      <div className="size-[46px] rounded-[14px] shrink-0 flex items-center justify-center overflow-hidden bg-[#E2319B]">
                         {photo
                           ? <img src={photo} alt="" className="w-full h-full object-cover object-top" />
                           : (
-                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                               <path d="M12 3.5c.3 3.4 1.6 4.7 5 5-3.4.3-4.7 1.6-5 5-.3-3.4-1.6-4.7-5-5 3.4-.3 4.7-1.6 5-5Z" fill="#fff" />
                               <path d="M18.6 13.6c.14 1.55.75 2.16 2.3 2.3-1.55.14-2.16.75-2.3 2.3-.14-1.55-.75-2.16-2.3-2.3 1.55-.14 2.16-.75 2.3-2.3Z" fill="#fff" fillOpacity="0.9" />
                             </svg>
                           )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="block text-[11px]/[100%] font-semibold uppercase tracking-[0.08em] text-[#E2319B]">
-                          {t('more.activeRequest')}
+                        <span className="block text-[11px]/[100%] font-semibold uppercase tracking-[0.07em] truncate" style={{ color: st.fg }}>
+                          {t(`requests.status.${st.key}`)}
                         </span>
-                        <span className="block text-black text-[17px]/[120%] font-semibold truncate mt-1.5">{title}</span>
-                        <span className="flex items-center gap-1.5 mt-1.5 min-w-0">
-                          <span className="text-[13px]/[100%] font-medium shrink-0" style={{ color: st.fg }}>
-                            {t(`requests.status.${st.key}`)}
-                          </span>
-                          {lead.city && (
-                            <>
-                              <span className="text-[#CFC7CD] shrink-0">·</span>
-                              <svg className="w-3.5 h-3.5 shrink-0 text-[#A7A2AA]" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-                                <circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.7" />
-                              </svg>
-                              <span className="text-[#8A8A8A] text-[13px]/[120%] truncate">{lead.city}</span>
-                            </>
-                          )}
-                        </span>
+                        <span className="block text-black text-[16px]/[120%] font-semibold truncate mt-1">{title}</span>
                       </div>
                       <svg className="w-[18px] h-[18px] text-[#E2319B]/70 shrink-0" viewBox="0 0 16 16" fill="none">
                         <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
