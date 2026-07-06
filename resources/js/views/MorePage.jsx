@@ -154,44 +154,36 @@ export default function MorePage() {
                 </div>
               </div>
             ) : activeLeads.length > 0 ? (
-              (() => {
-                const lead = activeLeads[0]
+              activeLeads.map((lead) => {
                 const st = ACTIVE_STATUS[lead.status] ?? ACTIVE_STATUS.new
                 return (
-                  <>
-                    <button
-                      onClick={() => openLead(lead)}
-                      className="w-full flex items-center gap-3 rounded-[18px] px-4 py-3 bg-[#FCEFF6] border border-[#F4D5E7] active:bg-[#F8E2EF] transition-colors text-left"
-                    >
-                      <div className="size-[46px] rounded-[14px] shrink-0 flex items-center justify-center bg-[#E2319B]">
-                        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M16.5 9.4 7.55 4.24" />
-                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-                          <path d="M3.27 6.96 12 12.01l8.73-5.05" />
-                          <path d="M12 22.08V12" />
-                        </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="block text-black text-[16px]/[120%] font-semibold truncate">
-                          {t('more.activeRequest')} <span className="text-[#E2319B]">#{lead.id}</span>
-                        </span>
-                        <span className="block text-[13px]/[120%] font-medium mt-1 truncate" style={{ color: st.fg }}>
-                          {t(`requests.status.${st.key}`)}
-                        </span>
-                      </div>
-                      <svg className="w-[18px] h-[18px] text-[#E2319B]/70 shrink-0" viewBox="0 0 16 16" fill="none">
-                        <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                  <button
+                    key={lead.id}
+                    onClick={() => openLead(lead)}
+                    className="w-full flex items-center gap-3 rounded-[18px] px-4 py-3 bg-[#FCEFF6] border border-[#F4D5E7] active:bg-[#F8E2EF] transition-colors text-left"
+                  >
+                    <div className="size-[46px] rounded-[14px] shrink-0 flex items-center justify-center bg-[#E2319B]">
+                      <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M16.5 9.4 7.55 4.24" />
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+                        <path d="M3.27 6.96 12 12.01l8.73-5.05" />
+                        <path d="M12 22.08V12" />
                       </svg>
-                    </button>
-                    <button
-                      onClick={() => navigate('/requests')}
-                      className="self-start text-[#8A8A8A] text-[14px]/[100%] font-medium px-1 py-1 active:opacity-70 transition-opacity"
-                    >
-                      {t('more.allRequests')} →
-                    </button>
-                  </>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="block text-black text-[16px]/[120%] font-semibold truncate">
+                        {t('more.activeRequest')} <span className="text-[#E2319B]">#{lead.id}</span>
+                      </span>
+                      <span className="block text-[13px]/[120%] font-medium mt-1 truncate" style={{ color: st.fg }}>
+                        {t(`requests.status.${st.key}`)}
+                      </span>
+                    </div>
+                    <svg className="w-[18px] h-[18px] text-[#E2319B]/70 shrink-0" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
                 )
-              })()
+              })
             ) : null}
 
             <button

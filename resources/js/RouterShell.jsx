@@ -20,7 +20,6 @@ import ModelPage from '@/views/ModelPage'
 import MorePage from '@/views/MorePage'
 import RequestPage from '@/views/RequestPage'
 import RequestChatPage from '@/views/RequestChatPage'
-import RequestsPage from '@/views/RequestsPage'
 import ManagerHomePage from '@/views/manager/ManagerHomePage'
 import ManagerMorePage from '@/views/manager/ManagerMorePage'
 import ManagerLeadsPage from '@/views/manager/ManagerLeadsPage'
@@ -339,7 +338,6 @@ export default function App() {
                       <Route path="/request" element={<RequestPage />} />
                       <Route path="/request/chat" element={<RequestChatPage />} />
                       <Route path="/requisites/open" element={<RequisitesChatGate />} />
-                      <Route path="/requests" element={<RequestsPage />} />
                       <Route path="/manager/leads" element={<RoleRoute roles={['manager']}><ManagerLeadsPage /></RoleRoute>} />
                       <Route path="/manager/earnings" element={<RoleRoute roles={['manager']}><ManagerEarningsPage /></RoleRoute>} />
                       <Route path="/manager/support" element={<RoleRoute roles={['manager']}><ManagerSupportPage /></RoleRoute>} />
