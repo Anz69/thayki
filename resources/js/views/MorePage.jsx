@@ -172,17 +172,25 @@ export default function MorePage() {
                         {photo
                           ? <img src={photo} alt="" className="w-full h-full object-cover object-top" />
                           : (
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                              <path d="M12 3.5c.3 3.4 1.6 4.7 5 5-3.4.3-4.7 1.6-5 5-.3-3.4-1.6-4.7-5-5 3.4-.3 4.7-1.6 5-5Z" fill="#fff" />
-                              <path d="M18.6 13.6c.14 1.55.75 2.16 2.3 2.3-1.55.14-2.16.75-2.3 2.3-.14-1.55-.75-2.16-2.3-2.3 1.55-.14 2.16-.75 2.3-2.3Z" fill="#fff" fillOpacity="0.9" />
+                            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M16.5 9.4 7.55 4.24" />
+                              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+                              <path d="M3.27 6.96 12 12.01l8.73-5.05" />
+                              <path d="M12 22.08V12" />
                             </svg>
                           )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="block text-[11px]/[100%] font-semibold uppercase tracking-[0.07em] truncate" style={{ color: st.fg }}>
-                          {t(`requests.status.${st.key}`)}
+                        <span className="block text-[11px]/[100%] font-semibold uppercase tracking-[0.07em] text-[#E2319B] truncate">
+                          {t('more.activeRequest')}
                         </span>
-                        <span className="block text-black text-[16px]/[120%] font-semibold truncate mt-1">{title}</span>
+                        <span className="flex items-baseline gap-1.5 mt-1 min-w-0">
+                          <span className="text-black text-[16px]/[120%] font-semibold truncate">{title}</span>
+                          <span className="text-[#D5C1CD] text-[13px] shrink-0">·</span>
+                          <span className="text-[13px]/[120%] font-medium shrink-0" style={{ color: st.fg }}>
+                            {t(`requests.status.${st.key}`)}
+                          </span>
+                        </span>
                       </div>
                       <svg className="w-[18px] h-[18px] text-[#E2319B]/70 shrink-0" viewBox="0 0 16 16" fill="none">
                         <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
