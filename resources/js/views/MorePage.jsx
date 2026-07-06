@@ -145,15 +145,7 @@ export default function MorePage() {
 
           <div ref={section1Ref} className="flex flex-col gap-4">
 
-            {activeLeads === null ? (
-              <div className="w-full flex items-center gap-3 rounded-[18px] px-4 py-3 bg-[#FCEFF6] border border-[#F4D5E7]">
-                <div className="size-[46px] rounded-[14px] bg-[#F0D3E3] animate-pulse shrink-0" />
-                <div className="flex-1 flex flex-col gap-2 py-0.5">
-                  <div className="h-3.5 w-28 rounded-full bg-[#F0D3E3] animate-pulse" />
-                  <div className="h-2.5 w-20 rounded-full bg-[#E7C4D9] animate-pulse" />
-                </div>
-              </div>
-            ) : activeLeads.length > 0 ? (
+            {activeLeads && activeLeads.length > 0 ? (
               activeLeads.map((lead) => {
                 const st = ACTIVE_STATUS[lead.status] ?? ACTIVE_STATUS.new
                 return (
