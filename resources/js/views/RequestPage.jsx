@@ -5,6 +5,7 @@ import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api, { extractErrorMessage } from '@/utils/api'
+import useLeadsStore from '@/stores/useLeadsStore'
 import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
@@ -298,6 +299,8 @@ export default function RequestPage() {
 
       const { data } = await api.post('/leads', { ...base, ...typage },
         { headers: { 'Idempotency-Key': submitKeyRef.current } })
+      // Refresh the active-leads cache so the new request is already in "Ещё".
+      try { useLeadsStore.getState().fetchActiveLeads() } catch {}
       const from = encodeURIComponent(isModelFlow ? `/model/${modelId}` : '/home')
       navigate(`/request/chat?id=${data.data?.chat_id}&lead=${data.data?.lead_id}&from=${from}`, { replace: true })
     } catch (err) {
