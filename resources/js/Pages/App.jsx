@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react'
 import { useEffect } from 'react'
 import RouterShell from '@/RouterShell'
 import useAuthStore from '@/stores/useAuthStore'
+import useLeadsStore from '@/stores/useLeadsStore'
 import api, { getStoredToken, clearToken, getStoredAuthUid, storeAuthUid } from '@/utils/api'
 import { logWarn } from '@/utils/logger'
 import { parseTelegramStartParam, buildDevInitData, getOrCreateDevTelegramId } from '@/utils/telegramAuth'
@@ -10,6 +11,12 @@ import { lockTelegramVerticalSwipes } from '@/utils/modalLocks'
 export default function App() {
   const { auth, appEnv } = usePage().props
   const authStore    = useAuthStore()
+
+  // Warm the active-leads cache as soon as we have a user, so the "Ещё" tab renders
+  // the request card instantly (no fetch lag when the tab opens).
+  useEffect(() => {
+    if (authStore.user?.id) useLeadsStore.getState().fetchActiveLeads()
+  }, [authStore.user?.id])
 
   useEffect(() => {
     let cancelled = false

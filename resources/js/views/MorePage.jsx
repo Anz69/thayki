@@ -6,11 +6,11 @@ import FaqModal from '@/components/modals/FaqModal'
 import HowItWorksModal from '@/components/modals/HowItWorksModal'
 import GradientBorder from '@/components/ui/GradientBorder'
 import useAuthStore from '@/stores/useAuthStore'
+import useLeadsStore from '@/stores/useLeadsStore'
 import { useTranslation } from 'react-i18next'
 import i18n, { setLanguage } from '@/i18n'
 import api from '@/utils/api'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
-import { logError } from '@/utils/logger'
 
 const ACTIVE_STATUS = {
   new:              { key: 'new',             fg: '#E2319B' },
@@ -83,19 +83,12 @@ export default function MorePage() {
       setNotifications((v) => !v)
     }
   }, [auth])
-  const [activeLeads, setActiveLeads] = useState(null)
+  // Read from the shared store — it's prefetched at app boot, so on open the request
+  // card is already there (no fetch lag). Still refresh in the background on open.
+  const activeLeads = useLeadsStore((s) => s.activeLeads)
+  const fetchActiveLeads = useLeadsStore((s) => s.fetchActiveLeads)
 
-  useEffect(() => {
-    let cancelled = false
-    api.get('/leads', { params: { page: 1, per_page: 20 } })
-      .then(({ data }) => {
-        if (cancelled) return
-        const items = Array.isArray(data?.data) ? data.data : []
-        setActiveLeads(items.filter((l) => !!ACTIVE_STATUS[l.status] && l.chat_id))
-      })
-      .catch((e) => { logError(e); if (!cancelled) setActiveLeads([]) })
-    return () => { cancelled = true }
-  }, [])
+  useEffect(() => { fetchActiveLeads() }, [fetchActiveLeads])
 
   const openLead = useCallback((lead) => {
     if (!lead?.chat_id) return
