@@ -993,8 +993,8 @@ export default function RequestChatPage() {
               const curDay = localDayKey(msg.createdAt)
               const prevDay = idx > 0 ? localDayKey(displayMessages[idx - 1]?.createdAt) : null
               const daySep = curDay && curDay !== prevDay ? (
-                <div className="flex justify-center my-3">
-                  <span className="text-[#8A8A8A] text-[12px] font-semibold bg-[#F2F2F5] rounded-full px-3 py-1">
+                <div className="flex justify-center my-4">
+                  <span className="text-[#B4B3BA] text-[12.5px] font-medium tracking-[0.02em]">
                     {daySeparatorLabel(msg.createdAt, t, i18n.language)}
                   </span>
                 </div>
