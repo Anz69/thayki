@@ -266,6 +266,16 @@ export default function RequestChatPage() {
   const [clearNotif, setClearNotif] = useState({ open: false, count: 0, busy: false })
   const [othersTyping, setOthersTyping] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+
+  // Flip the "Сегодня" separator to the new day live, without a reload: re-render a
+  // few seconds after the next local midnight, then re-arm for the following day.
+  const [dayTick, setDayTick] = useState(0)
+  useEffect(() => {
+    const now = new Date()
+    const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5)
+    const id = setTimeout(() => setDayTick((v) => v + 1), Math.max(1000, nextMidnight - now))
+    return () => clearTimeout(id)
+  }, [dayTick])
   const [deleteBusy, setDeleteBusy] = useState(false)
   const longPressRef = useRef(null)
   const [peerReadAt, setPeerReadAt] = useState({})

@@ -25,23 +25,12 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
-    // Resolve the viewer's IANA timezone from the plaintext `tz` cookie set by the
-    // browser (see the injected script below). Falls back to the app timezone.
-    private static function viewerTimezone(): string
-    {
-        $tz = $_COOKIE['tz'] ?? null;
-
-        return (is_string($tz) && in_array($tz, timezone_identifiers_list(), true))
-            ? $tz
-            : (string) config('app.timezone');
-    }
-
     public function boot(): void
     {
         // Show every date/time in tables and infolists in the viewer's own timezone
         // (times are stored in UTC), instead of the server timezone.
-        TextColumn::configureUsing(fn (TextColumn $column) => $column->timezone(fn () => self::viewerTimezone()));
-        TextEntry::configureUsing(fn (TextEntry $entry) => $entry->timezone(fn () => self::viewerTimezone()));
+        TextColumn::configureUsing(fn (TextColumn $column) => $column->timezone(fn () => \App\Support\DisplayTimezone::get()));
+        TextEntry::configureUsing(fn (TextEntry $entry) => $entry->timezone(fn () => \App\Support\DisplayTimezone::get()));
 
         // Publish the browser timezone into a cookie so the server can format times in
         // it. On the very first visit (cookie absent) reload once so the current page
@@ -56,9 +45,13 @@ class AdminPanelProvider extends PanelProvider
     if(!tz) return;
     var m = document.cookie.match(/(?:^|; )tz=([^;]+)/);
     var cur = m ? decodeURIComponent(m[1]) : null;
-    if(cur !== tz){
-      document.cookie = 'tz='+encodeURIComponent(tz)+';path=/;max-age=31536000;samesite=lax';
-      if(!cur) location.reload();
+    if(cur === tz) return;
+    document.cookie = 'tz='+encodeURIComponent(tz)+';path=/;max-age=31536000;samesite=lax';
+    // Reload once so the current page re-renders in the viewer's timezone. Guard with
+    // sessionStorage so a browser that refuses cookies can't loop forever.
+    if(!cur && !sessionStorage.getItem('tz_reloaded')){
+      sessionStorage.setItem('tz_reloaded','1');
+      location.reload();
     }
   }catch(e){}
 })();

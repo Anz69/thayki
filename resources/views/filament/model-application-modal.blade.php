@@ -227,8 +227,8 @@
         <h3 style="margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8f98a8;">Служебная информация</h3>
         <div style="border: 1px solid #2a2f39; border-radius: 14px; background: #ffffff05; padding: 12px; font-size: 13px; line-height: 20px; color: #c8d0df;">
             <p style="margin: 0;"><span style="color: #8f98a8;">ID заявки:</span> <span style="font-weight: 600; color: #f2f6ff;">{{ $record->id }}</span></p>
-            <p style="margin: 4px 0 0;"><span style="color: #8f98a8;">Подана:</span> <span style="font-weight: 600; color: #f2f6ff;">{{ $record->created_at?->format('d.m.Y H:i') ?? '—' }}</span></p>
-            <p style="margin: 4px 0 0;"><span style="color: #8f98a8;">Обновлена:</span> <span style="font-weight: 600; color: #f2f6ff;">{{ $record->updated_at?->format('d.m.Y H:i') ?? '—' }}</span></p>
+            <p style="margin: 4px 0 0;"><span style="color: #8f98a8;">Подана:</span> <span style="font-weight: 600; color: #f2f6ff;">{{ \App\Support\DisplayTimezone::format($record->created_at) }}</span></p>
+            <p style="margin: 4px 0 0;"><span style="color: #8f98a8;">Обновлена:</span> <span style="font-weight: 600; color: #f2f6ff;">{{ \App\Support\DisplayTimezone::format($record->updated_at) }}</span></p>
         </div>
 
         @if(filled($record->review_note ?? null) || filled($record->admin_note ?? null))

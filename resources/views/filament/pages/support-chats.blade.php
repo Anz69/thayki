@@ -224,7 +224,7 @@
                                         {{ $message->body }}
                                     </div>
                                 @endif
-                                <span style="font-size:10px;color:#444;padding:0 4px;">{{ $message->created_at->format('H:i') }}</span>
+                                <span style="font-size:10px;color:#444;padding:0 4px;">{{ \App\Support\DisplayTimezone::format($message->created_at, 'H:i') }}</span>
                             </div>
                         </div>
                     @empty
