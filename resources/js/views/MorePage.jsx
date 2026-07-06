@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import gsap from 'gsap'
+import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import FaqModal from '@/components/modals/FaqModal'
 import HowItWorksModal from '@/components/modals/HowItWorksModal'
@@ -100,6 +102,23 @@ export default function MorePage() {
     navigate(`/request/chat?id=${lead.chat_id}&lead=${lead.id}&from=${encodeURIComponent('/more')}`)
   }, [navigate])
 
+  const section1Ref = useRef(null)
+  const section2Ref = useRef(null)
+
+  useLayoutEffect(() => {
+    if (section1Ref.current) gsap.set(section1Ref.current, { autoAlpha: 0, y: 24 })
+    if (section2Ref.current) gsap.set(section2Ref.current, { autoAlpha: 0, y: 24 })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  usePageReady(() => {
+    const s1 = section1Ref.current
+    const s2 = section2Ref.current
+    if (!s1 || !s2) return
+    gsap.timeline()
+      .to(s1, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0)
+      .to(s2, { autoAlpha: 1, y: 0, duration: 0.38, ease: 'power3.out' }, 0.1)
+  })
+
   return (
     <>
       <section className="flex flex-col min-h-screen bg-white">
@@ -124,7 +143,7 @@ export default function MorePage() {
             </GradientBorder>
           )}
 
-          <div className="flex flex-col gap-4">
+          <div ref={section1Ref} className="flex flex-col gap-4">
 
             {activeLeads && activeLeads.length > 0 ? (
               activeLeads.map((lead) => {
@@ -213,7 +232,7 @@ export default function MorePage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div ref={section2Ref} className="flex flex-col gap-4">
             <SectionLabel>{t('more.additional')}</SectionLabel>
 
             <button
