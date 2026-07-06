@@ -263,6 +263,7 @@
     "language": "Language",
     "myRequests": "My requests",
     "activeRequest": "Active request",
+    "leadTypeLabel": "Type",
     "allRequests": "All my requests"
   },
   "vip": {

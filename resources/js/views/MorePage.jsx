@@ -145,80 +145,65 @@ export default function MorePage() {
           )}
 
           <div ref={section1Ref} className="flex flex-col gap-4">
-            <SectionLabel>{t('more.important')}</SectionLabel>
 
             {activeLeads === null ? (
               <div className="w-full flex items-center gap-3 rounded-[18px] px-4 py-3 bg-[#FCEFF6] border border-[#F4D5E7]">
                 <div className="size-[46px] rounded-[14px] bg-[#F0D3E3] animate-pulse shrink-0" />
                 <div className="flex-1 flex flex-col gap-2 py-0.5">
-                  <div className="h-2.5 w-20 rounded-full bg-[#F0D3E3] animate-pulse" />
-                  <div className="h-3.5 w-32 rounded-full bg-[#E7C4D9] animate-pulse" />
+                  <div className="h-3.5 w-28 rounded-full bg-[#F0D3E3] animate-pulse" />
+                  <div className="h-2.5 w-20 rounded-full bg-[#E7C4D9] animate-pulse" />
                 </div>
               </div>
             ) : activeLeads.length > 0 ? (
-              <>
-                {activeLeads.map((lead) => {
-                  const st = ACTIVE_STATUS[lead.status] ?? ACTIVE_STATUS.new
-                  const m = lead.model
-                  const photo = m?.photo ? resolveMediaUrl(m.photo) : null
-                  const title = (m && modelName(m)) || `${t('requestChat.title')} #${lead.id}`
-                  return (
+              (() => {
+                const lead = activeLeads[0]
+                const st = ACTIVE_STATUS[lead.status] ?? ACTIVE_STATUS.new
+                const m = lead.model
+                const typ = m && modelName(m)
+                return (
+                  <>
                     <button
-                      key={lead.id}
                       onClick={() => openLead(lead)}
                       className="w-full flex items-center gap-3 rounded-[18px] px-4 py-3 bg-[#FCEFF6] border border-[#F4D5E7] active:bg-[#F8E2EF] transition-colors text-left"
                     >
-                      <div className="size-[46px] rounded-[14px] shrink-0 flex items-center justify-center overflow-hidden bg-[#E2319B]">
-                        {photo
-                          ? <img src={photo} alt="" className="w-full h-full object-cover object-top" />
-                          : (
-                            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M16.5 9.4 7.55 4.24" />
-                              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-                              <path d="M3.27 6.96 12 12.01l8.73-5.05" />
-                              <path d="M12 22.08V12" />
-                            </svg>
-                          )}
+                      <div className="size-[46px] rounded-[14px] shrink-0 flex items-center justify-center bg-[#E2319B]">
+                        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M16.5 9.4 7.55 4.24" />
+                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+                          <path d="M3.27 6.96 12 12.01l8.73-5.05" />
+                          <path d="M12 22.08V12" />
+                        </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="block text-[11px]/[100%] font-semibold uppercase tracking-[0.07em] text-[#E2319B] truncate">
-                          {t('more.activeRequest')}
+                        <span className="block text-black text-[16px]/[120%] font-semibold truncate">
+                          {t('more.activeRequest')} <span className="text-[#E2319B]">#{lead.id}</span>
                         </span>
                         <span className="flex items-baseline gap-1.5 mt-1 min-w-0">
-                          <span className="text-black text-[16px]/[120%] font-semibold truncate">{title}</span>
-                          <span className="text-[#D5C1CD] text-[13px] shrink-0">·</span>
                           <span className="text-[13px]/[120%] font-medium shrink-0" style={{ color: st.fg }}>
                             {t(`requests.status.${st.key}`)}
                           </span>
+                          {typ && (
+                            <>
+                              <span className="text-[#D5C1CD] text-[13px] shrink-0">·</span>
+                              <span className="text-[#8A8A8A] text-[13px]/[120%] truncate">{t('more.leadTypeLabel')}: {typ}</span>
+                            </>
+                          )}
                         </span>
                       </div>
                       <svg className="w-[18px] h-[18px] text-[#E2319B]/70 shrink-0" viewBox="0 0 16 16" fill="none">
                         <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </button>
-                  )
-                })}
-                <button
-                  onClick={() => navigate('/requests')}
-                  className="self-start text-[#8A8A8A] text-[14px]/[100%] font-medium px-1 py-1 active:opacity-70 transition-opacity"
-                >
-                  {t('more.allRequests')} →
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => navigate('/requests')}
-                className="w-full flex items-center gap-2.5 bg-[#EFEEF3] rounded-xl px-4 py-4.5 active:bg-[#ECEAEC] transition-colors"
-              >
-                <span className="flex items-center justify-center w-5 h-5 flex-shrink-0">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 13h4l2 3h6l2-3h4M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
-                      stroke="#777779" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <span className="text-black text-[16px]/[100%] font-medium">{t('more.myRequests')}</span>
-              </button>
-            )}
+                    <button
+                      onClick={() => navigate('/requests')}
+                      className="self-start text-[#8A8A8A] text-[14px]/[100%] font-medium px-1 py-1 active:opacity-70 transition-opacity"
+                    >
+                      {t('more.allRequests')} →
+                    </button>
+                  </>
+                )
+              })()
+            ) : null}
 
             <button
               onClick={() => setHowItWorksOpen(true)}

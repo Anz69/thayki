@@ -263,6 +263,7 @@
     "language": "语言",
     "myRequests": "我的预约",
     "activeRequest": "进行中的预约",
+    "leadTypeLabel": "类型",
     "allRequests": "全部预约"
   },
   "vip": {

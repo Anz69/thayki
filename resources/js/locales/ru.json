@@ -263,6 +263,7 @@
     "language": "Язык",
     "myRequests": "Мои заявки",
     "activeRequest": "Активная заявка",
+    "leadTypeLabel": "Типаж",
     "allRequests": "Все мои заявки"
   },
   "vip": {
