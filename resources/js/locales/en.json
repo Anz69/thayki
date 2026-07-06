@@ -237,6 +237,7 @@
     "deleteConfirm": "Delete this message?",
     "deleteConfirmBtn": "Delete",
     "statusError": "Couldn't change status",
+    "dateToday": "Today",
     "uploadError": "Couldn't send the file",
     "uploadTooLarge": "File exceeds 10 MB",
     "uploadBadType": "Unsupported file type"

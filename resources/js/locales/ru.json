@@ -237,6 +237,7 @@
     "deleteConfirm": "Удалить это сообщение?",
     "deleteConfirmBtn": "Удалить",
     "statusError": "Не удалось изменить статус",
+    "dateToday": "Сегодня",
     "uploadError": "Не удалось отправить файл",
     "uploadTooLarge": "Файл больше 10 МБ",
     "uploadBadType": "Тип файла не поддерживается"

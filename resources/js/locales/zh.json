@@ -237,6 +237,7 @@
     "deleteConfirm": "删除此消息？",
     "deleteConfirmBtn": "删除",
     "statusError": "无法更改状态",
+    "dateToday": "今天",
     "uploadError": "文件发送失败",
     "uploadTooLarge": "文件超过 10 MB",
     "uploadBadType": "不支持的文件类型"

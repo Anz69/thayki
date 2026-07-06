@@ -3,6 +3,10 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Support\Facades\FilamentView;
+use Filament\Tables\Columns\TextColumn;
+use Filament\View\PanelsRenderHook;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -21,6 +25,48 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
+    // Resolve the viewer's IANA timezone from the plaintext `tz` cookie set by the
+    // browser (see the injected script below). Falls back to the app timezone.
+    private static function viewerTimezone(): string
+    {
+        $tz = $_COOKIE['tz'] ?? null;
+
+        return (is_string($tz) && in_array($tz, timezone_identifiers_list(), true))
+            ? $tz
+            : (string) config('app.timezone');
+    }
+
+    public function boot(): void
+    {
+        // Show every date/time in tables and infolists in the viewer's own timezone
+        // (times are stored in UTC), instead of the server timezone.
+        TextColumn::configureUsing(fn (TextColumn $column) => $column->timezone(fn () => self::viewerTimezone()));
+        TextEntry::configureUsing(fn (TextEntry $entry) => $entry->timezone(fn () => self::viewerTimezone()));
+
+        // Publish the browser timezone into a cookie so the server can format times in
+        // it. On the very first visit (cookie absent) reload once so the current page
+        // picks it up immediately.
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::HEAD_END,
+            fn (): string => <<<'HTML'
+<script>
+(function(){
+  try{
+    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if(!tz) return;
+    var m = document.cookie.match(/(?:^|; )tz=([^;]+)/);
+    var cur = m ? decodeURIComponent(m[1]) : null;
+    if(cur !== tz){
+      document.cookie = 'tz='+encodeURIComponent(tz)+';path=/;max-age=31536000;samesite=lax';
+      if(!cur) location.reload();
+    }
+  }catch(e){}
+})();
+</script>
+HTML,
+        );
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel

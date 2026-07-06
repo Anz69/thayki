@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo, Fragment } from 'react'
 import { createPortal } from 'react-dom'
 import CopyableContacts from '@/components/ui/CopyableContacts'
 import { useSearchParams } from 'react-router-dom'
@@ -97,6 +97,27 @@ function fmtTime(iso) {
   if (!iso) return ''
   const d = new Date(iso)
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+// Local-day key (client timezone) — new Date(iso) renders in the viewer's zone.
+function localDayKey(iso) {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+}
+
+// Telegram-style separator label: today → "Сегодня", otherwise the localized date
+// (e.g. "5 июля"), with the year appended when it's not the current year.
+function daySeparatorLabel(iso, t, locale) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const now = new Date()
+  if (localDayKey(iso) === localDayKey(now.toISOString())) return t('requestChat.dateToday')
+  const sameYear = d.getFullYear() === now.getFullYear()
+  return d.toLocaleDateString(locale || undefined, sameYear
+    ? { day: 'numeric', month: 'long' }
+    : { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 const STAFF_ROLES = ['admin', 'support', 'manager']
@@ -211,7 +232,7 @@ function ManagerNote({ text }) {
 }
 
 export default function RequestChatPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useTransitionNavigate()
   const [params] = useSearchParams()
   const auth     = useAuthStore()
@@ -959,11 +980,22 @@ export default function RequestChatPage() {
                 onContextMenu: (e) => { e.preventDefault(); setDeleteTarget(msg) },
               } : {}
 
+              const curDay = localDayKey(msg.createdAt)
+              const prevDay = idx > 0 ? localDayKey(displayMessages[idx - 1]?.createdAt) : null
+              const daySep = curDay && curDay !== prevDay ? (
+                <div className="flex justify-center my-3">
+                  <span className="text-[#8A8A8A] text-[12px] font-semibold bg-[#F2F2F5] rounded-full px-3 py-1">
+                    {daySeparatorLabel(msg.createdAt, t, i18n.language)}
+                  </span>
+                </div>
+              ) : null
+              const withDay = (node) => <Fragment key={msg.id}>{daySep}{node}</Fragment>
+
               if (msg.type === 'system') {
                 const ok = typeof msg.text === 'string' && msg.text.trimStart().startsWith('✅')
                 const text = ok ? msg.text.replace(/^\s*✅\s*/, '') : msg.text
-                return (
-                  <div key={msg.id} data-msg data-msg-id={msg.id} className="flex justify-center my-3" {...lpHandlers}>
+                return withDay(
+                  <div data-msg data-msg-id={msg.id} className="flex justify-center my-3" {...lpHandlers}>
                     <span className="max-w-[300px] inline-flex items-center gap-1.5 text-center text-[#8A8A8A] text-[13px]/[140%] font-medium bg-[#F2F2F5] rounded-2xl px-4 py-2.5">
                       {ok && (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0"><circle cx="12" cy="12" r="10" fill="#1E9E4E" /><path d="m7.5 12.5 3 3 6-6.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -975,8 +1007,8 @@ export default function RequestChatPage() {
               }
 
               if (TYPED.has(msg.type)) {
-                return (
-                  <div key={msg.id} {...lpHandlers}>
+                return withDay(
+                  <div {...lpHandlers}>
                     <TypedMessageCard
                       msg={msg}
                       isManager={isStaff}
@@ -1062,8 +1094,8 @@ export default function RequestChatPage() {
                 </div>
               )
 
-              return (
-                <div key={msg.id}>
+              return withDay(
+                <div>
                   <div data-msg data-msg-id={msg.id} className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`} {...lpHandlers}>
                     {bubble}
                   </div>
