@@ -76,9 +76,21 @@ async function copyToClipboard(text) {
   }
 }
 
+const IconSend = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M21 3L3 10.5l6 2.2M21 3l-2.6 15-5.4-4.8M21 3L9 12.7v5l3-2.3" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+  </svg>
+)
+
+const IconShare = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M12 15V3m0 0L8 7m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
 const IconCopy = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path d="M11.6362 2.18164H9.16346C6.71959 2.18164 5.49766 2.18164 4.56423 2.65725C3.74316 3.0756 3.0756 3.74316 2.65725 4.56423C2.18164 5.49766 2.18164 6.71959 2.18164 9.16346V11.6362M8.21522 15.2725H11.7816C13.0036 15.2725 13.6145 15.2725 14.0813 15.0347C14.4918 14.8256 14.8256 14.4918 15.0347 14.0813C15.2725 13.6145 15.2725 13.0036 15.2725 11.7816V8.21522C15.2725 6.99329 15.2725 6.38232 15.0347 5.9156C14.8256 5.50507 14.4918 5.17129 14.0813 4.96211C13.6145 4.72431 13.0036 4.72431 11.7816 4.72431H8.21522C6.99329 4.72431 6.38232 4.72431 5.9156 4.96211C5.50507 5.17129 5.17129 5.50507 4.96211 5.9156C4.72431 6.38232 4.72431 6.99328 4.72431 8.21522V11.7816C4.72431 13.0036 4.72431 13.6145 4.96211 14.0813C5.17129 14.4918 5.50507 14.8256 5.9156 15.0347C6.38232 15.2725 6.99328 15.2725 8.21522 15.2725Z" stroke="#777779" strokeWidth="1.45455" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M11.6362 2.18164H9.16346C6.71959 2.18164 5.49766 2.18164 4.56423 2.65725C3.74316 3.0756 3.0756 3.74316 2.65725 4.56423C2.18164 5.49766 2.18164 6.71959 2.18164 9.16346V11.6362M8.21522 15.2725H11.7816C13.0036 15.2725 13.6145 15.2725 14.0813 15.0347C14.4918 14.8256 14.8256 14.4918 15.0347 14.0813C15.2725 13.6145 15.2725 13.0036 15.2725 11.7816V8.21522C15.2725 6.99329 15.2725 6.38232 15.0347 5.9156C14.8256 5.50507 14.4918 5.17129 14.0813 4.96211C13.6145 4.72431 13.0036 4.72431 11.7816 4.72431H8.21522C6.99329 4.72431 6.38232 4.72431 5.9156 4.96211C5.50507 5.17129 5.17129 5.50507 4.96211 5.9156C4.72431 6.38232 4.72431 6.99328 4.72431 8.21522V11.7816C4.72431 13.0036 4.72431 13.6145 4.96211 14.0813C5.17129 14.4918 5.50507 14.8256 5.9156 15.0347C6.38232 15.2725 6.99328 15.2725 8.21522 15.2725Z" stroke="currentColor" strokeWidth="1.45455" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
@@ -255,48 +267,37 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
 
   return (
     <ModalMiddle isOpen={isOpen} onClose={onClose}>
-      <div className="px-4 pb-4 sm:px-5 sm:pb-5 flex flex-col gap-3.5">
-        <div ref={headerRef} className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-black text-xl/[100%] font-[500]">{t('share.title')}</h2>
-            <p className="text-[#7F7F7F] text-sm mt-1 leading-snug">
-              {t('share.subtitle')}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="px-3 py-2 bg-[#EFEEF3] rounded-full text-xs font-medium text-black active:bg-[#E0DEDF] transition-colors"
-          >
-            {t('common.close')}
-          </button>
-        </div>
+      <div className="px-4 pb-5 sm:px-5 flex flex-col gap-4">
+        <h2 ref={headerRef} className="text-black text-[20px]/[120%] font-[600] text-center pt-1">
+          {t('share.title')}
+        </h2>
 
-        <div ref={footerRef} className="grid grid-cols-1 gap-2 pt-1">
+        <div ref={footerRef} className="flex flex-col gap-2.5">
           <button
             ref={primaryBtnRef}
             onClick={shareToTelegram}
-            className="py-3 rounded-2xl bg-[#E2319B] text-white text-sm font-[500] active:opacity-90 transition-opacity"
+            className="py-3.5 rounded-2xl bg-[#E2319B] text-white text-sm font-[500] flex items-center justify-center gap-2.5 active:opacity-90 transition-opacity"
           >
-            {t('share.sendTelegram')}
+            <IconSend />
+            <span>{t('share.sendTelegram')}</span>
           </button>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={shareNative}
-              className="py-3 rounded-2xl bg-[#F5F5F7] text-black text-sm font-[500] active:bg-[#ECEAEC] transition-colors"
-            >
-              {t('share.share')}
-            </button>
-            <button
-              onClick={copyText}
-              className="py-2.5 rounded-2xl bg-[#F5F5F7] text-black text-sm font-[500] active:bg-[#ECEAEC] transition-colors flex items-center justify-center gap-2"
-            >
-              <span>{t('share.copy')}</span>
-              <div className="relative w-[18px] h-[18px]">
-                <div ref={setCopyIconRef} className="absolute inset-0 flex items-center justify-center"><IconCopy /></div>
-                <div ref={setCheckIconRef} className="absolute inset-0 flex items-center justify-center"><IconCheck /></div>
-              </div>
-            </button>
-          </div>
+          <button
+            onClick={shareNative}
+            className="py-3.5 rounded-2xl bg-[#F5F5F7] text-black text-sm font-[500] flex items-center justify-center gap-2.5 active:bg-[#ECEAEC] transition-colors"
+          >
+            <IconShare />
+            <span>{t('share.share')}</span>
+          </button>
+          <button
+            onClick={copyText}
+            className="py-3.5 rounded-2xl bg-[#F5F5F7] text-black text-sm font-[500] flex items-center justify-center gap-2.5 active:bg-[#ECEAEC] transition-colors"
+          >
+            <div className="relative w-[18px] h-[18px]">
+              <div ref={setCopyIconRef} className="absolute inset-0 flex items-center justify-center"><IconCopy /></div>
+              <div ref={setCheckIconRef} className="absolute inset-0 flex items-center justify-center"><IconCheck /></div>
+            </div>
+            <span>{t('share.copy')}</span>
+          </button>
           {status ? (
             <p className="text-xs text-[#7F7F7F] text-center pt-0.5">{status}</p>
           ) : null}
