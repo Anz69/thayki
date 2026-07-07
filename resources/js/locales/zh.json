@@ -186,19 +186,23 @@
     }
   },
   "share": {
-    "title": "分享精选",
-    "subtitle": "选择模特并发送带链接的消息，可在机器人中打开她们的资料。",
-    "selectAll": "全选",
-    "reset": "重置",
+    "title": "分享",
+    "subtitle": "发送带链接的消息 — 可打开模特机器人。",
     "sendTelegram": "在 Telegram 发送",
     "share": "分享",
     "copy": "复制",
-    "selected": "已选择 <b>{{n}}</b> / <b>{{total}}</b>",
-    "msgHeader": "☝️ 点击并选择",
-    "msgCollection": "🔥 {{brand}} 的模特精选",
     "msgView": "查看",
+    "msgModelHeader": "🔥 {{brand}} 的模特",
     "msgBotTitle": "🤖 {{brand}} — 模特机器人",
-    "msgBotSub": "✨ 打开并在机器人中挑选模特"
+    "msgBotSub": "✨ 打开并在机器人中挑选模特",
+    "statusModelSent": "已发送带模特的消息",
+    "statusInviteSent": "已发送邀请链接",
+    "statusSent": "消息已发送",
+    "statusCancelled": "已取消分享",
+    "nativeUnavailable": "系统「分享」不可用，请改用复制",
+    "copyError": "无法复制文本",
+    "inviteError": "无法获取邀请，请重试。",
+    "inviteCreateError": "无法创建邀请链接"
   },
   "leadMsg": {
     "title": "📩 模特预约",

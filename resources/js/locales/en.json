@@ -186,19 +186,23 @@
     }
   },
   "share": {
-    "title": "Share a selection",
-    "subtitle": "Select models and send a message with links that open their profiles in the bot.",
-    "selectAll": "Select all",
-    "reset": "Reset",
+    "title": "Share",
+    "subtitle": "Send a message with a link — it opens the bot with models.",
     "sendTelegram": "Send in Telegram",
     "share": "Share",
     "copy": "Copy",
-    "selected": "Selected <b>{{n}}</b> of <b>{{total}}</b>",
-    "msgHeader": "☝️ Tap and choose",
-    "msgCollection": "🔥 Model selection in {{brand}}",
     "msgView": "view",
+    "msgModelHeader": "🔥 Model in {{brand}}",
     "msgBotTitle": "🤖 {{brand}} — a bot with models",
-    "msgBotSub": "✨ Open and pick a model in the bot"
+    "msgBotSub": "✨ Open and pick a model in the bot",
+    "statusModelSent": "Message with the model sent",
+    "statusInviteSent": "Invite link sent",
+    "statusSent": "Message sent",
+    "statusCancelled": "Sharing cancelled",
+    "nativeUnavailable": "System share is unavailable, use copy instead",
+    "copyError": "Could not copy the text",
+    "inviteError": "Could not get an invite. Please try again.",
+    "inviteCreateError": "Could not create an invite link"
   },
   "leadMsg": {
     "title": "📩 Model request",
