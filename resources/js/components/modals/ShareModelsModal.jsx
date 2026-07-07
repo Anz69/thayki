@@ -14,13 +14,10 @@ function botStartLink(botUsername, startToken = '') {
   return `https://t.me/${botUsername}?start=${encodeURIComponent(startToken)}`
 }
 
-const BRAND = 'Rus-Model'
+const BRAND = 'Rus-Model Agency'
 
 function buildShareText(t) {
-  return [
-    t('share.msgBotTitle', { brand: BRAND }),
-    t('share.msgBotSub'),
-  ].join('\n')
+  return t('share.msgBotTitle', { brand: BRAND })
 }
 
 async function copyToClipboard(text) {
