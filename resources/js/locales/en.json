@@ -193,7 +193,7 @@
     "copy": "Copy",
     "msgView": "view",
     "msgModelHeader": "🔥 Model in {{brand}}",
-    "msgBotTitle": "🤖 {{brand}} — a bot with models",
+    "msgBotTitle": "💎 {{brand}} — a bot with models",
     "msgBotSub": "✨ Open and pick a model in the bot",
     "statusModelSent": "Message with the model sent",
     "statusInviteSent": "Invite link sent",
