@@ -187,7 +187,7 @@
   },
   "share": {
     "title": "Share",
-    "subtitle": "Send a message with a link — it opens the bot with models.",
+    "subtitle": "Send an invitation to the agency to someone you know.",
     "sendTelegram": "Send in Telegram",
     "share": "Share",
     "copy": "Copy",

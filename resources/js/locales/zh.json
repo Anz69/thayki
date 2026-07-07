@@ -187,7 +187,7 @@
   },
   "share": {
     "title": "分享",
-    "subtitle": "发送带链接的消息 — 可打开模特机器人。",
+    "subtitle": "把机构邀请发送给你认识的人。",
     "sendTelegram": "在 Telegram 发送",
     "share": "分享",
     "copy": "复制",

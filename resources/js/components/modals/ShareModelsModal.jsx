@@ -91,7 +91,6 @@ const IconCheck = () => (
 export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   const { t } = useTranslation()
   const headerRef = useRef(null)
-  const previewRef = useRef(null)
   const footerRef = useRef(null)
   const primaryBtnRef = useRef(null)
   const copyIconRef = useRef(null)
@@ -137,7 +136,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     if (copyIconRef.current) gsap.set(copyIconRef.current, { autoAlpha: 1, scale: 1 })
     if (checkIconRef.current) gsap.set(checkIconRef.current, { autoAlpha: 0, scale: 0.5 })
 
-    const blocks = [headerRef.current, previewRef.current, footerRef.current].filter(Boolean)
+    const blocks = [headerRef.current, footerRef.current].filter(Boolean)
     if (blocks.length) {
       gsap.set(blocks, { autoAlpha: 0, y: 10 })
       gsap.to(blocks, {
@@ -270,15 +269,6 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
           >
             {t('common.close')}
           </button>
-        </div>
-
-        <div
-          ref={previewRef}
-          className="bg-[#F6F5F9] rounded-2xl px-3.5 py-3 max-h-[30dvh] overflow-y-auto"
-        >
-          <p className="text-[13px] leading-relaxed text-[#3A3A3C] whitespace-pre-wrap break-words">
-            {shareText}
-          </p>
         </div>
 
         <div ref={footerRef} className="grid grid-cols-1 gap-2 pt-1">
