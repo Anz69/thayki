@@ -3,29 +3,6 @@ import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
 import ModalMiddle from '@/layout/ModalMiddle'
 import api from '@/utils/api'
-import { modelName } from '@/utils/modelName'
-
-function encodeStartPath(path) {
-  try {
-    const bytes = new TextEncoder().encode(path)
-    let binary = ''
-    for (const byte of bytes) binary += String.fromCharCode(byte)
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
-  } catch {
-    return ''
-  }
-}
-
-const MINIAPP_NAME = (import.meta.env.VITE_TELEGRAM_MINIAPP_NAME ?? 'app').trim().replace(/^\/+|\/+$/g, '')
-
-function modelShareLink(modelId, botUsername, inviteToken = '') {
-  const path = inviteToken
-    ? `/model/${modelId}?invite_token=${encodeURIComponent(inviteToken)}`
-    : `/model/${modelId}`
-  if (!botUsername) return `${window.location.origin}${path}`
-  const startApp = encodeStartPath(path)
-  return `https://t.me/${botUsername}/${MINIAPP_NAME}?startapp=${startApp}`
-}
 
 function botLink(botUsername) {
   return botUsername ? `https://t.me/${botUsername}` : window.location.origin
@@ -39,21 +16,10 @@ function botStartLink(botUsername, startToken = '') {
 
 const BRAND = 'Rus-Model'
 
-function buildShareText(model, botUsername, inviteToken, t) {
-  if (!model) {
-    return [
-      t('share.msgBotTitle', { brand: BRAND }),
-      t('share.msgBotSub'),
-    ].join('\n')
-  }
-
-  const view = t('share.msgView')
-  const startLink = modelShareLink(model.id, botUsername, inviteToken)
+function buildShareText(t) {
   return [
-    t('share.msgModelHeader', { brand: BRAND }),
-    '',
-    `👤 ${model.name}${model.age ? `, ${model.age}` : ''}`,
-    `🔗 ${view} → ${startLink}`,
+    t('share.msgBotTitle', { brand: BRAND }),
+    t('share.msgBotSub'),
   ].join('\n')
 }
 
@@ -100,7 +66,7 @@ const IconCheck = () => (
   </svg>
 )
 
-export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
+export default function ShareModelsModal({ isOpen, onClose }) {
   const { t } = useTranslation()
   const headerRef = useRef(null)
   const footerRef = useRef(null)
@@ -123,22 +89,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     if (el) gsap.set(el, { autoAlpha: 0, scale: 0.5 })
   }, [])
 
-  const shareModel = useMemo(() => {
-    if (models.length !== 1) return null
-    const model = models[0]
-    return {
-      id: model.id,
-      name: modelName(model) || 'Model',
-      age: model.age ?? null,
-    }
-  }, [models])
-
-  const isBotFallback = shareModel === null
-
-  const shareText = useMemo(
-    () => buildShareText(shareModel, botUsername, inviteToken, t),
-    [shareModel, botUsername, inviteToken, t],
-  )
+  const shareText = useMemo(() => buildShareText(t), [t])
 
   useEffect(() => {
     if (!isOpen) return
@@ -175,10 +126,9 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
   const sharePayload = useMemo(() => ({ url: botLink(botUsername), text: shareText }), [botUsername, shareText])
 
   const buildPayloadWithToken = useCallback((token = inviteToken) => {
-    const text = buildShareText(shareModel, botUsername, token, t)
     const url = botStartLink(botUsername, token)
-    return { url, text }
-  }, [inviteToken, shareModel, botUsername, t])
+    return { url, text: shareText }
+  }, [inviteToken, botUsername, shareText])
 
   const ensureInviteToken = useCallback(async () => {
     if (inviteToken) return inviteToken
@@ -226,7 +176,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
     } else {
       window.open(tgUrl, '_blank', 'noopener,noreferrer')
     }
-    setStatus(isBotFallback ? t('share.statusInviteSent') : t('share.statusModelSent'))
+    setStatus(t('share.statusInviteSent'))
   }
 
   const shareNative = async () => {
@@ -240,7 +190,7 @@ export default function ShareModelsModal({ isOpen, onClose, models = [] }) {
         title: BRAND,
         text: payload.url ? `${payload.url}\n${payload.text}` : payload.text,
       })
-      setStatus(isBotFallback ? t('share.statusInviteSent') : t('share.statusSent'))
+      setStatus(t('share.statusInviteSent'))
     } catch {
       setStatus(t('share.statusCancelled'))
     }
