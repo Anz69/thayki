@@ -13,7 +13,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class InviteLatestOrdersWidget extends BaseWidget
 {
-    protected static ?string $heading = 'Последние заказы от пришедших по ссылкам';
+    protected static ?string $heading = 'Заказы от пришедших по ссылкам';
 
     protected static ?int $sort = 4;
 
@@ -26,8 +26,7 @@ class InviteLatestOrdersWidget extends BaseWidget
                 Lead::query()
                     ->whereIn('user_id', StartInviteUse::query()->select('user_id'))
                     ->with(['user.inviteUses.invite'])
-                    ->latest()
-                    ->limit(15),
+                    ->latest(),
             )
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->width('56px'),
@@ -54,7 +53,8 @@ class InviteLatestOrdersWidget extends BaseWidget
                     }),
                 Tables\Columns\TextColumn::make('created_at')->label('Создан')->since()->sortable(),
             ])
-            ->paginated(false)
+            ->paginated([25, 50, 100])
+            ->defaultPaginationPageOption(25)
             ->striped();
     }
 }
