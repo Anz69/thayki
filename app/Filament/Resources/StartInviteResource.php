@@ -70,8 +70,14 @@ class StartInviteResource extends Resource
                     ->copyable()
                     ->copyMessage('Ссылка скопирована')
                     ->limit(60),
-                Tables\Columns\TextColumn::make('uses_label')->label('Использовано')
+                Tables\Columns\TextColumn::make('uses_label')->label('Пришло')
                     ->state(fn (StartInvite $record): string => "{$record->times_used}/{$record->max_uses}"),
+                Tables\Columns\TextColumn::make('leads_count')->counts('leads')->label('Заказов')
+                    ->badge()->color('info')->sortable(),
+                Tables\Columns\TextColumn::make('conversion')->label('Конверсия')
+                    ->state(fn (StartInvite $record): string => $record->conversionPercent().'%')
+                    ->badge()
+                    ->color(fn (StartInvite $record): string => $record->conversionPercent() >= 50 ? 'success' : ($record->conversionPercent() > 0 ? 'warning' : 'gray')),
                 Tables\Columns\TextColumn::make('expires_at')->label('До')
                     ->dateTime('d.m.Y H:i')
                     ->placeholder('бессрочно'),
@@ -86,6 +92,7 @@ class StartInviteResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()->label('Статистика')->icon('heroicon-o-chart-bar'),
                 Tables\Actions\Action::make('copy_link')
                     ->label('Скопировать')
                     ->icon('heroicon-o-clipboard-document')
@@ -105,7 +112,10 @@ class StartInviteResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            StartInviteResource\RelationManagers\LeadsRelationManager::class,
+            StartInviteResource\RelationManagers\UsersRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -113,6 +123,7 @@ class StartInviteResource extends Resource
         return [
             'index' => Pages\ListStartInvites::route('/'),
             'create' => Pages\CreateStartInvite::route('/create'),
+            'view' => Pages\ViewStartInvite::route('/{record}'),
             'edit' => Pages\EditStartInvite::route('/{record}/edit'),
         ];
     }

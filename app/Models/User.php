@@ -67,6 +67,16 @@ class User extends Authenticatable
         return $this->hasOne(ModelProfile::class);
     }
 
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
+
+    public function inviteUses(): HasMany
+    {
+        return $this->hasMany(StartInviteUse::class);
+    }
+
 
     public function isAdmin(): bool
     {

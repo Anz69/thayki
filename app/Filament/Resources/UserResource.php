@@ -93,6 +93,18 @@ class UserResource extends Resource
                     ->getStateUsing(fn (User $record): string => trim(implode(', ', array_filter([$record->country, $record->city]))) ?: '—')
                     ->description(fn (User $record): ?string => $record->last_ip)
                     ->toggleable(),
+                Tables\Columns\TextColumn::make('source_invite')->label('Пришёл по ссылке')
+                    ->state(function (User $record): string {
+                        $invite = $record->inviteUses->first()?->invite;
+                        if ($invite === null) {
+                            return '—';
+                        }
+
+                        return $invite->label ?: ('#'.$invite->id.' · '.$invite->token);
+                    })
+                    ->badge()
+                    ->color(fn (User $record): string => $record->inviteUses->first() ? 'success' : 'gray')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('last_seen_at')->label('Был онлайн')
                     ->dateTime('d.m.Y H:i')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Зарегистрирован')
@@ -207,6 +219,12 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [];
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        // Eager-load the invite source so the "Пришёл по ссылке" column doesn't N+1.
+        return parent::getEloquentQuery()->with('inviteUses.invite');
     }
 
     public static function getPages(): array
