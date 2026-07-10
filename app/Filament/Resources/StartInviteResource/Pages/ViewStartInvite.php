@@ -6,6 +6,7 @@ namespace App\Filament\Resources\StartInviteResource\Pages;
 
 use App\Filament\Resources\StartInviteResource;
 use App\Models\StartInvite;
+use Filament\Actions;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -16,6 +17,13 @@ class ViewStartInvite extends ViewRecord
     protected static string $resource = StartInviteResource::class;
 
     protected static ?string $title = 'Статистика по ссылке';
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\EditAction::make()->label('Изменить'),
+        ];
+    }
 
     public function infolist(Infolist $infolist): Infolist
     {
