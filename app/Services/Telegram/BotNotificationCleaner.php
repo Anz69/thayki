@@ -38,8 +38,11 @@ class BotNotificationCleaner
         return $rows->count();
     }
 
-    // Automatic cleanup: remove notifications older than the given age (default 48h).
-    public function clearOlderThan(int $hours = 48): int
+    // Automatic cleanup: remove notifications older than the given age. Default 46h —
+    // NOT 48h: Telegram refuses to let a bot delete its own messages once they are
+    // older than 48h, so we must delete them a bit before that wall (the scheduler
+    // runs every 30 min, catching each notification inside the deletable window).
+    public function clearOlderThan(int $hours = 46): int
     {
         $threshold = Carbon::now()->subHours($hours);
 

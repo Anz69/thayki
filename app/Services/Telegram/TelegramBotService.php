@@ -114,17 +114,38 @@ class TelegramBotService
         }
     }
 
-    public function deleteMessage(int|string $chatId, int $messageId): void
+    public function deleteMessage(int|string $chatId, int $messageId): bool
     {
         if ($this->botToken === '' || $messageId <= 0) {
-            return;
+            return false;
         }
         try {
-            Http::timeout(5)->post($this->endpoint('deleteMessage'), [
+            $response = Http::timeout(5)->post($this->endpoint('deleteMessage'), [
                 'chat_id' => $chatId,
                 'message_id' => $messageId,
             ]);
-        } catch (\Throwable) {
+
+            if (! $response->successful() || ! (bool) $response->json('ok')) {
+                // Most common cause: the message is older than Telegram's 48h delete
+                // window, or was already removed. Logged so cleanup issues are visible.
+                Log::info('[TelegramBotService] deleteMessage failed', [
+                    'chat_id' => $chatId,
+                    'message_id' => $messageId,
+                    'body' => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::info('[TelegramBotService] deleteMessage threw', [
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
         }
     }
 

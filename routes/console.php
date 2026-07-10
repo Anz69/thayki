@@ -19,7 +19,7 @@ Schedule::command('model-cards:cleanup')
     ->runInBackground();
 
 Schedule::command('bot:cleanup-notifications')
-    ->hourly()
+    ->everyThirtyMinutes()
     ->withoutOverlapping()
     ->runInBackground();
 
