@@ -30,12 +30,9 @@ class StartInviteResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('kind')->label('Тип')->required()
-                ->options([
-                    StartInvite::KIND_VERIFY => 'Verify (обычный пользователь)',
-                    StartInvite::KIND_MODEL => 'Model (заявка на модель)',
-                ])
-                ->default(StartInvite::KIND_VERIFY),
+            // Only client (Verify) invites can be created. Model invites are no longer
+            // offered here; kind is fixed to Verify.
+            Forms\Components\Hidden::make('kind')->default(StartInvite::KIND_VERIFY),
             Forms\Components\TextInput::make('label')->label('Название (для админа)')
                 ->maxLength(255)
                 ->placeholder('напр. "Промо ноябрь"'),
@@ -84,13 +81,7 @@ class StartInviteResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')->label('Создана')
                     ->dateTime('d.m.Y H:i')->sortable(),
             ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('kind')->label('Тип')
-                    ->options([
-                        StartInvite::KIND_VERIFY => 'Verify',
-                        StartInvite::KIND_MODEL => 'Model',
-                    ]),
-            ])
+            ->filters([])
             ->actions([
                 Tables\Actions\ViewAction::make()->label('Статистика')->icon('heroicon-o-chart-bar'),
                 Tables\Actions\Action::make('copy_link')
