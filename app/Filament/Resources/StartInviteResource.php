@@ -84,6 +84,7 @@ class StartInviteResource extends Resource
             ->filters([])
             ->actions([
                 Tables\Actions\ViewAction::make()->label('Статистика')->icon('heroicon-o-chart-bar'),
+                Tables\Actions\EditAction::make()->label('Изменить'),
                 Tables\Actions\Action::make('copy_link')
                     ->label('Скопировать')
                     ->icon('heroicon-o-clipboard-document')
