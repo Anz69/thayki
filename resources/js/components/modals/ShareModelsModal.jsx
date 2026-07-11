@@ -63,6 +63,10 @@ const IconCheck = () => (
   </svg>
 )
 
+// Reuse one share invite per app session instead of minting a new StartInvite on
+// every open/copy — and so the token is ready synchronously for the clipboard write.
+let sharedInviteToken = null
+
 export default function ShareModelsModal({ isOpen, onClose }) {
   const { t } = useTranslation()
   const headerRef = useRef(null)
@@ -72,7 +76,7 @@ export default function ShareModelsModal({ isOpen, onClose }) {
   const checkIconRef = useRef(null)
   const copyTimerRef = useRef(null)
   const [status, setStatus] = useState('')
-  const [inviteToken, setInviteToken] = useState('')
+  const [inviteToken, setInviteToken] = useState(sharedInviteToken || '')
   const [inviteLoading, setInviteLoading] = useState(false)
   const botUsername = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME ?? '').trim().replace(/^@/, '')
 
@@ -91,7 +95,6 @@ export default function ShareModelsModal({ isOpen, onClose }) {
   useEffect(() => {
     if (!isOpen) return
     setStatus('')
-    setInviteToken('')
     clearTimeout(copyTimerRef.current)
     if (copyIconRef.current) gsap.set(copyIconRef.current, { autoAlpha: 1, scale: 1 })
     if (checkIconRef.current) gsap.set(checkIconRef.current, { autoAlpha: 0, scale: 0.5 })
@@ -128,6 +131,10 @@ export default function ShareModelsModal({ isOpen, onClose }) {
   }, [inviteToken, botUsername, shareText])
 
   const ensureInviteToken = useCallback(async () => {
+    if (sharedInviteToken) {
+      if (!inviteToken) setInviteToken(sharedInviteToken)
+      return sharedInviteToken
+    }
     if (inviteToken) return inviteToken
     if (inviteLoading) return ''
     setInviteLoading(true)
@@ -147,6 +154,7 @@ export default function ShareModelsModal({ isOpen, onClose }) {
         setStatus(t('share.inviteError'))
         return ''
       }
+      sharedInviteToken = tokenFromUrl
       setInviteToken(tokenFromUrl)
       return tokenFromUrl
     } catch {
@@ -156,6 +164,14 @@ export default function ShareModelsModal({ isOpen, onClose }) {
       setInviteLoading(false)
     }
   }, [inviteLoading, inviteToken, t])
+
+  // Prefetch the invite token as soon as the modal opens, so the token is already in
+  // hand when the user taps "Copy" — the clipboard write then stays inside the user
+  // gesture (a network await between gesture and writeText breaks copy on the first
+  // try in the Telegram WebView).
+  useEffect(() => {
+    if (isOpen) ensureInviteToken()
+  }, [isOpen, ensureInviteToken])
 
   const resolvePayload = useCallback(async () => {
     const token = await ensureInviteToken()
@@ -194,22 +210,32 @@ export default function ShareModelsModal({ isOpen, onClose }) {
   }
 
   const copyText = async () => {
-    try {
-      const payload = await resolvePayload()
-      const fullText = payload.url ? `${payload.url}\n${payload.text}` : payload.text
-      const ok = await copyToClipboard(fullText)
-      if (!ok) throw new Error('copy failed')
-      setStatus('')
-      clearTimeout(copyTimerRef.current)
-      gsap.to(copyIconRef.current, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
-      gsap.to(checkIconRef.current, { autoAlpha: 1, scale: 1, duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
-      copyTimerRef.current = setTimeout(() => {
-        gsap.to(checkIconRef.current, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
-        gsap.to(copyIconRef.current, { autoAlpha: 1, scale: 1, duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
-      }, 1800)
-    } catch {
+    // Build the text synchronously from the token we already have (prefetched on open),
+    // then write to the clipboard WITHOUT any prior await — otherwise the WebView drops
+    // the user-gesture and the first copy fails. Falls back to the plain bot link only
+    // if the token somehow isn't ready yet.
+    const token = inviteToken || sharedInviteToken
+    const payload = token ? buildPayloadWithToken(token) : sharePayload
+    const fullText = payload.url ? `${payload.url}\n${payload.text}` : payload.text
+
+    const ok = await copyToClipboard(fullText)
+    if (!ok) {
       setStatus(t('share.copyError'))
+      return
     }
+
+    setStatus('')
+    clearTimeout(copyTimerRef.current)
+    gsap.to(copyIconRef.current, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
+    gsap.to(checkIconRef.current, { autoAlpha: 1, scale: 1, duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
+    copyTimerRef.current = setTimeout(() => {
+      gsap.to(checkIconRef.current, { autoAlpha: 0, scale: 0.4, duration: 0.18, ease: 'power2.in' })
+      gsap.to(copyIconRef.current, { autoAlpha: 1, scale: 1, duration: 0.28, ease: 'back.out(2)', delay: 0.1 })
+    }, 1800)
+
+    // If the prefetch hadn't finished, warm the token so the copied link carries the
+    // invite next time.
+    if (!token) ensureInviteToken()
   }
 
   return (
