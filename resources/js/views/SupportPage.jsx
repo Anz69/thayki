@@ -451,6 +451,12 @@ export default function SupportPage() {
 
   return (
     <section className="flex flex-col bg-white overflow-hidden" style={{ height: '100dvh' }}>
+      <style>{`
+        .typing-bubble { animation: typingIn 0.26s cubic-bezier(0.34,1.4,0.64,1); transform-origin: left bottom; }
+        @keyframes typingIn { 0% { opacity: 0; transform: translateY(8px) scale(0.86) } 100% { opacity: 1; transform: none } }
+        .typing-dot { width: 7px; height: 7px; border-radius: 9999px; background: #9B9AA0; display: inline-block; animation: typingDot 1.25s infinite ease-in-out; }
+        @keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.35 } 30% { transform: translateY(-5px); opacity: 1 } }
+      `}</style>
       {viewerSrc && <PhotoViewer src={viewerSrc} onClose={() => setViewerSrc(null)} />}
 
       <header ref={headerRef} className="w-full py-4 bg-white shrink-0">
