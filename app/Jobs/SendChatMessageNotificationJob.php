@@ -24,7 +24,11 @@ class SendChatMessageNotificationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private const READ_DEBOUNCE_SECONDS = 1;
+    // Wait before notifying so an in-chat recipient's "read" (realtime message +
+    // POST /read round-trip) has time to register — otherwise they get a push while
+    // actively reading. Both the message read_at and the participant last_read_at are
+    // re-checked after this window.
+    private const READ_DEBOUNCE_SECONDS = 4;
 
     public function __construct(public readonly int $messageId) {}
 
