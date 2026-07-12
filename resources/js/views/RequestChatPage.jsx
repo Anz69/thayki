@@ -246,7 +246,7 @@ export default function RequestChatPage() {
   const isGroup = chatKind === 'requisites'
 
   const role     = auth.user?.role
-  const isStaff  = role === 'manager'
+  const isStaff  = STAFF_ROLES.includes(role)
   const myName   = (() => {
     const u = auth.user
     if (!u) return ''
