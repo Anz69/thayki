@@ -40,7 +40,12 @@ class WebhookController extends Controller
                 $cbFrom = is_array($callback['from'] ?? null) ? $callback['from'] : [];
                 if (str_starts_with($data, 'lang:') && $cbChat > 0 && $cbFrom !== []) {
                     $lang = substr($data, 5);
-                    $start->bot()->answerCallback($cbId, $lang === 'en' ? 'English ✓' : 'Русский ✓');
+                    $langLabel = match ($lang) {
+                        'en' => 'English ✓',
+                        'zh' => '中文 ✓',
+                        default => 'Русский ✓',
+                    };
+                    $start->bot()->answerCallback($cbId, $langLabel);
 
                     $cbMsgId = (int) ($callback['message']['message_id'] ?? 0);
                     if ($cbMsgId > 0) {
