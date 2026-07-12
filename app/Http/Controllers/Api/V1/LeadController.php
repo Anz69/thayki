@@ -296,9 +296,11 @@ class LeadController extends Controller
 
         $this->notifyManagersLeadCancelled($leadId, $city, $client);
 
-        $chat = $lead->chat;
-        $lead->delete();
-        $chat?->delete();
+        // Close the request (keep it + its chat/history), don't delete it.
+        $lead->update(['status' => \App\Enums\LeadStatus::Closed->value]);
+        if ($lead->chat_id !== null) {
+            try { event(new \App\Events\LeadStatusChanged($lead->chat_id, \App\Enums\LeadStatus::Closed->value)); } catch (\Throwable) {}
+        }
 
         // Clear the client's bot notifications when they cancel — in the background so
         // the cancel response stays fast (each notification is deleted via Telegram).
