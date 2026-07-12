@@ -6,6 +6,7 @@ namespace App\Services\Telegram;
 
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Models\AppSetting;
 use App\Models\StartInvite;
 use App\Models\StartInviteUse;
 use App\Models\User;
@@ -42,6 +43,10 @@ class StartHandler
         }
 
         $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
+
+        if ($user->wasRecentlyCreated) {
+            try { $this->notifyNewUser($user, $startParam); } catch (\Throwable) {}
+        }
 
         // Ask for a language first — for EVERY new client, including those arriving with
         // an invite token. The start param (invite token, if any) is stashed and applied
@@ -119,6 +124,36 @@ class StartHandler
         }
 
         $this->sendVerifiedWelcome($chatId, $user->first_name ?? '', $locale);
+    }
+
+    // Notify a configured Telegram ID when a brand-new user does /start (name, username,
+    // and which invite link they came from). Toggled in the admin panel.
+    private function notifyNewUser(User $user, ?string $startParam): void
+    {
+        if (! AppSetting::bool('new_user_notify_enabled')) {
+            return;
+        }
+        $tgId = trim((string) AppSetting::get('new_user_notify_tg_id', ''));
+        if ($tgId === '' || ! ctype_digit(ltrim($tgId, '-'))) {
+            return;
+        }
+
+        $inviteLabel = null;
+        if (is_string($startParam) && $startParam !== '' && ! str_starts_with($startParam, 'adminlink-')) {
+            $invite = StartInvite::query()->where('token', $startParam)->first();
+            if ($invite !== null) {
+                $inviteLabel = $invite->label !== null && $invite->label !== '' ? $invite->label : ('#'.$invite->id);
+            }
+        }
+
+        $name = trim(($user->first_name ?? '').' '.($user->last_name ?? ''));
+        $text = "🆕 <b>Новый пользователь</b>\n\n"
+            .'Имя: '.($name !== '' ? e($name) : '—')."\n"
+            .'Юзернейм: '.($user->username ? '@'.e($user->username) : '—')."\n"
+            .'ID: '.$user->telegram_id."\n"
+            .'Ссылка: '.($inviteLabel !== null ? e($inviteLabel) : 'прямой /start');
+
+        $this->bot->sendMessage((int) $tgId, $text);
     }
 
     private function stashPendingStart(int $userId, ?string $startParam): void
