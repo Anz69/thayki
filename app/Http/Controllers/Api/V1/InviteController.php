@@ -36,16 +36,12 @@ class InviteController extends Controller
             'expires_at'         => $expiresAt,
         ]);
 
-        $miniAppUrl = (string) config('telegram.miniapp_url', '');
-        $bot        = (string) config('telegram.bot_username', '');
+        $bot = (string) config('telegram.bot_username', '');
 
-        if ($miniAppUrl !== '' && str_starts_with($miniAppUrl, 'https://t.me/')) {
-            $sep = str_contains($miniAppUrl, '?') ? '&' : '?';
-            $url = rtrim($miniAppUrl, '/').$sep.'startapp='.$token;
-        } elseif ($bot !== '') {
-            // Open the mini app directly (not the bot chat) so onboarding — incl. the
-            // in-app language prompt — happens inside the app.
-            $url = "https://t.me/{$bot}?startapp={$token}";
+        // Open the BOT (not the mini app) so the bot handles onboarding — it asks the
+        // language and applies the invite on /start.
+        if ($bot !== '') {
+            $url = "https://t.me/{$bot}?start={$token}";
         } else {
             throw DomainException::invalid('BOT_NOT_CONFIGURED', 'Бот не настроен. Обратитесь к администратору.');
         }

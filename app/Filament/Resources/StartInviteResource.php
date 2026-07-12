@@ -62,7 +62,7 @@ class StartInviteResource extends Resource
                             return '— укажите TELEGRAM_BOT_USERNAME —';
                         }
 
-                        return "https://t.me/{$bot}?startapp={$record->token}";
+                        return "https://t.me/{$bot}?start={$record->token}";
                     })
                     ->copyable()
                     ->copyMessage('Ссылка скопирована')
@@ -90,7 +90,7 @@ class StartInviteResource extends Resource
                     ->icon('heroicon-o-clipboard-document')
                     ->action(function (StartInvite $record): void {
                         $bot = (string) config('telegram.bot_username', '');
-                        $url = $bot ? "https://t.me/{$bot}?startapp={$record->token}" : '';
+                        $url = $bot ? "https://t.me/{$bot}?start={$record->token}" : '';
                         Notification::make()
                             ->title('Ссылка')
                             ->body($url ?: 'Укажите TELEGRAM_BOT_USERNAME в .env')

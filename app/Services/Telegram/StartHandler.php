@@ -9,6 +9,7 @@ use App\Enums\UserStatus;
 use App\Models\StartInvite;
 use App\Models\StartInviteUse;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -42,14 +43,25 @@ class StartHandler
 
         $user = $this->upsertUser($telegramId, $chatId, $tgFrom);
 
-        if (($startParam === null || $startParam === '') && ! $user->language_chosen) {
+        // Ask for a language first — for EVERY new client, including those arriving with
+        // an invite token. The start param (invite token, if any) is stashed and applied
+        // right after the user picks a language.
+        if (! $user->language_chosen) {
+            $this->stashPendingStart($user->id, $startParam);
             $this->promptLanguage($chatId);
 
             return;
         }
 
         $this->markWelcomed($user);
+        $this->processStart($chatId, $user, $startParam);
+    }
 
+    // Apply the /start payload (invite token or plain start) and send the matching
+    // welcome. Called after the language is known — either immediately (language already
+    // chosen) or from chooseLanguage() once the user has picked one.
+    private function processStart(int $chatId, User $user, ?string $startParam): void
+    {
         $locale = $this->localeFor($user);
 
         if ($startParam === null || $startParam === '') {
@@ -107,6 +119,22 @@ class StartHandler
         }
 
         $this->sendVerifiedWelcome($chatId, $user->first_name ?? '', $locale);
+    }
+
+    private function stashPendingStart(int $userId, ?string $startParam): void
+    {
+        $key = 'tg:pending_start:'.$userId;
+        if ($startParam === null || $startParam === '') {
+            Cache::forget($key);
+
+            return;
+        }
+        Cache::put($key, $startParam, now()->addHour());
+    }
+
+    private function takePendingStart(int $userId): ?string
+    {
+        return Cache::pull('tg:pending_start:'.$userId);
     }
 
     public function sendWelcomeFor(User $user): bool
@@ -193,15 +221,9 @@ class StartHandler
 
         $this->markWelcomed($user);
 
-        if (! $user->is_strange) {
-            if ($user->role === UserRole::Model) {
-                $this->sendModelWelcome($chatId, $user->first_name ?? '', $lang);
-            } else {
-                $this->sendVerifiedWelcome($chatId, $user->first_name ?? '', $lang);
-            }
-        } else {
-            $this->sendStrangeWelcome($chatId, false, $lang);
-        }
+        // Now that the language is chosen, apply whatever /start payload they arrived
+        // with (invite token stashed before the prompt) and send the matching welcome.
+        $this->processStart($chatId, $user, $this->takePendingStart($user->id));
     }
 
     private function upsertUser(int $telegramId, int $chatId, array $tgFrom): User
