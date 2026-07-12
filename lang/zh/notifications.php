@@ -16,4 +16,8 @@ return [
     'new_lead' => '📩 新的甄选申请 — :city',
     'lead_cancelled' => '❌ :name 取消了申请 #:id — :city',
     'open' => '打开',
+    'client_language' => '🗣 客户语言：:lang',
+    'lang_ru' => '俄语',
+    'lang_en' => '英语',
+    'lang_zh' => '中文',
 ];

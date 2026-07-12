@@ -16,4 +16,8 @@ return [
     'new_lead' => '📩 Новая заявка на подбор — :city',
     'lead_cancelled' => '❌ :name отменил(а) заявку #:id — :city',
     'open' => 'Открыть',
+    'client_language' => '🗣 Язык клиента: :lang',
+    'lang_ru' => 'Русский',
+    'lang_en' => 'Английский',
+    'lang_zh' => 'Китайский',
 ];

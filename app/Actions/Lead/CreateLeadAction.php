@@ -101,38 +101,49 @@ class CreateLeadAction
 
         $notifier = \App\Services\Telegram\Notifier::default();
 
-        $firstMessage = $lead->chat?->messages()->orderBy('id')->value('body');
-        if (is_string($firstMessage)) {
-            $lines = preg_split('/\r?\n/', $firstMessage) ?: [];
-            if (isset($lines[0]) && str_starts_with(trim($lines[0]), '📩')) {
-                array_shift($lines);
-                while (isset($lines[0]) && trim($lines[0]) === '') {
-                    array_shift($lines);
-                }
+        // Managers/admins read the lead in THEIR language (not the client's) — rebuild
+        // the card in the viewer's language and append the client's language line.
+        $profile = $lead->modelProfile;
+        $clientLocale = \App\Support\Locale::fromUser($lead->user);
+
+        $build = function (string $locale) use ($lead, $profile, $clientLocale): string {
+            $text = trans('notifications.new_lead', ['city' => $lead->city], $locale);
+            $body = $this->cardBody($lead, $profile, $locale);
+            if ($body !== '') {
+                $text .= "\n\n".$body;
             }
-            $firstMessage = trim(implode("\n", $lines));
-        }
+            $text .= "\n\n".trans('notifications.client_language', [
+                'lang' => trans('notifications.lang_'.$clientLocale, [], $locale),
+            ], $locale);
+
+            return $text;
+        };
 
         foreach ($managers as $manager) {
             $locale = \App\Support\Locale::fromUser($manager);
-            $text = trans('notifications.new_lead', ['city' => $lead->city], $locale);
-            if (is_string($firstMessage) && $firstMessage !== '') {
-                $text .= "\n\n".$firstMessage;
-            }
             $notifier->notifyUser(
                 $manager,
-                $text,
+                $build($locale),
                 '/manager/leads',
                 trans('notifications.open', [], $locale),
                 'new-lead:'.$lead->id,
             );
         }
 
-        $adminText = trans('notifications.new_lead', ['city' => $lead->city], 'ru');
-        if (is_string($firstMessage) && $firstMessage !== '') {
-            $adminText .= "\n\n".$firstMessage;
+        $notifier->notifyAdmins($build('ru'), null, null, 'new-lead:'.$lead->id);
+    }
+
+    private function cardBody(Lead $lead, ?ModelProfile $profile, string $locale): string
+    {
+        $lines = preg_split('/\r?\n/', $this->formatMessage($lead, $profile, $locale)) ?: [];
+        if (isset($lines[0]) && str_starts_with(trim($lines[0]), '📩')) {
+            array_shift($lines);
+            while (isset($lines[0]) && trim($lines[0]) === '') {
+                array_shift($lines);
+            }
         }
-        $notifier->notifyAdmins($adminText, null, null, 'new-lead:'.$lead->id);
+
+        return trim(implode("\n", $lines));
     }
 
     private function formatMessage(Lead $lead, ?ModelProfile $profile, string $locale = 'ru'): string

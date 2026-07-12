@@ -16,4 +16,8 @@ return [
     'new_lead' => '📩 New model request — :city',
     'lead_cancelled' => '❌ :name cancelled request #:id — :city',
     'open' => 'Open',
+    'client_language' => '🗣 Client language: :lang',
+    'lang_ru' => 'Russian',
+    'lang_en' => 'English',
+    'lang_zh' => 'Chinese',
 ];
