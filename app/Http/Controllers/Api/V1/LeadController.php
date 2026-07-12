@@ -300,6 +300,18 @@ class LeadController extends Controller
         $lead->delete();
         $chat?->delete();
 
+        // Clear the client's bot notifications when they cancel — in the background so
+        // the cancel response stays fast (each notification is deleted via Telegram).
+        $clientId = $client?->id;
+        if ($clientId !== null) {
+            dispatch(function () use ($clientId): void {
+                $u = User::query()->find($clientId);
+                if ($u !== null) {
+                    \App\Services\Telegram\BotNotificationCleaner::default()->clearForUser($u);
+                }
+            })->afterResponse();
+        }
+
         return ApiResponse::ok(['cancelled' => true]);
     }
 
