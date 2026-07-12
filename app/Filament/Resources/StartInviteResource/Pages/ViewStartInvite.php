@@ -37,7 +37,7 @@ class ViewStartInvite extends ViewRecord
                     ->state(function (StartInvite $record): string {
                         $bot = (string) config('telegram.bot_username', '');
 
-                        return $bot !== '' ? "https://t.me/{$bot}?start={$record->token}" : $record->token;
+                        return $bot !== '' ? "https://t.me/{$bot}?startapp={$record->token}" : $record->token;
                     }),
             ])->columns(3),
 
