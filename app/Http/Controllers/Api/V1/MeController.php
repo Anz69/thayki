@@ -37,9 +37,10 @@ class MeController extends Controller
 
         $user = $request->user();
         $data = $request->validated();
-        if (array_key_exists('language_code', $data) && filled($data['language_code'])) {
-            $data['language_chosen'] = true;
-        }
+        // language_chosen is set ONLY when the client sends it explicitly (the in-app
+        // language switcher / bot language buttons) — NOT derived from a language_code
+        // sync. Otherwise the automatic app-side language sync would mark a brand-new
+        // client as "already chose", and the bot would skip the language prompt.
         $user->fill($data)->save();
 
         return ApiResponse::ok(new UserResource($user));

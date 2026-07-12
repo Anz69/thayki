@@ -43,7 +43,7 @@ export function setLanguage(lng) {
   i18n.changeLanguage(lng)
   try { localStorage.setItem('lang', lng) } catch {}
   import('@/utils/api')
-    .then(({ default: api }) => api.patch('/me', { language_code: lng }))
+    .then(({ default: api }) => api.patch('/me', { language_code: lng, language_chosen: true }))
     .catch(() => {})
 }
 

@@ -19,6 +19,7 @@ class UpdateMyProfileRequest extends FormRequest
             'first_name' => ['sometimes', 'string', 'min:1', 'max:80'],
             'last_name' => ['sometimes', 'nullable', 'string', 'max:80'],
             'language_code' => ['sometimes', 'nullable', 'string', 'max:8'],
+            'language_chosen' => ['sometimes', 'boolean'],
             'notifications_enabled' => ['sometimes', 'boolean'],
         ];
     }
