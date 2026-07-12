@@ -39,7 +39,7 @@ return [
         ['code' => 'LTC',  'name' => 'Litecoin',     'network' => 'Litecoin',         'net_label' => 'Litecoin'],
         ['code' => 'SOL',  'name' => 'Solana',       'network' => 'Solana',           'net_label' => 'Solana'],
         ['code' => 'TRX',  'name' => 'TRON',         'network' => 'Tron',             'net_label' => 'TRC-20'],
-        ['code' => 'TON',  'name' => 'Toncoin',      'network' => 'The Open Network', 'net_label' => 'TON'],
+        ['code' => 'GRAM', 'name' => 'Gram',         'network' => 'The Open Network', 'net_label' => 'TON'],
         ['code' => 'XMR',  'name' => 'Monero',       'network' => 'Monero',           'net_label' => 'Monero'],
         ['code' => 'BCH',  'name' => 'Bitcoin Cash', 'network' => 'BitcoinCash',      'net_label' => 'Bitcoin Cash'],
     ],

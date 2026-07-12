@@ -8,7 +8,7 @@ import { logError } from '@/utils/logger'
 const COIN_COLORS = {
   BTC: '#F7931A', ETH: '#627EEA', USDT: '#26A17B', USDC: '#2775CA',
   BNB: '#F0B90B', POL: '#8247E5', LTC: '#345D9D', SOL: '#9945FF',
-  TRX: '#EF0027', TON: '#0098EA', XMR: '#FF6600', BCH: '#0AC18E',
+  TRX: '#EF0027', GRAM: '#0098EA', XMR: '#FF6600', BCH: '#0AC18E',
 }
 
 const LOCAL_COINS = [
@@ -21,7 +21,7 @@ const LOCAL_COINS = [
   { code: 'LTC', name: 'Litecoin', net_label: 'Litecoin' },
   { code: 'SOL', name: 'Solana', net_label: 'Solana' },
   { code: 'TRX', name: 'TRON', net_label: 'TRC-20' },
-  { code: 'TON', name: 'Toncoin', net_label: 'TON' },
+  { code: 'GRAM', name: 'Gram', net_label: 'TON' },
   { code: 'XMR', name: 'Monero', net_label: 'Monero' },
   { code: 'BCH', name: 'Bitcoin Cash', net_label: 'Bitcoin Cash' },
 ]
