@@ -106,9 +106,8 @@ class LeadController extends Controller
             $lead->update(['identity_verified_at' => now()]);
         }
 
-        $locale = in_array($lead->locale, ['ru', 'en', 'zh'], true)
-            ? $lead->locale
-            : (str_starts_with(strtolower((string) ($lead->user?->language_code ?? '')), 'zh') ? 'zh' : 'ru');
+        // Client-facing system message → the client's current language.
+        $locale = \App\Support\Locale::fromUser($user);
         $chat = $lead->chat;
         if ($chat !== null) {
             if (! $chat->participants()->where('user_id', $user->id)->exists()) {
@@ -132,7 +131,7 @@ class LeadController extends Controller
 
         if ($lead->manager_id !== null) {
             $manager = User::query()->find($lead->manager_id);
-            $mLocale = str_starts_with(strtolower((string) ($manager?->language_code ?? '')), 'en') ? 'en' : 'ru';
+            $mLocale = \App\Support\Locale::fromUser($manager);
             Notifier::default()->notifyUser(
                 $manager,
                 trans('lead.verification_done_manager', ['name' => trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: ($user->username ?? '—')], $mLocale),
@@ -322,7 +321,7 @@ class LeadController extends Controller
         $params = ['name' => $name, 'id' => $leadId, 'city' => $city];
 
         foreach ($managers as $manager) {
-            $locale = str_starts_with(strtolower((string) ($manager->language_code ?? '')), 'en') ? 'en' : 'ru';
+            $locale = \App\Support\Locale::fromUser($manager);
             $notifier->notifyUser(
                 $manager,
                 trans('notifications.lead_cancelled', $params, $locale),

@@ -396,16 +396,13 @@ class ManagerLeadController extends Controller
 
     private function leadLocale(Lead $lead): string
     {
-        if (in_array($lead->locale, ['ru', 'en', 'zh'], true)) {
-            return $lead->locale;
-        }
-        $code = strtolower((string) ($lead->user?->language_code ?? ''));
-
-        if (str_starts_with($code, 'zh')) {
-            return 'zh';
+        // Client-facing lead messages → the client's current language (so switching
+        // language is reflected), falling back to the lead's snapshot locale.
+        if ($lead->user?->language_code) {
+            return \App\Support\Locale::fromUser($lead->user);
         }
 
-        return str_starts_with($code, 'en') ? 'en' : 'ru';
+        return \App\Support\Locale::normalize($lead->locale, null);
     }
 
     private function money(int $minor, string $currency): string

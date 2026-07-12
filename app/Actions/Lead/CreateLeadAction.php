@@ -114,7 +114,7 @@ class CreateLeadAction
         }
 
         foreach ($managers as $manager) {
-            $locale = str_starts_with(strtolower((string) ($manager->language_code ?? '')), 'en') ? 'en' : 'ru';
+            $locale = \App\Support\Locale::fromUser($manager);
             $text = trans('notifications.new_lead', ['city' => $lead->city], $locale);
             if (is_string($firstMessage) && $firstMessage !== '') {
                 $text .= "\n\n".$firstMessage;
