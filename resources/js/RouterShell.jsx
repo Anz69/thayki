@@ -14,6 +14,7 @@ import LandingPage from '@/views/LandingPage'
 import StrangeWelcomePage from '@/views/StrangeWelcomePage'
 import BannedPage from '@/views/BannedPage'
 import ModalMiddle from '@/layout/ModalMiddle'
+import LanguageOnboardingModal from '@/components/modals/LanguageOnboardingModal'
 
 import HomePage from '@/views/HomePage'
 import ModelPage from '@/views/ModelPage'
@@ -274,7 +275,17 @@ function AuthGuard({ children }) {
   if (!user && needsLogin) return <AuthErrorScreen />
   if (!user) return <AuthPendingScreen />
 
-  return children
+  // Ask app-first / invited users for a language on first launch — the bot's language
+  // prompt is skipped when they open the mini app directly via an invite link.
+  const askLanguage = user.language_chosen === false
+    && !['manager', 'requisite'].includes(user.role)
+
+  return (
+    <>
+      {children}
+      <LanguageOnboardingModal isOpen={askLanguage} />
+    </>
+  )
 }
 
 // Frontend role gate (defense-in-depth on top of API 403s): keeps manager/admin

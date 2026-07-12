@@ -45,6 +45,10 @@ const useAuthStore = create((set, get) => ({
     set({ user, needsLogin: false, authPending: false, isBanned: false, authErrorHint: null, authErrorDetail: null })
   },
 
+  // Merge fields into the current user without side effects (e.g. after the user
+  // picks a language in the first-run modal).
+  patchUser: (partial) => set((s) => ({ user: s.user ? { ...s.user, ...partial } : s.user })),
+
   setNeedsLogin: (hint = null, detail = null) => {
     clearToken()
     set({ user: null, needsLogin: true, authPending: false, isBanned: false, authErrorHint: hint, authErrorDetail: detail })
