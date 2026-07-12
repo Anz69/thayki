@@ -144,7 +144,7 @@ class ManagerLeadController extends Controller
     {
         $client = $lead->user;
         $count = $client !== null
-            ? \App\Services\Telegram\BotNotificationCleaner::default()->countForUser($client)
+            ? \App\Services\Telegram\BotNotificationCleaner::default()->countForLead($client, $lead->id)
             : 0;
 
         return ApiResponse::ok(['count' => $count]);
@@ -154,7 +154,7 @@ class ManagerLeadController extends Controller
     {
         $client = $lead->user;
         $deleted = $client !== null
-            ? \App\Services\Telegram\BotNotificationCleaner::default()->clearForUser($client)
+            ? \App\Services\Telegram\BotNotificationCleaner::default()->clearForLead($client, $lead->id)
             : 0;
 
         return ApiResponse::ok(['deleted' => $deleted]);
@@ -391,6 +391,7 @@ class ManagerLeadController extends Controller
             "/request/chat?id={$lead->chat_id}&lead={$lead->id}",
             trans('notifications.open_chat', [], $this->leadLocale($lead)),
             'lead-event:'.$lead->id.':'.substr(md5($text), 0, 8),
+            $lead->id,
         );
     }
 

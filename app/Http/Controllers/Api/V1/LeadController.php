@@ -304,10 +304,10 @@ class LeadController extends Controller
         // the cancel response stays fast (each notification is deleted via Telegram).
         $clientId = $client?->id;
         if ($clientId !== null) {
-            dispatch(function () use ($clientId): void {
+            dispatch(function () use ($clientId, $leadId): void {
                 $u = User::query()->find($clientId);
                 if ($u !== null) {
-                    \App\Services\Telegram\BotNotificationCleaner::default()->clearForUser($u);
+                    \App\Services\Telegram\BotNotificationCleaner::default()->clearForLead($u, $leadId);
                 }
             })->afterResponse();
         }

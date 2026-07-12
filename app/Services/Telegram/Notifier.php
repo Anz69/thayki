@@ -29,6 +29,7 @@ class Notifier
         ?string $openPath = null,
         ?string $buttonLabel = null,
         ?string $dedupToken = null,
+        ?int $leadId = null,
     ): void {
         if ($user === null) {
             return;
@@ -41,11 +42,12 @@ class Notifier
         }
 
         // Track client-facing notifications so they can be cleaned later (manually on
-        // lead close/completion, or automatically after 48h). Staff notifications are
-        // not tracked. The pinned welcome is sent elsewhere and never recorded.
+        // lead close/completion/cancel, or automatically after 48h). Staff notifications
+        // are not tracked. The pinned welcome is sent elsewhere and never recorded.
+        // leadId scopes tracking to a specific request so cleanup counts per-lead.
         $trackFor = $user->role === UserRole::Client ? $user : null;
 
-        $this->sendDeduped((int) $user->tg_chat_id, $text, $openPath, $buttonLabel, $dedupToken, $trackFor);
+        $this->sendDeduped((int) $user->tg_chat_id, $text, $openPath, $buttonLabel, $dedupToken, $trackFor, $leadId);
     }
 
     /**
@@ -87,6 +89,7 @@ class Notifier
         ?string $buttonLabel,
         ?string $dedupToken = null,
         ?User $trackFor = null,
+        ?int $leadId = null,
     ): void {
         $fingerprint = $dedupToken !== null
             ? sha1($chatId.'|'.$dedupToken)
@@ -103,6 +106,7 @@ class Notifier
             try {
                 BotNotification::query()->create([
                     'user_id' => $trackFor->id,
+                    'lead_id' => $leadId,
                     'tg_chat_id' => $chatId,
                     'message_id' => $messageId,
                 ]);

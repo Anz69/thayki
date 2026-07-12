@@ -206,7 +206,7 @@ class SendChatMessageNotificationJob implements ShouldQueue
                 }
                 $button = trans('notifications.open_chat', [], $locale);
 
-                $notifier->notifyUser($recipient, $text, $openPath, $button, $dedupToken);
+                $notifier->notifyUser($recipient, $text, $openPath, $button, $dedupToken, $leadId);
                 if ($recipient->tg_chat_id !== null) {
                     $notifiedChatIds[] = (int) $recipient->tg_chat_id;
                 }

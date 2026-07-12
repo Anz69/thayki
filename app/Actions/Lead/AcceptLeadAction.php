@@ -76,6 +76,7 @@ class AcceptLeadAction
                         "/request/chat?id={$chatId}&lead={$leadId}",
                         trans('notifications.open_chat', [], $locale),
                         'lead-accepted:'.$leadId,
+                        $leadId,
                     );
                 })->afterResponse();
             }

@@ -22,6 +22,35 @@ class BotNotificationCleaner
         return BotNotification::query()->where('user_id', $user->id)->count();
     }
 
+    public function countForLead(User $user, int $leadId): int
+    {
+        return BotNotification::query()
+            ->where('user_id', $user->id)
+            ->where('lead_id', $leadId)
+            ->count();
+    }
+
+    // Clear only the notifications tied to a specific request (not the client's other
+    // leads). Returns how many were cleared.
+    public function clearForLead(User $user, int $leadId): int
+    {
+        $rows = BotNotification::query()
+            ->where('user_id', $user->id)
+            ->where('lead_id', $leadId)
+            ->get();
+
+        foreach ($rows as $row) {
+            $this->bot->deleteMessage((int) $row->tg_chat_id, (int) $row->message_id);
+        }
+
+        BotNotification::query()
+            ->where('user_id', $user->id)
+            ->where('lead_id', $leadId)
+            ->delete();
+
+        return $rows->count();
+    }
+
     // Delete every tracked bot notification for this client from the Telegram chat and
     // from the DB. The pinned welcome is never tracked, so it stays. Returns how many
     // notifications were cleared.
