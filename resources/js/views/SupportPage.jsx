@@ -6,7 +6,7 @@ import gsap from 'gsap'
 import { usePageReady } from '@/composables/usePageReady'
 import useAuthStore from '@/stores/useAuthStore'
 import api from '@/utils/api'
-import { subscribePrivate } from '@/utils/safeEcho'
+import { subscribePrivate, privateChannel } from '@/utils/safeEcho'
 import ChatLoadingSkeleton from '@/components/ui/ChatLoadingSkeleton'
 import PhotoViewer from '@/components/ui/PhotoViewer'
 import { logError } from '@/utils/logger'
@@ -103,6 +103,9 @@ export default function SupportPage() {
 
   const [messages,  setMessages]  = useState([])
   const [inputText, setInputText] = useState('')
+  const [othersTyping, setOthersTyping] = useState(false)
+  const typingHideRef = useRef(null)
+  const lastTypingSentRef = useRef(0)
   const [chatId,    setChatId]    = useState(null)
   const [sending,   setSending]   = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -259,6 +262,42 @@ export default function SupportPage() {
       },
     })
   }, [chatId, myId])
+
+  // Mark the chat read whenever it's open / a new message arrives — so the other side
+  // sees the read receipt AND the notification job doesn't push while we're here.
+  useEffect(() => {
+    if (!chatId) return
+    api.post(`/chats/${chatId}/read`).catch(() => {})
+  }, [chatId, messages.length])
+
+  // Typing indicator (whisper over the chat channel), both directions.
+  useEffect(() => {
+    if (!chatId) return undefined
+    const ch = privateChannel(`chats.${chatId}`)
+    if (!ch || typeof ch.listenForWhisper !== 'function') return undefined
+    const notSelf = (p) => !(p?.from != null && String(p.from) === String(myId))
+    const onTyping = (p) => {
+      if (!notSelf(p)) return
+      setOthersTyping(true)
+      clearTimeout(typingHideRef.current)
+      typingHideRef.current = setTimeout(() => setOthersTyping(false), 6000)
+    }
+    const onStop = (p) => { if (notSelf(p)) { clearTimeout(typingHideRef.current); setOthersTyping(false) } }
+    try { ch.listenForWhisper('typing', onTyping) } catch {}
+    try { ch.listenForWhisper('typing-stop', onStop) } catch {}
+    return () => {
+      clearTimeout(typingHideRef.current)
+      try { ch.stopListeningForWhisper('typing') } catch {}
+      try { ch.stopListeningForWhisper('typing-stop') } catch {}
+    }
+  }, [chatId, myId])
+
+  const sendTyping = useCallback(() => {
+    const now = Date.now()
+    if (now - lastTypingSentRef.current < 1500) return
+    lastTypingSentRef.current = now
+    try { privateChannel(`chats.${chatId}`)?.whisper?.('typing', { from: myId, role: auth.user?.role, name: auth.user?.first_name }) } catch {}
+  }, [chatId, myId, auth.user])
 
   useEffect(() => {
     const state = contentState.current
@@ -529,6 +568,17 @@ export default function SupportPage() {
                 </div>
               )
             })}
+            {othersTyping && (
+              <div className="flex justify-start mt-2">
+                <div className="typing-bubble px-4 py-3 inline-flex items-center gap-2 rounded-3xl rounded-bl-lg bg-[#F0F0F0]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="typing-dot" style={{ animationDelay: '0ms' }} />
+                    <span className="typing-dot" style={{ animationDelay: '180ms' }} />
+                    <span className="typing-dot" style={{ animationDelay: '360ms' }} />
+                  </span>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -560,7 +610,7 @@ export default function SupportPage() {
               ref={textareaRef}
               rows={1}
               value={inputText}
-              onChange={(e) => { setInputText(e.target.value); autoResize() }}
+              onChange={(e) => { setInputText(e.target.value); autoResize(); sendTyping() }}
               onKeyDown={handleKeyDown}
               placeholder={t('support.placeholder')}
               className="w-full bg-transparent text-black text-[15px]/[145%] font-normal outline-none placeholder:text-[#ABABAB] resize-none"
