@@ -154,7 +154,7 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
       const dy = e.changedTouches[0].clientY - touchState.current.startY
       const sheet = sheetRef.current
       if (dy > 110) {
-        onCloseRef.current()
+        onCloseRef.current?.()
       } else if (sheet) {
         gsap.to(sheet, { y: 0, duration: 0.42, ease: 'back.out(2.2)' })
       }
@@ -174,7 +174,7 @@ export default function ModalMiddle({ isOpen, onClose, onAfterClose, children })
   const onRootClick = (e) => {
     if (!backdropPointerDown.current) return
     if (e.target !== rootRef.current)  return
-    onClose()
+    onClose?.()
   }
 
   if (!isVisible) return null
