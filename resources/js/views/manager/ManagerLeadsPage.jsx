@@ -397,10 +397,9 @@ export default function ManagerLeadsPage() {
               className="bg-white rounded-2xl p-3.5 border border-black/[0.06] active:bg-[#FBFAFC] transition-colors cursor-pointer"
             >
               <div className="flex gap-3">
-                <div className="size-12 rounded-full overflow-hidden bg-[#EFEAEE] shrink-0 flex items-center justify-center">
-                  {clientPhoto
-                    ? <img src={clientPhoto} alt="" className="w-full h-full object-cover" />
-                    : <span className="text-[#E2319B] text-base font-bold">{(lead.client?.name || '?')[0]?.toUpperCase()}</span>}
+                <div className="size-12 rounded-full overflow-hidden bg-[#EFEAEE] shrink-0 flex items-center justify-center relative">
+                  <span className="text-[#E2319B] text-base font-bold">{(lead.client?.name || '?')[0]?.toUpperCase()}</span>
+                  {clientPhoto && <img src={clientPhoto} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
@@ -466,10 +465,9 @@ export default function ManagerLeadsPage() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="size-[52px] rounded-full overflow-hidden bg-[#EFEAEE] shrink-0 flex items-center justify-center ring-1 ring-black/[0.04]">
-                  {clientPhoto
-                    ? <img src={clientPhoto} alt="" className="w-full h-full object-cover" />
-                    : <span className="text-[#E2319B] text-lg font-bold">{(viewing.client?.name || '?')[0]?.toUpperCase()}</span>}
+                <div className="size-[52px] rounded-full overflow-hidden bg-[#EFEAEE] shrink-0 flex items-center justify-center ring-1 ring-black/[0.04] relative">
+                  <span className="text-[#E2319B] text-lg font-bold">{(viewing.client?.name || '?')[0]?.toUpperCase()}</span>
+                  {clientPhoto && <img src={clientPhoto} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="flex items-center gap-1.5">
