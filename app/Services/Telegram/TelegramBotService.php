@@ -190,6 +190,60 @@ class TelegramBotService
         }
     }
 
+    // The file_id of the user's current profile photo (largest size), or null.
+    public function getUserProfilePhotoFileId(int $userId): ?string
+    {
+        if ($this->botToken === '' || $userId <= 0) {
+            return null;
+        }
+        try {
+            $response = Http::timeout(10)->get($this->endpoint('getUserProfilePhotos'), [
+                'user_id' => $userId,
+                'limit' => 1,
+            ]);
+            if (! $response->successful()) {
+                return null;
+            }
+            $sizes = $response->json('result.photos.0');
+            if (! is_array($sizes) || $sizes === []) {
+                return null;
+            }
+            $largest = end($sizes);
+
+            return isset($largest['file_id']) ? (string) $largest['file_id'] : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    public function getFilePath(string $fileId): ?string
+    {
+        if ($this->botToken === '' || $fileId === '') {
+            return null;
+        }
+        try {
+            $response = Http::timeout(10)->get($this->endpoint('getFile'), ['file_id' => $fileId]);
+
+            return $response->successful() ? $response->json('result.file_path') : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    public function downloadFile(string $filePath): ?string
+    {
+        if ($this->botToken === '' || $filePath === '') {
+            return null;
+        }
+        try {
+            $response = Http::timeout(20)->get(self::API_BASE.'/file/bot'.$this->botToken.'/'.$filePath);
+
+            return $response->successful() ? $response->body() : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function getMe(): ?array
     {
         if ($this->botToken === '') {

@@ -48,6 +48,12 @@ class StartHandler
             try { $this->notifyNewUser($user, $startParam); } catch (\Throwable) {}
         }
 
+        // Fetch the user's Telegram avatar (bot updates carry no photo_url) so managers
+        // see a real photo instead of a letter. Skips users with a custom/app photo.
+        if (! $user->photo_customized && (empty($user->photo_url) || str_starts_with((string) $user->photo_url, 'https://t.me/'))) {
+            try { \App\Jobs\SyncTelegramAvatarJob::dispatch($user->id)->afterResponse(); } catch (\Throwable) {}
+        }
+
         // Ask for a language first — for EVERY new client, including those arriving with
         // an invite token. The start param (invite token, if any) is stashed and applied
         // right after the user picks a language.
