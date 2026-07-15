@@ -788,23 +788,27 @@ export default function RequestChatPage() {
     postMessageBody(m.text, m.id, m.clientMessageId)
   }, [postMessageBody])
 
-  const canDeleteMsg = useCallback((m) => {
+  // Any staff can select/copy; deletion additionally requires can_delete_messages.
+  const canSelectMsg = useCallback((m) => {
     if (!isStaff || !m) return false
-    if (!auth.user?.can_delete_messages) return false
     if (m.uploading || m.failed) return false
     const id = String(m.id ?? '')
     return id !== '' && !id.startsWith('opt-')
-  }, [isStaff, auth.user?.can_delete_messages])
+  }, [isStaff])
+
+  const canDeleteMsg = useCallback((m) => {
+    return canSelectMsg(m) && !!auth.user?.can_delete_messages
+  }, [canSelectMsg, auth.user?.can_delete_messages])
 
   const startLongPress = useCallback((m) => (e) => {
-    if (!canDeleteMsg(m)) return
+    if (!canSelectMsg(m)) return
     if (e.pointerType === 'mouse' && e.button !== 0) return
     clearTimeout(longPressRef.current)
     longPressRef.current = setTimeout(() => {
       try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('medium') } catch { /* noop */ }
       setActionTarget(m)
     }, 500)
-  }, [canDeleteMsg])
+  }, [canSelectMsg])
 
   const toggleSelect = useCallback((m) => {
     setSelectedIds((prev) => {
@@ -965,13 +969,15 @@ export default function RequestChatPage() {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#3E6CC4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             <span className="text-black text-[15px] font-semibold">{t('requestChat.selectBtn')}</span>
           </button>
-          <button
-            onClick={() => { const m = actionTarget; setActionTarget(null); setDeleteTarget(m) }}
-            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-[#F5F5F7] active:bg-[#ECEAEC] transition-colors"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7m2 0v11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7" stroke="#E5484D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            <span className="text-[#E5484D] text-[15px] font-semibold">{t('requestChat.deleteConfirmBtn')}</span>
-          </button>
+          {canDeleteMsg(actionTarget) && (
+            <button
+              onClick={() => { const m = actionTarget; setActionTarget(null); setDeleteTarget(m) }}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-[#F5F5F7] active:bg-[#ECEAEC] transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7m2 0v11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7" stroke="#E5484D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              <span className="text-[#E5484D] text-[15px] font-semibold">{t('requestChat.deleteConfirmBtn')}</span>
+            </button>
+          )}
         </div>
       </ModalMiddle>
 
@@ -1060,7 +1066,7 @@ export default function RequestChatPage() {
               // Managers can delete ANY message — system notices, typed cards
               // (payment, verification, model), or plain bubbles. Long-press anywhere
               // on the message opens the delete confirm.
-              const selectable = canDeleteMsg(msg)
+              const selectable = canSelectMsg(msg)
               const isSelected = selectMode && selectedIds.has(String(msg.id))
               const lpHandlers = selectMode
                 ? (selectable ? { onClick: () => toggleSelect(msg), style: { cursor: 'pointer' } } : {})
