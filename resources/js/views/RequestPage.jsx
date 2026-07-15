@@ -298,7 +298,7 @@ export default function RequestPage() {
       doSubmit()
     } catch (e) {
       logError(e)
-      setVerifyError(t('request.verifyNeeded'))
+      setVerifyError(t('request.verifyFailed'))
     } finally {
       setVerifyBusy(false)
     }
@@ -662,19 +662,19 @@ export default function RequestPage() {
       />
 
       <ModalMiddle isOpen={verifyOpen} onClose={verifyBusy ? undefined : () => setVerifyOpen(false)}>
-        <div className="flex flex-col gap-5 p-6 pt-2">
-          <div className="flex flex-col items-center gap-3 text-center pt-1">
-            <span className="size-14 rounded-full bg-[#E9F0FF] flex items-center justify-center">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V5l-8-3Z" stroke="#2F6BD8" strokeWidth="1.7" strokeLinejoin="round" /><path d="m8.5 12 2.2 2.2L15.5 9.5" stroke="#2F6BD8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        <div className="flex flex-col gap-3.5 px-5 pt-1 pb-5">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <span className="size-11 rounded-full bg-[#E9F0FF] flex items-center justify-center">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V5l-8-3Z" stroke="#2F6BD8" strokeWidth="1.7" strokeLinejoin="round" /><path d="m8.5 12 2.2 2.2L15.5 9.5" stroke="#2F6BD8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </span>
-            <h2 className="text-black text-2xl/[100%] font-semibold">{t('leadChat.verifyTitle')}</h2>
-            <p className="text-[#7F7F7F] text-sm/[140%] font-medium">{t('leadChat.verifySub')}</p>
-            {verifyError && <p className="text-[#E5484D] text-[13px]/[140%] font-medium">{verifyError}</p>}
+            <h2 className="text-black text-[18px]/[120%] font-semibold">{t('leadChat.verifyTitle')}</h2>
+            <p className="text-[#8A8A8A] text-[13px]/[135%] font-medium">{t('leadChat.verifySub')}</p>
+            {verifyError && <p className="text-[#E5484D] text-[13px]/[135%] font-medium">{verifyError}</p>}
           </div>
           <button
             onClick={doVerify}
             disabled={verifyBusy}
-            className="w-full py-4 rounded-full bg-[#2F6BD8] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity disabled:opacity-60"
+            className="w-full py-3.5 rounded-full bg-[#2F6BD8] text-white text-[15px]/[100%] font-semibold active:opacity-80 transition-opacity disabled:opacity-60"
           >
             {verifyBusy ? '…' : t('leadChat.verifyBtn')}
           </button>
