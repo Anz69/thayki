@@ -1193,10 +1193,10 @@ export default function RequestChatPage() {
               )
 
               return withDay(
-                <div className={selectMode && selectable ? 'rounded-2xl transition-colors ' + (isSelected ? 'bg-[#FCE9F4]' : '') : ''}>
-                  <div data-msg data-msg-id={msg.id} className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`} {...lpHandlers}>
+                <div className={selectMode && selectable ? `-mx-3 px-3 py-1 rounded-2xl transition-colors ${isSelected ? 'bg-[#FBE4F1]' : 'active:bg-[#F5F5F7]'}` : ''}>
+                  <div data-msg data-msg-id={msg.id} className={`flex items-end gap-2.5 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`} {...lpHandlers}>
                     {selectMode && selectable && (
-                      <span className={`shrink-0 size-[22px] rounded-full border-2 flex items-center justify-center self-center ${isSelected ? 'bg-[#E2319B] border-[#E2319B]' : 'border-[#C9C8CE] bg-white'}`}>
+                      <span className={`shrink-0 size-[22px] rounded-full border-2 flex items-center justify-center self-center transition-colors ${isSelected ? 'bg-[#E2319B] border-[#E2319B]' : 'border-[#C9C8CE] bg-white'}`}>
                         {isSelected && <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                       </span>
                     )}
