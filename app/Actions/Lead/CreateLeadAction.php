@@ -104,7 +104,9 @@ class CreateLeadAction
         // Managers/admins read the lead in THEIR language (not the client's) — rebuild
         // the card in the viewer's language and append the client's language line.
         $profile = $lead->modelProfile;
-        $clientLocale = \App\Support\Locale::fromUser($lead->user);
+        // The language the client actually uses = the language of the request they filled
+        // in (their app UI), not their Telegram account language.
+        $clientLocale = \App\Support\Locale::normalize($lead->locale, $lead->user?->language_code);
 
         $build = function (string $locale) use ($lead, $profile, $clientLocale): string {
             $text = trans('notifications.new_lead', ['city' => $lead->city], $locale);
