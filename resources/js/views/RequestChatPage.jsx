@@ -697,6 +697,12 @@ export default function RequestChatPage() {
     api.post(`/chats/${chatId}/read`).catch(() => {})
   }, [chatId, messages.length])
 
+  const isNearBottom = useCallback(() => {
+    const el = messagesRef.current
+    if (!el) return true
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 140
+  }, [])
+
   useEffect(() => {
     if (contentState.current !== 'messages') return
     const currentCount = messages.length
@@ -704,6 +710,12 @@ export default function RequestChatPage() {
     const isNewMessage = currentCount > prevMsgCount.current
     prevMsgCount.current = currentCount
     if (!isNewMessage) return
+
+    // Don't yank the user down if they scrolled up to read history — unless the new
+    // message is their own (they just sent it, so following to the bottom is expected).
+    const last = messages[messages.length - 1]
+    const mine = last && last.from === 'user'
+    if (!mine && !isNearBottom()) return
 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     const els = messagesRef.current?.querySelectorAll('[data-msg]')
@@ -725,8 +737,8 @@ export default function RequestChatPage() {
   }, [messages])
 
   useEffect(() => {
-    if (othersTyping) requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }))
-  }, [othersTyping])
+    if (othersTyping && isNearBottom()) requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }))
+  }, [othersTyping, isNearBottom])
 
   useEffect(() => {
     const el = sendWrapRef.current
