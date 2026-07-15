@@ -23,6 +23,7 @@ class UserResource extends JsonResource
             'photo_url' => $this->photo_url,
             'photo_customized' => $this->photo_customized,
             'is_strange' => (bool) $this->is_strange,
+            'phone_verified' => $this->phone_verified_at !== null,
             'notifications_enabled' => (bool) $this->notifications_enabled,
             'can_delete_messages' => (bool) $this->can_delete_messages,
             'role' => $this->role->value,

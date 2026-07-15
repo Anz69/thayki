@@ -46,6 +46,23 @@ class MeController extends Controller
         return ApiResponse::ok(new UserResource($user));
     }
 
+    // Verify the user by their shared Telegram contact (used before creating a lead in
+    // the "select model" flow). Sets phone_verified_at.
+    public function verifyContact(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'phone_number' => ['required', 'string', 'max:32'],
+        ]);
+
+        $user = $request->user();
+        $user->forceFill([
+            'phone_number' => preg_replace('/[^0-9+]/', '', $data['phone_number']),
+            'phone_verified_at' => $user->phone_verified_at ?? now(),
+        ])->save();
+
+        return ApiResponse::ok(new UserResource($user->fresh()));
+    }
+
     public function modelProfile(Request $request): JsonResponse
     {
 

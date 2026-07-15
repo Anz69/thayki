@@ -6,6 +6,8 @@ import { usePageReady } from '@/composables/usePageReady'
 import { useTransitionNavigate } from '@/composables/useTransitionNavigate'
 import api, { extractErrorMessage } from '@/utils/api'
 import useLeadsStore from '@/stores/useLeadsStore'
+import useAuthStore from '@/stores/useAuthStore'
+import ModalMiddle from '@/layout/ModalMiddle'
 import { logError } from '@/utils/logger'
 import { resolveMediaUrl } from '@/utils/resolveMediaUrl'
 import { modelName } from '@/utils/modelName'
@@ -20,6 +22,19 @@ const FIGURES = ['anorexic', 'slim', 'curvy', 'bodybuilder', 'fit', 'siliconeBea
 const HIPS = ['narrow', 'medium', 'wide']
 const HAIRS = ['any', 'blonde', 'brunette', 'brown', 'red']
 const EVENTS = ['oneTime', 'trip', 'relationship']
+
+function requestTelegramContact() {
+  return new Promise((resolve, reject) => {
+    const tg = window.Telegram?.WebApp
+    if (!tg?.requestContact) { reject(new Error('no-telegram')); return }
+    try {
+      tg.requestContact((ok, event) => {
+        if (!ok) { reject(new Error('declined')); return }
+        resolve(event?.responseUnsafe?.contact || event?.contact || null)
+      })
+    } catch (e) { reject(e) }
+  })
+}
 
 function Chip({ active, onClick, children }) {
   return (
@@ -76,6 +91,11 @@ export default function RequestPage() {
   const [comments, setComments] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
+  const [verifyOpen, setVerifyOpen] = useState(false)
+  const [verifyBusy, setVerifyBusy] = useState(false)
+  const [verifyError, setVerifyError] = useState(null)
+  const authUser = useAuthStore((s) => s.user)
+  const patchUser = useAuthStore((s) => s.patchUser)
   const [vipOpen, setVipOpen] = useState(false)
   const [vipMode, setVipMode] = useState(false)
 
@@ -254,7 +274,37 @@ export default function RequestPage() {
     return e.relationship
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
+    if (!canSubmit) return
+    // "Select model" flow requires the client to be verified (shared contact) first.
+    if (isModelFlow && authUser?.phone_verified === false) {
+      setVerifyError(null)
+      setVerifyOpen(true)
+      return
+    }
+    doSubmit()
+  }
+
+  const doVerify = async () => {
+    if (verifyBusy) return
+    setVerifyBusy(true)
+    setVerifyError(null)
+    try {
+      const c = await requestTelegramContact()
+      if (!c?.phone_number) throw new Error('no-phone')
+      await api.post('/me/verify-contact', { phone_number: c.phone_number })
+      patchUser({ phone_verified: true })
+      setVerifyOpen(false)
+      doSubmit()
+    } catch (e) {
+      logError(e)
+      setVerifyError(t('request.verifyNeeded'))
+    } finally {
+      setVerifyBusy(false)
+    }
+  }
+
+  const doSubmit = async () => {
     if (!canSubmit) return
     setSubmitError(null)
     setSubmitting(true)
@@ -610,6 +660,26 @@ export default function RequestPage() {
         onClose={() => setVipOpen(false)}
         onContinue={() => { setVipMode(true); setVipOpen(false) }}
       />
+
+      <ModalMiddle isOpen={verifyOpen} onClose={verifyBusy ? undefined : () => setVerifyOpen(false)}>
+        <div className="flex flex-col gap-5 p-6 pt-2">
+          <div className="flex flex-col items-center gap-3 text-center pt-1">
+            <span className="size-14 rounded-full bg-[#E9F0FF] flex items-center justify-center">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V5l-8-3Z" stroke="#2F6BD8" strokeWidth="1.7" strokeLinejoin="round" /><path d="m8.5 12 2.2 2.2L15.5 9.5" stroke="#2F6BD8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </span>
+            <h2 className="text-black text-2xl/[100%] font-semibold">{t('leadChat.verifyTitle')}</h2>
+            <p className="text-[#7F7F7F] text-sm/[140%] font-medium">{t('leadChat.verifySub')}</p>
+            {verifyError && <p className="text-[#E5484D] text-[13px]/[140%] font-medium">{verifyError}</p>}
+          </div>
+          <button
+            onClick={doVerify}
+            disabled={verifyBusy}
+            className="w-full py-4 rounded-full bg-[#2F6BD8] text-white text-base/[100%] font-semibold active:opacity-80 transition-opacity disabled:opacity-60"
+          >
+            {verifyBusy ? '…' : t('leadChat.verifyBtn')}
+          </button>
+        </div>
+      </ModalMiddle>
     </main>
   )
 }

@@ -47,6 +47,7 @@ Route::prefix('v1')->group(function (): void {
 
         Route::get('/me', [MeController::class, 'profile'])->name('me.profile');
         Route::patch('/me', [MeController::class, 'updateProfile'])->name('me.update');
+        Route::post('/me/verify-contact', [MeController::class, 'verifyContact'])->name('me.verify-contact');
         Route::get('/me/model-profile', [MeController::class, 'modelProfile'])->name('me.model-profile');
         Route::patch('/me/model-profile', [MeController::class, 'updateModelProfile'])->name('me.model-profile.update');
         Route::post('/me/avatar', [MeController::class, 'uploadAvatar'])

@@ -95,6 +95,7 @@
     "wishesPlaceholder": "Describe the type, looks, personality and any other preferences.",
     "submit": "Send request",
     "submitting": "Sending…",
+    "verifyNeeded": "To send the request, please confirm you are not a bot by sharing your contact.",
     "submitError": "Couldn't send the request. Check your connection and try again.",
     "next": "Next",
     "cityRequiredHint": "Enter a city to continue",
