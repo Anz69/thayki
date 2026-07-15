@@ -108,8 +108,13 @@ class CreateLeadAction
         // in (their app UI), not their Telegram account language.
         $clientLocale = \App\Support\Locale::normalize($lead->locale, $lead->user?->language_code);
 
-        $build = function (string $locale) use ($lead, $profile, $clientLocale): string {
+        $clientUsername = $lead->user?->username;
+
+        $build = function (string $locale) use ($lead, $profile, $clientLocale, $clientUsername): string {
             $text = trans('notifications.new_lead', ['city' => $lead->city], $locale);
+            if ($clientUsername) {
+                $text .= "\n👤 @".e($clientUsername);
+            }
             $body = $this->cardBody($lead, $profile, $locale);
             if ($body !== '') {
                 $text .= "\n\n".$body;
