@@ -11,6 +11,7 @@
     "close": "关闭",
     "loading": "检查中…",
     "client": "客户",
+    "manager": "经理",
     "hoursShort": "小时",
     "user": "用户",
     "support": "客服",
@@ -227,6 +228,8 @@
   },
   "requestChat": {
     "title": "预约",
+    "copyBtn": "复制",
+    "selectBtn": "选择",
     "managerNote": "经理会尽快与您联系。平均回复时间不超过一小时。",
     "placeholder": "消息…",
     "closedNotice": "该预约已关闭 — 无法发送消息。",

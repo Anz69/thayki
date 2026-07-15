@@ -11,6 +11,7 @@
     "close": "Close",
     "loading": "Checking...",
     "client": "Client",
+    "manager": "Manager",
     "hoursShort": "h",
     "user": "User",
     "support": "Support",
@@ -227,6 +228,8 @@
   },
   "requestChat": {
     "title": "Request",
+    "copyBtn": "Copy",
+    "selectBtn": "Select",
     "managerNote": "A manager will contact you shortly. On average, replies take no more than an hour.",
     "placeholder": "Message...",
     "closedNotice": "This request is closed — messaging is unavailable.",

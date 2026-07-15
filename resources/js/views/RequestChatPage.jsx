@@ -266,6 +266,9 @@ export default function RequestChatPage() {
   const [clearNotif, setClearNotif] = useState({ open: false, count: 0, busy: false })
   const [othersTyping, setOthersTyping] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [actionTarget, setActionTarget] = useState(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
 
   // Flip the "Сегодня" separator to the new day live, without a reload: re-render a
   // few seconds after the next local midnight, then re-arm for the following day.
@@ -799,9 +802,50 @@ export default function RequestChatPage() {
     clearTimeout(longPressRef.current)
     longPressRef.current = setTimeout(() => {
       try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('medium') } catch { /* noop */ }
-      setDeleteTarget(m)
+      setActionTarget(m)
     }, 500)
   }, [canDeleteMsg])
+
+  const toggleSelect = useCallback((m) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      const id = String(m.id)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }, [])
+
+  const exitSelect = useCallback(() => { setSelectMode(false); setSelectedIds(new Set()) }, [])
+
+  const enterSelect = useCallback((m) => {
+    setActionTarget(null)
+    setSelectMode(true)
+    setSelectedIds(new Set([String(m.id)]))
+  }, [])
+
+  const copySelected = useCallback(async () => {
+    const ordered = displayMessages.filter((m) => selectedIds.has(String(m.id)))
+    const text = ordered.map((m) => {
+      const d = m.createdAt ? new Date(m.createdAt) : null
+      const stamp = d && !Number.isNaN(d.getTime())
+        ? `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+        : ''
+      const who = m.isSupport ? t('common.manager') : t('common.client')
+      const body = (m.text && m.text.trim()) || (m.type === 'image' ? '[фото]' : '')
+      return `[${stamp}] ${who}: ${body}`.trim()
+    }).filter(Boolean).join('\n')
+    if (!text) { exitSelect(); return }
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text)
+      else {
+        const ta = document.createElement('textarea'); ta.value = text
+        ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select()
+        try { document.execCommand('copy') } finally { document.body.removeChild(ta) }
+      }
+      showToast(t('common.copied'))
+    } catch (e) { logError(e) }
+    exitSelect()
+  }, [displayMessages, selectedIds, t, exitSelect, showToast])
 
   const cancelLongPress = useCallback(() => { clearTimeout(longPressRef.current) }, [])
 
@@ -912,6 +956,25 @@ export default function RequestChatPage() {
       `}</style>
       {viewerSrc && <PhotoViewer src={viewerSrc} onClose={() => setViewerSrc(null)} />}
 
+      <ModalMiddle isOpen={!!actionTarget} onClose={() => setActionTarget(null)}>
+        <div className="flex flex-col px-5 pt-2 pb-6 gap-2.5">
+          <button
+            onClick={() => actionTarget && enterSelect(actionTarget)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-[#F5F5F7] active:bg-[#ECEAEC] transition-colors"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#3E6CC4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span className="text-black text-[15px] font-semibold">{t('requestChat.selectBtn')}</span>
+          </button>
+          <button
+            onClick={() => { const m = actionTarget; setActionTarget(null); setDeleteTarget(m) }}
+            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-[#F5F5F7] active:bg-[#ECEAEC] transition-colors"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7m2 0v11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7" stroke="#E5484D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span className="text-[#E5484D] text-[15px] font-semibold">{t('requestChat.deleteConfirmBtn')}</span>
+          </button>
+        </div>
+      </ModalMiddle>
+
       <ModalMiddle isOpen={!!deleteTarget} onClose={() => !deleteBusy && setDeleteTarget(null)}>
         <div className="flex flex-col px-5 pt-1 pb-6 gap-4 text-center">
           <p className="text-black text-[15px]/[150%] font-medium">{t('requestChat.deleteConfirm')}</p>
@@ -947,7 +1010,22 @@ export default function RequestChatPage() {
           <span className="absolute left-1/2 -translate-x-1/2 text-black text-base/[100%] font-[500] max-w-[50%] truncate">
             {chatHeaderTitle}
           </span>
-          {isStaff && isLead && <HeaderLeadStatus status={leadStatus} onChange={changeLeadStatus} />}
+          {isStaff && isLead && !selectMode && <HeaderLeadStatus status={leadStatus} onChange={changeLeadStatus} />}
+          {isStaff && selectMode && (
+            <div className="absolute right-4 flex items-center gap-2">
+              <button
+                onClick={copySelected}
+                disabled={selectedIds.size === 0}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#E2319B] text-white text-[13px] font-semibold active:scale-95 transition disabled:opacity-40"
+              >
+                <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M11.6 2.2H9.16c-2.44 0-3.66 0-4.6.48a4.4 4.4 0 0 0-1.9 1.9C2.18 5.5 2.18 6.72 2.18 9.16v2.48M8.2 15.27h3.57c1.22 0 1.83 0 2.3-.24a2.2 2.2 0 0 0 .95-.95c.24-.47.24-1.08.24-2.3V8.22c0-1.22 0-1.83-.24-2.3a2.2 2.2 0 0 0-.95-.95c-.47-.24-1.08-.24-2.3-.24H8.2c-1.22 0-1.83 0-2.3.24a2.2 2.2 0 0 0-.95.95c-.24.47-.24 1.08-.24 2.3v3.56c0 1.22 0 1.83.24 2.3.2.4.54.74.95.95.47.24 1.08.24 2.3.24Z" stroke="#fff" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                {t('requestChat.copyBtn')} {selectedIds.size > 0 ? selectedIds.size : ''}
+              </button>
+              <button onClick={exitSelect} className="size-8 rounded-full bg-[#EFEEF3] flex items-center justify-center active:scale-95 transition">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#7F7F7F" strokeWidth="2.2" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -982,13 +1060,17 @@ export default function RequestChatPage() {
               // Managers can delete ANY message — system notices, typed cards
               // (payment, verification, model), or plain bubbles. Long-press anywhere
               // on the message opens the delete confirm.
-              const lpHandlers = canDeleteMsg(msg) ? {
-                onPointerDown: startLongPress(msg),
-                onPointerUp: cancelLongPress,
-                onPointerMove: cancelLongPress,
-                onPointerCancel: cancelLongPress,
-                onContextMenu: (e) => { e.preventDefault(); setDeleteTarget(msg) },
-              } : {}
+              const selectable = canDeleteMsg(msg)
+              const isSelected = selectMode && selectedIds.has(String(msg.id))
+              const lpHandlers = selectMode
+                ? (selectable ? { onClick: () => toggleSelect(msg), style: { cursor: 'pointer' } } : {})
+                : (selectable ? {
+                    onPointerDown: startLongPress(msg),
+                    onPointerUp: cancelLongPress,
+                    onPointerMove: cancelLongPress,
+                    onPointerCancel: cancelLongPress,
+                    onContextMenu: (e) => { e.preventDefault(); setActionTarget(msg) },
+                  } : {})
 
               const curDay = localDayKey(msg.createdAt)
               const prevDay = idx > 0 ? localDayKey(displayMessages[idx - 1]?.createdAt) : null
@@ -1105,8 +1187,13 @@ export default function RequestChatPage() {
               )
 
               return withDay(
-                <div>
+                <div className={selectMode && selectable ? 'rounded-2xl transition-colors ' + (isSelected ? 'bg-[#FCE9F4]' : '') : ''}>
                   <div data-msg data-msg-id={msg.id} className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'} ${gap}`} {...lpHandlers}>
+                    {selectMode && selectable && (
+                      <span className={`shrink-0 size-[22px] rounded-full border-2 flex items-center justify-center self-center ${isSelected ? 'bg-[#E2319B] border-[#E2319B]' : 'border-[#C9C8CE] bg-white'}`}>
+                        {isSelected && <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                      </span>
+                    )}
                     {bubble}
                   </div>
                   {idx === 0 && isLead && !isStaff && <ManagerNote text={t('requestChat.managerNote')} />}
