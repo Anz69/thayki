@@ -135,6 +135,16 @@ export default function RequestPage() {
     })
   }, [i18n.language, t])
 
+  const timeOptions = useMemo(() => {
+    const out = []
+    for (let h = 0; h < 24; h += 1) {
+      for (const m of [0, 30]) {
+        out.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
+      }
+    }
+    return out
+  }, [])
+
   const meetingDayLabel = useMemo(() => {
     const o = dayOptions.find((x) => x.value === meetingDate)
     return o ? `${o.dow}, ${o.day} ${o.mon}` : ''
@@ -389,7 +399,6 @@ export default function RequestPage() {
     }
   }
 
-  // Reused in the one-time-meeting block (general flow) and as its own card (model flow).
   const meetingPicker = (
     <>
       <div>
@@ -421,12 +430,24 @@ export default function RequestPage() {
         <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2">
           {t('request.meetingTime')} <span className="text-[#E2319B]">*</span>
         </p>
-        <input
-          type="time"
-          value={meetingTime}
-          onChange={(e) => setMeetingTime(e.target.value)}
-          className="w-full bg-white rounded-xl px-4 py-3 text-black text-[15px] outline-none focus:ring-2 focus:ring-[#E2319B]/30 transition-shadow"
-        />
+        <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {timeOptions.map((tm) => {
+            const active = meetingTime === tm
+            return (
+              <button
+                key={tm}
+                type="button"
+                onClick={() => setMeetingTime(active ? '' : tm)}
+                className={[
+                  'shrink-0 px-3.5 py-2.5 rounded-2xl text-[14px]/[100%] font-semibold transition-colors duration-200 active:scale-95',
+                  active ? 'bg-[#E2319B] text-white' : 'bg-[#EFEEF3] text-[#7F7F7F]',
+                ].join(' ')}
+              >
+                {tm}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </>
   )
