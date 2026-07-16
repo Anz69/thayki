@@ -114,7 +114,10 @@ export default function RequestPage() {
     || (eventType === 'trip' && tripCity.trim().length > 0)
   const paramsOk = !!bustType && !!hips && !!figure && !!hair && !!eventType && eventOk
   const allSelected = isModelFlow || paramsOk
-  const meetingOk = !!meetingDate && !!meetingTime
+  // Day/time is asked only for a one-time meeting (and in the model flow, which has no
+  // event step at all).
+  const meetingRequired = isModelFlow || eventType === 'oneTime'
+  const meetingOk = !meetingRequired || (!!meetingDate && !!meetingTime)
   const canSubmit = city.trim().length > 0 && allSelected && meetingOk && !submitting
   const formHint = city.trim().length === 0
     ? t('request.cityRequiredHint')
@@ -386,6 +389,48 @@ export default function RequestPage() {
     }
   }
 
+  // Reused in the one-time-meeting block (general flow) and as its own card (model flow).
+  const meetingPicker = (
+    <>
+      <div>
+        <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2.5">
+          {t('request.meetingDay')} <span className="text-[#E2319B]">*</span>
+        </p>
+        <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {dayOptions.map((d) => {
+            const active = meetingDate === d.value
+            return (
+              <button
+                key={d.value}
+                type="button"
+                onClick={() => setMeetingDate(active ? null : d.value)}
+                className={[
+                  'shrink-0 w-[72px] flex flex-col items-center justify-center gap-0.5 py-2 rounded-2xl transition-colors duration-200 active:scale-95',
+                  active ? 'bg-[#E2319B]' : 'bg-[#EFEEF3]',
+                ].join(' ')}
+              >
+                <span className={`w-full text-center truncate px-1 text-[10.5px]/[110%] font-medium ${active ? 'text-white/85' : 'text-[#9B9AA0]'}`}>{d.dow}</span>
+                <span className={`text-[16px]/[110%] font-bold ${active ? 'text-white' : 'text-black'}`}>{d.day}</span>
+                <span className={`w-full text-center truncate px-1 text-[10px]/[110%] ${active ? 'text-white/85' : 'text-[#9B9AA0]'}`}>{d.mon}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+      <div>
+        <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2">
+          {t('request.meetingTime')} <span className="text-[#E2319B]">*</span>
+        </p>
+        <input
+          type="time"
+          value={meetingTime}
+          onChange={(e) => setMeetingTime(e.target.value)}
+          className="w-full bg-white rounded-xl px-4 py-3 text-black text-[15px] outline-none focus:ring-2 focus:ring-[#E2319B]/30 transition-shadow"
+        />
+      </div>
+    </>
+  )
+
   return (
     <main ref={rootRef} className="flex flex-col min-h-screen bg-[#FAFAFB]">
       <header className="w-full py-4 bg-[#FAFAFB]/90 backdrop-blur-xs sticky top-0 z-50">
@@ -603,10 +648,13 @@ export default function RequestPage() {
               </div>
 
                 {eventType === 'oneTime' && (
-                  <div className="mt-1.5 rounded-xl bg-[#F8F7FA] p-3.5">
-                    <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2.5">{t('request.duration')}</p>
-                    <RangeSlider min={1} max={24} from={eventHours.from} to={eventHours.to}
-                      onChange={(f, to) => setEventHours({ from: f, to })} format={fmtHours} formatRange={rangeHours} />
+                  <div className="mt-1.5 flex flex-col gap-3.5 rounded-xl bg-[#F8F7FA] p-3.5">
+                    {meetingPicker}
+                    <div>
+                      <p className="text-[#9B9AA0] text-[12.5px]/[100%] font-medium mb-2.5">{t('request.duration')}</p>
+                      <RangeSlider min={1} max={24} from={eventHours.from} to={eventHours.to}
+                        onChange={(f, to) => setEventHours({ from: f, to })} format={fmtHours} formatRange={rangeHours} />
+                    </div>
                   </div>
                 )}
 
@@ -629,46 +677,16 @@ export default function RequestPage() {
           </>
         )}
 
-        <div
-          data-anim
-          onFocusCapture={scrollFieldIntoView}
-          style={{ scrollMarginTop: 80 }}
-          className="flex flex-col gap-3 bg-white rounded-2xl p-4 border border-black/5"
-        >
-          <p className="text-black text-[15px]/[100%] font-semibold">
-            {t('request.meetingDay')} <span className="text-[#E2319B]">*</span>
-          </p>
-          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-            {dayOptions.map((d) => {
-              const active = meetingDate === d.value
-              return (
-                <button
-                  key={d.value}
-                  type="button"
-                  onClick={() => setMeetingDate(active ? null : d.value)}
-                  className={[
-                    'shrink-0 w-[72px] flex flex-col items-center justify-center gap-0.5 py-2 rounded-2xl transition-colors duration-200 active:scale-95',
-                    active ? 'bg-[#E2319B]' : 'bg-[#F5F5F7]',
-                  ].join(' ')}
-                >
-                  <span className={`w-full text-center truncate px-1 text-[10.5px]/[110%] font-medium ${active ? 'text-white/85' : 'text-[#9B9AA0]'}`}>{d.dow}</span>
-                  <span className={`text-[16px]/[110%] font-bold ${active ? 'text-white' : 'text-black'}`}>{d.day}</span>
-                  <span className={`w-full text-center truncate px-1 text-[10px]/[110%] ${active ? 'text-white/85' : 'text-[#9B9AA0]'}`}>{d.mon}</span>
-                </button>
-              )
-            })}
+        {isModelFlow && (
+          <div
+            data-anim
+            onFocusCapture={scrollFieldIntoView}
+            style={{ scrollMarginTop: 80 }}
+            className="flex flex-col gap-3.5 bg-white rounded-2xl p-4 border border-black/5"
+          >
+            {meetingPicker}
           </div>
-
-          <p className="text-black text-[15px]/[100%] font-semibold mt-1">
-            {t('request.meetingTime')} <span className="text-[#E2319B]">*</span>
-          </p>
-          <input
-            type="time"
-            value={meetingTime}
-            onChange={(e) => setMeetingTime(e.target.value)}
-            className="w-full bg-[#F5F5F7] rounded-xl px-4 py-3.5 text-black text-[15px] outline-none focus:ring-2 focus:ring-[#E2319B]/30 transition-shadow"
-          />
-        </div>
+        )}
 
         <div
           data-anim
