@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import gsap from 'gsap'
@@ -89,6 +89,8 @@ export default function RequestPage() {
   const [tripDays, setTripDays] = useState({ from: 3, to: 7 })
   const [tripCity, setTripCity] = useState('')
   const [comments, setComments] = useState('')
+  const [meetingDate, setMeetingDate] = useState(null)
+  const [meetingTime, setMeetingTime] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
   const [verifyOpen, setVerifyOpen] = useState(false)
@@ -112,10 +114,28 @@ export default function RequestPage() {
     || (eventType === 'trip' && tripCity.trim().length > 0)
   const paramsOk = !!bustType && !!hips && !!figure && !!hair && !!eventType && eventOk
   const allSelected = isModelFlow || paramsOk
-  const canSubmit = city.trim().length > 0 && allSelected && !submitting
+  const meetingOk = !!meetingDate && !!meetingTime
+  const canSubmit = city.trim().length > 0 && allSelected && meetingOk && !submitting
   const formHint = city.trim().length === 0
     ? t('request.cityRequiredHint')
-    : (!allSelected ? t('request.allRequiredHint') : '')
+    : (!allSelected ? t('request.allRequiredHint') : (!meetingOk ? t('request.meetingRequiredHint') : ''))
+
+  // Next two weeks as day chips — "Сегодня / Завтра", then weekday + date.
+  const dayOptions = useMemo(() => {
+    const lang = i18n.language || 'ru'
+    return Array.from({ length: 14 }, (_, i) => {
+      const d = new Date()
+      d.setDate(d.getDate() + i)
+      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const dow = i === 0 ? t('request.today') : (i === 1 ? t('request.tomorrow') : d.toLocaleDateString(lang, { weekday: 'short' }))
+      return { value, dow, day: d.getDate(), mon: d.toLocaleDateString(lang, { month: 'short' }) }
+    })
+  }, [i18n.language, t])
+
+  const meetingDayLabel = useMemo(() => {
+    const o = dayOptions.find((x) => x.value === meetingDate)
+    return o ? `${o.dow}, ${o.day} ${o.mon}` : ''
+  }, [dayOptions, meetingDate])
 
   useEffect(() => {
     if (!modelId) { setModel(null); return undefined }
@@ -260,6 +280,8 @@ export default function RequestPage() {
       rows.push([t('leadMsg.hair'), U(`hair.${hair}`)])
       rows.push([t('leadMsg.event'), eventStr()])
     }
+    if (meetingDayLabel) rows.push([t('leadMsg.meetingDate'), meetingDayLabel])
+    if (meetingTime) rows.push([t('leadMsg.meetingTime'), meetingTime])
     if (comments.trim()) rows.push([t('leadMsg.comments'), comments.trim()])
 
     const lines = rows.map(([label, value]) => (value == null ? label : `${label}: ${value}`))
@@ -316,6 +338,8 @@ export default function RequestPage() {
       const base = {
         model_profile_id: isModelFlow ? Number(modelId) : null,
         city: city.trim(),
+        meeting_date: meetingDate,
+        meeting_time: meetingTime || null,
         wishes: comments.trim() || null,
         locale: (i18n.language || 'ru').toLowerCase().startsWith('ru')
           ? 'ru'
@@ -604,6 +628,47 @@ export default function RequestPage() {
               </Section>
           </>
         )}
+
+        <div
+          data-anim
+          onFocusCapture={scrollFieldIntoView}
+          style={{ scrollMarginTop: 80 }}
+          className="flex flex-col gap-3 bg-white rounded-2xl p-4 border border-black/5"
+        >
+          <p className="text-black text-[15px]/[100%] font-semibold">
+            {t('request.meetingDay')} <span className="text-[#E2319B]">*</span>
+          </p>
+          <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
+            {dayOptions.map((d) => {
+              const active = meetingDate === d.value
+              return (
+                <button
+                  key={d.value}
+                  type="button"
+                  onClick={() => setMeetingDate(active ? null : d.value)}
+                  className={[
+                    'shrink-0 min-w-[62px] flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-2xl transition-all duration-200 active:scale-95',
+                    active ? 'bg-[#E2319B] text-white shadow-[0_4px_14px_rgba(226,49,155,0.3)]' : 'bg-[#F5F5F7] text-[#7F7F7F]',
+                  ].join(' ')}
+                >
+                  <span className={`text-[10.5px]/[100%] font-medium ${active ? 'text-white/85' : 'text-[#9B9AA0]'}`}>{d.dow}</span>
+                  <span className={`text-[16px]/[110%] font-bold ${active ? 'text-white' : 'text-black'}`}>{d.day}</span>
+                  <span className={`text-[10px]/[100%] ${active ? 'text-white/85' : 'text-[#9B9AA0]'}`}>{d.mon}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <p className="text-black text-[15px]/[100%] font-semibold mt-1">
+            {t('request.meetingTime')} <span className="text-[#E2319B]">*</span>
+          </p>
+          <input
+            type="time"
+            value={meetingTime}
+            onChange={(e) => setMeetingTime(e.target.value)}
+            className="w-full bg-[#F5F5F7] rounded-xl px-4 py-3.5 text-black text-[15px] outline-none focus:ring-2 focus:ring-[#E2319B]/30 transition-shadow"
+          />
+        </div>
 
         <div
           data-anim

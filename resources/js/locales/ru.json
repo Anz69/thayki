@@ -186,7 +186,12 @@
       "business": "Деловая",
       "event": "Мероприятие",
       "companion": "Сопровождение"
-    }
+    },
+    "meetingDay": "День встречи",
+    "meetingTime": "Время начала встречи",
+    "today": "Сегодня",
+    "tomorrow": "Завтра",
+    "meetingRequiredHint": "Выберите день и время встречи"
   },
   "share": {
     "title": "Поделиться",
@@ -221,7 +226,9 @@
     "tripCity": "Город поездки",
     "comments": "Комментарии",
     "hips": "Бёдра",
-    "tripPurpose": "Мероприятие"
+    "tripPurpose": "Мероприятие",
+    "meetingDate": "Дата встречи",
+    "meetingTime": "Время встречи"
   },
   "requestModal": {
     "title": "Оставить заявку",

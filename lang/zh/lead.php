@@ -7,6 +7,8 @@ return [
     'interested' => '感兴趣的类型',
     'type' => '类型',
     'city' => '城市',
+    'meeting_date' => '会面日期',
+    'meeting_time' => '会面时间',
     'age' => '年龄',
     'height' => '身高',
     'goal' => '活动',

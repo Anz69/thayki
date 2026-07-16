@@ -186,7 +186,12 @@
       "business": "Business",
       "event": "Event",
       "companion": "Companionship"
-    }
+    },
+    "meetingDay": "Meeting day",
+    "meetingTime": "Start time",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "meetingRequiredHint": "Choose the meeting day and time"
   },
   "share": {
     "title": "Share",
@@ -221,7 +226,9 @@
     "tripCity": "Trip city",
     "comments": "Comments",
     "hips": "Hips",
-    "tripPurpose": "Event"
+    "tripPurpose": "Event",
+    "meetingDate": "Meeting date",
+    "meetingTime": "Meeting time"
   },
   "requestModal": {
     "title": "Leave a request",

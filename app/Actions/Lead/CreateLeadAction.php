@@ -40,6 +40,8 @@ class CreateLeadAction
                 'user_id' => $client->id,
                 'model_profile_id' => $profile?->id,
                 'city' => trim((string) $data['city']),
+                'meeting_date' => $data['meeting_date'] ?? null,
+                'meeting_time' => $data['meeting_time'] ?? null,
                 'hair_type' => $data['hair_type'] ?? null,
                 'age_range' => $data['age_range'] ?? null,
                 'height_range' => $data['height_range'] ?? null,
@@ -166,6 +168,16 @@ class CreateLeadAction
         }
 
         $lines[] = $L('city').': '.$lead->city;
+
+        if ($lead->meeting_date) {
+            $d = $lead->meeting_date instanceof \DateTimeInterface
+                ? $lead->meeting_date
+                : \Illuminate\Support\Carbon::parse((string) $lead->meeting_date);
+            $lines[] = $L('meeting_date').': '.$d->format('d.m.Y');
+        }
+        if ($lead->meeting_time) {
+            $lines[] = $L('meeting_time').': '.$lead->meeting_time;
+        }
 
         if ($lead->age_range) {
             $lines[] = $L('age').': '.$lead->age_range;

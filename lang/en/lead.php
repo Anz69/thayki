@@ -7,6 +7,8 @@ return [
     'interested' => 'Interested in',
     'type' => 'Type',
     'city' => 'City',
+    'meeting_date' => 'Meeting date',
+    'meeting_time' => 'Meeting time',
     'age' => 'Age',
     'height' => 'Height',
     'goal' => 'Event',

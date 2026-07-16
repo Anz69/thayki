@@ -21,6 +21,8 @@ class StoreLeadRequest extends FormRequest
         return [
             'model_profile_id' => ['nullable', 'integer', 'exists:model_profiles,id'],
             'city' => ['required', 'string', 'max:120'],
+            'meeting_date' => ['nullable', 'date_format:Y-m-d'],
+            'meeting_time' => ['nullable', 'date_format:H:i'],
             'hair_type' => ['nullable', 'string', 'max:64'],
             'age_range' => ['nullable', 'string', 'max:32'],
             'height_range' => ['nullable', 'string', 'max:32'],
