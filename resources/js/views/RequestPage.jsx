@@ -638,7 +638,7 @@ export default function RequestPage() {
           <p className="text-black text-[15px]/[100%] font-semibold">
             {t('request.meetingDay')} <span className="text-[#E2319B]">*</span>
           </p>
-          <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
             {dayOptions.map((d) => {
               const active = meetingDate === d.value
               return (
@@ -647,13 +647,13 @@ export default function RequestPage() {
                   type="button"
                   onClick={() => setMeetingDate(active ? null : d.value)}
                   className={[
-                    'shrink-0 min-w-[62px] flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-2xl transition-all duration-200 active:scale-95',
-                    active ? 'bg-[#E2319B] text-white shadow-[0_4px_14px_rgba(226,49,155,0.3)]' : 'bg-[#F5F5F7] text-[#7F7F7F]',
+                    'shrink-0 w-[72px] flex flex-col items-center justify-center gap-0.5 py-2 rounded-2xl transition-colors duration-200 active:scale-95',
+                    active ? 'bg-[#E2319B]' : 'bg-[#F5F5F7]',
                   ].join(' ')}
                 >
-                  <span className={`text-[10.5px]/[100%] font-medium ${active ? 'text-white/85' : 'text-[#9B9AA0]'}`}>{d.dow}</span>
+                  <span className={`w-full text-center truncate px-1 text-[10.5px]/[110%] font-medium ${active ? 'text-white/85' : 'text-[#9B9AA0]'}`}>{d.dow}</span>
                   <span className={`text-[16px]/[110%] font-bold ${active ? 'text-white' : 'text-black'}`}>{d.day}</span>
-                  <span className={`text-[10px]/[100%] ${active ? 'text-white/85' : 'text-[#9B9AA0]'}`}>{d.mon}</span>
+                  <span className={`w-full text-center truncate px-1 text-[10px]/[110%] ${active ? 'text-white/85' : 'text-[#9B9AA0]'}`}>{d.mon}</span>
                 </button>
               )
             })}
